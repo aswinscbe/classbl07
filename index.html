@@ -195,6 +195,65 @@ html[data-theme="dark"] .greetingHeader{background:linear-gradient(135deg,#17273
 
 #homeView .hero .stats{display:grid!important}#homeView .weekPulse{order:6}
 @media(min-width:761px){.greetingHeader{min-height:0!important}.greetingHeader .identity{min-height:0!important}.greetingHeader .desktopNav{position:fixed!important}}
+/* Home workspace v2: schedule-first, responsive */
+@media(min-width:900px){
+ body:has(#homeView:not([hidden])) .app{max-width:1320px;padding-left:28px;padding-right:28px}
+ body:has(#homeView:not([hidden])) .greetingHeader{min-height:0!important;height:auto;padding:13px 17px!important;margin-bottom:14px!important;border-radius:20px}
+ body:has(#homeView:not([hidden])) .greetingHeader .identity{min-height:0!important}
+ body:has(#homeView:not([hidden])) .greetingHeader .identity h1{min-height:0!important;font-size:29px!important}
+ body:has(#homeView:not([hidden])) .greetingHeader .motivation{min-height:0!important;margin:4px 0 6px!important;font-size:11px}
+ #homeView{display:grid!important;grid-template-columns:minmax(310px,.72fr) minmax(520px,1.28fr);grid-template-rows:auto auto 1fr auto;gap:9px 16px;align-items:start}
+ #homeView .hero{grid-column:1;grid-row:1/5;position:sticky;top:82px;display:flex!important;flex-direction:column;gap:9px;margin:0}
+ #homeView .focusCard{min-height:218px!important;height:auto}
+ #homeView .focusStage{padding:19px 21px 17px}
+ #homeView .focusStage h2{font-size:27px!important}
+ #homeView .stats{order:2;margin:0!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ #homeView .stat,#homeView .stat:first-child,#homeView .stat:nth-child(2),#homeView .stat.week{min-height:64px!important;padding:9px 8px!important;text-align:center;align-items:center;border-radius:0!important}
+ #homeView .stat strong{font-size:17px!important}
+ #homeView .stat span{font-size:7px!important}
+ #homeView .termProgress{order:3;margin:0!important;padding:10px 12px!important}
+ #homeView .homeAgendaTitle{grid-column:2;grid-row:1;margin:0!important;min-height:0;padding:2px 0 0}
+ #homeView .homeAgendaTitle h2{font-size:22px}
+ #homeView .homeDayTabs{grid-column:2;grid-row:2;width:100%!important;max-width:none;margin:0!important}
+ #homeView .homeAgenda{grid-column:2;grid-row:3;max-width:none!important;width:100%;margin:0!important;padding:18px 20px}
+ #homeView .weekPulse{grid-column:2;grid-row:4;order:initial;margin:0!important;padding:10px 13px}
+}
+@media(max-width:899px){
+ body:has(#homeView:not([hidden])) .greetingHeader{min-height:0!important;padding:12px 13px!important;margin-bottom:10px!important;border-radius:18px}
+ body:has(#homeView:not([hidden])) .greetingHeader .identity h1{font-size:23px!important;line-height:1.05!important}
+ body:has(#homeView:not([hidden])) .greetingHeader .motivation{display:none}
+ body:has(#homeView:not([hidden])) .personLine{margin-top:5px!important;padding-top:0!important}
+ #homeView{display:flex!important}
+ #homeView .hero{order:1;display:flex!important;flex-direction:column;gap:7px}
+ #homeView .focusCard{min-height:156px!important}
+ #homeView .focusStage{padding:14px 15px 12px}
+ #homeView .focusStage h2{font-size:22px!important;margin:5px 0}
+ #homeView .focusStageTime{margin-top:7px;padding-top:7px}
+ #homeView .focusContext{margin-top:6px;padding-top:6px}
+ #homeView .stats{order:2;margin:0!important;gap:0!important}
+ #homeView .stat,#homeView .stat:first-child,#homeView .stat:nth-child(2),#homeView .stat.week{min-height:48px!important;padding:6px 4px!important;border-radius:0!important}
+ #homeView .stat strong{font-size:14px!important}
+ #homeView .stat span{font-size:6.5px!important}
+ #homeView .termProgress{order:3;margin:0!important;padding:7px 10px!important}
+ #homeView .termProgress>div:first-child{margin-bottom:4px}
+ #homeView .homeAgendaTitle{display:none!important}
+ #homeView .homeDayTabs{order:3;margin:10px 0 7px!important;position:relative!important}
+ #homeView .homeAgenda{order:4;margin:0!important;padding:14px!important}
+ #homeView .weekPulse{order:5;margin:8px 0 0!important;padding:9px 11px}
+ #homeView .homeAgendaHead{padding-bottom:10px}
+ #homeView .event{padding-top:12px;padding-bottom:12px}
+}
+@media(max-width:430px){
+ .greetingHeader{grid-template-columns:minmax(0,1fr) auto!important}
+ .greetingHeader .identity h1{max-width:210px}
+ .headActions .icon{width:36px;height:36px}
+ #homeView .focusCard{min-height:148px!important}
+ #homeView .focusStage h2{font-size:20px!important;max-width:74%}
+ #homeView .focusCountdown strong{font-size:17px!important}
+ #homeView .focusContext{font-size:8px}
+ #homeView .homeDayTab{min-height:44px!important}
+}
+@media(min-width:900px){body:has(#homeView:not([hidden])) .greetingHeader .motivation{display:none}body:has(#homeView:not([hidden])) .personLine{margin-top:5px!important;padding-top:0!important}body:has(#homeView:not([hidden])) .syncStrip{margin-top:5px}}
 </style></head><body>
 <div class="setup" id="setup" hidden><form class="setupCard" id="profileForm"><div class="eyebrow">PGPBL07 · Term III</div><h1>Make this planner yours</h1><p class="meta">Core subjects are included automatically.</p><div class="formRow"><label>Name<input id="name" required placeholder="Your name"></label><label>Roll number<input id="roll" placeholder="PGPBL/07/009"></label></div><h3>Section</h3><div class="choices"><label class="choice"><input type="radio" name="section" value="A" required> Section A</label><label class="choice"><input type="radio" name="section" value="B" required> Section B</label></div><h3 style="margin-top:18px">Electives</h3><div class="choices" id="electives"></div><div class="sheetActions"><button class="primary" type="submit">Save my planner</button><button class="secondary" type="button" id="cancelProfile">Cancel</button></div></form></div>
 <div class="sheet" id="classSheet" hidden><article class="sheetCard"><div class="handle"></div><div class="sheetTop"><div><div class="eyebrow" id="sheetCode"></div><h2 id="sheetTitle"></h2><p class="meta" id="sheetMeta"></p></div><button class="close" id="closeSheet">×</button></div><div class="classQuickActions"><button class="classAction primary" id="classAddTask"><span>+</span><strong>Add task</strong><small>Deadline or preparation</small></button><button class="classAction secondary" id="classShare"><span>↗</span><strong>Share class</strong><small>Send the details</small></button><button class="classAction secondary" id="classSubjectPlanner"><span>≡</span><strong>Subject planner</strong><small>Tasks and notes</small></button></div><label class="eyebrow">Class note</label><textarea id="classNote" placeholder="Key ideas, instructions or anything to remember…"></textarea><div class="noteSaveRow"><p class="meta" id="noteSaved">Saved on this device</p><button class="secondary compactButton" id="saveNote">Save note</button></div><a class="quietLink" id="addCalendar" target="_blank">Add this class to calendar</a></article></div>
@@ -237,7 +296,7 @@ function setSync(label,detail,state="ok"){$("#status").dataset.state=state;$("#s
 async function fetchLatestSchedule(){let failure;for(let attempt=0;attempt<2;attempt++){const controller=new AbortController,timer=setTimeout(()=>controller.abort(),12000);try{const response=await fetch(`${API}?ts=${Date.now()}&attempt=${attempt}`,{cache:"no-store",signal:controller.signal,redirect:"follow"});if(!response.ok)throw Error(`HTTP ${response.status}`);const payload=await response.json();if(!payload.success)throw Error(payload.error||"Invalid schedule response");return payload}catch(error){failure=error}finally{clearTimeout(timer)}}throw failure||Error("Schedule unavailable")}
 async function load(){if(syncPromise)return syncPromise;syncPromise=(async()=>{setSync("Updating…","Latest Google Sheet","checking");try{const payload=await fetchLatestSchedule();lastSyncAt=Date.now();localStorage.setItem(DATAK,JSON.stringify({savedAt:lastSyncAt,payload}));applyPayload(payload);setSync("Up to date","Updated just now","ok")}catch(error){let cached=null;try{cached=JSON.parse(localStorage.getItem(DATAK)||"null")}catch{}const online=navigator.onLine!==false;if(cached?.payload){applyPayload(cached.payload,true);const age=Math.max(1,Math.round((Date.now()-cached.savedAt)/60000));setSync(online?"Using saved schedule":"No connection",`Saved ${age} min ago`,online?"saved":"offline")}else{setSync(online?"Sync issue":"No connection",online?"Tap to try again":"Connect and retry","offline");if($("#focusCard"))$("#focusCard").innerHTML='<div><div class="eyebrow">Schedule unavailable</div><h2>Tap the status to retry</h2></div>'}}})().finally(()=>syncPromise=null);return syncPromise}
 window.addEventListener("online",()=>load());window.addEventListener("offline",()=>setSync("No connection","Using saved schedule","offline"));document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastSyncAt>60000)load()});
-if("serviceWorker"in navigator){navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!sessionStorage.getItem("pgpbl-sw-refreshed-v32")){sessionStorage.setItem("pgpbl-sw-refreshed-v32","1");location.reload()}})}
+if("serviceWorker"in navigator){navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!sessionStorage.getItem("pgpbl-sw-refreshed-v33")){sessionStorage.setItem("pgpbl-sw-refreshed-v33","1");location.reload()}})}
 var GOOGLE_TASKS_CLIENT_ID="326019358906-4dpbtbmnp6rm6a7m8bikcir4a2pejiot.apps.googleusercontent.com",GOOGLE_TASKS_SCOPE="https://www.googleapis.com/auth/tasks",googleToken="",googleTokenClient=null,googlePlannerTasks=[],googleTasksBusy=false;
 function addDays(k,n){const parts=String(k).split("-").map(Number),d=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]+n));return`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`}function monday(k){const d=new Date(`${k}T12:00:00Z`),offset=(d.getUTCDay()+6)%7;return addDays(k,-offset)}
 function ensureEnhancementUI(){const term=$(".termProgress"),home=$("#homeView");if(home&&term&&!$("#changeBanner")){const banner=document.createElement("div");banner.id="changeBanner";banner.className="changeBanner";banner.hidden=true;term.insertAdjacentElement("afterend",banner)}const hero=$("#notesView .plannerHero");if(hero&&!$("#googleTasksBar")){const bar=document.createElement("div");bar.id="googleTasksBar";bar.className="googleTasksBar";bar.innerHTML='<div class="googleMark">G</div><div><strong>Google Tasks</strong><span id="googleTasksStatus">Connect to sync tasks across your devices.</span></div><button class="googleConnect" id="googleTasksConnect" type="button">Connect</button>';hero.insertAdjacentElement("afterend",bar);$("#googleTasksConnect").onclick=()=>googleToken?disconnectGoogleTasks():connectGoogleTasks()}renderChangeBanner();renderGoogleTasksBar()}
@@ -313,7 +372,7 @@ configureGoogleTaskForm=function(){ensureTaskQuickDates();ensureTaskEditorUI();$
 var renderScheduleBeforeStatusDots=renderSchedule;renderSchedule=function(){renderScheduleBeforeStatusDots();decorateScheduleDates()};
 function closeOverlay(element){if(!element)return;element.hidden=true;document.body.classList.remove("modalOpen")}
 $("#closeDrawer").onclick=()=>closeOverlay($("#drawer"));$("#closeSheet").onclick=()=>closeOverlay($("#classSheet"));$("#closeTaskSheet").onclick=()=>closeOverlay($("#taskSheet"));document.addEventListener("click",event=>{if(event.target===$("#drawer"))closeOverlay($("#drawer"));if(event.target===$("#classSheet"))closeOverlay($("#classSheet"));if(event.target===$("#taskSheet"))closeOverlay($("#taskSheet"));if(event.target.closest?.("#bellButton")||event.target.closest?.("[data-class]")||event.target.closest?.("#plannerAddTask")||event.target.closest?.("[data-task-edit]"))requestAnimationFrame(()=>document.body.classList.toggle("modalOpen",!["drawer","classSheet","taskSheet"].every(id=>$("#"+id).hidden)))});document.addEventListener("keydown",event=>{if(event.key!=="Escape")return;for(const id of ["drawer","classSheet","taskSheet"]){const element=$("#"+id);if(!element.hidden){closeOverlay(element);break}}});
-function placeDesktopNavigation(){const header=$(".greetingHeader"),nav=$(".desktopNav");if(header&&nav&&nav.parentElement!==header)header.appendChild(nav)}placeDesktopNavigation();ensureTaskEditorUI();ensureTaskQuickDates();configureGoogleTaskForm();renderSchedule();
+function placeDesktopNavigation(){const header=$(".greetingHeader"),nav=$(".desktopNav");if(header&&nav&&nav.parentElement!==header)header.appendChild(nav)}placeDesktopNavigation();ensureTaskEditorUI();ensureTaskQuickDates();configureGoogleTaskForm();if(weeks.length)renderSchedule();
 function refreshExactSyncTime(){if(!lastSyncAt||!$("#status")||$("#status").dataset.state!=="ok")return;const label=new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",hour:"numeric",minute:"2-digit"}).format(new Date(lastSyncAt));const detail=`Updated ${label} IST`;$("#status small").textContent=detail;$("#status").title=`Schedule ${detail.toLowerCase()} · Tap to refresh`;updateSyncChips()}setInterval(refreshExactSyncTime,15000);setTimeout(refreshExactSyncTime,1200);
 $("#classSubjectPlanner").onclick=()=>{if(!sheetClass)return;plannerSubject=sheetClass.baseCode||sheetClass.code;plannerView="subjects";closeOverlay($("#classSheet"));switchTab("notes");requestAnimationFrame(()=>{$(`[data-planner-subject="${CSS.escape(plannerSubject)}"]`)?.scrollIntoView({block:"nearest",inline:"center"})})};
 </script></body></html>
