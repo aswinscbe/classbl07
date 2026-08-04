@@ -324,8 +324,8 @@ $("#classSubjectPlanner").onclick=()=>{if(!sheetClass)return;plannerSubject=shee
 #homeView #focusCard{
   position:relative!important; isolation:isolate!important; overflow:hidden!important;
   min-height:210px!important; padding:0!important; border:1px solid rgba(255,255,255,.10)!important;
-  border-radius:24px!important; background:linear-gradient(145deg,#172844 0%,#203b61 100%)!important;
-  box-shadow:0 14px 32px rgba(22,40,68,.18)!important; color:#fff!important;
+  border-radius:24px!important; background:linear-gradient(145deg,#172033 0%,#22324a 100%)!important;
+  box-shadow:0 12px 28px rgba(20,31,50,.14)!important; color:#fff!important;
 }
 #homeView #focusCard::before,#homeView #focusCard::after{display:none!important;content:none!important}
 #homeView #focusCard .verifiedFocus{position:relative!important;z-index:5!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;min-height:210px!important;padding:20px!important;color:#fff!important;opacity:1!important;visibility:visible!important}
@@ -347,14 +347,15 @@ $("#classSubjectPlanner").onclick=()=>{if(!sheetClass)return;plannerSubject=shee
   function validDate(event,end){try{var d=stamp(event,end?event.end:event.start);return d instanceof Date&&!isNaN(d)}catch(_){return false}}
   function renderVerifiedFocus(){
     var card=document.getElementById('focusCard'); if(!card)return;
-    var list=Array.isArray(window.classes)?window.classes:[];
+    var list=(typeof classes!=='undefined'&&Array.isArray(classes))?classes:[];
     var now=new Date();
     var scheduledList=list.filter(function(e){return e&&e.status!=='Cancelled'&&validDate(e,false)}).sort(function(a,b){return stamp(a)-stamp(b)});
     var live=scheduledList.find(function(e){return validDate(e,true)&&stamp(e)<=now&&stamp(e,e.end)>now});
     var item=live||scheduledList.find(function(e){return stamp(e)>now});
     card.classList.toggle('now',!!live);
     if(!item){
-      card.innerHTML='<div class="verifiedFocus"><div><div class="verifiedTop"><span class="verifiedState"><i></i>Schedule</span></div><h2 class="verifiedTitle">No upcoming classes</h2><p class="verifiedMeta">Your schedule is clear for now.</p></div><div class="verifiedBottom"><div class="verifiedWhen">Live schedule<strong>Up to date</strong></div></div></div>';
+      var waiting=!list.length;
+      card.innerHTML='<div class="verifiedFocus"><div><div class="verifiedTop"><span class="verifiedState"><i></i>Schedule</span></div><h2 class="verifiedTitle">'+(waiting?'Loading schedule…':'No upcoming classes')+'</h2><p class="verifiedMeta">'+(waiting?'Fetching your latest timetable.':'Your schedule is clear for now.')+'</p></div><div class="verifiedBottom"><div class="verifiedWhen">Live schedule<strong>'+(waiting?'Updating':'Up to date')+'</strong></div></div></div>';
       return;
     }
     var target=live?stamp(item,item.end):stamp(item), diff=Math.max(0,target-now), minsLeft=Math.floor(diff/60000), sec=Math.floor(diff%60000/1000), days=Math.floor(diff/86400000), hours=Math.floor(diff%86400000/3600000);
