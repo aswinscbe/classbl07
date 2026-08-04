@@ -583,4 +583,102 @@ $("#classSubjectPlanner").onclick=()=>{if(!sheetClass)return;plannerSubject=shee
   setInterval(()=>{if(document.getElementById('homeView')&&!document.getElementById('homeView').hidden)renderHome()},30000);
 })();
 </script>
+
+<style id="v5-foundation-theme">
+/* V5 foundation: one consistent visual system, especially in dark mode */
+:root{
+  --v5-bg:#f5f7fb;--v5-panel:#ffffff;--v5-panel-2:#eef2f8;--v5-text:#172033;
+  --v5-muted:#6f7b90;--v5-border:#dde3ed;--v5-accent:#3156d3;--v5-accent-2:#6d5bd0;
+  --v5-shadow:0 10px 30px rgba(37,53,91,.08);
+}
+html[data-theme="dark"]{
+  --v5-bg:#0f131b;--v5-panel:#181e29;--v5-panel-2:#222a38;--v5-text:#f3f6fb;
+  --v5-muted:#a3aec0;--v5-border:#303a4c;--v5-accent:#89a5ff;--v5-accent-2:#b0a1ff;
+  --v5-shadow:0 12px 34px rgba(0,0,0,.28);
+}
+body{background:var(--v5-bg)!important;color:var(--v5-text)!important}
+.greetingHeader,.agenda,.calendarCard,.selectedDay,.notesPanel,.profileCard,.dayAgenda,
+.termProgress,.weekPulse,.plannerHero,.googleTasksBar,.subjectWorkspace,.setupCard,.sheetCard,.drawerCard,
+#homeView .stats,.stat,.taskCard,.reminderItem,.choice,.syncStatus{
+  background:var(--v5-panel)!important;color:var(--v5-text)!important;border-color:var(--v5-border)!important;
+  box-shadow:var(--v5-shadow)!important;
+}
+.surface2,.desktopNav,.mobileNav,.homeDayTabs,.plannerTabs,.themeSelect,.weekControl,.day,
+.subjectCard,.notebook,input,textarea,select,.secondary,.close,.calButtons button{
+  background:var(--v5-panel-2)!important;color:var(--v5-text)!important;border-color:var(--v5-border)!important;
+}
+.meta,.motivation,.eventMeta,.stat span,.termNudge,.weekPulseCopy small,.syncStatus small,
+.taskRowMeta,.fieldLabel,.profileCard .meta{color:var(--v5-muted)!important}
+#homeView .stat strong,#homeView #weekStat,#classesLeft,#daysLeft{color:var(--v5-text)!important}
+html[data-theme="dark"] #homeView .stats{background:var(--v5-panel)!important}
+html[data-theme="dark"] #homeView .stat{background:transparent!important;box-shadow:none!important}
+html[data-theme="dark"] .homeDayTab:not(.active),html[data-theme="dark"] .nav:not(.active){color:var(--v5-muted)!important}
+html[data-theme="dark"] .homeDayTab.active,html[data-theme="dark"] .nav.active,
+html[data-theme="dark"] .seg.active{background:var(--v5-accent)!important;color:#fff!important}
+html[data-theme="dark"] .progressTrack,html[data-theme="dark"] .focusDayLine{background:#2b3444!important}
+html[data-theme="dark"] .event{border-color:var(--v5-border)!important}
+html[data-theme="dark"] .empty{background:var(--v5-panel-2)!important;color:var(--v5-muted)!important}
+@media(max-width:760px){
+  #homeView .stats{overflow:hidden!important}
+  #homeView .stat{min-width:0!important;padding:12px 10px!important}
+  #homeView .stat strong,#homeView #weekStat{font-size:14px!important;overflow-wrap:anywhere!important;white-space:normal!important}
+  #homeView .stat span,#homeView .termNudge{font-size:8px!important;line-height:1.25!important}
+}
+</style>
+<script id="v5-foundation-course-engine">
+(()=>{
+  const NWW={code:'NWW',course:'Navigating Work and Workplaces: Lessons from the Bhagavad Gita'};
+  const isNww=value=>{const v=String(value||'').toUpperCase();return /(^|[^A-Z0-9])NWLB([^A-Z0-9]|$)/.test(v)||/(^|[^A-Z0-9])NWW([^A-Z0-9]|$)/.test(v)||v.includes('NAVIGATING WORK AND WORKPLACES')};
+  const venueFrom=record=>{
+    const explicit=String(record?.room||record?.venue||record?.location||record?.classroom||'').trim();
+    if(explicit)return explicit;
+    for(const value of [record?.code,record?.baseCode,record?.course,record?.subject,record?.details]){
+      const match=String(value||'').match(/(?:venue|room|location)\s*:\s*(.+)$/i);
+      if(match)return match[1].trim().replace(/^[-–—:\s]+|[-–—:\s]+$/g,'');
+    }
+    return '';
+  };
+  window.V5CourseEngine={
+    normalize(record={}){
+      if(![record.code,record.baseCode,record.course,record.subject,record.name].some(isNww))return record;
+      return {...record,sourceCode:record.sourceCode||record.code||record.baseCode,code:NWW.code,baseCode:NWW.code,course:NWW.course,room:venueFrom(record)};
+    },
+    migrateProfile(profile){
+      if(!profile)return profile;
+      const electives=[...new Set((profile.electives||[]).map(x=>isNww(x)?NWW.code:String(x||'').trim().toUpperCase()))];
+      return {...profile,electives};
+    },
+    nww:NWW,isNww,venueFrom
+  };
+
+  const baseRenderElectives=window.renderElectives||renderElectives;
+  window.renderElectives=renderElectives=function(){
+    try{
+      if(Array.isArray(electives)){
+        electives=electives.map(e=>window.V5CourseEngine.normalize(e));
+        const fromSchedule=(Array.isArray(all)?all:[]).map(e=>window.V5CourseEngine.normalize(e)).find(e=>e.code==='NWW');
+        const found=electives.some(e=>e.code==='NWW');
+        if(!found)electives.push({...NWW,baseCode:'NWW',faculty:fromSchedule?.faculty||'',room:fromSchedule?.room||''});
+      }
+      if(profile){profile=window.V5CourseEngine.migrateProfile(profile);localStorage.setItem(PK,JSON.stringify(profile));}
+    }catch(error){console.warn('V5 course normalization failed',error)}
+    return baseRenderElectives();
+  };
+
+  const baseApplyPayload=window.applyPayload||applyPayload;
+  window.applyPayload=applyPayload=function(payload,fromCache=false){
+    const result=baseApplyPayload(payload,fromCache);
+    try{
+      all=(Array.isArray(all)?all:[]).map(e=>window.V5CourseEngine.normalize(e));
+      electives=(Array.isArray(electives)?electives:[]).map(e=>window.V5CourseEngine.normalize(e));
+      profile=window.V5CourseEngine.migrateProfile(profile);
+      if(profile){localStorage.setItem(PK,JSON.stringify(profile));classes=personal();}
+      renderElectives();
+      if(profile)renderAll();
+    }catch(error){console.warn('V5 post-load normalization failed',error)}
+    return result;
+  };
+})();
+</script>
+
 </body></html>
