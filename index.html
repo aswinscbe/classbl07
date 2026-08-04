@@ -319,58 +319,54 @@ function placeDesktopNavigation(){const header=$(".greetingHeader"),nav=$(".desk
 function refreshExactSyncTime(){if(!lastSyncAt||!$("#status")||$("#status").dataset.state!=="ok")return;const label=new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",hour:"numeric",minute:"2-digit"}).format(new Date(lastSyncAt));const detail=`Updated ${label} IST`;$("#status small").textContent=detail;$("#status").title=`Schedule ${detail.toLowerCase()} · Tap to refresh`;updateSyncChips()}setInterval(refreshExactSyncTime,15000);setTimeout(refreshExactSyncTime,1200);
 $("#classSubjectPlanner").onclick=()=>{if(!sheetClass)return;plannerSubject=sheetClass.baseCode||sheetClass.code;plannerView="subjects";closeOverlay($("#classSheet"));switchTab("notes");requestAnimationFrame(()=>{$(`[data-planner-subject="${CSS.escape(plannerSubject)}"]`)?.scrollIntoView({block:"nearest",inline:"center"})})};
 </script>
-<style id="focus-card-critical-fix">
-/* Critical focus-card fix: keep content above all decorative layers on every viewport. */
-#homeView #focusCard{position:relative!important;display:block!important;visibility:visible!important;opacity:1!important;overflow:hidden!important;background:linear-gradient(145deg,#17264a,#233865)!important;color:#fff!important;min-height:190px!important;padding:0!important}
+<style id="verified-focus-card-style">
+/* Verified focus card: final mobile-first override */
+#homeView #focusCard{
+  position:relative!important; isolation:isolate!important; overflow:hidden!important;
+  min-height:210px!important; padding:0!important; border:1px solid rgba(255,255,255,.10)!important;
+  border-radius:24px!important; background:linear-gradient(145deg,#172844 0%,#203b61 100%)!important;
+  box-shadow:0 14px 32px rgba(22,40,68,.18)!important; color:#fff!important;
+}
 #homeView #focusCard::before,#homeView #focusCard::after{display:none!important;content:none!important}
-#homeView #focusCard>.focusStage,#homeView #focusCard>.focusFallback{position:relative!important;z-index:5!important;display:flex!important;flex-direction:column!important;visibility:visible!important;opacity:1!important;min-height:190px!important;padding:20px 18px 18px!important;color:#fff!important}
-#homeView #focusCard .focusStage * ,#homeView #focusCard .focusFallback *{visibility:visible!important;opacity:1!important}
-#homeView #focusCard .focusStage h2,#homeView #focusCard .focusFallback h2{color:#fff!important;margin:10px 0!important;font-size:clamp(25px,7vw,38px)!important;line-height:1.08!important}
-#homeView #focusCard .focusState,#homeView #focusCard .focusStageCode,#homeView #focusCard .focusMeta,#homeView #focusCard .focusRange,#homeView #focusCard .focusCountdown span,#homeView #focusCard .focusContext{color:#dce6ff!important}
-#homeView #focusCard .focusStageTime{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;gap:14px!important;margin-top:auto!important;padding-top:14px!important;border-top:1px solid rgba(255,255,255,.16)!important}
-#homeView #focusCard .focusRange strong,#homeView #focusCard .focusCountdown strong{display:block!important;color:#fff!important}
-@media(max-width:760px){#homeView #focusCard,#homeView #focusCard>.focusStage,#homeView #focusCard>.focusFallback{min-height:205px!important}#homeView #focusCard .focusStageTime{align-items:flex-start!important}.focusCountdown{text-align:right!important}}
+#homeView #focusCard .verifiedFocus{position:relative!important;z-index:5!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;min-height:210px!important;padding:20px!important;color:#fff!important;opacity:1!important;visibility:visible!important}
+#homeView #focusCard .verifiedTop{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#homeView #focusCard .verifiedState,#homeView #focusCard .verifiedCode{display:inline-flex;align-items:center;min-height:30px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.10);font-size:10px;font-weight:800;letter-spacing:.04em;color:#eef5ff}
+#homeView #focusCard .verifiedState i{width:7px;height:7px;margin-right:7px;border-radius:50%;background:#67dfb2;box-shadow:0 0 0 4px rgba(103,223,178,.13)}
+#homeView #focusCard .verifiedTitle{margin:16px 0 5px!important;font-size:clamp(25px,7vw,34px)!important;line-height:1.08!important;letter-spacing:-.04em!important;color:#fff!important}
+#homeView #focusCard .verifiedMeta{margin:0;color:#c8d5e7;font-size:12px;font-weight:650}
+#homeView #focusCard .verifiedBottom{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:14px;margin-top:22px;padding-top:14px;border-top:1px solid rgba(255,255,255,.13)}
+#homeView #focusCard .verifiedWhen{color:#c8d5e7;font-size:11px}.verifiedWhen strong{display:block;margin-top:3px;color:#fff;font-size:18px;font-variant-numeric:tabular-nums}
+#homeView #focusCard .verifiedCountdown{text-align:right;color:#b9c8dc;font-size:10px}.verifiedCountdown strong{display:block;color:#9fc0ff;font-size:24px;line-height:1;font-variant-numeric:tabular-nums}
+@media(max-width:760px){#homeView #focusCard{min-height:200px!important;border-radius:21px!important}#homeView #focusCard .verifiedFocus{min-height:200px!important;padding:17px!important}#homeView #focusCard .verifiedTitle{font-size:25px!important;margin-top:14px!important}#homeView #focusCard .verifiedBottom{margin-top:18px}.verifiedCountdown strong{font-size:21px!important}}
 </style>
-<script id="focus-card-critical-renderer">
-(()=>{
-  const normalizeCode=value=>String(value??'').trim().toUpperCase()==='NWLB'?'NWW':String(value??'').trim();
-  const safeText=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-  const parseDateTime=(entry,time)=>{
-    const date=String(entry?.date||'').slice(0,10),clock=String(time||entry?.start||'00:00').replace('.',':').slice(0,5);
-    const parsed=new Date(`${date}T${clock}:00+05:30`);
-    return Number.isNaN(parsed.getTime())?null:parsed;
-  };
-  const formatDay=date=>{try{return new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',weekday:'short',day:'numeric',month:'short'}).format(date)}catch{return 'Upcoming'}};
-  const durationText=milliseconds=>{
-    const total=Math.max(0,Math.floor(milliseconds/1000)),days=Math.floor(total/86400),hours=Math.floor(total%86400/3600),minutes=Math.floor(total%3600/60),seconds=total%60;
-    if(days)return `${days}d ${hours}h`;
-    if(hours)return `${hours}h ${minutes}m`;
-    return `${minutes}m ${String(seconds).padStart(2,'0')}s`;
-  };
-  function renderCriticalFocus(){
-    const card=document.getElementById('focusCard');
-    if(!card)return;
-    try{
-      const source=Array.isArray(window.classes)?window.classes:(typeof classes!=='undefined'&&Array.isArray(classes)?classes:[]);
-      const now=new Date();
-      const usable=source.filter(item=>item&&String(item.status||'').toLowerCase()!=='cancelled').map(item=>({...item,code:normalizeCode(item.code),baseCode:normalizeCode(item.baseCode)})).filter(item=>parseDateTime(item,item.start)&&parseDateTime(item,item.end)).sort((a,b)=>parseDateTime(a,a.start)-parseDateTime(b,b.start));
-      const live=usable.find(item=>parseDateTime(item,item.start)<=now&&parseDateTime(item,item.end)>now);
-      const next=live||usable.find(item=>parseDateTime(item,item.start)>now);
-      card.classList.toggle('now',Boolean(live));
-      if(!next){
-        card.innerHTML='<div class="focusFallback"><span class="focusState">Schedule</span><h2>No upcoming classes.</h2><p class="focusMeta">Your full timetable is available below.</p></div>';
-        return;
-      }
-      const start=parseDateTime(next,next.start),end=parseDateTime(next,next.end),target=live?end:start,remaining=durationText(target-now),label=live?'Happening now':'Next class';
-      card.innerHTML=`<div class="focusStage"><div class="focusStageTop"><span class="focusState">${label}</span><span class="focusStageCode">${safeText(normalizeCode(next.code)||'CLASS')}</span></div><h2>${safeText(next.course||normalizeCode(next.code)||'Upcoming class')}</h2><div class="focusMeta">${safeText(next.faculty||'Faculty details unavailable')}</div><div class="focusStageTime"><div class="focusRange">${safeText(live?'Today':formatDay(start))} · ${safeText(next.room||'Room TBA')}<strong>${safeText(next.start||'--:--')}–${safeText(next.end||'--:--')}</strong></div><div class="focusCountdown"><strong>${remaining}</strong><span>${live?'Remaining':'Starts in'}</span></div></div></div>`;
-    }catch(error){
-      console.error('Critical focus-card renderer failed',error);
-      card.innerHTML='<div class="focusFallback"><span class="focusState">Schedule</span><h2>Your schedule is loading.</h2><p class="focusMeta">Use the Today section below in the meantime.</p></div>';
+
+<script id="verified-focus-card-script">
+(function(){
+  function safeCode(value){return String(value||'').trim().toUpperCase()==='NWLB'?'NWW':String(value||'').trim()}
+  function text(value){return String(value??'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function validDate(event,end){try{var d=stamp(event,end?event.end:event.start);return d instanceof Date&&!isNaN(d)}catch(_){return false}}
+  function renderVerifiedFocus(){
+    var card=document.getElementById('focusCard'); if(!card)return;
+    var list=Array.isArray(window.classes)?window.classes:[];
+    var now=new Date();
+    var scheduledList=list.filter(function(e){return e&&e.status!=='Cancelled'&&validDate(e,false)}).sort(function(a,b){return stamp(a)-stamp(b)});
+    var live=scheduledList.find(function(e){return validDate(e,true)&&stamp(e)<=now&&stamp(e,e.end)>now});
+    var item=live||scheduledList.find(function(e){return stamp(e)>now});
+    card.classList.toggle('now',!!live);
+    if(!item){
+      card.innerHTML='<div class="verifiedFocus"><div><div class="verifiedTop"><span class="verifiedState"><i></i>Schedule</span></div><h2 class="verifiedTitle">No upcoming classes</h2><p class="verifiedMeta">Your schedule is clear for now.</p></div><div class="verifiedBottom"><div class="verifiedWhen">Live schedule<strong>Up to date</strong></div></div></div>';
+      return;
     }
+    var target=live?stamp(item,item.end):stamp(item), diff=Math.max(0,target-now), minsLeft=Math.floor(diff/60000), sec=Math.floor(diff%60000/1000), days=Math.floor(diff/86400000), hours=Math.floor(diff%86400000/3600000);
+    var countdown=days?days+'d '+hours+'h':hours?hours+'h '+(minsLeft%60)+'m':minsLeft+'m '+String(sec).padStart(2,'0')+'s';
+    var dateLabel=''; try{dateLabel=fmt(item.date,{weekday:'short',day:'numeric',month:'short'})}catch(_){dateLabel=item.date||'Upcoming'}
+    card.innerHTML='<div class="verifiedFocus"><div><div class="verifiedTop"><span class="verifiedState"><i></i>'+(live?'Happening now':'Next class')+'</span><span class="verifiedCode">'+text(safeCode(item.code||item.baseCode))+'</span></div><h2 class="verifiedTitle">'+text(item.course||safeCode(item.code)||'Scheduled class')+'</h2><p class="verifiedMeta">'+text(item.room||'Room TBA')+(item.faculty?' · '+text(item.faculty):'')+'</p></div><div class="verifiedBottom"><div class="verifiedWhen">'+text(dateLabel)+'<strong>'+text(item.start||'')+'–'+text(item.end||'')+'</strong></div><div class="verifiedCountdown"><strong>'+text(countdown)+'</strong>'+(live?'Remaining':'Starts in')+'</div></div></div>';
   }
-  window.renderCriticalFocus=renderCriticalFocus;
-  const start=()=>{renderCriticalFocus();setTimeout(renderCriticalFocus,250);setTimeout(renderCriticalFocus,1200);setInterval(renderCriticalFocus,1000)};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  window.renderFocus=renderVerifiedFocus;
+  window.renderVerifiedFocus=renderVerifiedFocus;
+  document.addEventListener('DOMContentLoaded',renderVerifiedFocus);
+  setTimeout(renderVerifiedFocus,0);setTimeout(renderVerifiedFocus,300);setTimeout(renderVerifiedFocus,1200);
+  setInterval(renderVerifiedFocus,1000);
 })();
 </script>
 
