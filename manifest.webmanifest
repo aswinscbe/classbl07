@@ -1,9 +1,9 @@
 {
-  "name": "PGPBL07 Term III Schedule",
-  "short_name": "Term Schedule",
+  "name": "PGPBL07 Dashboard",
+  "short_name": "PGPBL07",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f5f7f5",
-  "theme_color": "#16324f",
-  "description": "Personalised live PGPBL07 Term III schedule"
+  "background_color": "#f5f7fb",
+  "theme_color": "#172033",
+  "icons": []
 }
