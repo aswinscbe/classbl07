@@ -1,0 +1,340 @@
+/* ============================================================
+   style.css — single stylesheet, single source of truth.
+   Every rule defined once. No later overrides layered on top.
+   ============================================================ */
+
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f2f2f3;
+  --ink: #1a1a1a;
+  --muted: #6b6b6f;
+  --line: #e4e4e6;
+  --accent: #2f6fed;
+  --accent-soft: #eaf0fe;
+  --green: #1f8a5c;
+  --red: #d9483d;
+  --amber: #b7791f;
+  --radius: 12px;
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] {
+  --bg: #121214;
+  --surface: #1b1b1e;
+  --surface-2: #232326;
+  --ink: #f0f0f1;
+  --muted: #9a9a9e;
+  --line: #2d2d31;
+  --accent: #5b8ef7;
+  --accent-soft: #1c2a4a;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 -apple-system, "Segoe UI", Roboto, ui-sans-serif, sans-serif;
+  padding-bottom: 72px; /* space for bottom nav */
+}
+
+h1, h2, h3 { margin: 0 0 8px; font-weight: 600; letter-spacing: -0.01em; }
+
+a { color: var(--accent); text-decoration: none; }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input, textarea, select {
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px 10px;
+}
+
+/* ---------- Layout ---------- */
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px 24px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.topbar h1 { font-size: 17px; margin: 0; }
+
+.iconBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  font-size: 15px;
+}
+
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  z-index: 5;
+}
+
+.bottomNav a {
+  flex: 1;
+  text-align: center;
+  padding: 10px 4px 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.bottomNav a.active { color: var(--accent); font-weight: 600; }
+
+.bottomNav .navIcon { display: block; font-size: 18px; margin-bottom: 2px; }
+
+/* ---------- Cards ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.sectionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 20px 0 10px;
+}
+
+/* ---------- Live / Focus card ---------- */
+
+.focusCard { border-left: 4px solid var(--accent); }
+
+.focusCard.idle { border-left-color: var(--line); }
+
+.focusState {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.focusState .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.focusCard h2 { font-size: 20px; margin: 8px 0 4px; }
+
+.focusMeta { color: var(--muted); font-size: 13px; }
+
+.focusTime {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.focusTime strong { font-size: 16px; }
+
+.focusTime .label { font-size: 11px; color: var(--muted); display: block; }
+
+/* ---------- Event rows ---------- */
+
+.eventRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.eventRow:last-child { border-bottom: none; }
+
+.eventDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.eventBody { flex: 1; min-width: 0; }
+
+.eventTitle { font-weight: 500; font-size: 14px; }
+
+.eventMeta { font-size: 12px; color: var(--muted); }
+
+.eventTime { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+.eventRow.cancelled .eventTitle { text-decoration: line-through; color: var(--muted); }
+
+.pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.tabs button {
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tabPanel { display: none; }
+
+.tabPanel.active { display: block; }
+
+/* ---------- Tasks ---------- */
+
+.taskRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.taskRow:last-child { border-bottom: none; }
+
+.taskCheck {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  flex-shrink: 0;
+}
+
+.taskCheck.done { background: var(--green); border-color: var(--green); }
+
+.taskTitle { flex: 1; font-size: 14px; }
+
+.taskTitle.done { text-decoration: line-through; color: var(--muted); }
+
+.addRow { display: flex; gap: 8px; margin-top: 12px; }
+
+.addRow input { flex: 1; }
+
+.addRow button {
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.googleSyncBtn {
+  font-size: 12px;
+  color: var(--accent);
+  padding: 6px 0;
+}
+
+/* ---------- Notes ---------- */
+
+.noteCard {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  position: relative;
+}
+
+.noteCard .noteDate { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+.noteDelete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---------- Profile / setup ---------- */
+
+.formRow { margin-bottom: 14px; }
+
+.formRow label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+
+.formRow input, .formRow select { width: 100%; }
+
+.electiveList { display: flex; flex-direction: column; gap: 8px; }
+
+.electiveOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.primaryBtn {
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  width: 100%;
+}
+
+.muted { color: var(--muted); font-size: 13px; }
+
+.empty { text-align: center; color: var(--muted); padding: 30px 10px; font-size: 13px; }

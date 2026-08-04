@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planner · PGPBL07</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f6fed">
+<link rel="stylesheet" href="style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Planner</h1>
+  <button class="iconBtn" id="themeToggle" aria-label="Toggle dark mode">◐</button>
+</div>
+
+<main class="page">
+  <div class="tabs">
+    <button data-tab="schedule" class="active">Schedule</button>
+    <button data-tab="calendar">Calendar</button>
+    <button data-tab="tasks">Tasks</button>
+    <button data-tab="notes">Notes</button>
+    <button data-tab="profile">Profile</button>
+  </div>
+
+  <section class="tabPanel active" id="panel-schedule">
+    <div id="scheduleList"><div class="empty">Loading…</div></div>
+  </section>
+
+  <section class="tabPanel" id="panel-calendar">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <button class="iconBtn" id="calPrev">‹</button>
+        <strong id="calLabel"></strong>
+        <button class="iconBtn" id="calNext">›</button>
+      </div>
+      <div id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:12px;"></div>
+    </div>
+    <div id="calDayEvents"></div>
+  </section>
+
+  <section class="tabPanel" id="panel-tasks">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="sectionLabel" style="margin:0;">All tasks</span>
+        <button class="googleSyncBtn" id="googleSyncBtn">Sync Google Tasks</button>
+      </div>
+      <div id="taskList"><div class="empty">No tasks yet</div></div>
+      <div class="addRow">
+        <input type="text" id="taskInput" placeholder="Add a task…">
+        <button id="taskAdd">Add</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="tabPanel" id="panel-notes">
+    <div class="card">
+      <textarea id="noteInput" rows="3" style="width:100%;" placeholder="Write a note…"></textarea>
+      <button class="primaryBtn" id="noteAdd" style="margin-top:8px;">Add note</button>
+    </div>
+    <div id="noteList"></div>
+  </section>
+
+  <section class="tabPanel" id="panel-profile">
+    <div class="card">
+      <div class="formRow">
+        <label>Name</label>
+        <input type="text" id="pfName">
+      </div>
+      <div class="formRow">
+        <label>Roll number</label>
+        <input type="text" id="pfRoll">
+      </div>
+      <div class="formRow">
+        <label>Section</label>
+        <select id="pfSection">
+          <option value="A">A</option>
+          <option value="B">B</option>
+        </select>
+      </div>
+      <div class="formRow">
+        <label>Electives</label>
+        <div class="electiveList" id="pfElectives"><div class="empty">Loading…</div></div>
+      </div>
+      <button class="primaryBtn" id="pfSave">Save profile</button>
+    </div>
+  </section>
+</main>
+
+<nav class="bottomNav">
+  <a href="index.html"><span class="navIcon">●</span>Today</a>
+  <a href="planner.html" class="active"><span class="navIcon">▤</span>Schedule</a>
+  <a href="planner.html#calendar"><span class="navIcon">▦</span>Calendar</a>
+  <a href="planner.html#tasks"><span class="navIcon">✓</span>Tasks</a>
+  <a href="planner.html#profile"><span class="navIcon">◎</span>Profile</a>
+</nav>
+
+<script src="app.js"></script>
+<script src="tasks.js"></script>
+<script>
+initTheme();
+document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+
+/* ---------- Tabs ---------- */
+const tabButtons = document.querySelectorAll(".tabs button");
+function activateTab(name) {
+  tabButtons.forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+  document.querySelectorAll(".tabPanel").forEach((p) => p.classList.toggle("active", p.id === `panel-${name}`));
+}
+tabButtons.forEach((b) => b.addEventListener("click", () => { activateTab(b.dataset.tab); history.replaceState(null, "", `#${b.dataset.tab}`); }));
+if (location.hash) activateTab(location.hash.slice(1));
+
+/* ---------- Data ---------- */
+let payload = { classes: [], availableElectives: [] };
+let profile = loadProfile();
+let personal = [];
+
+async function boot() {
+  payload = await fetchSchedule();
+  personal = profile ? personalClasses(payload.classes, profile) : [];
+  renderSchedule();
+  renderCalendar();
+  renderTasks();
+  renderNotes();
+  renderProfileForm();
+}
+
+/* ---------- Schedule tab ---------- */
+function renderSchedule() {
+  const el = document.getElementById("scheduleList");
+  if (!profile) {
+    el.innerHTML = `<div class="card"><p>Set up your profile first.</p></div>`;
+    return;
+  }
+  if (!personal.length) {
+    el.innerHTML = `<div class="empty">No classes match your section/electives yet</div>`;
+    return;
+  }
+  const byDate = {};
+  personal.forEach((e) => { (byDate[e.date] ||= []).push(e); });
+  const dates = Object.keys(byDate).sort();
+  el.innerHTML = dates.map((date) => {
+    const events = byDate[date].sort((a, b) => stamp(a.date, a.start) - stamp(b.date, b.start));
+    const label = new Date(`${date}T00:00:00+05:30`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+    return `
+      <div class="sectionLabel">${label}</div>
+      <div class="card">
+        ${events.map((e) => `
+          <div class="eventRow ${e.status === "Cancelled" ? "cancelled" : ""}">
+            <span class="eventDot" style="background:${subjectColor(e.baseCode || e.code)}"></span>
+            <div class="eventBody">
+              <div class="eventTitle">${esc(e.course)}</div>
+              <div class="eventMeta">${esc(e.room)} · ${esc(e.faculty)}</div>
+            </div>
+            <div class="eventTime">${fmtTimeRange(e)}</div>
+          </div>`).join("")}
+      </div>`;
+  }).join("");
+}
+
+/* ---------- Calendar tab ---------- */
+let calMonth = new Date();
+function renderCalendar() {
+  const label = calMonth.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+  document.getElementById("calLabel").textContent = label;
+  const grid = document.getElementById("calGrid");
+  const year = calMonth.getFullYear(), month = calMonth.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const classDates = new Set(personal.map((e) => e.date));
+
+  let html = ["S","M","T","W","T","F","S"].map((d) => `<div class="muted">${d}</div>`).join("");
+  for (let i = 0; i < firstDay; i++) html += "<div></div>";
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const hasClass = classDates.has(dateKey);
+    const isToday = dateKey === istKey();
+    html += `<button class="calDay" data-date="${dateKey}" style="padding:6px 0;border-radius:6px;background:${isToday ? "var(--accent-soft)" : "transparent"};font-weight:${hasClass ? 600 : 400};">${d}${hasClass ? '<div style="width:4px;height:4px;border-radius:50%;background:var(--accent);margin:2px auto 0;"></div>' : ""}</button>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll(".calDay").forEach((btn) => btn.addEventListener("click", () => showDayEvents(btn.dataset.date)));
+}
+document.getElementById("calPrev").addEventListener("click", () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); });
+document.getElementById("calNext").addEventListener("click", () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); });
+
+function showDayEvents(dateKey) {
+  const events = personal.filter((e) => e.date === dateKey).sort((a, b) => stamp(a.date, a.start) - stamp(b.date, b.start));
+  const el = document.getElementById("calDayEvents");
+  if (!events.length) { el.innerHTML = `<div class="empty">No classes on this day</div>`; return; }
+  el.innerHTML = `<div class="card">${events.map((e) => `
+    <div class="eventRow ${e.status === "Cancelled" ? "cancelled" : ""}">
+      <span class="eventDot" style="background:${subjectColor(e.baseCode || e.code)}"></span>
+      <div class="eventBody">
+        <div class="eventTitle">${esc(e.course)}</div>
+        <div class="eventMeta">${esc(e.room)}</div>
+      </div>
+      <div class="eventTime">${fmtTimeRange(e)}</div>
+    </div>`).join("")}</div>`;
+}
+
+/* ---------- Tasks tab ---------- */
+function renderTasks() {
+  const tasks = loadTasks();
+  const el = document.getElementById("taskList");
+  el.innerHTML = tasks.length ? tasks.map((t) => `
+    <div class="taskRow">
+      <button class="taskCheck ${t.done ? "done" : ""}" data-id="${t.id}"></button>
+      <span class="taskTitle ${t.done ? "done" : ""}">${esc(t.title)}</span>
+      ${t.source === "google" ? '<span class="pill">Google</span>' : ""}
+      <button class="iconBtn" data-del="${t.id}" style="width:26px;height:26px;font-size:12px;">✕</button>
+    </div>`).join("") : `<div class="empty">No tasks yet</div>`;
+  el.querySelectorAll(".taskCheck").forEach((b) => b.addEventListener("click", () => { toggleTask(b.dataset.id); renderTasks(); }));
+  el.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => { deleteTask(b.dataset.del); renderTasks(); }));
+}
+document.getElementById("taskAdd").addEventListener("click", () => {
+  const input = document.getElementById("taskInput");
+  if (!input.value.trim()) return;
+  addTask(input.value.trim());
+  input.value = "";
+  renderTasks();
+});
+document.getElementById("googleSyncBtn").addEventListener("click", async () => {
+  if (!googleToken) {
+    initGoogleTasksClient(async () => { await fetchGoogleTasks(); renderTasks(); });
+    requestGoogleTasksAccess();
+  } else {
+    await fetchGoogleTasks();
+    renderTasks();
+  }
+});
+
+/* ---------- Notes tab ---------- */
+function renderNotes() {
+  const notes = loadNotes();
+  const el = document.getElementById("noteList");
+  el.innerHTML = notes.length ? notes.map((n) => `
+    <div class="noteCard">
+      <button class="noteDelete" data-id="${n.id}">✕</button>
+      <div>${esc(n.text)}</div>
+      <div class="noteDate">${new Date(n.createdAt).toLocaleString("en-IN")}</div>
+    </div>`).join("") : `<div class="empty">No notes yet</div>`;
+  el.querySelectorAll(".noteDelete").forEach((b) => b.addEventListener("click", () => { deleteNote(b.dataset.id); renderNotes(); }));
+}
+document.getElementById("noteAdd").addEventListener("click", () => {
+  const input = document.getElementById("noteInput");
+  if (!input.value.trim()) return;
+  addNote(input.value.trim());
+  input.value = "";
+  renderNotes();
+});
+
+/* ---------- Profile tab ---------- */
+function renderProfileForm() {
+  if (profile) {
+    document.getElementById("pfName").value = profile.name || "";
+    document.getElementById("pfRoll").value = profile.roll || "";
+    document.getElementById("pfSection").value = profile.section || "A";
+  }
+  const electives = payload.availableElectives || [];
+  const el = document.getElementById("pfElectives");
+  el.innerHTML = electives.length ? electives.map((e) => `
+    <label class="electiveOption">
+      <input type="checkbox" value="${esc(e.code)}" ${profile && (profile.electives || []).includes(e.code) ? "checked" : ""}>
+      ${esc(e.course)} <span class="muted">(${esc(e.faculty)})</span>
+    </label>`).join("") : `<div class="empty">No electives found</div>`;
+}
+document.getElementById("pfSave").addEventListener("click", () => {
+  const electives = Array.from(document.querySelectorAll("#pfElectives input:checked")).map((c) => c.value);
+  profile = {
+    name: document.getElementById("pfName").value.trim(),
+    roll: document.getElementById("pfRoll").value.trim(),
+    section: document.getElementById("pfSection").value,
+    electives,
+  };
+  saveProfile(profile);
+  personal = personalClasses(payload.classes, profile);
+  renderSchedule();
+  renderCalendar();
+  alert("Profile saved");
+});
+
+boot();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+</body>
+</html>
