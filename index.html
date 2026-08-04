@@ -195,139 +195,7 @@ html[data-theme="dark"] .greetingHeader{background:linear-gradient(135deg,#17273
 
 #homeView .hero .stats{display:grid!important}#homeView .weekPulse{order:6}
 @media(min-width:761px){.greetingHeader{min-height:0!important}.greetingHeader .identity{min-height:0!important}.greetingHeader .desktopNav{position:fixed!important}}
-
-/* Dashboard v5 — product redesign */
-:root{--v5-bg:#f4f6fb;--v5-card:#fff;--v5-ink:#101b35;--v5-muted:#6f7890;--v5-line:#e4e8f1;--v5-navy:#10265d;--v5-blue:#315ee8;--v5-soft:#eef3ff}
-body{background:var(--v5-bg)!important;color:var(--v5-ink)}
-.app{max-width:1240px!important}
-.greetingHeader{background:transparent!important;border:0!important;box-shadow:none!important;padding-left:0!important;padding-right:0!important}
-#homeView .focusCard{background:linear-gradient(135deg,#0f255a,#173a83)!important;border:0!important;box-shadow:0 16px 38px rgba(15,37,90,.18)!important;border-radius:24px!important}
-#homeView .focusCard:before,#homeView .focusCard:after{display:none!important}
-#homeView .focusStage{position:relative;z-index:2}
-.termProgress,.agenda,.calendarCard,.selectedDay,.notesPanel,.profileCard,.plannerHero,.googleTasksBar,.weekPulse{background:var(--v5-card)!important;border:1px solid var(--v5-line)!important;box-shadow:0 8px 26px rgba(24,42,82,.06)!important}
-.event{background:transparent!important}
-.mobileNav{background:rgba(255,255,255,.94)!important;border:1px solid var(--v5-line)!important;box-shadow:0 12px 32px rgba(18,32,68,.16)!important}
-.mobileNav .nav.active{color:var(--v5-blue)!important;background:var(--v5-soft)!important}
-@media(min-width:900px){
- body{padding-left:210px}
- .app{padding:28px 34px 70px!important}
- .desktopNav{position:fixed!important;left:0!important;top:0!important;bottom:0!important;transform:none!important;width:210px!important;margin:0!important;padding:90px 16px 20px!important;border:0!important;border-right:1px solid var(--v5-line)!important;border-radius:0!important;background:#fff!important;display:flex!important;flex-direction:column!important;gap:7px!important;box-shadow:none!important}
- .desktopNav:before{content:"◆  ClassBL07";position:absolute;top:28px;left:22px;font-size:17px;font-weight:800;color:var(--v5-navy)}
- .desktopNav .nav{width:100%!important;text-align:left!important;padding:12px 14px!important;border-radius:12px!important;min-width:0!important}
- .desktopNav .nav.active{background:var(--v5-soft)!important;color:var(--v5-blue)!important;box-shadow:none!important}
- .greetingHeader{margin-bottom:10px!important}
- #homeView .hero{display:grid!important;grid-template-columns:minmax(0,1.55fr) minmax(260px,.75fr)!important;gap:18px!important}
- #homeView .focusCard{min-height:310px!important}
- #homeView .stats{display:grid!important;grid-template-columns:1fr!important;gap:12px!important;margin-top:0!important;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
- #homeView .stat,#homeView .stat:first-child,#homeView .stat:nth-child(2),#homeView .stat.week{border:1px solid var(--v5-line)!important;border-radius:18px!important;background:#fff!important;min-height:92px!important;padding:18px!important}
- #homeView .homeAgenda{display:grid!important;grid-template-columns:minmax(0,1.35fr) minmax(300px,.75fr)!important;gap:18px!important}
- #homeView .homeAgendaSurface{min-width:0}
- .calendarWrap{grid-template-columns:minmax(0,1.45fr) minmax(330px,.8fr)!important}
- .notesHome{grid-template-columns:260px minmax(0,1fr)!important}
- .mobileNav{display:none!important}
-}
-@media(max-width:899px){
- body{padding-left:0}
- .app{padding:12px 14px calc(96px + env(safe-area-inset-bottom))!important}
- .greetingHeader{padding-top:8px!important}
- .greetingHeader .identity h1{font-size:30px!important;line-height:1.05!important}
- #homeView .focusCard{min-height:230px!important;border-radius:20px!important;padding:0!important}
- #homeView .focusStage{padding:18px!important}
- #homeView .focusStage h2{font-size:27px!important;line-height:1.08!important}
- #homeView .focusStageTime{grid-template-columns:1fr auto!important;gap:12px!important}
- #homeView .focusCountdown strong{font-size:25px!important}
- #homeView .stats{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important}
- #homeView .stat,#homeView .stat.week{padding:13px 8px!important;min-width:0!important}
- #homeView .stat strong{font-size:18px!important;overflow-wrap:anywhere}
- #homeView .stat span{font-size:8px!important}
- .sectionTitle h2{font-size:25px!important}
- .event{grid-template-columns:66px minmax(0,1fr) auto!important}
- .eventTitle{font-size:14px!important}
- .mobileNav{left:10px!important;right:10px!important;bottom:10px!important;border-radius:22px!important}
-}
-html[data-theme="dark"] body{--v5-bg:#0d1424;--v5-card:#151f33;--v5-ink:#eef3ff;--v5-muted:#99a7c2;--v5-line:#26324a;--v5-soft:#1d2d52;background:var(--v5-bg)!important}
-html[data-theme="dark"] .desktopNav{background:#121b2d!important}
-
-</style>
-<style id="dashboard-v4-style">
-/* Dashboard v4 — mobile-first product redesign */
-:root{
-  --v4-bg:#f4f6fb;--v4-card:#ffffff;--v4-text:#172033;--v4-muted:#6f7a8d;
-  --v4-border:#e5e9f1;--v4-primary:#243b80;--v4-primary-2:#5162c8;
-  --v4-soft:#eef1fb;--v4-shadow:0 10px 30px rgba(36,59,128,.08);
-  --v4-radius:22px;
-}
-html[data-theme="dark"]{
-  --v4-bg:#0f1420;--v4-card:#171d2a;--v4-text:#f2f5fb;--v4-muted:#a2adbf;
-  --v4-border:#283142;--v4-primary:#8fa2ff;--v4-primary-2:#6878de;
-  --v4-soft:#20283a;--v4-shadow:none;
-}
-body{background:var(--v4-bg)!important;color:var(--v4-text)!important}
-.app{max-width:1180px!important;padding-left:16px!important;padding-right:16px!important}
-.greetingHeader{border:0!important;background:transparent!important;box-shadow:none!important;padding:8px 0 16px!important;margin-bottom:0!important}
-.greetingHeader .identity h1{font-size:clamp(28px,4vw,44px)!important;letter-spacing:-.045em!important}
-.motivation,.meta{color:var(--v4-muted)!important}
-.desktopNav{background:color-mix(in srgb,var(--v4-card) 92%,transparent)!important;border:1px solid var(--v4-border)!important;box-shadow:var(--v4-shadow)!important}
-.desktopNav .nav.active{background:var(--v4-soft)!important;color:var(--v4-primary)!important;box-shadow:none!important}
-.view>.sectionTitle{margin-top:10px!important}.view>.sectionTitle h2{font-size:clamp(24px,3vw,31px)!important}
-.termProgress,.agenda,.dayAgenda,.calendarCard,.selectedDay,.profileCard,.plannerHero,.taskCard,.googleTasksBar{
-  background:var(--v4-card)!important;border:1px solid var(--v4-border)!important;box-shadow:var(--v4-shadow)!important
-}
-.termProgress{border-radius:16px!important;padding:11px 14px!important}.progressTrack{height:6px!important;background:var(--v4-soft)!important}.progressTrack i{background:linear-gradient(90deg,var(--v4-primary),var(--v4-primary-2))!important}
-#homeView .hero{display:grid!important;grid-template-columns:minmax(0,1.65fr) 300px!important;gap:14px!important;align-items:stretch!important}
-#homeView .focusCard{
-  min-height:310px!important;border-radius:28px!important;padding:0!important;overflow:hidden!important;
-  background:linear-gradient(145deg,#1c2b52 0%,#263d75 55%,#354a91 100%)!important;
-  box-shadow:0 22px 50px rgba(28,43,82,.22)!important
-}
-#homeView .focusCard:before,#homeView .focusCard:after,#homeView .focusCard .focusStage:before,#homeView .focusCard .focusStage:after{display:none!important;content:none!important}
-#homeView .focusCard>*{position:relative!important;z-index:2!important}
-#homeView .focusStage{min-height:310px!important;padding:28px!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;color:#fff!important}
-#homeView .focusState{display:inline-flex!important;align-items:center!important;gap:7px!important;width:max-content!important;padding:7px 10px!important;border-radius:999px!important;background:rgba(255,255,255,.1)!important;color:#e7ecff!important;font-size:10px!important;font-weight:800!important}
-#homeView .focusState i{width:7px!important;height:7px!important;border-radius:50%!important;background:#65d6ad!important}
-#homeView .focusStageCode{padding:7px 10px!important;border-radius:10px!important;background:rgba(255,255,255,.1)!important;color:#fff!important;font-weight:800!important}
-#homeView .focusStage h2{max-width:760px!important;margin:18px 0 8px!important;color:#fff!important;font-size:clamp(28px,4vw,44px)!important;line-height:1.04!important}
-#homeView .focusStageTime{display:grid!important;grid-template-columns:1fr auto!important;align-items:end!important;gap:18px!important;margin-top:20px!important;padding-top:18px!important;border-top:1px solid rgba(255,255,255,.14)!important}
-#homeView .focusRange{color:#cbd5f0!important;font-size:12px!important}#homeView .focusRange strong{display:block!important;margin-top:4px!important;color:#fff!important;font-size:22px!important}
-#homeView .focusCountdown{text-align:right!important}#homeView .focusCountdown strong{display:block!important;color:#fff!important;font-size:clamp(28px,4vw,42px)!important;line-height:1!important}#homeView .focusCountdown span{color:#cbd5f0!important;font-size:10px!important;text-transform:uppercase!important;letter-spacing:.1em!important}
-#homeView .focusDayLine{height:6px!important;margin-top:18px!important;border-radius:999px!important;background:rgba(255,255,255,.12)!important;overflow:hidden!important}#homeView .focusDayLine i{display:block!important;height:100%!important;background:linear-gradient(90deg,#8ca7ff,#6de1ca)!important}
-#homeView .focusContext{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;margin-top:12px!important;color:#d4dcf2!important;font-size:11px!important}#homeView .focusContext span{padding:10px 12px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:13px!important;background:rgba(255,255,255,.06)!important}
-#homeView .stats{display:grid!important;grid-template-columns:1fr!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;gap:10px!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important}
-#homeView .stat,#homeView .stat.week{min-width:0!important;min-height:0!important;padding:20px!important;border:1px solid var(--v4-border)!important;border-radius:20px!important;background:var(--v4-card)!important;box-shadow:var(--v4-shadow)!important}
-#homeView .stat strong{font-size:clamp(24px,3vw,34px)!important;color:var(--v4-text)!important;overflow-wrap:anywhere!important}#homeView .stat span{color:var(--v4-muted)!important}
-#homeView #weekStat{display:block!important;font-size:18px!important;line-height:1.3!important;white-space:normal!important;overflow-wrap:anywhere!important}
-.homeDayTabs{width:100%!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;padding:6px!important;border:1px solid var(--v4-border)!important;border-radius:17px!important;background:var(--v4-soft)!important;box-shadow:none!important}
-.homeDayTab{min-width:0!important;min-height:52px!important;border:0!important;border-radius:12px!important;background:transparent!important;color:var(--v4-muted)!important}.homeDayTab.active{background:var(--v4-card)!important;color:var(--v4-primary)!important;box-shadow:0 5px 16px rgba(36,59,128,.08)!important}.homeDayTab strong{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
-.event{border-bottom:1px solid var(--v4-border)!important}.event:after{width:4px!important}.eventTitle{font-size:15px!important}.eventMeta{color:var(--v4-muted)!important}
-.lunch{margin:6px 0!important;padding:12px!important;border-radius:14px!important;background:var(--v4-soft)!important;color:var(--v4-primary)!important;font-weight:800!important}.lunch:before,.lunch:after{background:color-mix(in srgb,var(--v4-primary) 18%,transparent)!important}
-.weekControl{border-color:var(--v4-border)!important;background:var(--v4-card)!important}.weekControl button,.calButtons button{background:var(--v4-soft)!important;color:var(--v4-primary)!important}
-.day,.calDay{border-color:var(--v4-border)!important;background:var(--v4-card)!important}.day.active,.calDay.selected{background:var(--v4-primary)!important;color:#fff!important}
-.calendarWrap{grid-template-columns:minmax(0,1.5fr) minmax(320px,.85fr)!important;gap:18px!important}.selectedDay{position:sticky!important;top:82px!important;align-self:start!important}
-.plannerHero{border-radius:24px!important;padding:24px!important}.plannerTabs{background:var(--v4-soft)!important;border-radius:15px!important;padding:5px!important}.plannerTabs .seg.active{background:var(--v4-primary)!important;color:#fff!important}
-.mobileNav{background:color-mix(in srgb,var(--v4-card) 92%,transparent)!important;border:1px solid var(--v4-border)!important;box-shadow:0 16px 42px rgba(25,35,70,.16)!important}.mobileNav .nav.active{background:var(--v4-soft)!important;color:var(--v4-primary)!important}
-@media(max-width:760px){
-  .app{padding:10px 13px calc(96px + env(safe-area-inset-bottom))!important}
-  .greetingHeader{padding:4px 2px 12px!important}.greetingHeader .identity h1{font-size:30px!important}.motivation{font-size:12px!important}
-  #homeView .hero{display:flex!important;flex-direction:column!important;gap:10px!important}
-  #homeView .focusCard,#homeView .focusStage{min-height:260px!important;border-radius:24px!important}
-  #homeView .focusStage{padding:20px!important}
-  #homeView .focusStage h2{font-size:27px!important;margin-top:14px!important}
-  #homeView .focusStageTime{grid-template-columns:1fr!important;gap:12px!important;margin-top:15px!important;padding-top:14px!important}
-  #homeView .focusCountdown{text-align:left!important;display:flex!important;align-items:baseline!important;gap:8px!important}#homeView .focusCountdown strong{font-size:30px!important}
-  #homeView .focusContext{grid-template-columns:1fr!important}.focusContext span{min-width:0!important}
-  #homeView .stats{grid-template-columns:1fr 1fr!important;grid-template-rows:auto!important;gap:8px!important}
-  #homeView .stat,#homeView .stat.week{padding:15px!important;min-height:92px!important}.hero .stat.week{grid-column:1/-1!important}
-  #homeView .stat strong{font-size:25px!important}#homeView #weekStat{font-size:16px!important}
-  .homeDayTabs{position:relative!important;top:auto!important}.homeDayTab{min-height:49px!important;padding:8px!important}.homeDayTab strong{font-size:10px!important}
-  .agenda,.dayAgenda,.calendarCard,.selectedDay,.profileCard,.plannerHero{border-radius:20px!important;padding:16px!important}
-  .calendarWrap{display:block!important}.selectedDay{position:static!important;margin-top:12px!important}
-  .event{grid-template-columns:68px minmax(0,1fr) auto!important;gap:10px!important;padding:15px 4px 15px 10px!important}.eventTime{font-size:14px!important}.eventTitle{font-size:14px!important}.eventMeta{font-size:9px!important}
-  .dateRail{top:0!important}.days{gap:6px!important}.day{min-width:64px!important}
-  .mobileNav{left:9px!important;right:9px!important;bottom:8px!important;border-radius:22px!important}
-}
-
-</style>
-</head><body>
+</style></head><body>
 <div class="setup" id="setup" hidden><form class="setupCard" id="profileForm"><div class="eyebrow">PGPBL07 · Term III</div><h1>Make this planner yours</h1><p class="meta">Core subjects are included automatically.</p><div class="formRow"><label>Name<input id="name" required placeholder="Your name"></label><label>Roll number<input id="roll" placeholder="PGPBL/07/009"></label></div><h3>Section</h3><div class="choices"><label class="choice"><input type="radio" name="section" value="A" required> Section A</label><label class="choice"><input type="radio" name="section" value="B" required> Section B</label></div><h3 style="margin-top:18px">Electives</h3><div class="choices" id="electives"></div><div class="sheetActions"><button class="primary" type="submit">Save my planner</button><button class="secondary" type="button" id="cancelProfile">Cancel</button></div></form></div>
 <div class="sheet" id="classSheet" hidden><article class="sheetCard"><div class="handle"></div><div class="sheetTop"><div><div class="eyebrow" id="sheetCode"></div><h2 id="sheetTitle"></h2><p class="meta" id="sheetMeta"></p></div><button class="close" id="closeSheet">×</button></div><div class="classQuickActions"><button class="classAction primary" id="classAddTask"><span>+</span><strong>Add task</strong><small>Deadline or preparation</small></button><button class="classAction secondary" id="classShare"><span>↗</span><strong>Share class</strong><small>Send the details</small></button><button class="classAction secondary" id="classSubjectPlanner"><span>≡</span><strong>Subject planner</strong><small>Tasks and notes</small></button></div><label class="eyebrow">Class note</label><textarea id="classNote" placeholder="Key ideas, instructions or anything to remember…"></textarea><div class="noteSaveRow"><p class="meta" id="noteSaved">Saved on this device</p><button class="secondary compactButton" id="saveNote">Save note</button></div><a class="quietLink" id="addCalendar" target="_blank">Add this class to calendar</a></article></div>
 <div class="sheet" id="taskSheet" hidden><form class="sheetCard" id="taskForm"><div class="handle"></div><div class="sheetTop"><div><div class="eyebrow">Student planner</div><h2 id="taskSheetTitle">Add a task</h2><p class="meta">Keep the next action clear and easy to find.</p></div><button class="close" type="button" id="closeTaskSheet">×</button></div><label class="fieldLabel">Task<input id="taskTitle" required placeholder="Assignment, reading or preparation"></label><div class="taskFormGrid"><label class="fieldLabel">Subject<select id="taskSubject" required></select></label><label class="fieldLabel">Due date<input id="taskDue" type="datetime-local"></label></div><label class="fieldLabel">Priority<select id="taskPriority"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select></label><input type="hidden" id="taskClassKey"><button class="primary fullButton" type="submit">Save task</button></form></div>
@@ -345,20 +213,7 @@ body{background:var(--v4-bg)!important;color:var(--v4-text)!important}
 const API="https://script.google.com/macros/s/AKfycbxQWG7cS3quE0C8BBtRVx8PExapIvuqAB5-KLGzQMnOoDNKBMcblxMpztO77jME6EwShQ/exec",START="2026-08-03",END="2026-10-18",PK="pgpbl-profile-v3",TK="pgpbl-theme-v3",CK="pgpbl-changes-v3",LK="pgpbl-last-tab-v3",TASKK="pgpbl-tasks-v1",DATAK="pgpbl-schedule-cache-v1";
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],pad=n=>String(n).padStart(2,"0"),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));let all=[],classes=[],electives=[],profile=null,weeks=[],weekIndex=0,selectedDate="",calMonth=new Date("2026-08-01T00:00:00+05:30"),sheetClass=null,activeSubject="",drawerTab="changes",homeDay="today",plannerView="today",plannerSubject="",lastSyncAt=0,visitGreeting=Math.random(),swipeStart=0,syncPromise=null;
 const colors={SM:"#4f6fe8",DBST:"#7956d8",AIB:"#159db0",OS:"#e18a35",CV:"#df6372",PM:"#397fc4",POM:"#e66f47",CB:"#c6579a",SBM:"#63a064",NWW:"#607caa",MAAS:"#a458bc",ACC:"#2f9a78"};
-const COURSE_ALIASES={NWLB:{code:"NWW",course:"Navigating Work and Workplaces: Lessons from the Bhagavad Gita"}};
-function courseAliasFor(value){const text=String(value||"").trim(),upper=text.toUpperCase();if(/(^|[^A-Z0-9])NWLB([^A-Z0-9]|$)/.test(upper)||upper.includes("NAVIGATING WORK AND WORKPLACES"))return COURSE_ALIASES.NWLB;return null}
-function recordCourseAlias(record={}){return courseAliasFor(record.baseCode)||courseAliasFor(record.code)||courseAliasFor(record.course)||courseAliasFor(record.subject)||courseAliasFor(record.name)}
-function extractVenue(value){const text=String(value||"").trim(),match=text.match(/(?:^|[-–—|,;])\s*(?:venue|room|location)\s*:\s*(.+)$/i);return match?match[1].trim().replace(/^[-–—:\s]+|[-–—:\s]+$/g,""):""}
-function recordVenue(record={}){const explicit=String(record.room||record.venue||record.location||record.classroom||"").trim();if(explicit)return explicit;for(const value of [record.baseCode,record.code,record.course,record.subject,record.name,record.details]){const venue=extractVenue(value);if(venue)return venue}return""}
-function cleanCourseCode(value){const text=String(value||"").trim(),alias=courseAliasFor(text);if(alias)return alias.code;return text.toUpperCase()}
-function canonicalCourseCode(value){return cleanCourseCode(value)}
-function normalizeCourseRecord(record={}){const alias=recordCourseAlias(record),rawCode=String(record.baseCode||record.code||record.course||"").trim(),room=recordVenue(record);if(!alias)return{...record,room:room||record.room,code:cleanCourseCode(record.code),baseCode:cleanCourseCode(record.baseCode||record.code)};return{...record,sourceCode:rawCode,code:alias.code,baseCode:alias.code,course:alias.course,room}}
-function normalizeElectiveRecord(record={}){const alias=recordCourseAlias(record),rawCode=String(record.code||record.baseCode||record.course||"").trim(),room=recordVenue(record);if(alias)return{...record,sourceCode:rawCode,code:alias.code,baseCode:alias.code,course:alias.course,room};return{...record,room:room||record.room,code:cleanCourseCode(record.code||record.baseCode),baseCode:cleanCourseCode(record.baseCode||record.code)}}
-function migrateProfileCourses(value){if(!value)return value;return{...value,electives:[...new Set((value.electives||[]).map(cleanCourseCode))]}}
-function istKey(add=0){const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(Date.now()+add*864e5)),o=Object.fromEntries(p.map(x=>[x.type,x.value]));return`${o.year}-${o.month}-${o.day}`}function addDays(k,n){const d=new Date(k+"T00:00:00+05:30");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}function monday(k){const d=new Date(k+"T00:00:00+05:30"),n=(d.getDay()+6)%7;return addDays(k,-n)}function fmt(k,o){return new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",...o}).format(new Date(k+"T00:00:00+05:30"))}function normDate(s){const d=new Date(s);if(!isNaN(d))return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(d);const m=String(s).match(/(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})/),ms={January:"01",February:"02",March:"03",April:"04",May:"05",June:"06",July:"07",August:"08",September:"09",October:"10",November:"11",December:"12"};return m?`${m[3]}-${ms[m[2]]}-${pad(m[1])}`:s}function normTime(s){const p=String(s).replaceAll(".",":").replace(/\s/g,"").split("-");return[p[0].padStart(5,"0"),p[1].padStart(5,"0")]}function stamp(e,t=e.start){return new Date(`${e.date}T${t}:00+05:30`)}function mins(e){return(stamp(e,e.end)-stamp(e))/60000}function dur(n){const h=Math.floor(n/60),m=n%60;return h&&m?`${h} hr ${m} min`:h?`${h} hr`:`${m} min`}function scheduled(l){return l.filter(e=>e.status!=="Cancelled")}function added(e){return String(e.fillColor).toLowerCase()==="#00ff00"}function ongoing(e){const n=new Date;return e.status!=="Cancelled"&&stamp(e)<=n&&stamp(e,e.end)>n}function key(e){return`${e.date}|${e.start}|${e.code}|${e.room}`}function noteKey(e){return"pgpbl-note-v3-"+key(e)}function reminderKey(e){return"pgpbl-reminders-v3-"+key(e)}function accent(e){return colors[e.baseCode]||colors[e.code]||"#4b87c4"}function personal(){
-  const chosen=new Set((profile?.electives||[]).map(cleanCourseCode));
-  return all.filter(e=>e.type==="Core"?e.section===profile.section||e.section==="All":chosen.has(cleanCourseCode(e.baseCode||e.code||e.course)));
-}
+function istKey(add=0){const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(Date.now()+add*864e5)),o=Object.fromEntries(p.map(x=>[x.type,x.value]));return`${o.year}-${o.month}-${o.day}`}function addDays(k,n){const d=new Date(k+"T00:00:00+05:30");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}function monday(k){const d=new Date(k+"T00:00:00+05:30"),n=(d.getDay()+6)%7;return addDays(k,-n)}function fmt(k,o){return new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",...o}).format(new Date(k+"T00:00:00+05:30"))}function normDate(s){const d=new Date(s);if(!isNaN(d))return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(d);const m=String(s).match(/(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})/),ms={January:"01",February:"02",March:"03",April:"04",May:"05",June:"06",July:"07",August:"08",September:"09",October:"10",November:"11",December:"12"};return m?`${m[3]}-${ms[m[2]]}-${pad(m[1])}`:s}function normTime(s){const p=String(s).replaceAll(".",":").replace(/\s/g,"").split("-");return[p[0].padStart(5,"0"),p[1].padStart(5,"0")]}function stamp(e,t=e.start){return new Date(`${e.date}T${t}:00+05:30`)}function mins(e){return(stamp(e,e.end)-stamp(e))/60000}function dur(n){const h=Math.floor(n/60),m=n%60;return h&&m?`${h} hr ${m} min`:h?`${h} hr`:`${m} min`}function scheduled(l){return l.filter(e=>e.status!=="Cancelled")}function added(e){return String(e.fillColor).toLowerCase()==="#00ff00"}function ongoing(e){const n=new Date;return e.status!=="Cancelled"&&stamp(e)<=n&&stamp(e,e.end)>n}function key(e){return`${e.date}|${e.start}|${e.code}|${e.room}`}function noteKey(e){return"pgpbl-note-v3-"+key(e)}function reminderKey(e){return"pgpbl-reminders-v3-"+key(e)}function accent(e){return colors[e.baseCode]||colors[e.code]||"#4b87c4"}function personal(){return all.filter(e=>e.type==="Core"?e.section===profile.section||e.section==="All":profile.electives.includes(e.baseCode||e.code))}
 function setTheme(choice){localStorage.setItem(TK,choice);const mode=choice==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):choice;document.documentElement.dataset.theme=mode;document.querySelector('meta[name="theme-color"]').content=mode==="dark"?"#0e1720":"#f7f6f2";$$('[data-theme-choice]').forEach(b=>b.classList.toggle("active",b.dataset.themeChoice===choice))}function cycleTheme(){const cur=localStorage.getItem(TK)||"system",next=cur==="light"?"dark":cur==="dark"?"system":"light";setTheme(next);toast(next==="system"?"Following device theme":next[0].toUpperCase()+next.slice(1)+" mode")}
 function eventHtml(e){const note=localStorage.getItem(noteKey(e)),status=ongoing(e)?'<span class="statusPill now">HAPPENING NOW</span>':e.status==="Cancelled"?'<span class="statusPill cancelled">CANCELLED</span>':added(e)?'<span class="statusPill added">NEWLY ADDED</span>':"";return`<div class="event${e.status==="Cancelled"?" cancelled":""}" data-class="${encodeURIComponent(key(e))}" style="--accent:${accent(e)}"><div class="eventTime">${e.start}<div class="meta">${e.end}</div></div><div><div class="eventTitle">${esc(e.course)}</div><div class="eventMeta">${esc(e.room)} · ${esc(e.faculty)}</div><span class="codeBadge">${esc(e.code)}</span> ${status}</div><div>${note?'<span class="noteMark">NOTE</span>':'<span class="dot"></span>'}</div></div>`}function emptyMessage(k,context=""){const wd=k?fmt(k,{weekday:"long"}):"";if(context==="today")return'<div class="empty"><strong>You don’t have classes today.</strong><span>Enjoy your day and make the most of the open time.</span></div>';if(context==="tomorrow")return'<div class="empty"><strong>Tomorrow is clear.</strong><span>Make the most of your free time.</span></div>';if(["Saturday","Sunday"].includes(wd))return`<div class="empty"><strong>Weekend reset.</strong><span>No classes ${wd.toLowerCase()}—rest and recharge.</span></div>`;return'<div class="empty"><strong>No classes scheduled.</strong><span>The day is yours.</span></div>'}function agendaHtml(list,k="",context=""){if(!list.length)return emptyMessage(k,context);return list.map((e,i)=>{const n=list[i+1],l=e.end<="13:30"&&n&&n.start>="14:00";return eventHtml(e)+(l?`<div class="lunch">Lunch break · ${e.end}–${n.start}</div>`:"")}).join("")}function bindEvents(){$$('[data-class]').forEach(x=>x.onclick=()=>openClass(decodeURIComponent(x.dataset.class)))}
 function renderFocus(){const now=new Date,live=classes.find(ongoing),next=live||scheduled(classes).find(e=>stamp(e)>now),card=$("#focusCard");card.classList.toggle("now",!!live);if(!next){card.innerHTML='<div><div class="eyebrow">Schedule clear</div><h2>No upcoming classes</h2></div>';return}const ac=accent(next);card.style.setProperty("--focus-b",ac);const target=live?stamp(next,next.end):stamp(next),d=Math.max(0,target-now),days=Math.floor(d/864e5),h=Math.floor(d%864e5/36e5),m=Math.floor(d%36e5/6e4),s=Math.floor(d%6e4/1000),count=days?`${days}d ${h}h ${m}m`:h?`${h}h ${m}m ${s}s`:`${m}m ${pad(s)}s`;card.innerHTML=`<div><span class="focusCode" style="--badge:${ac}">${esc(next.code)}</span><div class="eyebrow">${live?"Happening now":"Next class"}</div><h2>${esc(next.course)}</h2><div class="focusMeta"><strong>${esc(next.room)}</strong><br>${esc(next.faculty)}</div></div><div class="focusBottom"><div>${fmt(next.date,{weekday:"short",day:"numeric",month:"short"})}<div class="focusTime">${next.start}–${next.end}</div></div><div class="timer">${live?"Time remaining":"Starts in"}<strong>${count}</strong></div></div>`}
@@ -371,27 +226,8 @@ function reminders(e){return JSON.parse(localStorage.getItem(reminderKey(e))||"[
 function openClass(k){sheetClass=classes.find(e=>key(e)===k);if(!sheetClass)return;$("#classSheet .sheetCard").style.setProperty("--sheet-accent",accent(sheetClass));$("#sheetCode").textContent=sheetClass.code;$("#sheetTitle").textContent=sheetClass.course;$("#sheetMeta").textContent=`${fmt(sheetClass.date,{weekday:"long",day:"numeric",month:"long"})} · ${sheetClass.start}–${sheetClass.end} · ${sheetClass.room} · ${sheetClass.faculty}`;$("#classNote").value=localStorage.getItem(noteKey(sheetClass))||"";$("#addCalendar").href=googleUrl(sheetClass);$("#noteSaved").textContent=localStorage.getItem(noteKey(sheetClass))?"Note saved on this device":"Add anything worth remembering";$("#classSheet").hidden=false}function googleUrl(e){const clean=t=>t.replaceAll("-","").replace(":","")+"00";return"https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=Asia%2FKolkata&text="+encodeURIComponent(e.course)+"&dates="+clean(e.date+"T"+e.start)+"/"+clean(e.date+"T"+e.end)+"&location="+encodeURIComponent(e.room)}async function shareClass(e){const text=`${e.course}\n${fmt(e.date,{weekday:"long",day:"numeric",month:"long"})} · ${e.start}–${e.end}\n${e.room} · ${e.faculty}`;try{if(navigator.share)await navigator.share({title:e.course,text});else{await navigator.clipboard.writeText(text);toast("Class details copied")}}catch{}}function toast(t){$("#toast").textContent=t;$("#toast").classList.add("show");setTimeout(()=>$("#toast").classList.remove("show"),1500)}
 function changes(){return JSON.parse(localStorage.getItem(CK)||"[]")}function detectChanges(){if(!profile)return;const k="pgpbl-snapshot-v3-"+profile.section+profile.electives.join("-"),old=JSON.parse(localStorage.getItem(k)||"null"),now=Object.fromEntries(classes.map(e=>[key(e),{status:e.status,fill:e.fillColor,course:e.course,date:e.date,time:e.start,room:e.room}]));if(old){let c=changes();Object.entries(now).forEach(([id,e])=>{if(!old[id]&&String(e.fill).toLowerCase()==="#00ff00")c.unshift({...e,type:"Added",read:false,id:Date.now()+id});else if(e.status==="Cancelled"&&old[id]?.status!=="Cancelled")c.unshift({...e,type:"Cancelled",read:false,id:Date.now()+id})});localStorage.setItem(CK,JSON.stringify(c.slice(0,40)))}localStorage.setItem(k,JSON.stringify(now));updateBadge()}function updateBadge(){const n=changes().filter(x=>!x.read).length;$("#notificationCount").textContent=n;$("#notificationCount").hidden=!n}function renderDrawer(){const c=changes();$("#drawerContent").innerHTML=c.length?c.map(x=>`<div class="changeItem"><span class="statusPill ${x.type.toLowerCase()}">${x.type.toUpperCase()}</span><strong>${esc(x.course)}</strong><span>${esc(x.date)} · ${esc(x.time)} · ${esc(x.room)}</span></div>`).join(""):'<div class="empty"><strong>No timetable changes</strong><span>Your schedule matches the latest data fetched from the Sheet.</span></div>';localStorage.setItem(CK,JSON.stringify(c.map(x=>({...x,read:true}))));updateBadge();bindEvents()}
 function renderProfile(){$("#profileName").textContent=profile.name;$("#profileDetails").textContent=`${profile.roll||"No roll number"} · Section ${profile.section} · ${profile.electives.join(", ")||"No electives"}`;const initials=profile.name.split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase();$("#profileButton").innerHTML=`<b>${initials}</b>`;setTheme(localStorage.getItem(TK)||"system")}function renderAll(){renderHome();renderSchedule();renderCalendar();renderNotes();renderProfile();updateBadge();switchTab(localStorage.getItem(LK)||"home",false)}function switchTab(t,move=true){localStorage.setItem(LK,t);$$('[data-tab]').forEach(b=>b.classList.toggle("active",b.dataset.tab===t));["home","schedule","calendar","notes","profile"].forEach(v=>$("#"+v+"View").hidden=v!==t);if(t==="home"){homeDay="today";renderHome()}if(t==="schedule")renderSchedule();if(t==="calendar")renderCalendar();if(t==="notes")renderNotes();if(move)scrollTo({top:0,behavior:"auto"})}
-function renderElectives(){
-  const chosen=new Set((profile?.electives||[]).map(cleanCourseCode)),unique=[...new Map(electives.map(e=>[cleanCourseCode(e.code||e.baseCode||e.course),e])).values()].sort((a,b)=>String(a.course).localeCompare(String(b.course)));
-  $("#electives").innerHTML=unique.map(e=>{const code=cleanCourseCode(e.code||e.baseCode||e.course);return`<label class="choice"><input type="checkbox" name="elective" value="${code}" ${chosen.has(code)?"checked":""}><span><strong>${esc(e.course)}</strong><small>${code}${e.room?` · ${esc(e.room)}`:""}</small></span></label>`}).join("");
-}function showProfile(edit=false){renderElectives();$("#name").value=profile?.name||"";$("#roll").value=profile?.roll||"";if(profile){const r=$(`input[name="section"][value="${profile.section}"]`);if(r)r.checked=true}$("#cancelProfile").hidden=!edit;$("#setup").hidden=false}
-function setSync(label,detail,state="ok"){$("#status").dataset.state=state;$("#status").innerHTML=`<i></i><span>${label}</span><small>${detail}</small>`}function showGreeting(){if(!profile)return;const first=(profile.name||"there").trim().split(/\s+/)[0],hr=+new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",hour:"2-digit",hour12:false}).format(new Date),greet=hr<12?"Good morning":hr<17?"Good afternoon":"Good evening",headlines=[`${greet}, ${first}.`,`Welcome back, ${first}.`,`Ready when you are, ${first}.`,`Make it count, ${first}.`,`A fresh start, ${first}.`],lines=["Let’s make today count.","One class at a time.","Keep showing up—small progress compounds.","Stay curious today.","You’ve got this.","Build momentum, then let it carry you."];$("#greeting").textContent=headlines[Math.floor(visitGreeting*headlines.length)];$("#motivation").textContent=lines[Math.floor((visitGreeting*.73+.19)%1*lines.length)]}function applyPayload(p,fromCache=false){
-  all=(p.classes||[]).map(e=>{const[start,end]=normTime(e.time);return normalizeCourseRecord({...e,date:normDate(e.date),start,end})}).sort((a,b)=>stamp(a)-stamp(b));
-  electives=(p.availableElectives||[]).map(normalizeElectiveRecord);
-  const nwwClass=all.find(e=>cleanCourseCode(e.baseCode||e.code||e.course)==="NWW");
-  electives=electives.filter(e=>cleanCourseCode(e.code||e.baseCode||e.course)!=="NWW");
-  electives.push({code:"NWW",baseCode:"NWW",course:"Navigating Work and Workplaces: Lessons from the Bhagavad Gita",faculty:nwwClass?.faculty||"Prof. Surya Prakash Pati",room:nwwClass?.room||""});
-  profile=migrateProfileCourses(JSON.parse(localStorage.getItem(PK)||"null"));
-  if(profile)localStorage.setItem(PK,JSON.stringify(profile));
-  if(!profile){renderElectives();showProfile();return}
-  classes=personal();
-  if(!fromCache)detectChanges();
-  setupWeeks();
-  $("#studentName").textContent=profile.name;
-  $("#studentMeta").textContent=`${profile.roll||"PGPBL07"} · Section ${profile.section} · Term III 2026`;
-  showGreeting();renderAll()
-}
-async function load(){setSync("Checking…","Latest Google Sheet","checking");try{const r=await fetch(API+"?ts="+Date.now(),{cache:"no-store"}),p=await r.json();if(!p.success)throw Error(p.error);lastSyncAt=Date.now();localStorage.setItem(DATAK,JSON.stringify({savedAt:lastSyncAt,payload:p}));applyPayload(p);setSync("Up to date","Updated just now","ok")}catch(e){const cached=JSON.parse(localStorage.getItem(DATAK)||"null");if(cached?.payload){applyPayload(cached.payload,true);const age=Math.max(1,Math.round((Date.now()-cached.savedAt)/60000));setSync("Offline",`Saved ${age} min ago`,"offline")}else{setSync("Unable to sync","Tap to try again","offline");$("#focusCard").innerHTML='<div><div class="eyebrow">Connection issue</div><h2>Please refresh shortly</h2></div>'}}}
+function renderElectives(){const chosen=profile?.electives||[];$("#electives").innerHTML=electives.map(e=>`<label class="choice"><input type="checkbox" name="elective" value="${e.code}" ${chosen.includes(e.code)?"checked":""}><span><strong>${esc(e.course)}</strong><small>${e.code}</small></span></label>`).join("")}function showProfile(edit=false){renderElectives();$("#name").value=profile?.name||"";$("#roll").value=profile?.roll||"";if(profile){const r=$(`input[name="section"][value="${profile.section}"]`);if(r)r.checked=true}$("#cancelProfile").hidden=!edit;$("#setup").hidden=false}
+function setSync(label,detail,state="ok"){$("#status").dataset.state=state;$("#status").innerHTML=`<i></i><span>${label}</span><small>${detail}</small>`}function showGreeting(){if(!profile)return;const first=(profile.name||"there").trim().split(/\s+/)[0],hr=+new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",hour:"2-digit",hour12:false}).format(new Date),greet=hr<12?"Good morning":hr<17?"Good afternoon":"Good evening",headlines=[`${greet}, ${first}.`,`Welcome back, ${first}.`,`Ready when you are, ${first}.`,`Make it count, ${first}.`,`A fresh start, ${first}.`],lines=["Let’s make today count.","One class at a time.","Keep showing up—small progress compounds.","Stay curious today.","You’ve got this.","Build momentum, then let it carry you."];$("#greeting").textContent=headlines[Math.floor(visitGreeting*headlines.length)];$("#motivation").textContent=lines[Math.floor((visitGreeting*.73+.19)%1*lines.length)]}function applyPayload(p,fromCache=false){electives=p.availableElectives||[];all=(p.classes||[]).map(e=>{const[start,end]=normTime(e.time);return{...e,date:normDate(e.date),start,end}}).sort((a,b)=>stamp(a)-stamp(b));profile=JSON.parse(localStorage.getItem(PK)||"null");if(!profile){renderElectives();showProfile();return}classes=personal();if(!fromCache)detectChanges();setupWeeks();$("#studentName").textContent=profile.name;$("#studentMeta").textContent=`${profile.roll||"PGPBL07"} · Section ${profile.section} · Term III 2026`;showGreeting();renderAll()}async function load(){setSync("Checking…","Latest Google Sheet","checking");try{const r=await fetch(API+"?ts="+Date.now(),{cache:"no-store"}),p=await r.json();if(!p.success)throw Error(p.error);lastSyncAt=Date.now();localStorage.setItem(DATAK,JSON.stringify({savedAt:lastSyncAt,payload:p}));applyPayload(p);setSync("Up to date","Updated just now","ok")}catch(e){const cached=JSON.parse(localStorage.getItem(DATAK)||"null");if(cached?.payload){applyPayload(cached.payload,true);const age=Math.max(1,Math.round((Date.now()-cached.savedAt)/60000));setSync("Offline",`Saved ${age} min ago`,"offline")}else{setSync("Unable to sync","Tap to try again","offline");$("#focusCard").innerHTML='<div><div class="eyebrow">Connection issue</div><h2>Please refresh shortly</h2></div>'}}}
 $("#profileForm").onsubmit=e=>{e.preventDefault();profile={name:$("#name").value.trim(),roll:$("#roll").value.trim(),section:new FormData(e.target).get("section"),electives:$$('input[name="elective"]:checked').map(x=>x.value)};localStorage.setItem(PK,JSON.stringify(profile));$("#setup").hidden=true;classes=personal();setupWeeks();load()};$("#cancelProfile").onclick=()=>$("#setup").hidden=true;$("#editProfile").onclick=()=>showProfile(true);$("#profileButton").onclick=()=>switchTab("profile");$$('[data-tab]').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));$("#themeButton").onclick=cycleTheme;$("#status").onclick=load;$$('[data-theme-choice]').forEach(b=>b.onclick=()=>setTheme(b.dataset.themeChoice));$("#bellButton").onclick=()=>{$("#drawer").hidden=false;renderDrawer()};$("#closeDrawer").onclick=()=>$("#drawer").hidden=true;$("#closeSheet").onclick=()=>$("#classSheet").hidden=true;$("#closeTaskSheet").onclick=()=>$("#taskSheet").hidden=true;$("#plannerAddTask").onclick=()=>openTaskSheet();$("#classAddTask").onclick=()=>{if(sheetClass){$("#classSheet").hidden=true;openTaskSheet(sheetClass.baseCode,key(sheetClass))}};$("#classShare").onclick=()=>sheetClass&&shareClass(sheetClass);$("#classSubjectPlanner").onclick=()=>{if(sheetClass){plannerSubject=sheetClass.baseCode;plannerView="subjects";$("#classSheet").hidden=true;switchTab("notes")}};$("#saveNote").onclick=()=>{if(sheetClass){localStorage.setItem(noteKey(sheetClass),$("#classNote").value.trim());$("#noteSaved").textContent="Saved just now on this device";toast("Class note saved");renderAll()}};$("#taskForm").onsubmit=e=>{e.preventDefault();const due=$("#taskDue").value?new Date($("#taskDue").value+":00+05:30").toISOString():"",v=tasks();v.push({id:Date.now().toString(36),title:$("#taskTitle").value.trim(),subject:$("#taskSubject").value,due,priority:$("#taskPriority").value,classKey:$("#taskClassKey").value,completed:false,createdAt:Date.now()});localStorage.setItem(TASKK,JSON.stringify(v));$("#taskSheet").hidden=true;plannerView="upcoming";switchTab("notes");toast("Task added")};$("#prevWeek").onclick=()=>{weekIndex=Math.max(0,weekIndex-1);selectedDate=weeks[weekIndex];renderSchedule()};$("#nextWeek").onclick=()=>{weekIndex=Math.min(weeks.length-1,weekIndex+1);selectedDate=weeks[weekIndex];renderSchedule()};$("#prevMonth").onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);renderCalendar()};$("#nextMonth").onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1);renderCalendar()};$("#todayButton").onclick=()=>{selectedDate=istKey();calMonth=new Date(selectedDate.slice(0,7)+"-01T00:00:00+05:30");renderCalendar()};$$('[data-planner]').forEach(b=>b.onclick=()=>{plannerView=b.dataset.planner;renderNotes()});$("#exportAll").onclick=()=>window.open("https://calendar.google.com/calendar/u/0/r","_blank");matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{if((localStorage.getItem(TK)||"system")==="system")setTheme("system")});setTheme(localStorage.getItem(TK)||"system");load();setInterval(()=>{if(profile){renderFocus();if(new Date().getSeconds()===0){renderHome();renderSchedule();renderCalendar()}}},1000);setInterval(load,120000);if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("service-worker.js");
 $$('[data-home-day]').forEach(b=>b.onclick=()=>setHomeDay(b.dataset.homeDay));const homeSurface=$("#homeAgendaSurface");homeSurface.onpointerdown=e=>{homeSurface.dataset.swipeX=e.clientX;homeSurface.dataset.swipeY=e.clientY};homeSurface.onpointerup=e=>{const dx=e.clientX-Number(homeSurface.dataset.swipeX||e.clientX),dy=e.clientY-Number(homeSurface.dataset.swipeY||e.clientY);if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.25)setHomeDay(dx<0?"tomorrow":"today")};
 function eventHtml(e){const note=localStorage.getItem(noteKey(e)),isNow=ongoing(e),isPast=e.status!=="Cancelled"&&stamp(e,e.end)<=new Date,status=isNow?'<span class="statusPill now">HAPPENING NOW</span>':e.status==="Cancelled"?'<span class="statusPill cancelled">CANCELLED</span>':added(e)?'<span class="statusPill added">NEWLY ADDED</span>':"";return`<div class="event${e.status==="Cancelled"?" cancelled":""}${isPast?" past":""}${isNow?" currentEvent":""}" data-class="${encodeURIComponent(key(e))}" style="--accent:${accent(e)}"><div class="eventTime">${e.start}<div class="meta">${e.end}</div></div><div><div class="eventTitle">${esc(e.course)}</div><div class="eventMeta">${esc(e.room)} · ${esc(e.faculty)}</div><span class="codeBadge">${esc(e.code)}</span> ${status}</div><div>${note?'<span class="noteMark">NOTE</span>':'<span class="dot"></span>'}</div></div>`}
@@ -401,7 +237,7 @@ function setSync(label,detail,state="ok"){$("#status").dataset.state=state;$("#s
 async function fetchLatestSchedule(){let failure;for(let attempt=0;attempt<2;attempt++){const controller=new AbortController,timer=setTimeout(()=>controller.abort(),12000);try{const response=await fetch(`${API}?ts=${Date.now()}&attempt=${attempt}`,{cache:"no-store",signal:controller.signal,redirect:"follow"});if(!response.ok)throw Error(`HTTP ${response.status}`);const payload=await response.json();if(!payload.success)throw Error(payload.error||"Invalid schedule response");return payload}catch(error){failure=error}finally{clearTimeout(timer)}}throw failure||Error("Schedule unavailable")}
 async function load(){if(syncPromise)return syncPromise;syncPromise=(async()=>{setSync("Updating…","Latest Google Sheet","checking");try{const payload=await fetchLatestSchedule();lastSyncAt=Date.now();localStorage.setItem(DATAK,JSON.stringify({savedAt:lastSyncAt,payload}));applyPayload(payload);setSync("Up to date","Updated just now","ok")}catch(error){let cached=null;try{cached=JSON.parse(localStorage.getItem(DATAK)||"null")}catch{}const online=navigator.onLine!==false;if(cached?.payload){applyPayload(cached.payload,true);const age=Math.max(1,Math.round((Date.now()-cached.savedAt)/60000));setSync(online?"Using saved schedule":"No connection",`Saved ${age} min ago`,online?"saved":"offline")}else{setSync(online?"Sync issue":"No connection",online?"Tap to try again":"Connect and retry","offline");if($("#focusCard"))$("#focusCard").innerHTML='<div><div class="eyebrow">Schedule unavailable</div><h2>Tap the status to retry</h2></div>'}}})().finally(()=>syncPromise=null);return syncPromise}
 window.addEventListener("online",()=>load());window.addEventListener("offline",()=>setSync("No connection","Using saved schedule","offline"));document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastSyncAt>60000)load()});
-if("serviceWorker"in navigator){navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!sessionStorage.getItem("pgpbl-sw-refreshed-dashboard-v5-52")){sessionStorage.setItem("pgpbl-sw-refreshed-dashboard-v5-52","1");location.reload()}})}
+if("serviceWorker"in navigator){navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!sessionStorage.getItem("pgpbl-sw-refreshed-v37")){sessionStorage.setItem("pgpbl-sw-refreshed-v37","1");location.reload()}})}
 var GOOGLE_TASKS_CLIENT_ID="326019358906-4dpbtbmnp6rm6a7m8bikcir4a2pejiot.apps.googleusercontent.com",GOOGLE_TASKS_SCOPE="https://www.googleapis.com/auth/tasks",googleToken="",googleTokenClient=null,googlePlannerTasks=[],googleTasksBusy=false;
 function addDays(k,n){const parts=String(k).split("-").map(Number),d=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]+n));return`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`}function monday(k){const d=new Date(`${k}T12:00:00Z`),offset=(d.getUTCDay()+6)%7;return addDays(k,-offset)}
 function ensureEnhancementUI(){const term=$(".termProgress"),home=$("#homeView");if(home&&term&&!$("#changeBanner")){const banner=document.createElement("div");banner.id="changeBanner";banner.className="changeBanner";banner.hidden=true;term.insertAdjacentElement("afterend",banner)}const hero=$("#notesView .plannerHero");if(hero&&!$("#googleTasksBar")){const bar=document.createElement("div");bar.id="googleTasksBar";bar.className="googleTasksBar";bar.innerHTML='<div class="googleMark">G</div><div><strong>Google Tasks</strong><span id="googleTasksStatus">Connect to sync tasks across your devices.</span></div><button class="googleConnect" id="googleTasksConnect" type="button">Connect</button>';hero.insertAdjacentElement("afterend",bar);$("#googleTasksConnect").onclick=()=>googleToken?disconnectGoogleTasks():connectGoogleTasks()}renderChangeBanner();renderGoogleTasksBar()}
@@ -536,148 +372,129 @@ $("#classSubjectPlanner").onclick=()=>{if(!sheetClass)return;plannerSubject=shee
 </script>
 
 
-<script id="dashboard-v4-behavior">
-(()=>{
-  const toMinutes=value=>{
-    const m=String(value||'').trim().replace(/\./g,':').match(/(\d{1,2}):(\d{2})/);
-    return m?Number(m[1])*60+Number(m[2]):null;
-  };
-  const originalAgendaHtml=agendaHtml;
-  agendaHtml=function(list,k='',context=''){
-    if(!Array.isArray(list)||!list.length)return originalAgendaHtml(list,k,context);
-    const ordered=[...list].sort((a,b)=>stamp(a)-stamp(b));
-    const before=ordered.filter(e=>toMinutes(e.end)!==null&&toMinutes(e.end)<=810);
-    const after=ordered.filter(e=>toMinutes(e.start)!==null&&toMinutes(e.start)>=870);
-    const overlaps=ordered.some(e=>{
-      const start=toMinutes(e.start),end=toMinutes(e.end);
-      return start!==null&&end!==null&&start<870&&end>810;
-    });
-    if(!before.length||!after.length||overlaps)return originalAgendaHtml(ordered,k,context).replace(/<div class="lunch">[\s\S]*?<\/div>/g,'');
-    const anchor=before[before.length-1];
-    return ordered.map(e=>eventHtml(e)+(e===anchor?'<div class="lunch">Lunch break · 13:30–14:30</div>':'')).join('');
-  };
-
-  const baseRenderHome=renderHome;
-  renderHome=function(){
-    baseRenderHome();
-    try{
-      const now=new Date(),today=istKey(),weekStart=monday(today),weekEnd=addDays(weekStart,7);
-      const week=scheduled(classes.filter(e=>e.date>=weekStart&&e.date<weekEnd));
-      let remainingMinutes=0,remainingClasses=0;
-      week.forEach(e=>{
-        const start=stamp(e),end=stamp(e,e.end);
-        if(end<=now)return;
-        remainingClasses++;
-        remainingMinutes+=start<=now?Math.max(0,Math.ceil((end-now)/60000)):mins(e);
-      });
-      const el=document.getElementById('weekStat');
-      if(el){
-        if(!remainingClasses)el.innerHTML='Week complete<small class="termNudge">No classes remaining</small>';
-        else el.innerHTML=`${remainingClasses} class${remainingClasses===1?'':'es'} remaining<small class="termNudge">${dur(remainingMinutes)} left</small>`;
-      }
-    }catch(error){console.warn('Weekly remaining-hours update failed',error)}
-  };
-
-  const rerender=()=>{try{renderHome();renderSchedule()}catch{}};
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')rerender()});
-  setInterval(()=>{if(document.getElementById('homeView')&&!document.getElementById('homeView').hidden)renderHome()},30000);
-})();
-</script>
-
-<style id="v5-foundation-theme">
-/* V5 foundation: one consistent visual system, especially in dark mode */
+<style id="v5-rebuild-design-system">
 :root{
-  --v5-bg:#f5f7fb;--v5-panel:#ffffff;--v5-panel-2:#eef2f8;--v5-text:#172033;
-  --v5-muted:#6f7b90;--v5-border:#dde3ed;--v5-accent:#3156d3;--v5-accent-2:#6d5bd0;
-  --v5-shadow:0 10px 30px rgba(37,53,91,.08);
+  --bg:#f5f7fb;--surface:#ffffff;--surface2:#eef2f7;--ink:#172033;--muted:#68758a;
+  --line:#dfe5ed;--navy:#294c73;--navy2:#426f96;--green:#25956f;--amber:#d89634;
+  --red:#d95f68;--indigo:#607caa;--teal:#3d8f91;--violet:#7d6ca8;
+  --shadow:0 12px 34px rgba(33,51,74,.09);--radius:22px;
 }
 html[data-theme="dark"]{
-  --v5-bg:#0f131b;--v5-panel:#181e29;--v5-panel-2:#222a38;--v5-text:#f3f6fb;
-  --v5-muted:#a3aec0;--v5-border:#303a4c;--v5-accent:#89a5ff;--v5-accent-2:#b0a1ff;
-  --v5-shadow:0 12px 34px rgba(0,0,0,.28);
+  --bg:#0e1720;--surface:#16232e;--surface2:#1d2d39;--ink:#edf2f5;--muted:#9aabba;
+  --line:#2a3b47;--navy:#91b8d2;--navy2:#5b8baa;--green:#63d2a6;--amber:#f0b25b;
+  --red:#ff8179;--indigo:#9eb3d5;--teal:#65cec4;--violet:#b8a7d8;--shadow:none;
 }
-body{background:var(--v5-bg)!important;color:var(--v5-text)!important}
-.greetingHeader,.agenda,.calendarCard,.selectedDay,.notesPanel,.profileCard,.dayAgenda,
-.termProgress,.weekPulse,.plannerHero,.googleTasksBar,.subjectWorkspace,.setupCard,.sheetCard,.drawerCard,
-#homeView .stats,.stat,.taskCard,.reminderItem,.choice,.syncStatus{
-  background:var(--v5-panel)!important;color:var(--v5-text)!important;border-color:var(--v5-border)!important;
-  box-shadow:var(--v5-shadow)!important;
+body{background:var(--bg)!important;color:var(--ink)}
+.app{max-width:1240px!important}
+.greetingHeader,.top,.dateRail{background:color-mix(in srgb,var(--bg) 94%,transparent)!important}
+.focusCard,.agenda,.dayAgenda,.calendarCard,.selectedDay,.profileCard,.notesPanel,.plannerHero,.taskCard,.stat,.termProgress,.weekPulse,.googleTasksBar{
+  border:1px solid var(--line)!important;background:var(--surface)!important;box-shadow:var(--shadow)!important;color:var(--ink)!important;
 }
-.surface2,.desktopNav,.mobileNav,.homeDayTabs,.plannerTabs,.themeSelect,.weekControl,.day,
-.subjectCard,.notebook,input,textarea,select,.secondary,.close,.calButtons button{
-  background:var(--v5-panel-2)!important;color:var(--v5-text)!important;border-color:var(--v5-border)!important;
+#homeView #focusCard{background:linear-gradient(145deg,#172033,#29415f)!important;color:#fff!important;border:0!important}
+html[data-theme="dark"] #homeView #focusCard{background:linear-gradient(145deg,#111c29,#1c3042)!important}
+#homeView #focusCard *{color:inherit}
+.stat strong,.sectionTitle h2,.eventTitle,.daySummary h2,.profileCard h2{color:var(--ink)!important}
+.stat span,.meta,.eventMeta,.sectionTitle p,.daySummary span{color:var(--muted)!important}
+.desktopNav,.mobileNav,.themeSelect,.plannerTabs{background:var(--surface)!important;border:1px solid var(--line)!important}
+.nav{color:var(--muted)!important}.nav.active{background:var(--surface2)!important;color:var(--ink)!important}
+button,.day,.weekControl,.calDay,input,select,textarea{color:var(--ink)}
+.day,.weekControl,.calDay,input,select,textarea{background:var(--surface)!important;border-color:var(--line)!important}
+.day.active,.calDay.selected{background:var(--navy)!important;color:var(--bg)!important}
+.day.active b,.calDay.selected *{color:var(--bg)!important}
+.statusPill.added{background:color-mix(in srgb,var(--green) 15%,transparent)!important}.statusPill.cancelled{background:color-mix(in srgb,var(--red) 15%,transparent)!important}
+
+/* Schedule timeline: time column is isolated; line never crosses the time label. */
+.dayAgenda{position:relative;overflow:hidden}
+.dayAgenda .event{grid-template-columns:78px 18px minmax(0,1fr) auto!important;gap:12px!important;margin:0!important;padding:17px 0!important;border-radius:0!important}
+.dayAgenda .event::before{content:"";grid-column:2;grid-row:1/-1;width:2px;align-self:stretch;justify-self:center;background:var(--line);border-radius:2px}
+.dayAgenda .event::after{content:"";grid-column:2;grid-row:1;width:10px;height:10px;margin-top:5px;justify-self:center;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--surface);z-index:2}
+.dayAgenda .eventTime{grid-column:1;grid-row:1;position:relative;z-index:3;text-align:right;padding-right:2px;font-size:15px;white-space:nowrap}
+.dayAgenda .eventBody,.dayAgenda .event>div:nth-child(3){grid-column:3}
+.dayAgenda .dot{display:none!important}
+.dayAgenda .event>*:last-child{grid-column:4}
+.dayAgenda .lunch{margin-left:90px;padding:13px 0}
+
+/* Real desktop product layout: persistent sidebar and wider workspace. */
+@media(min-width:980px){
+  body{padding-left:230px}
+  .app{padding:22px 30px 50px!important;margin:0 auto!important}
+  .desktopNav{position:fixed!important;left:18px;top:18px;bottom:18px;width:190px;z-index:50;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:7px;padding:18px!important;border-radius:24px!important}
+  .desktopNav::before{content:"PGPBL07";display:block;padding:4px 10px 18px;font-size:18px;font-weight:900;letter-spacing:-.03em;color:var(--ink)}
+  .desktopNav .nav{justify-content:flex-start!important;text-align:left!important;padding:12px 14px!important;border-radius:14px!important}
+  .greetingHeader{padding-top:4px!important}
+  .hero{grid-template-columns:minmax(0,1.55fr) minmax(280px,.65fr)!important;gap:18px!important}
+  .agendaGrid{grid-template-columns:minmax(0,1.4fr) minmax(300px,.6fr)!important}
+  .dayAgenda{max-width:920px!important}
 }
-.meta,.motivation,.eventMeta,.stat span,.termNudge,.weekPulseCopy small,.syncStatus small,
-.taskRowMeta,.fieldLabel,.profileCard .meta{color:var(--v5-muted)!important}
-#homeView .stat strong,#homeView #weekStat,#classesLeft,#daysLeft{color:var(--v5-text)!important}
-html[data-theme="dark"] #homeView .stats{background:var(--v5-panel)!important}
-html[data-theme="dark"] #homeView .stat{background:transparent!important;box-shadow:none!important}
-html[data-theme="dark"] .homeDayTab:not(.active),html[data-theme="dark"] .nav:not(.active){color:var(--v5-muted)!important}
-html[data-theme="dark"] .homeDayTab.active,html[data-theme="dark"] .nav.active,
-html[data-theme="dark"] .seg.active{background:var(--v5-accent)!important;color:#fff!important}
-html[data-theme="dark"] .progressTrack,html[data-theme="dark"] .focusDayLine{background:#2b3444!important}
-html[data-theme="dark"] .event{border-color:var(--v5-border)!important}
-html[data-theme="dark"] .empty{background:var(--v5-panel-2)!important;color:var(--v5-muted)!important}
 @media(max-width:760px){
-  #homeView .stats{overflow:hidden!important}
-  #homeView .stat{min-width:0!important;padding:12px 10px!important}
-  #homeView .stat strong,#homeView #weekStat{font-size:14px!important;overflow-wrap:anywhere!important;white-space:normal!important}
-  #homeView .stat span,#homeView .termNudge{font-size:8px!important;line-height:1.25!important}
+  .app{padding-left:12px!important;padding-right:12px!important}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .stat.week{grid-column:1/-1!important}
+  .dayAgenda{padding:15px!important}
+  .dayAgenda .event{grid-template-columns:62px 14px minmax(0,1fr) auto!important;gap:9px!important}
+  .dayAgenda .eventTime{font-size:13px!important}
+  .dayAgenda .lunch{margin-left:72px}
 }
 </style>
-<script id="v5-foundation-course-engine">
-(()=>{
-  const NWW={code:'NWW',course:'Navigating Work and Workplaces: Lessons from the Bhagavad Gita'};
-  const isNww=value=>{const v=String(value||'').toUpperCase();return /(^|[^A-Z0-9])NWLB([^A-Z0-9]|$)/.test(v)||/(^|[^A-Z0-9])NWW([^A-Z0-9]|$)/.test(v)||v.includes('NAVIGATING WORK AND WORKPLACES')};
-  const venueFrom=record=>{
-    const explicit=String(record?.room||record?.venue||record?.location||record?.classroom||'').trim();
-    if(explicit)return explicit;
-    for(const value of [record?.code,record?.baseCode,record?.course,record?.subject,record?.details]){
-      const match=String(value||'').match(/(?:venue|room|location)\s*:\s*(.+)$/i);
-      if(match)return match[1].trim().replace(/^[-–—:\s]+|[-–—:\s]+$/g,'');
-    }
-    return '';
+<script id="v5-nww-source-of-truth">
+(function(){
+  const canonicalCode=value=>String(value||'').trim().toUpperCase()==='NWLB'?'NWW':String(value||'').trim().toUpperCase();
+  const migrateProfile=()=>{
+    let saved=null;try{saved=JSON.parse(localStorage.getItem(PK)||'null')}catch(_){saved=null}
+    if(!saved)return null;
+    const before=JSON.stringify(saved);
+    saved.electives=[...new Set((saved.electives||[]).map(canonicalCode).filter(Boolean))];
+    if(JSON.stringify(saved)!==before)localStorage.setItem(PK,JSON.stringify(saved));
+    return saved;
   };
-  window.V5CourseEngine={
-    normalize(record={}){
-      if(![record.code,record.baseCode,record.course,record.subject,record.name].some(isNww))return record;
-      return {...record,sourceCode:record.sourceCode||record.code||record.baseCode,code:NWW.code,baseCode:NWW.code,course:NWW.course,room:venueFrom(record)};
-    },
-    migrateProfile(profile){
-      if(!profile)return profile;
-      const electives=[...new Set((profile.electives||[]).map(x=>isNww(x)?NWW.code:String(x||'').trim().toUpperCase()))];
-      return {...profile,electives};
-    },
-    nww:NWW,isNww,venueFrom
+  const normaliseClass=e=>{
+    let start=e.start||e.startTime,end=e.end||e.endTime;
+    if((!start||!end)&&e.time){try{[start,end]=normTime(e.time)}catch(_){}}
+    return {...e,code:canonicalCode(e.code||e.baseCode),baseCode:canonicalCode(e.baseCode||e.code),sourceCode:String(e.sourceCode||e.code||''),course:e.course||e.displayName||canonicalCode(e.code),room:e.venue||e.room||'Room TBA',venue:e.venue||e.room||'Room TBA',date:e.dateIso||normDate(e.date),start,end};
   };
-
-  const baseRenderElectives=window.renderElectives||renderElectives;
-  window.renderElectives=renderElectives=function(){
-    try{
-      if(Array.isArray(electives)){
-        electives=electives.map(e=>window.V5CourseEngine.normalize(e));
-        const fromSchedule=(Array.isArray(all)?all:[]).map(e=>window.V5CourseEngine.normalize(e)).find(e=>e.code==='NWW');
-        const found=electives.some(e=>e.code==='NWW');
-        if(!found)electives.push({...NWW,baseCode:'NWW',faculty:fromSchedule?.faculty||'',room:fromSchedule?.room||''});
-      }
-      if(profile){profile=window.V5CourseEngine.migrateProfile(profile);localStorage.setItem(PK,JSON.stringify(profile));}
-    }catch(error){console.warn('V5 course normalization failed',error)}
-    return baseRenderElectives();
+  window.personal=function(){
+    const selected=new Set((profile?.electives||[]).map(canonicalCode));
+    return all.filter(e=>e.type==='Core'?(e.section===profile.section||e.section==='All'):selected.has(canonicalCode(e.baseCode||e.code)));
   };
-
-  const baseApplyPayload=window.applyPayload||applyPayload;
-  window.applyPayload=applyPayload=function(payload,fromCache=false){
-    const result=baseApplyPayload(payload,fromCache);
-    try{
-      all=(Array.isArray(all)?all:[]).map(e=>window.V5CourseEngine.normalize(e));
-      electives=(Array.isArray(electives)?electives:[]).map(e=>window.V5CourseEngine.normalize(e));
-      profile=window.V5CourseEngine.migrateProfile(profile);
-      if(profile){localStorage.setItem(PK,JSON.stringify(profile));classes=personal();}
-      renderElectives();
-      if(profile)renderAll();
-    }catch(error){console.warn('V5 post-load normalization failed',error)}
-    return result;
+  window.renderElectives=function(){
+    const chosen=new Set((profile?.electives||[]).map(canonicalCode));
+    const map=new Map();
+    (electives||[]).forEach(item=>{const code=canonicalCode(item.code||item.baseCode);if(code)map.set(code,{...item,code,baseCode:code})});
+    if(!map.has('NWW'))map.set('NWW',{code:'NWW',baseCode:'NWW',course:'Navigating Work and Workplaces: Lessons from the Bhagavad Gita',displayName:'Navigating Work and Workplaces: Lessons from the Bhagavad Gita',faculty:'Prof. Surya Prakash Pati'});
+    electives=[...map.values()].sort((a,b)=>a.code.localeCompare(b.code));
+    const host=document.getElementById('electives');if(!host)return;
+    host.innerHTML=electives.map(e=>`<label class="choice"><input type="checkbox" name="elective" value="${e.code}" ${chosen.has(e.code)?'checked':''}><span><strong>${esc(e.course||e.displayName||e.code)}</strong><small>${e.code}${e.faculty?' · '+esc(e.faculty):''}</small></span></label>`).join('');
   };
+  window.applyPayload=function(payload,fromCache=false){
+    const catalogue=new Map();
+    (payload.availableElectives||[]).forEach(item=>{const code=canonicalCode(item.code||item.baseCode);if(code)catalogue.set(code,{...item,code,baseCode:code})});
+    if(!catalogue.has('NWW'))catalogue.set('NWW',{code:'NWW',baseCode:'NWW',course:'Navigating Work and Workplaces: Lessons from the Bhagavad Gita',displayName:'Navigating Work and Workplaces: Lessons from the Bhagavad Gita',faculty:'Prof. Surya Prakash Pati'});
+    electives=[...catalogue.values()];
+    all=(payload.classes||[]).map(normaliseClass).filter(e=>e.date&&e.start&&e.end).sort((a,b)=>stamp(a)-stamp(b));
+    profile=migrateProfile();
+    if(!profile){renderElectives();showProfile();return}
+    classes=personal();
+    if(!fromCache)detectChanges();
+    setupWeeks();
+    document.getElementById('studentName').textContent=profile.name||'Student';
+    document.getElementById('studentMeta').textContent=`${profile.roll||'PGPBL07'} · Section ${profile.section} · Term III 2026`;
+    showGreeting();renderAll();
+  };
+  const form=document.getElementById('profileForm');
+  if(form)form.onsubmit=event=>{
+    event.preventDefault();
+    profile={name:document.getElementById('name').value.trim(),roll:document.getElementById('roll').value.trim(),section:new FormData(form).get('section'),electives:[...new Set($$('input[name="elective"]:checked').map(x=>canonicalCode(x.value)))]};
+    localStorage.setItem(PK,JSON.stringify(profile));
+    document.getElementById('setup').hidden=true;
+    classes=personal();setupWeeks();load();
+  };
+  const marker='pgpbl-v5-api-migration-1';
+  if(!localStorage.getItem(marker)){
+    localStorage.removeItem(DATAK);
+    migrateProfile();
+    localStorage.setItem(marker,new Date().toISOString());
+  }
+  migrateProfile();
 })();
 </script>
 
