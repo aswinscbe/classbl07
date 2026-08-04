@@ -195,18 +195,177 @@ html[data-theme="dark"] .greetingHeader{background:linear-gradient(135deg,#17273
 
 #homeView .hero .stats{display:grid!important}#homeView .weekPulse{order:6}
 @media(min-width:761px){.greetingHeader{min-height:0!important}.greetingHeader .identity{min-height:0!important}.greetingHeader .desktopNav{position:fixed!important}}
-</style>
-<style id="focus-card-visibility-fix">
-/* Keep the Home focus-card content above decorative pseudo-elements. */
-#homeView #focusCard{position:relative!important;}
-#homeView #focusCard::before,#homeView #focusCard::after{pointer-events:none!important;z-index:0!important;}
-#homeView #focusCard>*,#homeView #focusCard .focusStage{position:relative!important;z-index:2!important;visibility:visible!important;opacity:1!important;}
-#homeView #focusCard .focusStage{display:flex!important;flex-direction:column!important;width:100%!important;min-height:100%!important;color:#fff!important;}
-#homeView #focusCard .focusStageTop,#homeView #focusCard .focusStageTime,#homeView #focusCard .focusContext{position:relative!important;z-index:3!important;}
-#homeView #focusCard:not(.now) .focusStage{color:var(--ink)!important;}
-#homeView #focusCard.now .focusStage,#homeView #focusCard.now .focusStage *{visibility:visible!important;opacity:1!important;}
-</style>
-</head><body>
+
+/* Mobile-first refinement: live / next-class focus card */
+#homeView .focusCard,
+#homeView .focusCard.now,
+html[data-theme="dark"] #homeView .focusCard,
+html[data-theme="dark"] #homeView .focusCard.now{
+  min-height:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:22px!important;
+  background:linear-gradient(145deg,#142b45 0%,#1c3b59 100%)!important;
+  box-shadow:0 14px 34px rgba(20,43,69,.18)!important;
+  color:#f7fbff!important;
+}
+#homeView .focusCard:before,
+#homeView .focusCard:after,
+#homeView .focusCard.now:before,
+#homeView .focusCard.now:after{
+  display:none!important;
+  content:none!important;
+}
+#homeView .focusStage{
+  position:relative!important;
+  z-index:2!important;
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  min-height:0!important;
+  padding:19px 18px 17px!important;
+  background:transparent!important;
+  color:#f7fbff!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+#homeView .focusStageTop{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  margin-bottom:14px!important;
+}
+#homeView .focusState{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  min-height:28px!important;
+  padding:6px 10px!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.08)!important;
+  color:#dce8f5!important;
+  font-size:9px!important;
+  font-weight:800!important;
+  letter-spacing:.06em!important;
+  text-transform:uppercase!important;
+}
+#homeView .focusState i{
+  width:7px!important;
+  height:7px!important;
+  border-radius:50%!important;
+  background:#69dbb2!important;
+  box-shadow:0 0 0 4px rgba(105,219,178,.13)!important;
+}
+#homeView .focusStageCode{
+  flex:0 0 auto!important;
+  padding:6px 9px!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  border-radius:9px!important;
+  background:rgba(255,255,255,.07)!important;
+  color:#dce8f5!important;
+  font-size:9px!important;
+  font-weight:800!important;
+  letter-spacing:.08em!important;
+}
+#homeView .focusStage h2{
+  max-width:100%!important;
+  margin:0!important;
+  color:#fff!important;
+  font-size:clamp(23px,7.4vw,31px)!important;
+  line-height:1.08!important;
+  letter-spacing:-.04em!important;
+  overflow-wrap:anywhere!important;
+}
+#homeView .focusStageTime{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:end!important;
+  gap:14px!important;
+  margin-top:18px!important;
+  padding-top:15px!important;
+  border-top:1px solid rgba(255,255,255,.12)!important;
+}
+#homeView .focusRange{
+  min-width:0!important;
+  color:#aebed0!important;
+  font-size:10px!important;
+  font-weight:650!important;
+}
+#homeView .focusRange strong{
+  display:block!important;
+  margin-top:4px!important;
+  color:#fff!important;
+  font-size:16px!important;
+  font-weight:800!important;
+  line-height:1.15!important;
+  font-variant-numeric:tabular-nums!important;
+}
+#homeView .focusCountdown{
+  min-width:96px!important;
+  text-align:right!important;
+}
+#homeView .focusCountdown strong{
+  display:block!important;
+  color:#a9c2ff!important;
+  font-size:18px!important;
+  font-weight:800!important;
+  line-height:1!important;
+  font-variant-numeric:tabular-nums!important;
+  white-space:nowrap!important;
+}
+#homeView .focusCountdown span{
+  display:block!important;
+  margin-top:5px!important;
+  color:#91a6bb!important;
+  font-size:8px!important;
+  font-weight:800!important;
+  letter-spacing:.08em!important;
+  text-transform:uppercase!important;
+}
+#homeView .focusDayLine{
+  height:5px!important;
+  margin-top:16px!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.1)!important;
+  overflow:hidden!important;
+}
+#homeView .focusDayLine i{
+  display:block!important;
+  height:100%!important;
+  border-radius:inherit!important;
+  background:linear-gradient(90deg,#86a8ff,#68d9c0)!important;
+}
+#homeView .focusContext{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:7px!important;
+  margin-top:12px!important;
+  color:#aebed0!important;
+  font-size:9px!important;
+}
+#homeView .focusContext span{
+  display:block!important;
+  padding:9px 10px!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:11px!important;
+  background:rgba(255,255,255,.05)!important;
+  text-align:left!important;
+}
+#homeView .focusContext strong{color:#fff!important}
+@media(min-width:761px){
+  #homeView .focusCard,
+  #homeView .focusCard.now{border-radius:24px!important;box-shadow:0 18px 42px rgba(20,43,69,.16)!important}
+  #homeView .focusStage{padding:26px 28px 23px!important}
+  #homeView .focusStage h2{font-size:34px!important;max-width:760px!important}
+  #homeView .focusStageTime{margin-top:22px;padding-top:18px}
+  #homeView .focusRange strong{font-size:19px!important}
+  #homeView .focusCountdown strong{font-size:22px!important}
+  #homeView .focusContext{grid-template-columns:1fr 1fr!important}
+}
+</style></head><body>
 <div class="setup" id="setup" hidden><form class="setupCard" id="profileForm"><div class="eyebrow">PGPBL07 · Term III</div><h1>Make this planner yours</h1><p class="meta">Core subjects are included automatically.</p><div class="formRow"><label>Name<input id="name" required placeholder="Your name"></label><label>Roll number<input id="roll" placeholder="PGPBL/07/009"></label></div><h3>Section</h3><div class="choices"><label class="choice"><input type="radio" name="section" value="A" required> Section A</label><label class="choice"><input type="radio" name="section" value="B" required> Section B</label></div><h3 style="margin-top:18px">Electives</h3><div class="choices" id="electives"></div><div class="sheetActions"><button class="primary" type="submit">Save my planner</button><button class="secondary" type="button" id="cancelProfile">Cancel</button></div></form></div>
 <div class="sheet" id="classSheet" hidden><article class="sheetCard"><div class="handle"></div><div class="sheetTop"><div><div class="eyebrow" id="sheetCode"></div><h2 id="sheetTitle"></h2><p class="meta" id="sheetMeta"></p></div><button class="close" id="closeSheet">×</button></div><div class="classQuickActions"><button class="classAction primary" id="classAddTask"><span>+</span><strong>Add task</strong><small>Deadline or preparation</small></button><button class="classAction secondary" id="classShare"><span>↗</span><strong>Share class</strong><small>Send the details</small></button><button class="classAction secondary" id="classSubjectPlanner"><span>≡</span><strong>Subject planner</strong><small>Tasks and notes</small></button></div><label class="eyebrow">Class note</label><textarea id="classNote" placeholder="Key ideas, instructions or anything to remember…"></textarea><div class="noteSaveRow"><p class="meta" id="noteSaved">Saved on this device</p><button class="secondary compactButton" id="saveNote">Save note</button></div><a class="quietLink" id="addCalendar" target="_blank">Add this class to calendar</a></article></div>
 <div class="sheet" id="taskSheet" hidden><form class="sheetCard" id="taskForm"><div class="handle"></div><div class="sheetTop"><div><div class="eyebrow">Student planner</div><h2 id="taskSheetTitle">Add a task</h2><p class="meta">Keep the next action clear and easy to find.</p></div><button class="close" type="button" id="closeTaskSheet">×</button></div><label class="fieldLabel">Task<input id="taskTitle" required placeholder="Assignment, reading or preparation"></label><div class="taskFormGrid"><label class="fieldLabel">Subject<select id="taskSubject" required></select></label><label class="fieldLabel">Due date<input id="taskDue" type="datetime-local"></label></div><label class="fieldLabel">Priority<select id="taskPriority"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select></label><input type="hidden" id="taskClassKey"><button class="primary fullButton" type="submit">Save task</button></form></div>
@@ -329,25 +488,4 @@ $("#closeDrawer").onclick=()=>closeOverlay($("#drawer"));$("#closeSheet").onclic
 function placeDesktopNavigation(){const header=$(".greetingHeader"),nav=$(".desktopNav");if(header&&nav&&nav.parentElement!==header)header.appendChild(nav)}placeDesktopNavigation();ensureTaskEditorUI();ensureTaskQuickDates();configureGoogleTaskForm();if(weeks.length)renderSchedule();
 function refreshExactSyncTime(){if(!lastSyncAt||!$("#status")||$("#status").dataset.state!=="ok")return;const label=new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",hour:"numeric",minute:"2-digit"}).format(new Date(lastSyncAt));const detail=`Updated ${label} IST`;$("#status small").textContent=detail;$("#status").title=`Schedule ${detail.toLowerCase()} · Tap to refresh`;updateSyncChips()}setInterval(refreshExactSyncTime,15000);setTimeout(refreshExactSyncTime,1200);
 $("#classSubjectPlanner").onclick=()=>{if(!sheetClass)return;plannerSubject=sheetClass.baseCode||sheetClass.code;plannerView="subjects";closeOverlay($("#classSheet"));switchTab("notes");requestAnimationFrame(()=>{$(`[data-planner-subject="${CSS.escape(plannerSubject)}"]`)?.scrollIntoView({block:"nearest",inline:"center"})})};
-</script>
-<script id="focus-card-runtime-fix">
-(()=>{
-  const repairFocusCard=()=>{
-    const card=document.getElementById('focusCard');
-    if(!card)return;
-    card.style.visibility='visible';
-    card.style.opacity='1';
-    const children=[...card.children];
-    children.forEach(child=>{child.style.visibility='visible';child.style.opacity='1';child.style.position='relative';child.style.zIndex='2'});
-    if(!card.textContent.trim()){
-      try{ if(typeof renderFocus==='function') renderFocus(); }catch(error){ console.error('Focus card render error',error); }
-    }
-  };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',repairFocusCard,{once:true});
-  else repairFocusCard();
-  window.addEventListener('load',repairFocusCard,{once:true});
-  setTimeout(repairFocusCard,250);
-  setTimeout(repairFocusCard,1200);
-})();
-</script>
-</body></html>
+</script></body></html>
