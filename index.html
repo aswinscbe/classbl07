@@ -134,8 +134,20 @@
       </section>
 
       <section class="page" id="plannerPage" data-page="planner">
-        <div class="page-heading">
-          <div><p class="overline">ACADEMIC PLANNER</p><h1>See the month. Own the day.</h1><p class="subtitle">Calendar first, with tasks and notes close by.</p></div>
+        <div class="page-heading planner-heading-actions">
+          <div>
+            <p class="overline">ACADEMIC PLANNER</p>
+            <h1>See the month. Own the day.</h1>
+            <p class="subtitle">Calendar first, with tasks and notes close by.</p>
+          </div>
+          <div class="planner-utility-links" aria-label="Personal shortcuts">
+            <a class="icon-button utility-link" href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noopener" aria-label="Open Google Calendar" title="Google Calendar">
+              <span data-icon="calendar"></span>
+            </a>
+            <a class="icon-button utility-link" href="https://tasks.google.com/" target="_blank" rel="noopener" aria-label="Open Google Tasks" title="Google Tasks">
+              <span data-icon="check"></span>
+            </a>
+          </div>
         </div>
 
         <div class="subtabs" id="plannerTabs">
@@ -153,7 +165,7 @@
                 <button class="icon-button" id="nextMonth" aria-label="Next month"><span data-icon="chevron-right"></span></button>
               </div>
               <button class="today-button" id="todayButton"><span data-icon="target"></span>Jump to today</button>
-              <div class="weekday-row"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+              <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
               <div class="calendar-grid" id="calendarGrid"></div>
               <div class="calendar-legend" id="calendarLegend"></div>
             </article>
@@ -224,7 +236,7 @@
           <article class="panel">
             <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
             <div class="settings-row"><div><strong>Open calendar</strong><p>Open Google Calendar in a new tab.</p></div><a class="secondary-button link-button" href="https://calendar.google.com" target="_blank" rel="noopener">Open</a></div>
-            <div class="settings-row"><div><strong>App version</strong><p>BL07 Campus · 2.2.0</p></div><span class="version-chip">2.2.0</span></div>
+            <div class="settings-row"><div><strong>App version</strong><p>BL07 Final Clarity · 2.5.3</p></div><span class="version-chip">2.5.3</span></div>
             <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>
           </article>
         </div>

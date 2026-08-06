@@ -89,7 +89,7 @@ function renderHome(){
   $("#todaySwitchDate").textContent=fmtDate(today,{day:"numeric",month:"short"});
   $("#tomorrowSwitchDate").textContent=fmtDate(tomorrowIso(),{day:"numeric",month:"short"});
   $$(".timeline-day-button").forEach(b=>b.classList.toggle("active",b.dataset.timelineDay===state.timelineDay));
-  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineClasses.map(c=>{const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=wasRecentlyAdded(c);return`<article class="vertical-class ${status}" style="--course:${colorFor(c.code)}"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-line"><span class="vertical-dot"></span></div><div class="vertical-content"><strong>${esc(c.code)} · ${esc(c.course)}${added?'<span class="timeline-added">ADDED</span>':""}</strong><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><span class="vertical-status">${status==="current"?"HAPPENING NOW":status==="done"?"COMPLETED":status==="cancelled"?"CANCELLED":"UPCOMING"}</span></div></article>`}).join("")}</div>`:`<div class="empty-state">${state.timelineDay==="today"?"Enjoy your free day.":"Nothing scheduled tomorrow."}</div>`;
+  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineClasses.map(c=>{const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=wasRecentlyAdded(c);return`<article class="vertical-class ${status}" style="--course:${colorFor(c.code)}"><div class="vertical-time">${esc(fmtTime(c.startTime))} – ${esc(fmtTime(c.endTime))}</div><div class="vertical-line"><span class="vertical-dot"></span></div><div class="vertical-content"><strong>${esc(c.code)} · ${esc(c.course)}${added?'<span class="timeline-added">ADDED</span>':""}</strong><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><span class="vertical-status">${status==="current"?"HAPPENING NOW":status==="done"?"COMPLETED":status==="cancelled"?"CANCELLED":"UPCOMING"}</span></div></article>`}).join("")}</div>`:`<div class="empty-state">${state.timelineDay==="today"?"Enjoy your free day.":"Nothing scheduled tomorrow."}</div>`;
   const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0;
   $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
   const monday=new Date(now);monday.setHours(0,0,0,0);monday.setDate(now.getDate()-((now.getDay()+6)%7));const nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);const week=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")>now&&dateTime(c,"startTime")<nextMonday);const mins=week.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-Math.max(now,dateTime(c,"startTime")))/60000),0),cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;$("#weekClasses").textContent=week.length;$("#weekHours").textContent=`${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;$("#weekCancelled").textContent=cancels;const ts=new Date("2026-08-03T00:00:00+05:30"),te=new Date("2026-10-18T23:59:59+05:30"),ta=state.classes.filter(c=>dateTime(c,"startTime")>=ts&&dateTime(c,"startTime")<=te&&c.status!=="Cancelled"),td=ta.filter(c=>dateTime(c,"endTime")<now).length,tr=Math.max(0,ta.length-td),tp=ta.length?Math.round(td/ta.length*100):0,wl=Math.max(0,Math.ceil((te-now)/(7*24*3600000)));let tc=$("#termProgressCard");if(!tc){tc=document.createElement("section");tc.id="termProgressCard";tc.className="panel term-progress-card";$(".today-progress-card").after(tc)}tc.innerHTML=`<div class="panel-heading"><div><p class="overline">TERM III</p><h2>Progress</h2></div><span class="count-chip">${tp}%</span></div><div class="term-progress-bar"><span style="width:${tp}%"></span></div><div class="term-progress-stats"><article><strong>${td}</strong><span>classes completed</span></article><article><strong>${tr}</strong><span>classes remaining</span></article><article><strong>${wl}</strong><span>weeks remaining</span></article></div>`;
@@ -169,7 +169,14 @@ function agendaHtml(classes,tasks){
   }
   return html;
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),colors=classes.slice(0,4).map(c=>colorFor(c.code));html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""}" data-date="${iso}"><span class="calendar-day-number">${day.getDate()}</span><span class="calendar-course-dots">${colors.map(c=>`<i style="--course:${c}"></i>`).join("")}</span><span class="calendar-class-count">${classes.length?`${classes.length} class${classes.length>1?"es":""}`:""}</span></button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar()});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks);const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];$("#calendarLegend").innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("");bindTaskRows($("#dayAgenda"))}
+function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),colors=classes.slice(0,4).map(c=>colorFor(c.code));html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""}" data-date="${iso}"><span class="calendar-day-number">${day.getDate()}</span><span class="calendar-course-dots">${colors.map(c=>`<i style="--course:${c}"></i>`).join("")}</span><span class="calendar-class-count">${classes.length?`${classes.length} class${classes.length>1?"es":""}`:""}</span></button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{
+      state.selectedDate=b.dataset.date;
+      renderCalendar();
+      setTimeout(()=>{
+        const agenda=document.querySelector(".agenda-panel");
+        if(agenda)agenda.scrollIntoView({behavior:"smooth",block:"start"});
+      },80);
+    });b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks);const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];$("#calendarLegend").innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("");bindTaskRows($("#dayAgenda"))}
 function renderCourseOptions(){const o=(state.electives||[]).map(e=>`<option value="${esc(e.code)}">${esc(e.code)} · ${esc(e.course)}</option>`).join("");["#quickTaskCourse","#taskCourse","#noteCourse"].forEach(s=>{const el=$(s);if(el)el.innerHTML='<option value="">General</option>'+o})}
 function addTask(title,course,date){state.tasks.unshift({id:crypto.randomUUID(),title,course,date,completed:false,createdAt:Date.now()});save(KEYS.tasks,state.tasks);renderTasks();renderHomeTasks();renderCalendar()}
 function taskHtml(t){return`<article class="task-item ${t.completed?"completed":""}" data-task="${t.id}" style="--course:${colorFor(t.course)}"><input type="checkbox" ${t.completed?"checked":""}><div><strong>${esc(t.title)}</strong><p>${esc(t.course||"General")}${t.date?` · ${esc(fmtDate(t.date,{day:"numeric",month:"short"}))}`:""}</p></div><button class="delete-button">×</button></article>`}
@@ -178,7 +185,173 @@ function renderHomeTasks(){const a=state.tasks.filter(t=>!t.completed).slice(0,3
 function renderTasks(){const t=isoToday();let a=state.tasks;if(state.taskFilter==="open")a=a.filter(x=>!x.completed);if(state.taskFilter==="today")a=a.filter(x=>!x.completed&&x.date===t);if(state.taskFilter==="upcoming")a=a.filter(x=>!x.completed&&x.date&&x.date>t);if(state.taskFilter==="completed")a=a.filter(x=>x.completed);$("#taskList").innerHTML=a.length?a.map(taskHtml).join(""):'<div class="empty-state">Nothing here.</div>';bindTaskRows($("#taskList"))}
 function renderNotes(){const q=$("#noteSearch").value.toLowerCase(),a=state.notes.filter(n=>(n.title+" "+n.body+" "+n.course).toLowerCase().includes(q));$("#noteList").innerHTML=a.length?a.map(n=>`<article class="note-card" data-note="${n.id}"><header><div><small>${esc(n.course||"GENERAL")}</small><h3>${esc(n.title)}</h3></div><button class="delete-button">×</button></header><p>${esc(n.body)}</p></article>`).join(""):'<div class="empty-state">No notes yet.</div>';$$(".note-card .delete-button").forEach(b=>b.addEventListener("click",()=>{state.notes=state.notes.filter(n=>n.id!==b.closest(".note-card").dataset.note);save(KEYS.notes,state.notes);renderNotes()}))}
 function busDate(b,t=false){const n=new Date(),[h,m]=b.time.split(":").map(Number),d=new Date(n);d.setHours(h,m,0,0);if(t)d.setDate(d.getDate()+1);return d}const BUS_STOPS=["C&D Housing","Phase V Campus","PGP Auditorium","Main Gate"];
-function busStopLabel(s){return s==="Phase V Campus"?"Phase 5":s==="PGP Auditorium"?"Auditorium":s}function routeStops(b){const s=[b.from];if(b.mainGate&&b.from!=="Main Gate"&&!s.includes("Main Gate"))s.push("Main Gate");if(b.via&&!s.includes(b.via)&&b.via!==b.to)s.push(b.via);if(b.mainGate&&b.to!=="Main Gate"&&!s.includes("Main Gate"))s.push("Main Gate");if(!s.includes(b.to))s.push(b.to);return s}function serviceSupports(b,f,t){const s=routeStops(b);for(let i=0;i<s.length;i++){if(s[i]!==f)continue;for(let j=i+1;j<s.length;j++){if(s[j]===t)return true}}return false}function getUpcomingBuses(){const n=new Date(),a=window.CAMPUS_DATA.bus.filter(b=>serviceSupports(b,state.busFrom,state.busTo));let f=a.map(b=>({b,d:busDate(b)})).filter(x=>x.d>n).sort((a,b)=>a.d-b.d);return f.length?f:a.map(b=>({b,d:busDate(b,true)})).sort((a,b)=>a.d-b.d)}function renderCampus(){renderBusControls();renderBuses();renderMess()}function renderBusControls(){const o=BUS_STOPS.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");$("#busFrom").innerHTML=o;$("#busTo").innerHTML=o;$("#busFrom").value=state.busFrom;$("#busTo").value=state.busTo;const q=[["C&D Housing","PGP Auditorium"],["PGP Auditorium","C&D Housing"],["C&D Housing","Main Gate"],["Main Gate","C&D Housing"],["Phase V","Main Gate"],["Main Gate","Phase V"]];$("#quickRoutes").innerHTML=q.map(([f,t])=>`<button class="quick-route ${state.busFrom===f&&state.busTo===t?"active":""}" data-from="${esc(f)}" data-to="${esc(t)}">${esc(f.replace("Phase V Campus","Phase 5").replace("C&D Housing","Housing").replace("PGP Auditorium","Auditorium"))} → ${esc(t.replace("Phase V Campus","Phase 5").replace("C&D Housing","Housing").replace("PGP Auditorium","Auditorium"))}</button>`).join("");$$(".quick-route").forEach(b=>b.addEventListener("click",()=>{state.busFrom=b.dataset.from;state.busTo=b.dataset.to;renderBusControls();renderBuses()}))}function renderBuses(){const u=getUpcomingBuses(),f=u[0],n=new Date();if(f){$("#nextBusTime").textContent=fmtTime(f.b.time);$("#nextBusRoute").textContent=`${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;$("#nextBusMeta").textContent=f.b.mainGate?"Main Gate service":"Direct campus service";const d=Math.ceil((f.d-n)/60000);$("#nextBusCountdown").textContent=d>=60?`${Math.floor(d/60)}h ${d%60}m`:`${d} min`;const s=routeStops(f.b),i=s.indexOf(state.busFrom),j=s.indexOf(state.busTo);$("#nextBusVisual").innerHTML=s.slice(i,j+1).map(x=>`<div class="route-stop"><i></i><span>${esc(x)}</span></div>`).join("")}else{$("#nextBusTime").textContent="—";$("#nextBusRoute").textContent="No direct service";$("#nextBusMeta").textContent="Try another route";$("#nextBusCountdown").textContent="—";$("#nextBusVisual").innerHTML=""}$("#upcomingBuses").innerHTML=u.length?u.slice(0,5).map(({b})=>busRow(b)).join(""):'<div class="empty-state">No matching direct buses.</div>';const a=window.CAMPUS_DATA.bus.filter(b=>serviceSupports(b,state.busFrom,state.busTo));$("#fullBusList").innerHTML=a.length?a.map(busRow).join(""):'<div class="empty-state">No matching direct buses.</div>'}function busRow(b){return`<article class="bus-row ${b.mainGate?"main-gate":""}"><time>${esc(fmtTime(b.time))}</time><div><strong>${esc(busStopLabel(state.busFrom))} → ${esc(busStopLabel(state.busTo))}</strong><p>${esc(routeStops(b).join(" · "))}</p>${b.mainGate?'<span class="route-badge">MAIN GATE</span>':""}</div></article>`}function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const menu=window.CAMPUS_DATA.mess[state.messDay],items=menu[state.meal]||[],nv=/chicken|fish|egg|omelette/i,sw=/gulab|halwa|ice cream|kheer|custard|badusha|sweet/i,non=items.filter(i=>nv.test(i)),sweet=items.filter(i=>sw.test(i)),veg=items.filter(i=>!nv.test(i)&&!sw.test(i));$("#messMenu").innerHTML=`<article class="meal-hero"><h3>${state.meal[0].toUpperCase()+state.meal.slice(1)}</h3>${veg.length?`<section class="food-section"><div class="food-section-title">Vegetarian</div><div class="food-items">${veg.map(i=>`<div class="food-item veg">${esc(i)}</div>`).join("")}</div></section>`:""}${non.length?`<section class="food-section"><div class="food-section-title">Non-vegetarian</div><div class="food-items">${non.map(i=>`<div class="food-item nonveg">${esc(i)}</div>`).join("")}</div></section>`:""}${sweet.length?`<section class="food-section"><div class="food-section-title">Dessert / Sweet</div><div class="food-items">${sweet.map(i=>`<div class="food-item sweet">${esc(i)}</div>`).join("")}</div></section>`:""}</article>`;$$(".meal-tab").forEach(b=>b.classList.toggle("active",b.dataset.meal===state.meal))}function renderProfile(){$("#profileName").value=state.profile.name||"";$("#profileSection").value=state.profile.section||"A";$("#profileTheme").value=state.profile.theme||"system";$("#profileDisplayName").textContent=state.profile.name||"Student";$("#profileSummary").textContent=`PGPBL · Section ${state.profile.section||"A"}`;$("#profileAvatar").textContent=initials(state.profile.name);$("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";$("#electiveChoices").innerHTML=(state.electives||[]).map(e=>`<label class="choice"><input type="checkbox" value="${esc(e.code)}" ${(state.profile.electives||[]).includes(canonical(e.code))?"checked":""}><span><strong>${esc(e.code)} · ${esc(e.course)}</strong><small>${esc(e.faculty)}</small></span></label>`).join("")}
+
+function busStopLabel(stop){
+  if(stop==="Phase V Campus")return"Phase 5";
+  if(stop==="PGP Auditorium")return"Auditorium";
+  return stop;
+}
+
+function routeStops(bus){
+  const from=bus.from;
+  const to=bus.to;
+
+  // Internal shuttle routes.
+  if(from==="C&D Housing"&&to==="PGP Auditorium"){
+    return["C&D Housing","Phase V Campus","PGP Auditorium"];
+  }
+  if(from==="PGP Auditorium"&&to==="C&D Housing"){
+    return["PGP Auditorium","Phase V Campus","C&D Housing"];
+  }
+
+  // Main Gate services pass through both C&D Housing and Phase V.
+  // The source timetable stores only one intermediate stop, so the
+  // complete travelled route is expanded here.
+  if(from==="Main Gate"&&to==="PGP Auditorium"){
+    return["Main Gate","C&D Housing","Phase V Campus","PGP Auditorium"];
+  }
+  if(from==="PGP Auditorium"&&to==="Main Gate"){
+    return["PGP Auditorium","Phase V Campus","C&D Housing","Main Gate"];
+  }
+
+  // Safe fallback for any future timetable entry.
+  const stops=[from];
+  if(bus.via&&!stops.includes(bus.via)&&bus.via!==to)stops.push(bus.via);
+  if(!stops.includes(to))stops.push(to);
+  return stops;
+}
+
+function serviceSupports(bus,from,to){
+  const stops=routeStops(bus);
+  const fromIndex=stops.indexOf(from);
+  const toIndex=stops.indexOf(to);
+  return fromIndex>=0&&toIndex>fromIndex;
+}
+
+function getUpcomingBuses(){
+  const now=new Date();
+  const matching=window.CAMPUS_DATA.bus.filter(bus=>
+    serviceSupports(bus,state.busFrom,state.busTo)
+  );
+
+  const laterToday=matching
+    .map(bus=>({b:bus,d:busDate(bus)}))
+    .filter(item=>item.d>now)
+    .sort((a,b)=>a.d-b.d);
+
+  if(laterToday.length)return laterToday;
+
+  return matching
+    .map(bus=>({b:bus,d:busDate(bus,true)}))
+    .sort((a,b)=>a.d-b.d);
+}
+
+function renderCampus(){
+  renderBusControls();
+  renderBuses();
+  renderMess();
+}
+
+function renderBusControls(){
+  const options=BUS_STOPS.map(stop=>
+    `<option value="${esc(stop)}">${esc(busStopLabel(stop))}</option>`
+  ).join("");
+
+  $("#busFrom").innerHTML=options;
+  $("#busTo").innerHTML=options;
+  $("#busFrom").value=state.busFrom;
+  $("#busTo").value=state.busTo;
+
+  // Common Phase 5 journeys remain one tap away.
+  const quickRoutes=[
+    ["Phase V Campus","PGP Auditorium"],
+    ["PGP Auditorium","Phase V Campus"],
+    ["Phase V Campus","Main Gate"],
+    ["Main Gate","Phase V Campus"]
+  ];
+
+  $("#quickRoutes").innerHTML=quickRoutes.map(([from,to])=>
+    `<button class="quick-route ${
+      state.busFrom===from&&state.busTo===to?"active":""
+    }" data-from="${esc(from)}" data-to="${esc(to)}">${
+      esc(busStopLabel(from))
+    } → ${esc(busStopLabel(to))}</button>`
+  ).join("");
+
+  $$(".quick-route").forEach(button=>
+    button.addEventListener("click",()=>{
+      state.busFrom=button.dataset.from;
+      state.busTo=button.dataset.to;
+      renderBusControls();
+      renderBuses();
+    })
+  );
+}
+
+function renderBuses(){
+  const upcoming=getUpcomingBuses();
+  const first=upcoming[0];
+  const now=new Date();
+
+  if(first){
+    $("#nextBusTime").textContent=fmtTime(first.b.time);
+    $("#nextBusRoute").textContent=
+      `${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;
+    $("#nextBusMeta").textContent=
+      first.b.mainGate?"Main Gate service":"Campus shuttle";
+
+    const remaining=Math.ceil((first.d-now)/60000);
+    $("#nextBusCountdown").textContent=remaining>=60
+      ?`${Math.floor(remaining/60)}h ${remaining%60}m`
+      :`${remaining} min`;
+
+    const stops=routeStops(first.b);
+    const fromIndex=stops.indexOf(state.busFrom);
+    const toIndex=stops.indexOf(state.busTo);
+
+    $("#nextBusVisual").innerHTML=stops
+      .slice(fromIndex,toIndex+1)
+      .map(stop=>
+        `<div class="route-stop"><i></i><span>${
+          esc(busStopLabel(stop))
+        }</span></div>`
+      ).join("");
+  }else{
+    $("#nextBusTime").textContent="—";
+    $("#nextBusRoute").textContent="No direct service";
+    $("#nextBusMeta").textContent="Try another origin or destination";
+    $("#nextBusCountdown").textContent="—";
+    $("#nextBusVisual").innerHTML="";
+  }
+
+  $("#upcomingBuses").innerHTML=upcoming.length
+    ?upcoming.slice(0,5).map(({b})=>busRow(b)).join("")
+    :'<div class="empty-state">No matching direct buses.</div>';
+
+  const allMatching=window.CAMPUS_DATA.bus.filter(bus=>
+    serviceSupports(bus,state.busFrom,state.busTo)
+  );
+
+  $("#fullBusList").innerHTML=allMatching.length
+    ?allMatching.map(busRow).join("")
+    :'<div class="empty-state">No matching direct buses.</div>';
+}
+
+function busRow(bus){
+  const route=routeStops(bus).map(busStopLabel).join(" · ");
+  return`<article class="bus-row ${bus.mainGate?"main-gate":""}">
+    <time>${esc(fmtTime(bus.time))}</time>
+    <div>
+      <strong>${esc(busStopLabel(state.busFrom))} → ${
+        esc(busStopLabel(state.busTo))
+      }</strong>
+      <p>${esc(route)}</p>
+      ${bus.mainGate?'<span class="route-badge">MAIN GATE</span>':""}
+    </div>
+  </article>`;
+}
+
+function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const menu=window.CAMPUS_DATA.mess[state.messDay],items=menu[state.meal]||[],nv=/chicken|fish|egg|omelette/i,sw=/gulab|halwa|ice cream|kheer|custard|badusha|sweet/i,non=items.filter(i=>nv.test(i)),sweet=items.filter(i=>sw.test(i)),veg=items.filter(i=>!nv.test(i)&&!sw.test(i));$("#messMenu").innerHTML=`<article class="meal-hero"><h3>${state.meal[0].toUpperCase()+state.meal.slice(1)}</h3>${veg.length?`<section class="food-section"><div class="food-section-title">Vegetarian</div><div class="food-items">${veg.map(i=>`<div class="food-item veg">${esc(i)}</div>`).join("")}</div></section>`:""}${non.length?`<section class="food-section"><div class="food-section-title">Non-vegetarian</div><div class="food-items">${non.map(i=>`<div class="food-item nonveg">${esc(i)}</div>`).join("")}</div></section>`:""}${sweet.length?`<section class="food-section"><div class="food-section-title">Dessert / Sweet</div><div class="food-items">${sweet.map(i=>`<div class="food-item sweet">${esc(i)}</div>`).join("")}</div></section>`:""}</article>`;$$(".meal-tab").forEach(b=>b.classList.toggle("active",b.dataset.meal===state.meal))}function renderProfile(){$("#profileName").value=state.profile.name||"";$("#profileSection").value=state.profile.section||"A";$("#profileTheme").value=state.profile.theme||"system";$("#profileDisplayName").textContent=state.profile.name||"Student";$("#profileSummary").textContent=`PGPBL · Section ${state.profile.section||"A"}`;$("#profileAvatar").textContent=initials(state.profile.name);$("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";$("#electiveChoices").innerHTML=(state.electives||[]).map(e=>`<label class="choice"><input type="checkbox" value="${esc(e.code)}" ${(state.profile.electives||[]).includes(canonical(e.code))?"checked":""}><span><strong>${esc(e.code)} · ${esc(e.course)}</strong><small>${esc(e.faculty)}</small></span></label>`).join("")}
 function renderNotifications(){const unread=state.notifications.filter(n=>!n.read).length;$("#notificationBadge").hidden=!unread;$("#notificationBadge").textContent=unread;$("#notificationList").innerHTML=state.notifications.length?state.notifications.map(n=>`<article class="notification-item ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><strong>${esc(n.title)}</strong><p>${esc(n.text)}</p><time>${new Intl.RelativeTimeFormat("en",{numeric:"auto"}).format(-Math.max(1,Math.round((Date.now()-n.createdAt)/3600000)),"hour")}</time></article>`).join(""):'<div class="empty-state">No schedule updates.</div>'}
 function openNotifications(){const d=$("#notificationDrawer");d.classList.add("open");d.setAttribute("aria-hidden","false")}
 function closeNotifications(){const d=$("#notificationDrawer");d.classList.remove("open");d.setAttribute("aria-hidden","true")}
@@ -203,7 +376,21 @@ function bindDismissibleDialog(dialog){
   dialog.addEventListener("cancel",e=>{e.preventDefault();closeDialog(dialog)});
   $$(".dialog-close,.dialog-cancel",dialog).forEach(b=>b.addEventListener("click",()=>closeDialog(dialog)));
 }
+
+function bindOutsideDismiss(dialog){
+  if(!dialog)return;
+  dialog.addEventListener("click",event=>{
+    if(event.target===dialog)dialog.close();
+  });
+  dialog.addEventListener("cancel",event=>{
+    event.preventDefault();
+    dialog.close();
+  });
+}
+
 function bind(){
+  bindOutsideDismiss($("#taskDialog"));
+  bindOutsideDismiss($("#noteDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   $("#themeToggle").addEventListener("click",()=>{state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile()});
   $("#timelineDaySwitch").addEventListener("click",e=>{const b=e.target.closest("[data-timeline-day]");if(!b)return;state.timelineDay=b.dataset.timelineDay;renderHome()});
@@ -220,7 +407,31 @@ function bind(){
   $("#openNoteForm").addEventListener("click",()=>{clearDialogValidation(noteDialog);noteDialog.showModal()});
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes()});
   $("#noteSearch").addEventListener("input",renderNotes);
-  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:$$('#electiveChoices input:checked').map(x=>canonical(x.value)),theme:$("#profileTheme").value};save(KEYS.profile,state.profile);applyTheme();syncSchedule(true)});$("#refreshData").addEventListener("click",()=>syncSchedule(true));$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));location.reload()}});
+  $("#profileForm").addEventListener("submit",async e=>{
+    e.preventDefault();
+
+    state.profile={
+      name:$("#profileName").value.trim(),
+      section:$("#profileSection").value,
+      electives:$$('#electiveChoices input:checked').map(x=>canonical(x.value)),
+      theme:$("#profileTheme").value
+    };
+
+    save(KEYS.profile,state.profile);
+    applyTheme();
+
+    // Refresh immediately from the already-cached complete schedule.
+    state.classes=filteredClasses();
+    renderCourseOptions();
+    renderHome();
+    renderCalendar();
+    renderTasks();
+    renderNotes();
+    renderProfile();
+
+    // Then fetch the latest classes/elective data in the background.
+    await syncSchedule(true);
+  });$("#refreshData").addEventListener("click",()=>syncSchedule(true));$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));location.reload()}});
   $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const l=$("#fullBusList"),c=l.classList.toggle("collapsed");$("#toggleFullBus").textContent=c?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("planner");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()})
 }
