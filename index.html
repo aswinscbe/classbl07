@@ -3,42 +3,66 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b111b">
-  <meta name="description" content="ClassBL07 — mobile-first academic command deck">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="BL07 · IIM Kozhikode — mobile-first academic companion">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
-  <title>ClassBL07</title>
+  <title>BL07 · IIM Kozhikode</title>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <button class="brand" data-go="home" aria-label="Open Home">
         <span class="brand-mark">07</span>
-        <span><strong>ClassBL07</strong><small>IIM Kozhikode</small></span>
+        <span class="brand-copy"><strong>ClassBL07</strong><small>IIM Kozhikode</small></span>
       </button>
+
+      <nav class="desktop-nav" aria-label="Primary">
+        <button class="desktop-nav-item active" data-page-target="home"><span data-icon="home"></span>Home</button>
+        <button class="desktop-nav-item" data-page-target="planner"><span data-icon="calendar"></span>Planner</button>
+        <button class="desktop-nav-item" data-page-target="campus"><span data-icon="campus"></span>Campus</button>
+        <button class="desktop-nav-item" data-page-target="profile"><span data-icon="profile"></span>Profile</button>
+      </nav>
+
       <div class="top-actions">
         <span class="sync-pill" id="syncPill"><i></i><span>Connecting</span></span>
-        <button class="icon-button" id="themeToggle" aria-label="Toggle theme">◐</button>
+        <button class="icon-button notification-button" id="notificationButton" aria-label="Open notifications">
+          <span data-icon="bell"></span><b id="notificationBadge" hidden>0</b>
+        </button>
+        <button class="icon-button" id="themeToggle" aria-label="Toggle theme"><span data-icon="theme"></span></button>
       </div>
     </header>
 
     <main class="page-wrap">
       <section class="page active" id="homePage" data-page="home">
-        <div class="page-heading">
+        <div class="page-heading home-heading">
           <div>
             <p class="overline" id="todayLabel">TODAY</p>
             <h1 id="greeting">Good evening, Aswin.</h1>
-            <p class="subtitle">Your day, without the noise.</p>
+            <p class="subtitle">Everything important, at a glance.</p><p class="home-sync-text" id="homeSyncText">Checking the latest schedule…</p>
+          </div>
+          <div class="date-orbit" aria-hidden="true">
+            <span id="dateOrbitDay">06</span>
+            <small id="dateOrbitMonth">AUG</small>
           </div>
         </div>
 
-        <section class="focus-panel" id="focusPanel" aria-live="polite">
-          <div class="focus-status"><span class="pulse"></span><span id="focusState">SYNCING SCHEDULE</span></div>
-          <div class="focus-main">
-            <div>
+        <section class="hero-card" id="focusPanel" aria-live="polite">
+          <div class="hero-glow hero-glow-one"></div>
+          <div class="hero-glow hero-glow-two"></div>
+          <div class="hero-top">
+            <div class="live-state"><span class="pulse"></span><span id="focusState">SYNCING SCHEDULE</span></div>
+            <span class="hero-course-dot" id="heroCourseDot"></span>
+          </div>
+          <div class="hero-main">
+            <div class="hero-copy">
               <div class="focus-code" id="focusCode">—</div>
               <h2 id="focusTitle">Loading your schedule</h2>
-              <p id="focusMeta">Please wait a moment.</p>
+              <div class="hero-meta-grid">
+                <span><i data-icon="clock"></i><b id="focusTime">—</b></span>
+                <span><i data-icon="pin"></i><b id="focusVenue">—</b></span>
+                <span><i data-icon="faculty"></i><b id="focusFaculty">—</b></span>
+              </div>
             </div>
             <div class="focus-countdown">
               <span id="focusCountdownLabel">STATUS</span>
@@ -48,8 +72,34 @@
           <div class="focus-progress"><span id="focusProgress"></span></div>
         </section>
 
+        <section class="silent-update-strip" id="silentUpdateStrip" hidden>
+          <div class="silent-update-icon"><span data-icon="spark"></span></div>
+          <div><strong id="silentUpdateTitle">Schedule updated</strong><p id="silentUpdateText">New changes are available.</p></div>
+          <button class="text-button" id="openUpdatesFromHome">View</button>
+        </section>
+
+        <section class="today-progress-card panel">
+          <div class="panel-heading timeline-heading">
+            <div>
+              <p class="overline">CLASS TIMELINE</p>
+              <h2 id="timelineDateTitle">Today</h2>
+              <p class="timeline-full-date" id="timelineFullDate"></p>
+            </div>
+            <span class="count-chip" id="progressSummary">0 / 0</span>
+          </div>
+          <div class="timeline-day-switch" id="timelineDaySwitch">
+            <button class="timeline-day-button active" data-timeline-day="today">
+              <span>Today</span><small id="todaySwitchDate"></small>
+            </button>
+            <button class="timeline-day-button" data-timeline-day="tomorrow">
+              <span>Tomorrow</span><small id="tomorrowSwitchDate"></small>
+            </button>
+          </div>
+          <div id="todayProgressRail"></div>
+        </section>
+
         <div class="home-grid">
-          <section class="panel">
+          <section class="panel schedule-panel">
             <div class="panel-heading">
               <div><p class="overline">TODAY</p><h2>Remaining classes</h2></div>
               <span class="count-chip" id="todayCount">0</span>
@@ -62,14 +112,14 @@
               <div><p class="overline">WEEK</p><h2>What remains</h2></div>
             </div>
             <div class="metric-grid">
-              <article class="metric"><strong id="weekClasses">0</strong><span>classes left</span></article>
-              <article class="metric"><strong id="weekHours">0h</strong><span>class time left</span></article>
-              <article class="metric"><strong id="weekCancelled">0</strong><span>cancelled</span></article>
+              <article class="metric"><span class="metric-icon" data-icon="books"></span><strong id="weekClasses">0</strong><span>classes left</span></article>
+              <article class="metric"><span class="metric-icon" data-icon="clock"></span><strong id="weekHours">0h</strong><span>class time left</span></article>
+              <article class="metric"><span class="metric-icon" data-icon="calendar"></span><strong id="weekCancelled">0</strong><span>cancelled</span></article>
             </div>
           </section>
         </div>
 
-        <section class="panel">
+        <section class="panel quick-task-panel">
           <div class="panel-heading">
             <div><p class="overline">QUICK CAPTURE</p><h2>Add a task</h2></div>
           </div>
@@ -77,7 +127,7 @@
             <input id="quickTaskTitle" type="text" placeholder="What needs to be done?" required maxlength="120">
             <select id="quickTaskCourse"><option value="">General</option></select>
             <input id="quickTaskDate" type="date">
-            <button type="submit" class="primary-button">Add</button>
+            <button type="submit" class="primary-button"><span data-icon="plus"></span>Add</button>
           </form>
           <div id="homeTasks" class="task-list"></div>
         </section>
@@ -85,25 +135,27 @@
 
       <section class="page" id="plannerPage" data-page="planner">
         <div class="page-heading">
-          <div><p class="overline">ACADEMIC PLANNER</p><h1>Calendar first.</h1><p class="subtitle">Classes, tasks and notes in one place.</p></div>
+          <div><p class="overline">ACADEMIC PLANNER</p><h1>See the month. Own the day.</h1><p class="subtitle">Calendar first, with tasks and notes close by.</p></div>
         </div>
+
         <div class="subtabs" id="plannerTabs">
-          <button class="subtab active" data-planner-tab="calendar">Calendar</button>
-          <button class="subtab" data-planner-tab="tasks">Tasks</button>
-          <button class="subtab" data-planner-tab="notes">Notes</button>
+          <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span>Calendar</button>
+          <button class="subtab" data-planner-tab="tasks"><span data-icon="check"></span>Tasks</button>
+          <button class="subtab" data-planner-tab="notes"><span data-icon="note"></span>Notes</button>
         </div>
 
         <section class="planner-view active" data-planner-view="calendar">
           <div class="calendar-layout">
             <article class="panel calendar-panel">
               <div class="calendar-head">
-                <button class="icon-button" id="prevMonth" aria-label="Previous month">‹</button>
+                <button class="icon-button" id="prevMonth" aria-label="Previous month"><span data-icon="chevron-left"></span></button>
                 <div><p class="overline">MONTH</p><h2 id="calendarTitle">August 2026</h2></div>
-                <button class="icon-button" id="nextMonth" aria-label="Next month">›</button>
+                <button class="icon-button" id="nextMonth" aria-label="Next month"><span data-icon="chevron-right"></span></button>
               </div>
-              <button class="today-button" id="todayButton">Jump to today</button>
+              <button class="today-button" id="todayButton"><span data-icon="target"></span>Jump to today</button>
               <div class="weekday-row"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
               <div class="calendar-grid" id="calendarGrid"></div>
+              <div class="calendar-legend" id="calendarLegend"></div>
             </article>
 
             <article class="panel agenda-panel">
@@ -120,7 +172,7 @@
           <article class="panel">
             <div class="panel-heading">
               <div><p class="overline">TASKS</p><h2>Stay ahead</h2></div>
-              <button class="primary-button small" id="openTaskForm">New task</button>
+              <button class="primary-button small" id="openTaskForm"><span data-icon="plus"></span>New task</button>
             </div>
             <div class="filter-row" id="taskFilters">
               <button class="filter active" data-task-filter="open">Open</button>
@@ -136,7 +188,7 @@
           <article class="panel">
             <div class="panel-heading">
               <div><p class="overline">NOTES</p><h2>Quick academic notes</h2></div>
-              <button class="primary-button small" id="openNoteForm">New note</button>
+              <button class="primary-button small" id="openNoteForm"><span data-icon="plus"></span>New note</button>
             </div>
             <input class="search-input" id="noteSearch" type="search" placeholder="Search notes">
             <div id="noteList" class="note-grid"></div>
@@ -149,41 +201,11 @@
           <div><p class="overline">CAMPUS</p><h1>Move. Eat. Repeat.</h1><p class="subtitle">Bus departures and today’s mess menu.</p></div>
         </div>
         <div class="subtabs">
-          <button class="subtab active" data-campus-tab="bus">Bus</button>
-          <button class="subtab" data-campus-tab="mess">Mess</button>
+          <button class="subtab active" data-campus-tab="bus"><span data-icon="bus"></span>Bus</button>
+          <button class="subtab" data-campus-tab="mess"><span data-icon="meal"></span>Mess</button>
         </div>
 
-        <section class="campus-view active" data-campus-view="bus">
-          <div class="campus-grid">
-            <article class="next-bus-card">
-              <p class="overline light">NEXT DEPARTURE</p>
-              <div class="next-bus-time" id="nextBusTime">—</div>
-              <h2 id="nextBusRoute">Checking timetable</h2>
-              <p id="nextBusMeta">Daily campus service</p>
-              <div class="countdown-box"><span>Leaves in</span><strong id="nextBusCountdown">—</strong></div>
-            </article>
-            <article class="panel">
-              <div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next buses</h2></div></div>
-              <div id="upcomingBuses" class="bus-list"></div>
-            </article>
-          </div>
-          <article class="panel">
-            <div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Bus timetable</h2></div></div>
-            <div id="fullBusList" class="bus-table"></div>
-          </article>
-        </section>
-
-        <section class="campus-view" data-campus-view="mess">
-          <article class="panel">
-            <div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2></div></div>
-            <div class="day-pills" id="messDayPills"></div>
-            <p class="menu-note">Menu is tentative and may change with market availability.</p>
-            <div id="messMenu" class="meal-grid"></div>
-          </article>
-        </section>
-      </section>
-
-      <section class="page" id="profilePage" data-page="profile">
+        <section class="campus-view active" data-campus-view="bus"><article class="panel route-planner"><div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2></div></div><div class="route-select-grid"><label><span>From</span><select id="busFrom"></select></label><button class="swap-route-button" id="swapBusRoute" aria-label="Swap route"><span data-icon="swap"></span></button><label><span>To</span><select id="busTo"></select></label></div><div class="quick-route-row" id="quickRoutes"></div></article><div class="campus-grid"><article class="next-bus-card route-card"><p class="overline light">NEXT DEPARTURE</p><div class="next-bus-time" id="nextBusTime">—</div><h2 id="nextBusRoute">Choose a route</h2><p id="nextBusMeta">Direct services only</p><div class="route-visual" id="nextBusVisual"></div><div class="countdown-box"><span>Leaves in</span><strong id="nextBusCountdown">—</strong></div></article><article class="panel"><div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next departures</h2></div></div><div id="upcomingBuses" class="bus-list"></div></article></div><article class="panel"><div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small-toggle" id="toggleFullBus">Show all</button></div><div id="fullBusList" class="bus-table collapsed"></div></article></section><section class="campus-view" data-campus-view="mess"><article class="panel mess-shell"><div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2></div></div><div class="day-pills" id="messDayPills"></div><div class="meal-tabs" id="mealTabs"><button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button><button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button><button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button></div><p class="menu-note">Menu is tentative and may change with market availability.</p><div id="messMenu" class="meal-showcase"></div></article></section></section><section class="page" id="profilePage" data-page="profile">
         <div class="page-heading"><div><p class="overline">PROFILE</p><h1>Make it yours.</h1><p class="subtitle">Your section, electives and preferences.</p></div></div>
         <div class="profile-layout">
           <article class="profile-hero">
@@ -201,6 +223,8 @@
           </article>
           <article class="panel">
             <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
+            <div class="settings-row"><div><strong>Open calendar</strong><p>Open Google Calendar in a new tab.</p></div><a class="secondary-button link-button" href="https://calendar.google.com" target="_blank" rel="noopener">Open</a></div>
+            <div class="settings-row"><div><strong>App version</strong><p>BL07 Final · 2.1.0</p></div><span class="version-chip">2.1.0</span></div>
             <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>
           </article>
         </div>
@@ -208,30 +232,44 @@
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
-      <button class="nav-item active" data-page-target="home"><span>⌂</span><b>Home</b></button>
-      <button class="nav-item" data-page-target="planner"><span>▦</span><b>Planner</b></button>
-      <button class="nav-item" data-page-target="campus"><span>⌁</span><b>Campus</b></button>
-      <button class="nav-item" data-page-target="profile"><span>◎</span><b>Profile</b></button>
+      <button class="nav-item active" data-page-target="home"><span data-icon="home"></span><b>Home</b></button>
+      <button class="nav-item" data-page-target="planner"><span data-icon="calendar"></span><b>Planner</b></button>
+      <button class="nav-item" data-page-target="campus"><span data-icon="campus"></span><b>Campus</b></button>
+      <button class="nav-item" data-page-target="profile"><span data-icon="profile"></span><b>Profile</b></button>
     </nav>
   </div>
 
+  <aside class="notification-drawer" id="notificationDrawer" aria-hidden="true">
+    <div class="notification-backdrop" id="notificationBackdrop"></div>
+    <div class="notification-panel">
+      <div class="notification-head">
+        <div><p class="overline">UPDATES</p><h2>Notifications</h2></div>
+        <button class="icon-button" id="closeNotifications"><span data-icon="close"></span></button>
+      </div>
+      <div id="notificationList" class="notification-list"></div>
+      <button class="secondary-button full-width" id="markNotificationsRead">Mark all as read</button>
+    </div>
+  </aside>
+
+  <dialog id="shortcutDialog"><div class="dialog-card shortcut-card"><div class="dialog-head"><div><p class="overline">KEYBOARD</p><h2>Shortcuts</h2></div><button class="icon-button" id="closeShortcutDialog"><span data-icon="close"></span></button></div><div class="shortcut-grid"><span><kbd>H</kbd><b>Home</b></span><span><kbd>P</kbd><b>Planner</b></span><span><kbd>C</kbd><b>Campus</b></span><span><kbd>R</kbd><b>Refresh</b></span><span><kbd>N</kbd><b>Notifications</b></span><span><kbd>?</kbd><b>Shortcut help</b></span></div></div></dialog>
+
   <dialog id="taskDialog">
     <form method="dialog" id="taskForm" class="dialog-card">
-      <div class="dialog-head"><div><p class="overline">TASK</p><h2>Add task</h2></div><button value="cancel" class="icon-button">×</button></div>
+      <div class="dialog-head"><div><p class="overline">TASK</p><h2>Add task</h2></div><button type="button" class="icon-button dialog-close" aria-label="Close"><span data-icon="close"></span></button></div>
       <input id="taskTitle" placeholder="Task title" required maxlength="120">
       <select id="taskCourse"><option value="">General</option></select>
       <input id="taskDate" type="date">
-      <div class="dialog-actions"><button value="cancel" class="secondary-button">Cancel</button><button value="default" class="primary-button" id="saveTaskButton">Save</button></div>
+      <div class="dialog-actions"><button type="button" class="secondary-button dialog-cancel">Cancel</button><button type="button" class="primary-button" id="saveTaskButton">Save</button></div>
     </form>
   </dialog>
 
   <dialog id="noteDialog">
     <form method="dialog" id="noteForm" class="dialog-card">
-      <div class="dialog-head"><div><p class="overline">NOTE</p><h2>New note</h2></div><button value="cancel" class="icon-button">×</button></div>
+      <div class="dialog-head"><div><p class="overline">NOTE</p><h2>New note</h2></div><button type="button" class="icon-button dialog-close" aria-label="Close"><span data-icon="close"></span></button></div>
       <input id="noteTitle" placeholder="Note title" required maxlength="100">
       <select id="noteCourse"><option value="">General</option></select>
       <textarea id="noteBody" placeholder="Write your note…" required></textarea>
-      <div class="dialog-actions"><button value="cancel" class="secondary-button">Cancel</button><button value="default" class="primary-button" id="saveNoteButton">Save</button></div>
+      <div class="dialog-actions"><button type="button" class="secondary-button dialog-cancel">Cancel</button><button type="button" class="primary-button" id="saveNoteButton">Save</button></div>
     </form>
   </dialog>
 

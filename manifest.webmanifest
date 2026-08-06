@@ -1,10 +1,10 @@
 {
-  "name": "ClassBL07 Command Deck",
-  "short_name": "ClassBL07",
+  "name": "BL07 \u00b7 IIM Kozhikode",
+  "short_name": "BL07",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0b111b",
-  "theme_color": "#0b111b",
-  "description": "Mobile-first academic dashboard for PGPBL07 Term III",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "description": "Academic and campus companion for PGPBL07",
   "icons": []
 }
