@@ -369,7 +369,21 @@ function bindDismissibleDialog(dialog){
   dialog.addEventListener("cancel",e=>{e.preventDefault();closeDialog(dialog)});
   $$(".dialog-close,.dialog-cancel",dialog).forEach(b=>b.addEventListener("click",()=>closeDialog(dialog)));
 }
+
+function bindOutsideDismiss(dialog){
+  if(!dialog)return;
+  dialog.addEventListener("click",event=>{
+    if(event.target===dialog)dialog.close();
+  });
+  dialog.addEventListener("cancel",event=>{
+    event.preventDefault();
+    dialog.close();
+  });
+}
+
 function bind(){
+  bindOutsideDismiss($("#taskDialog"));
+  bindOutsideDismiss($("#noteDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   $("#themeToggle").addEventListener("click",()=>{state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile()});
   $("#timelineDaySwitch").addEventListener("click",e=>{const b=e.target.closest("[data-timeline-day]");if(!b)return;state.timelineDay=b.dataset.timelineDay;renderHome()});

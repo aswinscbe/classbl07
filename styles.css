@@ -559,3 +559,462 @@ dialog{
   .swap-route-button{width:100%;transform:none}
   .swap-label{display:inline}
 }
+
+
+/* Phase 6 polished-safe UI 2.4.0 */
+
+/* Larger top navigation on desktop */
+@media (min-width: 920px){
+  .desktop-nav{
+    min-width:520px;
+    min-height:60px;
+    padding:7px;
+    gap:8px;
+    border-radius:20px;
+  }
+  .desktop-nav-item{
+    flex:1;
+    min-height:46px;
+    justify-content:center;
+    padding:0 18px;
+    border-radius:15px;
+    font-size:14px;
+    font-weight:900;
+  }
+  .desktop-nav-item svg{
+    width:20px;
+    height:20px;
+  }
+}
+
+/* Stronger Happening Now / focus card */
+.hero-card{
+  position:relative;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--primary) 28%,var(--border));
+  box-shadow:
+    0 22px 55px color-mix(in srgb,var(--primary) 18%,rgba(0,0,0,.18)),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+.hero-card::after{
+  content:"";
+  position:absolute;
+  inset:auto -10% -46% auto;
+  width:240px;
+  height:240px;
+  border-radius:50%;
+  background:radial-gradient(circle,color-mix(in srgb,var(--primary) 20%,transparent),transparent 68%);
+  pointer-events:none;
+}
+.hero-main{
+  position:relative;
+  z-index:1;
+}
+.focus-code{
+  font-weight:950;
+  letter-spacing:.12em;
+}
+#focusTitle{
+  font-size:clamp(28px,4vw,42px);
+  line-height:1.06;
+  letter-spacing:-.045em;
+}
+.focus-countdown strong{
+  font-size:clamp(28px,4vw,40px);
+}
+.focus-progress{
+  height:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.12);
+  overflow:hidden;
+}
+.focus-progress span{
+  border-radius:inherit;
+  box-shadow:0 0 18px color-mix(in srgb,var(--primary) 42%,transparent);
+}
+
+/* Richer Today / Tomorrow timeline */
+.timeline-day-switch{
+  padding:6px;
+  gap:8px;
+}
+.timeline-day-button{
+  min-height:52px;
+}
+.vertical-class{
+  grid-template-columns:84px 24px minmax(0,1fr);
+}
+.vertical-time{
+  font-size:23px;
+  color:var(--text);
+}
+.vertical-content{
+  padding:16px;
+  border-radius:18px;
+  background:var(--surface-2);
+  box-shadow:0 8px 20px rgba(0,0,0,.06);
+}
+.vertical-class.current .vertical-content{
+  border-width:1px;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb,var(--course) 13%,transparent),
+    0 12px 30px color-mix(in srgb,var(--course) 12%,transparent);
+}
+.vertical-content strong{
+  font-size:15px;
+  line-height:1.35;
+}
+.vertical-content p{
+  font-size:11px;
+  line-height:1.45;
+}
+
+/* Planner utilities */
+.planner-heading-actions{
+  align-items:center;
+}
+.planner-utility-links{
+  display:flex;
+  gap:8px;
+  flex:0 0 auto;
+}
+.utility-link{
+  text-decoration:none;
+  opacity:.82;
+}
+.utility-link:hover{
+  opacity:1;
+  color:var(--primary);
+  border-color:color-mix(in srgb,var(--primary) 42%,var(--border));
+  transform:translateY(-1px);
+}
+
+/* Richer calendar hover popup, using existing JS */
+.calendar-tooltip{
+  min-width:250px;
+  max-width:310px;
+  padding:0;
+  overflow:hidden;
+  border-radius:18px;
+  border-color:color-mix(in srgb,var(--primary) 28%,var(--border));
+  background:var(--surface);
+  box-shadow:0 22px 58px rgba(0,0,0,.28);
+}
+.calendar-tooltip h4{
+  margin:0;
+  padding:13px 14px 11px;
+  font-size:13px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 12%,var(--surface)),var(--surface));
+}
+.calendar-tooltip-row{
+  padding:10px 14px;
+  grid-template-columns:64px minmax(0,1fr);
+}
+.calendar-tooltip-row time{
+  color:var(--text);
+  font-size:11px;
+  font-weight:950;
+}
+.calendar-tooltip-row strong{
+  color:var(--text);
+  font-size:11px;
+  line-height:1.4;
+}
+
+/* Sharper selected-day agenda */
+.agenda-panel{
+  border-color:color-mix(in srgb,var(--primary) 18%,var(--border));
+}
+.agenda-time-block time{
+  font-size:21px;
+  font-weight:950;
+  color:var(--text);
+}
+.agenda-course-line h3{
+  font-size:15px;
+  font-weight:850;
+  color:var(--text);
+}
+.agenda-meta-row{
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.45;
+}
+
+/* Bus visual polish only; routing logic remains from the tested bus-fix build */
+.route-planner{
+  border-color:color-mix(in srgb,var(--primary) 18%,var(--border));
+}
+.route-select-grid select{
+  min-height:48px;
+  font-weight:850;
+}
+.swap-route-button{
+  background:color-mix(in srgb,var(--primary) 9%,var(--surface-2));
+  color:var(--primary);
+}
+.next-bus-card{
+  box-shadow:0 18px 44px color-mix(in srgb,var(--primary) 15%,rgba(0,0,0,.18));
+}
+.next-bus-time{
+  font-size:clamp(38px,6vw,58px);
+  letter-spacing:-.05em;
+}
+.bus-row{
+  transition:transform .16s ease,border-color .16s ease,background .16s ease;
+}
+@media(hover:hover){
+  .bus-row:hover{
+    transform:translateY(-2px);
+    border-color:color-mix(in srgb,var(--primary) 34%,var(--border));
+    background:color-mix(in srgb,var(--primary) 5%,var(--surface-2));
+  }
+}
+
+/* Mobile touch targets */
+@media (max-width: 919px){
+  .nav-item{
+    min-height:56px;
+  }
+  .planner-heading-actions{
+    align-items:flex-start;
+  }
+  .planner-utility-links{
+    padding-top:2px;
+  }
+}
+@media (max-width: 520px){
+  .vertical-class{
+    grid-template-columns:70px 20px minmax(0,1fr);
+  }
+  .vertical-time{
+    font-size:19px;
+  }
+  .planner-utility-links{
+    gap:5px;
+  }
+  .utility-link{
+    width:38px;
+    height:38px;
+  }
+}
+
+
+/* Final clarity pass 2.5.0 */
+
+/* Calendar weekday labels */
+.weekday-row span{
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.01em;
+  text-transform:none;
+  color:var(--muted);
+}
+
+/* Calendar subject indicators: line/bar treatment */
+.calendar-dots,
+.calendar-events,
+.day-dots,
+.event-dots{
+  display:flex;
+  align-items:center;
+  gap:3px;
+  width:100%;
+  min-height:7px;
+  margin-top:5px;
+}
+.calendar-dot,
+.calendar-event-dot,
+.day-dot,
+.event-dot{
+  width:auto !important;
+  min-width:10px;
+  height:4px !important;
+  flex:1 1 0;
+  max-width:22px;
+  border-radius:999px !important;
+  box-shadow:none !important;
+}
+
+/* If the build uses generic i elements for calendar markers */
+.calendar-day .course-dot,
+.calendar-day .dot{
+  width:auto !important;
+  min-width:10px;
+  height:4px !important;
+  flex:1 1 0;
+  max-width:22px;
+  border-radius:999px !important;
+}
+
+/* Stronger date readability */
+.calendar-day{
+  min-height:76px;
+  align-content:start;
+}
+.calendar-day > strong,
+.calendar-day-number,
+.day-number{
+  font-size:13px;
+  font-weight:900;
+  color:var(--text);
+}
+
+/* More expressive current class card */
+.hero-card{
+  min-height:260px;
+}
+.hero-top{
+  margin-bottom:20px;
+}
+.live-state{
+  font-size:10px;
+  letter-spacing:.13em;
+  font-weight:950;
+}
+#focusTitle{
+  max-width:780px;
+}
+.hero-meta-grid{
+  gap:10px 18px;
+}
+.hero-meta-grid span{
+  font-size:12px;
+}
+.focus-countdown{
+  min-width:150px;
+}
+.focus-countdown span{
+  font-size:9px;
+  letter-spacing:.12em;
+  font-weight:900;
+}
+
+/* Timeline: old-style clarity with modern spacing */
+.today-progress-card{
+  overflow:visible;
+}
+.vertical-day-timeline{
+  position:relative;
+}
+.vertical-class{
+  position:relative;
+  min-height:102px;
+}
+.vertical-line{
+  position:relative;
+}
+.vertical-line::before{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:-18px;
+  left:50%;
+  width:3px;
+  transform:translateX(-50%);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--border) 76%,transparent);
+}
+.vertical-class:last-child .vertical-line::before{
+  bottom:50%;
+}
+.vertical-dot{
+  position:relative;
+  z-index:2;
+  width:13px;
+  height:13px;
+  border:3px solid var(--surface);
+  box-shadow:0 0 0 2px var(--course);
+  background:var(--course);
+}
+.vertical-class.current .vertical-dot{
+  width:16px;
+  height:16px;
+  box-shadow:
+    0 0 0 3px var(--surface),
+    0 0 0 6px color-mix(in srgb,var(--course) 72%,transparent),
+    0 0 20px color-mix(in srgb,var(--course) 52%,transparent);
+}
+.vertical-class.done{
+  opacity:.62;
+}
+.vertical-class.cancelled .vertical-content{
+  opacity:.72;
+  text-decoration:none;
+}
+.vertical-time{
+  padding-top:17px;
+  letter-spacing:-.045em;
+}
+.vertical-time small{
+  margin-top:5px;
+  font-size:9px;
+  color:var(--muted);
+}
+
+/* Calendar hover popup clarity */
+.calendar-tooltip-row{
+  position:relative;
+  border-top:1px solid var(--border);
+}
+.calendar-tooltip-row:first-of-type{
+  border-top:0;
+}
+.calendar-tooltip-row::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:9px;
+  bottom:9px;
+  width:4px;
+  border-radius:0 999px 999px 0;
+  background:var(--primary);
+}
+
+/* Selected day agenda */
+.agenda-class-card{
+  border-left-width:5px;
+}
+.agenda-card-body{
+  padding-top:2px;
+}
+.agenda-meta-row:first-child{
+  color:var(--text);
+  font-weight:700;
+}
+
+@media(max-width:620px){
+  .weekday-row span{
+    font-size:9px;
+  }
+  .calendar-day{
+    min-height:64px;
+  }
+  .hero-card{
+    min-height:auto;
+  }
+  .focus-countdown{
+    min-width:0;
+  }
+}
+
+
+/* Exact Phase 6 calendar marker classes */
+.calendar-course-dots{
+  display:flex;
+  align-items:center;
+  gap:3px;
+  width:100%;
+  min-height:7px;
+  margin-top:5px;
+}
+.calendar-course-dots i{
+  display:block;
+  flex:1 1 0;
+  min-width:10px;
+  max-width:24px;
+  height:4px;
+  border-radius:999px;
+  background:var(--course);
+}
