@@ -1018,3 +1018,27 @@ dialog{
   border-radius:999px;
   background:var(--course);
 }
+
+
+/* Final Clarity 2.6.0 — first-launch setup */
+.onboarding-dialog{width:min(94vw,620px)}
+.onboarding-dialog::backdrop{background:rgba(3,10,20,.72);backdrop-filter:blur(8px)}
+.onboarding-card{width:100%;max-width:none;gap:20px}
+.onboarding-progress{display:flex;gap:7px}
+.onboarding-progress span{height:5px;flex:1;border-radius:999px;background:var(--border)}
+.onboarding-progress span.active{background:var(--primary)}
+.onboarding-step{display:none}
+.onboarding-step.active{display:grid;gap:18px}
+.onboarding-step h2{margin:0;font-size:26px;line-height:1.1;letter-spacing:-.035em}
+.onboarding-copy{margin:-8px 0 0;color:var(--muted);font-size:12px;line-height:1.55}
+.onboarding-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.onboarding-section-choice,.onboarding-elective-choice{position:relative;cursor:pointer}
+.onboarding-section-choice input,.onboarding-elective-choice input{position:absolute;opacity:0;pointer-events:none}
+.onboarding-section-choice span{display:grid;gap:5px;min-height:110px;align-content:center;padding:18px;border:1px solid var(--border);border-radius:18px;background:var(--surface-2)}
+.onboarding-section-choice input:checked + span,.onboarding-elective-choice input:checked + span{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 9%,var(--surface-2));box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 10%,transparent)}
+.onboarding-section-choice small,.onboarding-elective-choice small{color:var(--muted);font-size:9px;line-height:1.4}
+.onboarding-elective-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:min(48vh,430px);overflow:auto;padding:2px}
+.onboarding-elective-choice span{display:grid;gap:4px;height:100%;padding:14px;border:1px solid var(--border);border-radius:15px;background:var(--surface-2)}
+.onboarding-elective-choice strong{font-size:11px;line-height:1.35}
+.onboarding-actions{grid-template-columns:1fr 1.3fr}
+@media(max-width:560px){.onboarding-section-grid,.onboarding-elective-list{grid-template-columns:1fr}}

@@ -236,7 +236,7 @@
           <article class="panel">
             <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
             <div class="settings-row"><div><strong>Open calendar</strong><p>Open Google Calendar in a new tab.</p></div><a class="secondary-button link-button" href="https://calendar.google.com" target="_blank" rel="noopener">Open</a></div>
-            <div class="settings-row"><div><strong>App version</strong><p>BL07 Final Clarity · 2.5.3</p></div><span class="version-chip">2.5.3</span></div>
+            <div class="settings-row"><div><strong>App version</strong><p>BL07 Final Clarity · 2.6.0</p></div><span class="version-chip">2.6.0</span></div>
             <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>
           </article>
         </div>
@@ -285,8 +285,49 @@
     </form>
   </dialog>
 
+
+  <dialog id="onboardingDialog" class="onboarding-dialog">
+    <form id="onboardingForm" class="dialog-card onboarding-card">
+      <div class="onboarding-progress" aria-hidden="true">
+        <span class="active" data-onboarding-progress="1"></span>
+        <span data-onboarding-progress="2"></span>
+      </div>
+
+      <section class="onboarding-step active" data-onboarding-step="1">
+        <p class="overline">WELCOME TO BL07</p>
+        <h2>Set up your schedule</h2>
+        <p class="onboarding-copy">Choose your section first. You can update it later from Profile.</p>
+
+        <div class="onboarding-section-grid">
+          <label class="onboarding-section-choice">
+            <input type="radio" name="onboardingSection" value="A" checked>
+            <span><strong>Section A</strong><small>Core timetable for Section A</small></span>
+          </label>
+          <label class="onboarding-section-choice">
+            <input type="radio" name="onboardingSection" value="B">
+            <span><strong>Section B</strong><small>Core timetable for Section B</small></span>
+          </label>
+        </div>
+
+        <button type="button" class="primary-button full-width" id="onboardingContinue">Continue</button>
+      </section>
+
+      <section class="onboarding-step" data-onboarding-step="2">
+        <p class="overline">YOUR ELECTIVES</p>
+        <h2>Choose your electives</h2>
+        <p class="onboarding-copy">Only selected electives will appear in your personal timetable.</p>
+
+        <div id="onboardingElectives" class="onboarding-elective-list"></div>
+
+        <div class="dialog-actions onboarding-actions">
+          <button type="button" class="secondary-button" id="onboardingBack">Back</button>
+          <button type="submit" class="primary-button">Finish setup</button>
+        </div>
+      </section>
+    </form>
+  </dialog>
+
   <script src="campus-data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
-<!--rebuild -->
