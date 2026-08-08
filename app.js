@@ -730,7 +730,7 @@ async function init(){
   maybeOpenOnboarding();
   syncSchedule(false);
   setInterval(()=>{renderHome();renderBuses()},30000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260809-mobile1",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
