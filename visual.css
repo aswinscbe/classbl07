@@ -121,6 +121,30 @@ html[data-theme=light] .filter-row,html[data-theme=light] .meal-tabs,html[data-t
 @media(max-width:620px){.progress-week-card>.term-progress-card,.progress-week-card>.compact-panel{padding:15px}.bus-table .bus-row{grid-template-columns:80px minmax(0,1fr);min-height:66px;padding:11px}.bus-table .bus-row time{font-size:18px}.bus-table .bus-row strong{font-size:12px}.bus-table .bus-row p{font-size:9px}.bus-table.collapsed{max-height:290px}}
 
 .timeline-course-line{display:flex;align-items:center;gap:9px;min-width:0}.timeline-code-chip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;border-radius:9px;background:color-mix(in srgb,var(--course) 15%,var(--surface-2));color:var(--course);font-size:10px;font-weight:900;line-height:1;letter-spacing:.055em}.timeline-course-line strong{min-width:0}.vertical-status{font-size:10px;font-weight:800;letter-spacing:.045em;margin-top:7px}.vertical-class.upcoming .vertical-status{font-size:11px}
+.timeline-course-line>strong{display:inline-flex!important;align-items:center;gap:7px;width:fit-content;max-width:100%;padding:4px 9px;border:1px solid color-mix(in srgb,var(--course) 30%,var(--border));border-radius:11px;background:color-mix(in srgb,var(--course) 7%,var(--surface-2));line-height:1.3;overflow-wrap:anywhere}
 .task-item>div{cursor:pointer}.task-item>div:hover strong{color:var(--primary)}
 .route-select-grid{align-items:end}.route-select-grid label{display:flex;flex-direction:column;justify-content:flex-end;min-width:0}.route-select-grid select,.swap-route-button{height:46px;min-height:46px;margin:0}.swap-route-button{align-self:end}.bus-list .bus-row strong,.bus-table .bus-row strong{font-size:14px;line-height:1.35}.bus-list .bus-row p,.bus-table .bus-row p{font-size:11px;line-height:1.45}
 @media(max-width:620px){.timeline-course-line{align-items:flex-start;gap:8px}.timeline-code-chip{margin-top:1px}.vertical-status{font-size:10px}.vertical-class.upcoming .vertical-status{font-size:11px}.route-select-grid{align-items:end}.route-select-grid select,.swap-route-button{height:44px;min-height:44px}.bus-list .bus-row strong,.bus-table .bus-row strong{font-size:13px}.bus-list .bus-row p,.bus-table .bus-row p{font-size:10px}}
+
+/* Mobile stability and compact interaction pass */
+.app-toast{position:fixed;left:50%;bottom:calc(94px + env(safe-area-inset-bottom));z-index:180;max-width:calc(100% - 32px);padding:11px 16px;border:1px solid color-mix(in srgb,var(--emerald) 38%,var(--border));border-radius:999px;background:color-mix(in srgb,var(--surface-solid) 94%,transparent);color:var(--text);font-size:12px;font-weight:800;box-shadow:0 16px 42px rgba(0,0,0,.26);opacity:0;transform:translate(-50%,12px);pointer-events:none;transition:opacity .2s ease,transform .28s var(--ease-spring);backdrop-filter:blur(18px)}
+.app-toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:620px){
+  .route-select-grid{grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);gap:7px;align-items:end}
+  .route-select-grid select{width:100%;min-width:0;padding-left:10px;padding-right:25px;font-size:12px;text-overflow:ellipsis}
+  .swap-route-button{width:44px!important;min-width:44px;padding:0;display:grid;place-items:center;border-radius:14px}
+  .swap-route-button svg{width:19px;height:19px}.swap-label{display:none!important}
+  .day-pills{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;overflow:visible;padding-bottom:8px}
+  .day-pill{min-width:0;min-height:38px;padding:0 2px;font-size:9px;letter-spacing:.02em}
+  .profile-form .choice-grid{gap:0;overflow:hidden;border:1px solid var(--border);border-radius:17px;background:var(--surface-2)}
+  .profile-form .choice{min-height:0;margin:0;padding:13px 12px;align-items:center;border:0;border-radius:0;background:transparent;box-shadow:none}
+  .profile-form .choice+.choice{border-top:1px solid var(--border)}
+  .profile-form .choice input{margin:0}.profile-form .choice strong{font-size:12px}.profile-form .choice small{font-size:10px}
+  html[data-theme=light] .profile-form .choice-grid{background:#fff;border-color:rgba(59,53,94,.14);box-shadow:0 8px 24px rgba(49,42,91,.07)}
+  html[data-theme=light] .profile-form .choice{background:transparent!important}
+  #taskDialog .dialog-card{width:100%;min-width:0}
+  #taskDialog input,#taskDialog select{display:block;width:100%;max-width:100%;min-width:0;font-size:16px}
+  #taskDate{inline-size:100%;min-inline-size:0;max-inline-size:100%}
+  .weekday-row span{font-size:11px;font-weight:850;letter-spacing:.02em}
+  .calendar-day-number{font-size:15px;font-weight:850}
+}
