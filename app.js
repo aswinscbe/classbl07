@@ -11,6 +11,7 @@ const colorFor=c=>COURSE_COLORS[canonical(c)]||"#7b8aa2";
 const venueOf=c=>c.venue||c.room||"Venue TBA";
 function load(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function showToast(message){let toast=$("#appToast");if(!toast){toast=document.createElement("div");toast.id="appToast";toast.className="app-toast";toast.setAttribute("role","status");toast.setAttribute("aria-live","polite");document.body.appendChild(toast)}toast.textContent=message;toast.classList.remove("show");requestAnimationFrame(()=>toast.classList.add("show"));clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.classList.remove("show"),2400)}
 function istParts(date=new Date()){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23",weekday:"long"}).formatToParts(date);return Object.fromEntries(parts.map(p=>[p.type,p.value]))}
 function isoToday(){const p=istParts();return`${p.year}-${p.month}-${p.day}`}
 function weekdayKey(d=new Date()){return istParts(d).weekday.toLowerCase()}
@@ -52,7 +53,6 @@ function classIdentity(c){return`${c.dateIso}|${c.startTime}|${canonical(c.code)
 function tomorrowIso(){const d=new Date(`${isoToday()}T12:00:00+05:30`);d.setDate(d.getDate()+1);return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
 function isClassCompleted(c){
   if(c.status==="Cancelled")return false;
-  if(c.dateIso!==isoToday())return false;
   return Date.now()>=dateTime(c,"endTime").getTime();
 }
 function wasRecentlyAdded(c){
@@ -339,6 +339,8 @@ function serviceSupports(bus,from,to){
   return fromIndex>=0&&toIndex>fromIndex;
 }
 
+function isMainGateService(bus){return bus.from==="Main Gate"||bus.to==="Main Gate"}
+
 function getUpcomingBuses(){
   const now=new Date();
   const matching=window.CAMPUS_DATA.bus.filter(bus=>
@@ -409,7 +411,7 @@ function renderBuses(){
     $("#nextBusRoute").textContent=
       `${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;
     $("#nextBusMeta").textContent=
-      first.b.mainGate?"Main Gate service":"Campus shuttle";
+      isMainGateService(first.b)?"Main Gate service":"Campus shuttle";
 
     const remaining=Math.ceil((first.d-now)/60000);
     $("#nextBusCountdown").textContent=remaining>=60
@@ -450,14 +452,15 @@ function renderBuses(){
 
 function busRow(bus){
   const route=routeStops(bus).map(busStopLabel).join(" · ");
-  return`<article class="bus-row ${bus.mainGate?"main-gate":""}">
+  const mainGate=isMainGateService(bus);
+  return`<article class="bus-row ${mainGate?"main-gate":""}">
     <time>${esc(fmtTime(bus.time))}</time>
     <div>
       <strong>${esc(busStopLabel(state.busFrom))} → ${
         esc(busStopLabel(state.busTo))
       }</strong>
       <p>${esc(route)}</p>
-      ${bus.mainGate?'<span class="route-badge">MAIN GATE</span>':""}
+      ${mainGate?'<span class="route-badge">MAIN GATE</span>':""}
     </div>
   </article>`;
 }
@@ -686,9 +689,9 @@ function bind(){
     setTimelineDay(next,direction==="left"?"forward":"backward");
   });
   $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);
-  $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome()});
+  $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();closeNotifications();showToast("Notifications marked as read")});
   $("#clearNotifications")?.addEventListener("click",()=>{
-    state.notifications=[];save(KEYS.notifications,state.notifications);renderNotifications();renderHome();
+    state.notifications=[];save(KEYS.notifications,state.notifications);renderNotifications();renderHome();closeNotifications();showToast("Notifications cleared");
   });
   $("#chooseElectivesButton")?.addEventListener("click",()=>openOnboardingManually());
   $("#connectGoogleTasks")?.addEventListener("click",()=>connectGoogleTasks());
@@ -709,7 +712,7 @@ function bind(){
   $("#openNoteForm").addEventListener("click",()=>{clearDialogValidation(noteDialog);noteDialog.showModal()});
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes()});
   $("#noteSearch").addEventListener("input",renderNotes);
-  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:$$('#electiveChoices input:checked').map(x=>canonical(x.value)),theme:$("#profileTheme").value};save(KEYS.profile,state.profile);applyTheme();syncSchedule(true)});$("#refreshData").addEventListener("click",()=>syncSchedule(true));$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));location.reload()}});
+  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:$$('#electiveChoices input:checked').map(x=>canonical(x.value)),theme:$("#profileTheme").value};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",()=>syncSchedule(true));$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));location.reload()}});
   $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const l=$("#fullBusList"),c=l.classList.toggle("collapsed");$("#toggleFullBus").textContent=c?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("planner");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()})
 }
@@ -730,7 +733,7 @@ async function init(){
   maybeOpenOnboarding();
   syncSchedule(false);
   setInterval(()=>{renderHome();renderBuses()},30000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260809-mobile1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260809-mobile2",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
