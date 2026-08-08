@@ -18,7 +18,7 @@ function fmtTime(t){const[h,m]=t.split(":").map(Number);return new Intl.DateTime
 function fmtDate(iso,o={weekday:"long",day:"numeric",month:"short"}){return new Intl.DateTimeFormat("en-IN",o).format(new Date(`${iso}T12:00:00+05:30`))}
 function initials(n){return String(n||"AS").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function icon(name){const p={
-home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9 20v-6h6v6"/>',
+home:'<path d="M3.5 11 12 3.5 20.5 11V20a1 1 0 0 1-1 1h-4v-6h-5v6H4.5a1 1 0 0 1-1-1Z"/>',
 calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
 campus:'<path d="M4 20h16M6 20V9l6-4 6 4v11M9 20v-5h6v5"/>',
 profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4-6 8-6s6.5 2 8 6"/>',
@@ -31,21 +31,30 @@ spark:'<path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z"/><
 books:'<path d="M4 19V5h5v14H4Zm6 0V3h5v16h-5Zm6 0V7h4v12h-4Z"/>',
 plus:'<path d="M12 5v14M5 12h14"/>',
 check:'<path d="m5 12 4 4L19 6"/>',
-note:'<path d="M5 3h14v18H5z"/><path d="M8 7h8M8 11h8M8 15h5"/>',
+note:'<path d="M5 4h11l3 3v13H5z"/><path d="M8 8h7M8 12h7M8 16h5"/>',
 'chevron-left':'<path d="m15 18-6-6 6-6"/>','chevron-right':'<path d="m9 18 6-6-6-6"/>',
 target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/>',
 bus:'<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M7 18v3M17 18v3M4 11h16M8 7h8"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/>',
 meal:'<path d="M7 3v8M4 3v5c0 2 1 3 3 3s3-1 3-3V3M7 11v10M16 3v18M16 3c3 2 4 5 4 8h-4"/>',
+refresh:'<path d="M3 12a9 9 0 0 1 15.5-6.3M21 4v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3M3 20v-5h5"/>',
+gcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="M12 14v3"/><path d="M11 14.5h2"/>',
+gtasks:'<path d="m5 12 4 4L19 6"/><path d="M3 12h2M19 12h2"/>',
 close:'<path d="m6 6 12 12M18 6 6 18"/>',swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',sunrise:'<path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4"/>',moon:'<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>'
-};return `<svg viewBox="0 0 24 24" aria-hidden="true">${p[name]||""}</svg>`}
+};return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
 function renderIcons(){$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
-function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#07111f":"#f4f6fb"}
+function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#0b1020":"#f5f7fb"}
 function filteredClasses(){const selected=new Set((state.profile.electives||[]).map(canonical));return state.all.filter(c=>c.type==="Core"?(state.profile.section==="A"?c.section==="A":c.section==="B"):selected.has(canonical(c.baseCode||c.code)))}
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
 function classKey(c){return`${c.dateIso}|${c.startTime}|${c.code}|${venueOf(c)}|${c.status}`}
 function classIdentity(c){return`${c.dateIso}|${c.startTime}|${canonical(c.code)}`}
 function tomorrowIso(){const d=new Date();d.setDate(d.getDate()+1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function isClassCompleted(c){
+  if(c.status==="Cancelled")return false;
+  if(c.dateIso!==isoToday())return false;
+  return Date.now()>=dateTime(c,"endTime").getTime();
+}
 function wasRecentlyAdded(c){
+  if(isClassCompleted(c))return false;
   return state.notifications.some(n=>n.type==="added"&&!n.read&&n.code===c.code&&n.text.includes(fmtDate(c.dateIso,{day:"numeric",month:"short"})));
 }
 function relativeSyncText(){
@@ -64,16 +73,37 @@ function compareSnapshots(oldList,newList){
   oldList.forEach(c=>{if(c.status!=="Cancelled"){const match=newList.find(n=>n.dateIso===c.dateIso&&n.startTime===c.startTime&&canonical(n.code)===canonical(c.code));if(match&&match.status==="Cancelled")out.push({id:crypto.randomUUID(),type:"cancelled",code:c.code,title:`${c.code} class cancelled`,text:`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)}`,course:canonical(c.code),createdAt:Date.now(),read:false})}});
   return out.slice(0,12)
 }
+let _syncInFlight=false,_lastSyncAt=0;
 async function syncSchedule(force=false){
-  const pill=$("#syncPill");pill.className="sync-pill";pill.innerHTML="<i></i><span>Connecting</span>";
+  if(_syncInFlight)return;
+  if(!force&&Date.now()-_lastSyncAt<30000)return;
+  _syncInFlight=true;
+  const pill=$("#syncPill"),refreshBtn=$("#refreshButton");
+  if(pill){pill.className="sync-pill syncing";pill.innerHTML="<i></i><span>Syncing</span>"}
+  if(refreshBtn)refreshBtn.dataset.state="syncing";
   try{
     const u=new URL(API);u.searchParams.set("section",state.profile.section||"A");u.searchParams.set("electives",(state.profile.electives||[]).join(","));u.searchParams.set("includeCancelled","true");if(force)u.searchParams.set("_",Date.now());
     const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`HTTP ${r.status}`);const d=await r.json();if(!d.success)throw new Error(d.error||"API failed");
     const previous=load(KEYS.snapshot,[]),changes=compareSnapshots(previous,d.classes||[]);
     if(changes.length){state.notifications=[...changes,...state.notifications].slice(0,40);save(KEYS.notifications,state.notifications)}
-    state.all=d.classes||[];state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Synced</span>"
-  }catch(e){const c=load(KEYS.cache,null);if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}pill.className="sync-pill error";pill.innerHTML="<i></i><span>Offline</span>";console.error(e)}
-  renderAll()
+    state.all=d.classes||[];state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();
+    _lastSyncAt=Date.now();
+    if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Synced</span>"}
+  }catch(e){
+    const c=load(KEYS.cache,null);
+    if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
+    if(pill){pill.className="sync-pill error";pill.innerHTML="<i></i><span>Offline</span>"}
+    console.error(e);
+  }finally{
+    _syncInFlight=false;
+    if(refreshBtn)refreshBtn.dataset.state="";
+  }
+  renderAll();
+}
+function scheduleIdleSync(){
+  const run=()=>syncSchedule(false);
+  if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
+  else setTimeout(run,1200);
 }
 function showPage(n){$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"smooth"});if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
 function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderCampus();renderNotifications();renderIcons()}
@@ -89,7 +119,7 @@ function renderHome(){
   $("#todaySwitchDate").textContent=fmtDate(today,{day:"numeric",month:"short"});
   $("#tomorrowSwitchDate").textContent=fmtDate(tomorrowIso(),{day:"numeric",month:"short"});
   $$(".timeline-day-button").forEach(b=>b.classList.toggle("active",b.dataset.timelineDay===state.timelineDay));
-  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineClasses.map(c=>{const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=wasRecentlyAdded(c);return`<article class="vertical-class ${status}" style="--course:${colorFor(c.code)}"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-line"><span class="vertical-dot"></span></div><div class="vertical-content"><strong>${esc(c.code)} · ${esc(c.course)}${added?'<span class="timeline-added">ADDED</span>':""}</strong><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><span class="vertical-status">${status==="current"?"HAPPENING NOW":status==="done"?"COMPLETED":status==="cancelled"?"CANCELLED":"UPCOMING"}</span></div></article>`}).join("")}</div>`:`<div class="empty-state">${state.timelineDay==="today"?"Enjoy your free day.":"Nothing scheduled tomorrow."}</div>`;
+  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineClasses.map(c=>{const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=wasRecentlyAdded(c);return`<article class="vertical-class ${status}" style="--course:${colorFor(c.code)}"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><strong>${esc(c.code)} · ${esc(c.course)}${added?'<span class="timeline-added">ADDED</span>':""}</strong><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><span class="vertical-status">${status==="current"?"HAPPENING NOW":status==="done"?"COMPLETED":status==="cancelled"?"CANCELLED":"UPCOMING"}</span></div></article>`}).join("")}</div>`:`<div class="empty-state">${state.timelineDay==="today"?"Enjoy your free day.":"Nothing scheduled tomorrow."}</div>`;
   const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0;
   $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
   const monday=new Date(now);monday.setHours(0,0,0,0);monday.setDate(now.getDate()-((now.getDay()+6)%7));const nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);const week=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")>now&&dateTime(c,"startTime")<nextMonday);const mins=week.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-Math.max(now,dateTime(c,"startTime")))/60000),0),cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;$("#weekClasses").textContent=week.length;$("#weekHours").textContent=`${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;$("#weekCancelled").textContent=cancels;const ts=new Date("2026-08-03T00:00:00+05:30"),te=new Date("2026-10-18T23:59:59+05:30"),ta=state.classes.filter(c=>dateTime(c,"startTime")>=ts&&dateTime(c,"startTime")<=te&&c.status!=="Cancelled"),td=ta.filter(c=>dateTime(c,"endTime")<now).length,tr=Math.max(0,ta.length-td),tp=ta.length?Math.round(td/ta.length*100):0,wl=Math.max(0,Math.ceil((te-now)/(7*24*3600000)));let tc=$("#termProgressCard");if(!tc){tc=document.createElement("section");tc.id="termProgressCard";tc.className="panel term-progress-card";$(".today-progress-card").after(tc)}tc.innerHTML=`<div class="panel-heading"><div><p class="overline">TERM III</p><h2>Progress</h2></div><span class="count-chip">${tp}%</span></div><div class="term-progress-bar"><span style="width:${tp}%"></span></div><div class="term-progress-stats"><article><strong>${td}</strong><span>classes completed</span></article><article><strong>${tr}</strong><span>classes remaining</span></article><article><strong>${wl}</strong><span>weeks remaining</span></article></div>`;
@@ -123,6 +153,14 @@ function agendaStatus(c){
   if(c.dateIso===isoToday()&&now<dateTime(c,"startTime"))return"Upcoming";
   return"Scheduled";
 }
+function googleUrl(c){
+  const start=String(c.startTime||"").replace(":","")+"00";
+  const end=String(c.endTime||"").replace(":","")+"00";
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=Asia%2FKolkata&text="+
+    encodeURIComponent(`${c.code} · ${c.course}`)+
+    "&dates="+`${c.dateIso.replace(/-/g,"")}T${start}/${c.dateIso.replace(/-/g,"")}T${end}`+
+    "&location="+encodeURIComponent(venueOf(c));
+}
 function agendaCardHtml(c){
   const status=agendaStatus(c), cls=[
     "agenda-class-card",
@@ -149,7 +187,7 @@ function agendaCardHtml(c){
     </div>
     <div class="agenda-card-footer">
       <span>${esc(c.type)}${c.section&&c.section!=="All"?` · Section ${esc(c.section)}`:""}</span>
-      <span>${esc(c.timezoneLabel||"IST")}</span>
+      <a class="open-calendar" href="${esc(googleUrl(c))}" target="_blank" rel="noopener" aria-label="Open in Google Calendar">${icon("gcal")} Open in Calendar</a>
     </div>
   </article>`;
 }
@@ -169,9 +207,15 @@ function agendaHtml(classes,tasks){
   }
   return html;
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),colors=classes.slice(0,4).map(c=>colorFor(c.code));html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""}" data-date="${iso}"><span class="calendar-day-number">${day.getDate()}</span><span class="calendar-course-dots">${colors.map(c=>`<i style="--course:${c}"></i>`).join("")}</span><span class="calendar-class-count">${classes.length?`${classes.length} class${classes.length>1?"es":""}`:""}</span></button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar()});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks);const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];$("#calendarLegend").innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("");bindTaskRows($("#dayAgenda"))}
+function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),colors=classes.slice(0,4).map(c=>colorFor(c.code));html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""}" data-date="${iso}"><span class="calendar-day-number">${day.getDate()}</span><span class="calendar-course-dots">${colors.map(c=>`<i style="--course:${c}"></i>`).join("")}</span><span class="calendar-class-count">${classes.length?`${classes.length} class${classes.length>1?"es":""}`:""}</span></button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar();requestAnimationFrame(()=>{const agenda=document.getElementById("dayAgenda");if(agenda&&window.matchMedia("(max-width:780px)").matches)agenda.scrollIntoView({behavior:"smooth",block:"start"})})});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks);const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];$("#calendarLegend").innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("");bindTaskRows($("#dayAgenda"))}
 function renderCourseOptions(){const o=(state.electives||[]).map(e=>`<option value="${esc(e.code)}">${esc(e.code)} · ${esc(e.course)}</option>`).join("");["#quickTaskCourse","#taskCourse","#noteCourse"].forEach(s=>{const el=$(s);if(el)el.innerHTML='<option value="">General</option>'+o})}
-function addTask(title,course,date){state.tasks.unshift({id:crypto.randomUUID(),title,course,date,completed:false,createdAt:Date.now()});save(KEYS.tasks,state.tasks);renderTasks();renderHomeTasks();renderCalendar()}
+function addTask(title,course,date){
+  const t={id:crypto.randomUUID(),title,course:course||"General",date,completed:false,createdAt:Date.now()};
+  state.tasks.unshift(t);
+  save(KEYS.tasks,state.tasks);
+  renderTasks();renderHomeTasks();renderCalendar();
+  if(_googleAccessToken)syncTaskToGoogle(t);
+}
 function taskHtml(t){return`<article class="task-item ${t.completed?"completed":""}" data-task="${t.id}" style="--course:${colorFor(t.course)}"><input type="checkbox" ${t.completed?"checked":""}><div><strong>${esc(t.title)}</strong><p>${esc(t.course||"General")}${t.date?` · ${esc(fmtDate(t.date,{day:"numeric",month:"short"}))}`:""}</p></div><button class="delete-button">×</button></article>`}
 function bindTaskRows(root){$$(".task-item",root).forEach(r=>{$("input",r)?.addEventListener("change",e=>{const t=state.tasks.find(x=>x.id===r.dataset.task);if(t){t.completed=e.target.checked;save(KEYS.tasks,state.tasks);renderTasks();renderHomeTasks();renderCalendar()}});$(".delete-button",r)?.addEventListener("click",()=>{state.tasks=state.tasks.filter(x=>x.id!==r.dataset.task);save(KEYS.tasks,state.tasks);renderTasks();renderHomeTasks();renderCalendar()})})}
 function renderHomeTasks(){const a=state.tasks.filter(t=>!t.completed).slice(0,3);$("#homeTasks").innerHTML=a.length?a.map(taskHtml).join(""):'<div class="empty-state">No open tasks.</div>';bindTaskRows($("#homeTasks"))}
@@ -183,6 +227,63 @@ function busStopLabel(stop){
   if(stop==="Phase V Campus")return"Phase 5";
   if(stop==="PGP Auditorium")return"Auditorium";
   return stop;
+}
+
+/* Timeline swipe + day switch */
+function setTimelineDay(day,direction){
+  if(state.timelineDay===day)return;
+  const rail=$("#todayProgressRail");
+  if(!rail){state.timelineDay=day;renderHome();return}
+  const xOffset=direction==="forward"?-42:direction==="backward"?42:0;
+  rail.style.transition="transform .18s ease, opacity .18s ease";
+  rail.style.transform=`translateX(${xOffset}px)`;
+  rail.style.opacity="0";
+  setTimeout(()=>{
+    state.timelineDay=day;
+    rail.style.transition="none";
+    rail.style.transform=`translateX(${-xOffset}px)`;
+    renderHome();
+    requestAnimationFrame(()=>{
+      rail.style.transition="transform .28s cubic-bezier(.34,1.56,.64,1), opacity .28s ease";
+      rail.style.transform="translateX(0)";
+      rail.style.opacity="1";
+    });
+  },180);
+}
+function bindSwipeGesture(el,onSwipe){
+  if(!el)return;
+  let sx=0,sy=0,active=false;
+  const start=e=>{
+    const p=e.touches?e.touches[0]:e;
+    sx=p.clientX;sy=p.clientY;active=true;
+  };
+  const end=e=>{
+    if(!active)return;active=false;
+    const p=e.changedTouches?e.changedTouches[0]:e;
+    const dx=p.clientX-sx,dy=p.clientY-sy;
+    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.2){
+      onSwipe(dx<0?"left":"right");
+    }
+  };
+  el.addEventListener("touchstart",start,{passive:true});
+  el.addEventListener("touchend",end);
+  el.addEventListener("mousedown",start);
+  el.addEventListener("mouseup",end);
+}
+
+/* Electives onboarding */
+function openOnboardingManually(){
+  const dialog=$("#onboardingDialog");
+  if(!dialog)return;
+  // Force render electives + restore any saved selections before opening
+  renderOnboardingElectives();
+  const section=state.profile.section||"A";
+  const sec=dialog.querySelector(`input[name="onboardingSection"][value="${section}"]`);
+  if(sec)sec.checked=true;
+  const saved=new Set((state.profile.electives||[]).map(canonical));
+  $$("#onboardingElectives input").forEach(cb=>cb.checked=saved.has(canonical(cb.value)));
+  setOnboardingStep(1);
+  dialog.showModal();
 }
 
 function routeStops(bus){
@@ -370,6 +471,127 @@ function bindDismissibleDialog(dialog){
   $$(".dialog-close,.dialog-cancel",dialog).forEach(b=>b.addEventListener("click",()=>closeDialog(dialog)));
 }
 
+/* ===== Google Tasks OAuth ===== */
+const GOOGLE_CLIENT_ID="326019358906-4dpbtbmnp6rm6a7m8bikcir4a2pejiot.apps.googleusercontent.com";
+const GOOGLE_TASKS_SCOPE="https://www.googleapis.com/auth/tasks";
+const GOOGLE_TOKEN_KEY="classbl07-nova-google-token-v1";
+const GOOGLE_LIST_KEY="classbl07-nova-google-list-v1";
+let _googleTokenClient=null;
+let _googleAccessToken=null;
+
+function getSavedGoogleToken(){
+  try{
+    const raw=localStorage.getItem(GOOGLE_TOKEN_KEY);
+    if(!raw)return null;
+    const o=JSON.parse(raw);
+    if(o?.access_token&&(!o.expires_at||Date.now()<o.expires_at-60000))return o;
+  }catch(e){}
+  return null;
+}
+function saveGoogleToken(o){
+  _googleAccessToken=o.access_token;
+  localStorage.setItem(GOOGLE_TOKEN_KEY,JSON.stringify(o));
+}
+function clearGoogleToken(){
+  _googleAccessToken=null;
+  localStorage.removeItem(GOOGLE_TOKEN_KEY);
+  localStorage.removeItem(GOOGLE_LIST_KEY);
+}
+async function initGoogleTokenClient(){
+  if(_googleTokenClient)return _googleTokenClient;
+  if(!window.google?.accounts?.oauth2)return null;
+  return new Promise(resolve=>{
+    _googleTokenClient=window.google.accounts.oauth2.initTokenClient({
+      client_id:GOOGLE_CLIENT_ID,
+      scope:GOOGLE_TASKS_SCOPE,
+      callback:()=>{}
+    });
+    resolve(_googleTokenClient);
+  });
+}
+async function connectGoogleTasks(){
+  try{
+    const client=await initGoogleTokenClient();
+    if(!client)throw new Error("Google Identity Services not loaded");
+    client.callback=async resp=>{
+      if(resp.error)return;
+      saveGoogleToken({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000});
+      try{await ensureGooglePlannerList()}catch(e){}
+      renderGoogleTasksStatus();
+    };
+    client.requestAccessToken({prompt:"consent"});
+  }catch(err){
+    alert("Google Tasks sign-in failed: "+(err.message||err));
+  }
+}
+function disconnectGoogleTasks(){
+  if(!confirm("Disconnect Google Tasks? Your tasks in this app will stay."))return;
+  if(_googleAccessToken){
+    fetch(`https://oauth2.googleapis.com/revoke?token=${_googleAccessToken}`,{method:"POST"}).catch(()=>{});
+  }
+  clearGoogleToken();
+  renderGoogleTasksStatus();
+}
+async function ensureGooglePlannerList(){
+  const saved=localStorage.getItem(GOOGLE_LIST_KEY);
+  if(saved)return saved;
+  const r=await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists",{headers:{Authorization:`Bearer ${_googleAccessToken}`}});
+  if(!r.ok)throw new Error("Could not list task lists");
+  const data=await r.json();
+  let list=(data.items||[]).find(l=>l.title==="BL07 Tasks");
+  if(!list){
+    const cr=await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists",{
+      method:"POST",
+      headers:{Authorization:`Bearer ${_googleAccessToken}`,"Content-Type":"application/json"},
+      body:JSON.stringify({title:"BL07 Tasks"})
+    });
+    if(!cr.ok)throw new Error("Could not create BL07 Tasks list");
+    list=await cr.json();
+  }
+  localStorage.setItem(GOOGLE_LIST_KEY,list.id);
+  return list.id;
+}
+async function syncTaskToGoogle(task){
+  if(!_googleAccessToken)return;
+  try{
+    const listId=await ensureGooglePlannerList();
+    if(task.googleTaskId){
+      // update existing
+      await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks/${task.googleTaskId}`,{
+        method:"PATCH",
+        headers:{Authorization:`Bearer ${_googleAccessToken}`,"Content-Type":"application/json"},
+        body:JSON.stringify({title:task.title,status:task.completed?"completed":"needsAction"})
+      });
+    }else{
+      const r=await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks`,{
+        method:"POST",
+        headers:{Authorization:`Bearer ${_googleAccessToken}`,"Content-Type":"application/json"},
+        body:JSON.stringify({title:task.title+(task.course?` · ${task.course}`:""),notes:task.date?`Due ${task.date}`:""})
+      });
+      if(r.ok){
+        const data=await r.json();
+        task.googleTaskId=data.id;
+        save(KEYS.tasks,state.tasks);
+      }
+    }
+  }catch(err){
+    console.warn("Google Tasks sync failed",err);
+  }
+}
+function renderGoogleTasksStatus(){
+  const connectedEl=$("#googleTasksConnected");
+  const disconnectedEl=$("#googleTasksDisconnected");
+  if(!connectedEl||!disconnectedEl)return;
+  const saved=getSavedGoogleToken();
+  if(saved||_googleAccessToken){
+    connectedEl.hidden=false;
+    disconnectedEl.hidden=true;
+  }else{
+    connectedEl.hidden=true;
+    disconnectedEl.hidden=false;
+  }
+}
+
 function bindOutsideDismiss(dialog){
   if(!dialog)return;
   dialog.addEventListener("click",event=>{
@@ -383,8 +605,12 @@ function bindOutsideDismiss(dialog){
 
 
 function shouldShowOnboarding(){
-  return localStorage.getItem(KEYS.onboarded)!=="true" &&
-    !localStorage.getItem(KEYS.profile);
+  if(localStorage.getItem(KEYS.onboarded)==="true")return false;
+  const p=load(KEYS.profile,null);
+  if(!p)return true;
+  if(!p.section)return true;
+  if(!p.electives||!p.electives.length)return true;
+  return false;
 }
 function setOnboardingStep(step){
   $$(".onboarding-step").forEach(panel=>panel.classList.toggle("active",panel.dataset.onboardingStep===String(step)));
@@ -402,8 +628,16 @@ function renderOnboardingElectives(){
 }
 function maybeOpenOnboarding(){
   const dialog=$("#onboardingDialog");
-  if(!dialog||dialog.open||!shouldShowOnboarding()||!state.electives.length)return;
+  if(!dialog||dialog.open)return;
+  if(!shouldShowOnboarding())return;
+  if(!state.electives.length)return;
   renderOnboardingElectives();
+  // Pre-check saved electives so returning users see their current picks
+  const saved=new Set((state.profile.electives||[]).map(canonical));
+  $$("#onboardingElectives input").forEach(cb=>cb.checked=saved.has(canonical(cb.value)));
+  const section=state.profile.section||"A";
+  const sec=dialog.querySelector(`input[name="onboardingSection"][value="${section}"]`);
+  if(sec)sec.checked=true;
   setOnboardingStep(1);
   dialog.showModal();
 }
@@ -426,8 +660,26 @@ function bind(){
   bindOutsideDismiss($("#noteDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   $("#themeToggle").addEventListener("click",()=>{state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile()});
-  $("#timelineDaySwitch").addEventListener("click",e=>{const b=e.target.closest("[data-timeline-day]");if(!b)return;state.timelineDay=b.dataset.timelineDay;renderHome()});
-  $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);$("#markNotificationsRead").addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome()});
+  $("#refreshButton")?.addEventListener("click",()=>syncSchedule(true));
+  $("#timelineDaySwitch").addEventListener("click",e=>{const b=e.target.closest("[data-timeline-day]");if(!b)return;setTimelineDay(b.dataset.timelineDay,"auto")});
+  bindSwipeGesture($(".today-progress-card"),direction=>{
+    const next=state.timelineDay==="today"?"tomorrow":"today";
+    setTimelineDay(next,direction==="left"?"forward":"backward");
+  });
+  $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);
+  $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome()});
+  $("#clearNotifications")?.addEventListener("click",()=>{
+    if(!state.notifications.length)return;
+    if(confirm("Clear all notifications? This removes the history, not just marks them read.")){
+      state.notifications=[];save(KEYS.notifications,state.notifications);renderNotifications();renderHome();
+    }
+  });
+  $("#chooseElectivesButton")?.addEventListener("click",()=>openOnboardingManually());
+  $("#connectGoogleTasks")?.addEventListener("click",()=>connectGoogleTasks());
+  $("#disconnectGoogleTasks")?.addEventListener("click",()=>disconnectGoogleTasks());
+  window.addEventListener("focus",()=>scheduleIdleSync());
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")scheduleIdleSync()});
+  window.addEventListener("online",()=>scheduleIdleSync());
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-planner-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===b.dataset.plannerTab))}));
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);renderCalendar()});
@@ -444,6 +696,24 @@ function bind(){
   $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const l=$("#fullBusList"),c=l.classList.toggle("collapsed");$("#toggleFullBus").textContent=c?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("planner");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()})
 }
-async function init(){const hour=new Date().getHours();state.meal=hour<11?"breakfast":hour<16?"lunch":"dinner";state.messDay=weekdayKey(new Date());applyTheme();renderIcons();bind();const c=load(KEYS.cache,null);if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}renderAll();maybeOpenOnboarding();await syncSchedule();maybeOpenOnboarding();setInterval(()=>{renderHome();renderBuses()},30000);if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(console.error)}
+async function init(){
+  const hour=new Date().getHours();
+  state.meal=hour<11?"breakfast":hour<16?"lunch":"dinner";
+  state.messDay=weekdayKey(new Date());
+  applyTheme();
+  renderIcons();
+  bind();
+  const c=load(KEYS.cache,null);
+  if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
+  // Restore Google Tasks token silently
+  const savedToken=getSavedGoogleToken();
+  if(savedToken){_googleAccessToken=savedToken.access_token;initGoogleTokenClient().catch(()=>{})}
+  renderAll();
+  renderGoogleTasksStatus();
+  maybeOpenOnboarding();
+  scheduleIdleSync();
+  setInterval(()=>{renderHome();renderBuses()},30000);
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js").catch(console.error)
+}
 document.addEventListener("DOMContentLoaded",init);
 })();

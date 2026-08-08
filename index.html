@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#07111f">
+  <meta name="theme-color" content="#0b1020">
   <meta name="description" content="BL07 · IIM Kozhikode — mobile-first academic companion">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
   <title>BL07 · IIM Kozhikode</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -26,6 +27,7 @@
 
       <div class="top-actions">
         <span class="sync-pill" id="syncPill"><i></i><span>Connecting</span></span>
+        <button class="icon-button" id="refreshButton" aria-label="Refresh schedule" title="Refresh schedule"><span data-icon="refresh"></span></button>
         <button class="icon-button notification-button" id="notificationButton" aria-label="Open notifications">
           <span data-icon="bell"></span><b id="notificationBadge" hidden>0</b>
         </button>
@@ -234,9 +236,11 @@
             </form>
           </article>
           <article class="panel">
+            <div class="settings-row"><div><strong>Choose electives</strong><p>Re-open the electives picker. Tasks can be added even without electives.</p></div><button class="secondary-button" id="chooseElectivesButton">Choose</button></div>
+            <div class="settings-row"><div><strong>Google Tasks</strong><p>Sync tasks to your Google account.</p><div id="googleTasksStatus"></div></div><span id="googleTasksConnected" hidden><button class="secondary-button" id="disconnectGoogleTasks">Disconnect</button></span><span id="googleTasksDisconnected"><button class="primary-button google-tasks-button" id="connectGoogleTasks">Connect</button></span></div>
             <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
             <div class="settings-row"><div><strong>Open calendar</strong><p>Open Google Calendar in a new tab.</p></div><a class="secondary-button link-button" href="https://calendar.google.com" target="_blank" rel="noopener">Open</a></div>
-            <div class="settings-row"><div><strong>App version</strong><p>BL07 Final Clarity · 2.6.0</p></div><span class="version-chip">2.6.0</span></div>
+            <div class="settings-row"><div><strong>App version</strong><p>BL07 Final Clarity · 3.0.0 (Liquid Glass)</p></div><span class="version-chip">3.0.0</span></div>
             <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>
           </article>
         </div>
@@ -259,7 +263,10 @@
         <button class="icon-button" id="closeNotifications"><span data-icon="close"></span></button>
       </div>
       <div id="notificationList" class="notification-list"></div>
-      <button class="secondary-button full-width" id="markNotificationsRead">Mark all as read</button>
+      <div class="notification-actions">
+        <button class="secondary-button" id="markNotificationsRead">Mark all as read</button>
+        <button class="danger-button" id="clearNotifications">Clear all</button>
+      </div>
     </div>
   </aside>
 
