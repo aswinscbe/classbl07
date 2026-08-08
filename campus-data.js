@@ -5,7 +5,7 @@ window.CAMPUS_DATA = {
     ["10:25","C&D Housing","Phase V Campus","PGP Auditorium",false],
     ["10:25","PGP Auditorium","Phase V Campus","C&D Housing",true],
     ["10:37","C&D Housing","Phase V Campus","PGP Auditorium",false],
-    ["11:03","PGP Auditorium","Phase V Campus","Main Gate",true],
+    ["11:30","PGP Auditorium","Phase V Campus","Main Gate",true],
     ["11:45","Main Gate","C&D Housing","PGP Auditorium",true],
     ["12:07","C&D Housing","Phase V Campus","PGP Auditorium",false],
     ["13:38","C&D Housing","Phase V Campus","PGP Auditorium",false],
