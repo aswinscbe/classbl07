@@ -1,5 +1,5 @@
-﻿const CACHE="classbl07-final-stable-20260809-mobile1";
-const SHELL=["./index.html","./styles.css?v=20260809-mobile1","./visual.css?v=20260809-mobile1","./app.js?v=20260809-mobile1","./polish.js?v=20260809-mobile1","./campus-data.js?v=20260809-mobile1","./manifest.webmanifest"];
+﻿const CACHE="classbl07-final-stable-20260809-mobile2";
+const SHELL=["./index.html","./styles.css?v=20260809-mobile2","./visual.css?v=20260809-mobile2","./app.js?v=20260809-mobile2","./polish.js?v=20260809-mobile2","./campus-data.js?v=20260809-mobile2","./manifest.webmanifest"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{
