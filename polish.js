@@ -59,6 +59,9 @@
     if(progressWeek.parentElement!==rail)rail.appendChild(progressWeek);
     [progress,week].forEach(node=>{if(node&&node.parentElement!==progressWeek)progressWeek.appendChild(node)});
     if(quick&&quick.parentElement!==rail)rail.appendChild(quick);
+    const layout=localStorage.getItem("classbl07-home-order-v1")||"summary-first";
+    progressWeek.style.order=layout==="tasks-first"?"2":"1";
+    if(quick)quick.style.order=layout==="tasks-first"?"1":"2";
     const metricGrid=week?.querySelector(".metric-grid");
     if(metricGrid&&!document.getElementById("weekAddedMetric")){const item=document.createElement("article");item.id="weekAddedMetric";item.className="metric added-metric";item.innerHTML='<span class="metric-icon">＋</span><strong id="weekAdded">0</strong><span>added</span>';metricGrid.appendChild(item)}
     const added=[...document.querySelectorAll(".notification-item strong")].filter(el=>/class added/i.test(el.textContent)).length;
@@ -67,7 +70,15 @@
   const decorateCalendar = () => {
     document.querySelectorAll("#calendarGrid .calendar-day").forEach((day, index) => {
       day.classList.toggle("weekend", index % 7 > 4);
+      const holiday=window.BL07_HOLIDAYS?.[day.dataset.date];
+      day.classList.toggle("holiday",Boolean(holiday));
+      let mark=day.querySelector(".calendar-holiday-mark");
+      if(holiday&&!mark){mark=document.createElement("span");mark.className="calendar-holiday-mark";day.appendChild(mark)}
+      if(mark){if(mark.textContent!==(holiday||""))mark.textContent=holiday||"";mark.hidden=!holiday}
     });
+    const selected=document.querySelector("#calendarGrid .calendar-day.selected"),holiday=window.BL07_HOLIDAYS?.[selected?.dataset.date],agenda=document.getElementById("dayAgenda");
+    let banner=agenda?.querySelector(":scope > .academic-date-banner");
+    if(holiday&&agenda){if(!banner){banner=document.createElement("div");banner.className="academic-date-banner";agenda.prepend(banner)}if(banner.dataset.holiday!==holiday){banner.dataset.holiday=holiday;banner.innerHTML=`<span>HOLIDAY</span><strong>${holiday}</strong>`}}else banner?.remove();
   };
   const setupQuickCapture = () => {
     const panel=document.querySelector(".quick-task-panel");
@@ -107,6 +118,13 @@
     let title = card.querySelector(".agenda-course-line h3")?.textContent.trim() || "";
     let time = card.querySelector(".agenda-time-block time")?.textContent.trim() || "";
     let meta = [...card.querySelectorAll(".agenda-meta-row span")].map(x=>x.textContent.trim()).filter(Boolean).join(" · ");
+    if(card.id==="focusPanel"){
+      date=card.dataset.focusDate||isoForOffset(0);
+      code=document.getElementById("focusCode")?.textContent.trim()||"";
+      title=document.getElementById("focusTitle")?.textContent.trim()||"";
+      time=document.getElementById("focusTime")?.textContent.trim()||"";
+      meta=[document.getElementById("focusVenue")?.textContent.trim(),document.getElementById("focusFaculty")?.textContent.trim()].filter(Boolean).join(" / ");
+    }
     if (card.classList.contains("vertical-class")) {
       code = card.querySelector(".timeline-code-chip")?.textContent.trim() || "";
       title = card.querySelector(".vertical-content strong")?.childNodes[0]?.textContent?.trim() || card.querySelector(".vertical-content strong")?.textContent.trim() || "";
@@ -201,7 +219,7 @@
     document.addEventListener("click", event => {
       const calendarDay = event.target.closest(".calendar-day");
       if (calendarDay && matchMedia("(max-width:780px)").matches) setTimeout(() => document.querySelector(".agenda-panel")?.scrollIntoView({behavior:"smooth", block:"start"}), 80);
-      const card = event.target.closest(".vertical-class,.agenda-class-card,.schedule-item");
+      const card = event.target.closest(".vertical-class,.agenda-class-card,.schedule-item,#focusPanel:not(.is-empty)");
       if (card && !event.target.closest("button,a,input")) openClassSheet(card);
       setTimeout(ensurePlannerFab,0);
     });
@@ -211,6 +229,7 @@
     document.getElementById("classActionDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
     document.getElementById("onboardingDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
   };
+  window.applyHomeOrder=arrangeHome;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
 })();
