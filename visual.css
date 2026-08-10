@@ -197,3 +197,71 @@ html[data-theme=light] .selected-electives-card{background:#fff;border-color:rgb
 }
 .agenda-group{margin-bottom:10px}.agenda-group-title{margin-bottom:6px}.agenda-class-card{margin-bottom:6px!important;border-radius:14px!important}.agenda-card-top{gap:8px;padding:10px 12px 6px!important}.agenda-time-block time{font-size:18px!important;line-height:1.05}.agenda-time-block small{margin-top:3px!important;font-size:9px!important}.agenda-status{padding:4px 7px;font-size:8px}.agenda-card-body{padding:0 12px 9px!important}.agenda-course-line{gap:7px}.agenda-code-chip{min-width:42px;padding:4px 7px}.agenda-course-line h3{font-size:14px!important;line-height:1.22}.agenda-meta{gap:3px;margin-top:7px}.agenda-meta-row{gap:6px;font-size:10px!important;line-height:1.35}.agenda-meta-row svg{width:12px;height:12px}.agenda-card-footer{padding:6px 12px 7px!important;font-size:8px}.schedule-list{gap:7px}
 @media(max-width:620px){.agenda-panel{padding:12px}.agenda-card-top{grid-template-columns:minmax(0,1fr) auto}.agenda-time-block time{font-size:17px!important}.agenda-card-body{padding-bottom:8px!important}.agenda-card-footer{align-items:center}.agenda-group-title{font-size:12px}}
+
+/* Cancelled classes must read as unavailable at a glance. */
+.vertical-class.cancelled,
+.agenda-class-card.cancelled,
+.schedule-item.cancelled{
+  border-color:color-mix(in srgb,var(--danger) 58%,var(--border))!important;
+  background:color-mix(in srgb,var(--danger) 7%,var(--surface))!important;
+}
+.vertical-class.cancelled .vertical-time,
+.vertical-class.cancelled .timeline-code-chip,
+.vertical-class.cancelled .timeline-course-line strong,
+.vertical-class.cancelled .vertical-content>p,
+.agenda-class-card.cancelled .agenda-time-block,
+.agenda-class-card.cancelled .agenda-code-chip,
+.agenda-class-card.cancelled .agenda-course-line h3,
+.schedule-item.cancelled .schedule-time,
+.schedule-item.cancelled .schedule-info>strong{
+  text-decoration-line:line-through!important;
+  text-decoration-color:var(--danger)!important;
+  text-decoration-thickness:2px!important;
+  text-decoration-skip-ink:auto;
+}
+.vertical-class.cancelled .vertical-status,
+.agenda-class-card.cancelled .agenda-status,
+.schedule-item.cancelled .status-badge{
+  text-decoration:none!important;
+  opacity:1!important;
+  font-weight:900!important;
+}
+
+/* Mobile route reversal: one centred control between From and To. */
+@media(max-width:620px){
+  .route-select-grid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:9px!important;
+    align-items:stretch!important;
+  }
+  .route-select-grid label:first-child{order:1}
+  .swap-route-button{
+    order:2;
+    width:100%!important;
+    min-width:0!important;
+    height:42px!important;
+    min-height:42px!important;
+    margin:0!important;
+    padding:0 14px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    border-radius:13px!important;
+    line-height:1!important;
+  }
+  .swap-route-button svg{
+    display:block!important;
+    width:17px!important;
+    height:17px!important;
+    transform:rotate(90deg)!important;
+    flex:0 0 auto;
+  }
+  .swap-route-button .swap-label{
+    display:inline!important;
+    white-space:nowrap;
+    line-height:1!important;
+  }
+  .route-select-grid label:last-child{order:3}
+}
