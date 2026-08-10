@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="BL07 Term 3 Planner — mobile-first academic companion">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=20260810-focus4">
-  <link rel="stylesheet" href="visual.css?v=20260810-focus4">
+  <link rel="stylesheet" href="styles.css?v=20260811-focus5">
+  <link rel="stylesheet" href="visual.css?v=20260811-focus5">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -41,7 +41,7 @@
         <div class="page-heading home-heading">
           <div>
             <p class="overline" id="todayLabel">TODAY</p>
-            <h1 id="greeting">Good evening, Aswin.</h1>
+            <h1 id="greeting">Good evening.</h1>
             <p class="subtitle">Everything important, at a glance.</p><p class="home-sync-text" id="homeSyncText">Checking the latest schedule…</p>
           </div>
           <div class="date-orbit" aria-hidden="true">
@@ -54,7 +54,13 @@
           <div class="hero-glow hero-glow-one"></div>
           <div class="hero-glow hero-glow-two"></div>
           <div class="hero-top">
-            <div class="live-state"><span class="pulse"></span><span id="focusState">SYNCING SCHEDULE</span></div>
+            <div class="focus-state-block">
+              <span class="pulse"></span>
+              <div class="focus-state-copy">
+                <span class="focus-state-kicker" id="focusKicker">YOUR SCHEDULE</span>
+                <strong id="focusState">Checking your day</strong>
+              </div>
+            </div>
             <span class="hero-course-dot" id="heroCourseDot"></span>
           </div>
           <div class="hero-main">
@@ -227,8 +233,8 @@
         <div class="page-heading"><div><p class="overline">PROFILE</p><h1>Make it yours.</h1><p class="subtitle">Your section, electives and preferences.</p></div></div>
         <div class="profile-layout">
           <article class="profile-hero">
-            <div class="avatar" id="profileAvatar">AS</div>
-            <div><h2 id="profileDisplayName">Aswin S</h2><p id="profileSummary">PGPBL / Section A</p></div>
+            <div class="avatar" id="profileAvatar">ST</div>
+            <div><h2 id="profileDisplayName">Student</h2><p id="profileSummary">PGPBL / Section A</p></div>
           </article>
           <article class="panel">
             <form id="profileForm" class="profile-form">
@@ -326,7 +332,12 @@
       <section class="onboarding-step active" data-onboarding-step="1">
         <p class="overline">WELCOME TO BL07</p>
         <h2>Set up your schedule</h2>
-        <p class="onboarding-copy">Choose your section first. You can update it later from Profile.</p>
+        <p class="onboarding-copy">Add your name and section. You can update both later from Profile.</p>
+
+        <label class="onboarding-name-field">
+          <span>Your name</span>
+          <input id="onboardingName" type="text" autocomplete="name" maxlength="60" placeholder="Enter your name" required>
+        </label>
 
         <div class="onboarding-section-grid">
           <label class="onboarding-section-choice">
@@ -357,8 +368,8 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260810-focus4"></script>
-  <script src="app.js?v=20260810-focus4"></script>
-  <script src="polish.js?v=20260810-focus4"></script>
+  <script src="campus-data.js?v=20260811-focus5"></script>
+  <script src="app.js?v=20260811-focus5"></script>
+  <script src="polish.js?v=20260811-focus5"></script>
 </body>
 </html>
