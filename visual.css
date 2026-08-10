@@ -310,11 +310,13 @@ html[data-theme=light] .selected-electives-card{background:#fff;border-color:rgb
 .hero-card.is-future .focus-state-kicker{color:#8d8df5}
 .hero-card .hero-main{margin:0;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:end}
 .hero-card .focus-time-label{margin-bottom:6px;font-size:10px;color:var(--muted)}
-.hero-card .focus-time-hero{font-size:clamp(39px,5vw,58px);line-height:.98;color:var(--text)}
+.hero-card .focus-time-hero{font-size:clamp(36px,4.3vw,46px);line-height:.98;color:var(--text)}
 .hero-card .focus-course-line{margin-top:17px;gap:11px}
 .hero-card .focus-course-line .focus-code{padding:8px 11px;border-radius:11px;font-size:13px}
 .hero-card .focus-course-line h2{font-size:clamp(24px,3vw,32px)!important;font-weight:840!important;letter-spacing:-.025em}
 .hero-card .hero-meta-grid{margin-top:13px}
+.focus-position{display:inline-flex;align-items:center;width:max-content;max-width:100%;margin-top:11px;padding:6px 9px;border:1px solid color-mix(in srgb,var(--focus-course,var(--primary)) 24%,var(--border));border-radius:999px;background:color-mix(in srgb,var(--focus-course,var(--primary)) 8%,var(--surface-2));color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.02em}
+.focus-position[hidden]{display:none}
 .hero-card .focus-countdown{
   min-width:142px;
   padding:14px 15px;
@@ -341,6 +343,13 @@ html[data-theme=light] .selected-electives-card{background:#fff;border-color:rgb
 .calendar-tooltip-row.cancelled time,.calendar-tooltip-row.cancelled strong{text-decoration:line-through;text-decoration-color:var(--danger);text-decoration-thickness:1.5px;color:var(--muted)}
 .calendar-tooltip-row.cancelled span{align-self:start;padding:3px 5px;border-radius:999px;background:color-mix(in srgb,var(--danger) 13%,var(--surface));color:var(--danger);font-size:7px;font-weight:950;letter-spacing:.07em}
 .calendar-tooltip-empty{padding:16px 14px;color:var(--muted);font-size:11px;font-weight:750}
+.calendar-day.holiday{border-color:color-mix(in srgb,var(--amber) 52%,var(--border));background:linear-gradient(145deg,color-mix(in srgb,var(--amber) 14%,var(--surface)),var(--surface))}
+.calendar-holiday-mark{display:block;max-width:100%;margin-top:3px;overflow:hidden;color:color-mix(in srgb,var(--amber) 82%,var(--text));font-size:7px;font-weight:950;letter-spacing:.03em;text-overflow:ellipsis;white-space:nowrap}
+.academic-date-banner,.timeline-holiday-banner{display:flex;align-items:center;gap:9px;margin-bottom:10px;padding:9px 11px;border:1px solid color-mix(in srgb,var(--amber) 36%,var(--border));border-radius:13px;background:color-mix(in srgb,var(--amber) 10%,var(--surface));color:var(--text)}
+.academic-date-banner span,.timeline-holiday-banner span{padding:3px 6px;border-radius:999px;background:color-mix(in srgb,var(--amber) 18%,var(--surface-2));color:color-mix(in srgb,var(--amber) 82%,var(--text));font-size:8px;font-weight:950;letter-spacing:.09em}
+.academic-date-banner strong,.timeline-holiday-banner strong{font-size:12px}
+.free-window-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;margin:5px 0;padding:6px 9px;border-block:1px dashed color-mix(in srgb,var(--primary) 22%,var(--border));color:var(--muted)}
+.free-window-row span{font-size:8px;font-weight:950;letter-spacing:.1em}.free-window-row strong{font-size:11px;color:var(--text)}.free-window-row small{font-size:9px;font-weight:800}
 
 /* First-visit identity field. */
 .onboarding-name-field{display:grid;gap:7px}
@@ -355,12 +364,14 @@ html[data-theme=light] .selected-electives-card{background:#fff;border-color:rgb
   .focus-state-copy strong{font-size:25px}
   .focus-state-kicker{font-size:9px}
   .hero-card .hero-main{grid-template-columns:1fr;gap:15px}
-  .hero-card .focus-time-hero{font-size:35px;white-space:normal}
+  .hero-card .focus-time-hero{font-size:31px;white-space:normal}
   .hero-card .focus-course-line{margin-top:14px;align-items:center}
   .hero-card .focus-course-line h2{font-size:22px!important}
   .hero-card .focus-course-line .focus-code{padding:7px 10px;font-size:12px}
   .hero-card .focus-countdown{width:100%;min-width:0;padding:11px 12px}
   .hero-card .focus-countdown strong{font-size:21px!important}
   .hero-card .focus-context{margin-top:13px}
+  .calendar-holiday-mark{width:6px;height:6px;margin:4px auto 0;border-radius:999px;background:var(--amber);color:transparent;font-size:0}
+  .free-window-row{grid-template-columns:1fr auto;gap:4px 8px}.free-window-row span{grid-column:1/-1}.free-window-row strong{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){.hero-card,.calendar-tooltip{transition:none!important}.pulse{animation:none!important}}
