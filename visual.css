@@ -265,3 +265,102 @@ html[data-theme=light] .selected-electives-card{background:#fff;border-color:rgb
   }
   .route-select-grid label:last-child{order:3}
 }
+
+/* ===== State-aware focus card ====================================== */
+.hero-card{
+  isolation:isolate;
+  transition:background .32s var(--ease-fluid),border-color .28s ease,box-shadow .32s ease;
+}
+.hero-card:not(.is-empty){
+  min-height:0;
+  padding:24px 26px;
+  border:1px solid color-mix(in srgb,var(--focus-course,var(--primary)) 28%,var(--border));
+  border-top-width:4px;
+  border-radius:27px;
+  background:
+    radial-gradient(circle at 94% 2%,color-mix(in srgb,var(--focus-course,var(--primary)) 18%,transparent),transparent 36%),
+    linear-gradient(135deg,color-mix(in srgb,var(--primary) 10%,var(--surface)),var(--surface) 58%,color-mix(in srgb,var(--cyan) 6%,var(--surface)));
+  box-shadow:0 22px 55px color-mix(in srgb,var(--focus-course,var(--primary)) 12%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);
+}
+.hero-card.is-live{
+  background:
+    radial-gradient(circle at 92% 0%,color-mix(in srgb,var(--cyan) 20%,transparent),transparent 38%),
+    linear-gradient(135deg,color-mix(in srgb,var(--emerald) 16%,var(--surface)),var(--surface) 66%);
+  border-color:color-mix(in srgb,var(--emerald) 45%,var(--border));
+  box-shadow:0 24px 60px color-mix(in srgb,var(--emerald) 14%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 9%,transparent);
+}
+.hero-card.is-upcoming{
+  background:
+    radial-gradient(circle at 93% 0%,color-mix(in srgb,var(--amber) 18%,transparent),transparent 36%),
+    linear-gradient(135deg,color-mix(in srgb,var(--primary) 12%,var(--surface)),var(--surface) 64%);
+}
+.hero-card.is-future{
+  background:
+    radial-gradient(circle at 94% 0%,color-mix(in srgb,#7c83ff 20%,transparent),transparent 38%),
+    linear-gradient(135deg,color-mix(in srgb,#7566db 14%,var(--surface)),var(--surface) 66%);
+}
+.hero-card .hero-top{margin:0 0 20px}
+.focus-state-block{display:flex;align-items:center;gap:13px;min-width:0}
+.focus-state-copy{display:grid;gap:3px;min-width:0}
+.focus-state-kicker{color:var(--muted);font-size:10px;font-weight:930;letter-spacing:.15em;line-height:1.1}
+.focus-state-copy strong{color:var(--text);font-size:clamp(25px,3vw,34px);font-weight:860;letter-spacing:-.035em;line-height:1.06;overflow-wrap:anywhere}
+.hero-card:not(.is-live) .pulse{animation:none;background:var(--focus-course,var(--primary));box-shadow:0 0 0 7px color-mix(in srgb,var(--focus-course,var(--primary)) 13%,transparent)}
+.hero-card.is-upcoming .pulse{background:var(--amber);box-shadow:0 0 0 7px color-mix(in srgb,var(--amber) 14%,transparent)}
+.hero-card.is-live .focus-state-kicker{color:var(--emerald)}
+.hero-card.is-future .focus-state-kicker{color:#8d8df5}
+.hero-card .hero-main{margin:0;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:end}
+.hero-card .focus-time-label{margin-bottom:6px;font-size:10px;color:var(--muted)}
+.hero-card .focus-time-hero{font-size:clamp(39px,5vw,58px);line-height:.98;color:var(--text)}
+.hero-card .focus-course-line{margin-top:17px;gap:11px}
+.hero-card .focus-course-line .focus-code{padding:8px 11px;border-radius:11px;font-size:13px}
+.hero-card .focus-course-line h2{font-size:clamp(24px,3vw,32px)!important;font-weight:840!important;letter-spacing:-.025em}
+.hero-card .hero-meta-grid{margin-top:13px}
+.hero-card .focus-countdown{
+  min-width:142px;
+  padding:14px 15px;
+  border:1px solid color-mix(in srgb,var(--focus-course,var(--primary)) 24%,var(--border));
+  border-radius:17px;
+  background:color-mix(in srgb,var(--focus-course,var(--primary)) 7%,var(--surface-2));
+  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent);
+}
+.hero-card .focus-countdown span{font-size:10px!important}
+.hero-card .focus-countdown strong{margin-top:6px!important;font-size:25px!important}
+.hero-card.is-live .focus-countdown{border-color:color-mix(in srgb,var(--emerald) 34%,var(--border));background:color-mix(in srgb,var(--emerald) 8%,var(--surface-2))}
+.hero-card .focus-context{margin-top:16px;padding:11px 13px;border-radius:14px}
+.hero-card .focus-progress{margin-top:13px}
+.hero-card.is-empty .focus-state-copy strong{font-size:clamp(25px,3vw,34px)}
+.hero-card.is-empty .focus-state-kicker{color:var(--muted)}
+
+/* Calendar preview: scheduled and cancelled are visually distinct. */
+.calendar-tooltip-head{padding:13px 14px 11px;border-bottom:1px solid var(--border);background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 14%,var(--surface)),var(--surface))}
+.calendar-tooltip-head h4{padding:0;border:0;background:none;font-size:14px}
+.calendar-tooltip-head small{display:block;margin-top:3px;color:var(--muted);font-size:9px;font-weight:800}
+.calendar-tooltip-row{position:relative;grid-template-columns:64px minmax(0,1fr);padding:10px 14px}
+.calendar-tooltip-row::before{background:var(--tooltip-course,var(--primary))}
+.calendar-tooltip-row.cancelled{grid-template-columns:64px minmax(0,1fr) auto;background:color-mix(in srgb,var(--danger) 7%,var(--surface))}
+.calendar-tooltip-row.cancelled time,.calendar-tooltip-row.cancelled strong{text-decoration:line-through;text-decoration-color:var(--danger);text-decoration-thickness:1.5px;color:var(--muted)}
+.calendar-tooltip-row.cancelled span{align-self:start;padding:3px 5px;border-radius:999px;background:color-mix(in srgb,var(--danger) 13%,var(--surface));color:var(--danger);font-size:7px;font-weight:950;letter-spacing:.07em}
+.calendar-tooltip-empty{padding:16px 14px;color:var(--muted);font-size:11px;font-weight:750}
+
+/* First-visit identity field. */
+.onboarding-name-field{display:grid;gap:7px}
+.onboarding-name-field>span{color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
+.onboarding-name-field input{width:100%;min-height:48px;padding:0 13px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2);color:var(--text);font-size:16px;outline:0}
+.onboarding-name-field input:focus{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 13%,transparent)}
+
+@media(max-width:620px){
+  .hero-card:not(.is-empty){padding:18px 17px;border-radius:23px}
+  .hero-card .hero-top{margin-bottom:17px}
+  .focus-state-block{gap:11px}
+  .focus-state-copy strong{font-size:25px}
+  .focus-state-kicker{font-size:9px}
+  .hero-card .hero-main{grid-template-columns:1fr;gap:15px}
+  .hero-card .focus-time-hero{font-size:35px;white-space:normal}
+  .hero-card .focus-course-line{margin-top:14px;align-items:center}
+  .hero-card .focus-course-line h2{font-size:22px!important}
+  .hero-card .focus-course-line .focus-code{padding:7px 10px;font-size:12px}
+  .hero-card .focus-countdown{width:100%;min-width:0;padding:11px 12px}
+  .hero-card .focus-countdown strong{font-size:21px!important}
+  .hero-card .focus-context{margin-top:13px}
+}
+@media(prefers-reduced-motion:reduce){.hero-card,.calendar-tooltip{transition:none!important}.pulse{animation:none!important}}
