@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="BL07 Term 3 Planner — mobile-first academic companion">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=20260811-focus5">
-  <link rel="stylesheet" href="visual.css?v=20260811-focus5">
+  <link rel="stylesheet" href="styles.css?v=20260811-focus6">
+  <link rel="stylesheet" href="visual.css?v=20260811-focus6">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -75,6 +75,7 @@
                 <span><i data-icon="pin"></i><b id="focusVenue">—</b></span>
                 <span><i data-icon="faculty"></i><b id="focusFaculty">—</b></span>
               </div>
+              <div class="focus-position" id="focusPosition" hidden></div>
             </div>
             <div class="focus-countdown">
               <span id="focusCountdownLabel">STATUS</span>
@@ -242,6 +243,7 @@
               <label><span>Section</span><select id="profileSection"><option value="A">Section A</option><option value="B">Section B</option></select></label>
               <div class="selected-electives-card"><span>Electives</span><div id="selectedElectiveChips" class="selected-elective-chips"></div><button class="secondary-button" type="button" id="chooseElectivesInline">Choose electives</button></div>
               <label><span>Appearance</span><select id="profileTheme"><option value="system">Follow device</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
+              <label><span>Home card order</span><select id="profileHomeOrder"><option value="summary-first">Progress before quick task</option><option value="tasks-first">Quick task before progress</option></select></label>
               <button class="primary-button" type="submit">Save profile</button>
             </form>
           </article>
@@ -368,8 +370,8 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260811-focus5"></script>
-  <script src="app.js?v=20260811-focus5"></script>
-  <script src="polish.js?v=20260811-focus5"></script>
+  <script src="campus-data.js?v=20260811-focus6"></script>
+  <script src="app.js?v=20260811-focus6"></script>
+  <script src="polish.js?v=20260811-focus6"></script>
 </body>
 </html>
