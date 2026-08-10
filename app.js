@@ -57,15 +57,17 @@ function isClassCompleted(c){
 }
 function wasRecentlyAdded(c){
   if(isClassCompleted(c))return false;
-  return state.notifications.some(n=>n.type==="added"&&!n.read&&n.classId===classIdentity(c));
+  const fill=String(c.fillColor||"").toLowerCase(),addedFill=["#00ff00","#00b050","#70ad47","#92d050"].includes(fill);
+  return c.status==="Added"||addedFill||state.notifications.some(n=>n.type==="added"&&n.classId===classIdentity(c));
 }
 function relativeSyncText(){
-  if(!state.lastUpdated)return"Schedule has not synced yet";
-  const mins=Math.max(0,Math.round((Date.now()-new Date(state.lastUpdated).getTime())/60000));
-  if(mins<1)return"Schedule synced just now";
-  if(mins===1)return"Schedule synced 1 minute ago";
-  if(mins<60)return`Schedule synced ${mins} minutes ago`;
-  return`Schedule synced ${Math.floor(mins/60)} hour${Math.floor(mins/60)>1?"s":""} ago`;
+  const stamp=_lastSyncAt||new Date(state.lastUpdated||0).getTime();
+  if(!stamp)return"Waiting for the first schedule check";
+  const mins=Math.max(0,Math.floor((Date.now()-stamp)/60000));
+  if(mins<1)return"Schedule checked just now";
+  if(mins===1)return"Schedule checked 1 minute ago";
+  if(mins<60)return`Schedule checked ${mins} minutes ago`;
+  const hours=Math.floor(mins/60);return`Schedule checked ${hours} hour${hours>1?"s":""} ago`;
 }
 
 function compareSnapshots(oldList,newList){
@@ -80,8 +82,8 @@ async function syncSchedule(force=false){
   if(!force&&Date.now()-_lastSyncAt<30000)return;
   _syncInFlight=true;
   const pill=$("#syncPill"),refreshBtn=$("#refreshButton");
-  if(pill){pill.className="sync-pill syncing";pill.innerHTML="<i></i><span>Syncing</span>"}
-  if(refreshBtn)refreshBtn.dataset.state="syncing";
+  if(pill){pill.className="sync-pill syncing";pill.innerHTML="<i></i><span>Checking</span>"}
+  if(refreshBtn){refreshBtn.dataset.state="syncing";refreshBtn.setAttribute("aria-busy","true")}
   try{
     const u=new URL(API);u.searchParams.set("section",state.profile.section||"A");u.searchParams.set("electives",(state.profile.electives||[]).join(","));u.searchParams.set("includeCancelled","true");if(force)u.searchParams.set("_",Date.now());
     const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`HTTP ${r.status}`);const d=await r.json();if(!d.success)throw new Error(d.error||"API failed");
@@ -89,7 +91,7 @@ async function syncSchedule(force=false){
     if(changes.length){state.notifications=[...changes,...state.notifications].slice(0,40);save(KEYS.notifications,state.notifications)}
     state.all=d.classes||[];state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();
     _lastSyncAt=Date.now();
-    if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Synced</span>"}
+    if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Updated now</span>"}
   }catch(e){
     const c=load(KEYS.cache,null);
     if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
@@ -97,7 +99,7 @@ async function syncSchedule(force=false){
     console.error(e);
   }finally{
     _syncInFlight=false;
-    if(refreshBtn)refreshBtn.dataset.state="";
+    if(refreshBtn){refreshBtn.dataset.state="";refreshBtn.setAttribute("aria-busy","false")}
   }
   renderAll();
 }
@@ -107,21 +109,35 @@ function scheduleIdleSync(){
   else setTimeout(run,1200);
 }
 function setPlannerView(view="calendar"){$$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===view));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===view));document.dispatchEvent(new CustomEvent("planner-view-change",{detail:{view}}))}
-function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner")setPlannerView("calendar");$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
+function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner"){state.selectedDate=isoToday();const today=new Date();state.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);setPlannerView("calendar")}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
 function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderCampus();renderNotifications();renderIcons()}
 function renderHome(){
   const now=new Date(),today=isoToday();$("#todayLabel").textContent=new Intl.DateTimeFormat("en-IN",{weekday:"long",day:"numeric",month:"long"}).format(now).toUpperCase();$("#dateOrbitDay").textContent=String(now.getDate()).padStart(2,"0");$("#dateOrbitMonth").textContent=new Intl.DateTimeFormat("en-IN",{month:"short"}).format(now).toUpperCase();const h=now.getHours();$("#greeting").textContent=`Good ${h<12?"morning":h<17?"afternoon":"evening"}, ${state.profile.name.split(" ")[0]||"there"}.`;
-  const todays=state.classes.filter(c=>c.dateIso===today&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),next=todays.find(c=>now<dateTime(c,"startTime")),focus=current||next;
-  if(focus){const isNow=!!current;$("#focusState").textContent=isNow?"HAPPENING NOW":"UP NEXT";$("#focusCode").textContent=focus.code;$("#focusTitle").textContent=focus.course;$("#focusTime").textContent=`${fmtTime(focus.startTime)} – ${fmtTime(focus.endTime)}`;$("#focusVenue").textContent=venueOf(focus);$("#focusFaculty").textContent=focus.faculty;$("#heroCourseDot").style.background=colorFor(focus.code);const target=isNow?dateTime(focus,"endTime"):dateTime(focus,"startTime"),diff=Math.max(0,Math.ceil((target-now)/60000));$("#focusCountdownLabel").textContent=isNow?"ENDS IN":"STARTS IN";$("#focusCountdown").textContent=diff>=60?`${Math.floor(diff/60)}h ${diff%60}m`:`${diff} min`;$("#focusProgress").style.width=`${isNow?Math.min(100,Math.max(0,((now-dateTime(focus,"startTime"))/(dateTime(focus,"endTime")-dateTime(focus,"startTime")))*100)):0}%`}
-  else{$("#focusState").textContent="TODAY";$("#focusCode").textContent="CLEAR";$("#focusTitle").textContent=todays.length?"No more classes today":"No scheduled classes today";$("#focusTime").textContent="—";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="Use Planner to look ahead";$("#focusCountdownLabel").textContent="STATUS";$("#focusCountdown").textContent="Done";$("#focusProgress").style.width="100%"}
-  const remaining=state.classes.filter(c=>c.dateIso===today&&c.status!=="Cancelled"&&now<dateTime(c,"endTime"));$("#todayCount").textContent=remaining.length;$("#todaySchedule").innerHTML=scheduleHtml(remaining,true);
+  const scheduled=state.classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
+  const todays=scheduled.filter(c=>c.dateIso===today),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),todayNext=todays.find(c=>now<dateTime(c,"startTime")),future=scheduled.find(c=>now<dateTime(c,"startTime")),focus=current||todayNext||future;
+  const focusPanel=$("#focusPanel");
+  if(focus){
+    const isNow=focus===current,isToday=focus.dateIso===today,isTomorrow=focus.dateIso===tomorrowIso(),dayClasses=scheduled.filter(c=>c.dateIso===focus.dateIso),dayMinutes=dayClasses.reduce((sum,c)=>sum+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0);
+    focusPanel.classList.remove("is-empty");focusPanel.classList.toggle("is-live",isNow);focusPanel.classList.toggle("is-upcoming",!isNow&&isToday);focusPanel.classList.toggle("is-future",!isToday);focusPanel.style.setProperty("--focus-course",colorFor(focus.code));
+    $("#focusState").textContent=isNow?"HAPPENING NOW":isToday?"UP NEXT":isTomorrow?"TOMORROW":fmtDate(focus.dateIso,{weekday:"long",day:"numeric",month:"short"}).toUpperCase();
+    $("#focusCode").textContent=canonical(focus.code);$("#focusTitle").textContent=focus.course;$("#focusTime").textContent=`${fmtTime(focus.startTime)} – ${fmtTime(focus.endTime)}`;$("#focusVenue").textContent=venueOf(focus);$("#focusFaculty").textContent=focus.faculty;$("#heroCourseDot").style.background=colorFor(focus.code);
+    const target=isNow?dateTime(focus,"endTime"):dateTime(focus,"startTime"),diff=Math.max(0,Math.ceil((target-now)/60000));
+    $("#focusCountdownLabel").textContent=isNow?`ENDS AT ${fmtTime(focus.endTime)}`:isToday?"STARTS IN":"DAY LOAD";
+    $("#focusCountdown").textContent=isNow?`${compactDuration(diff)} left`:isToday?compactDuration(diff):`${dayClasses.length} ${dayClasses.length===1?"class":"classes"}`;
+    const context=$("#focusContext");context.hidden=false;
+    if(isNow){const after=todays.find(c=>dateTime(c,"startTime")>=dateTime(focus,"endTime"));$("#focusContextLabel").textContent="AFTER THIS";$("#focusContextValue").textContent=after?`${canonical(after.code)} · ${fmtTime(after.startTime)}`:"Final class today"}
+    else if(isToday){const remaining=todays.filter(c=>dateTime(c,"endTime")>now),remainingMinutes=remaining.reduce((sum,c)=>sum+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0);$("#focusContextLabel").textContent="TODAY";$("#focusContextValue").textContent=`${remaining.length} ${remaining.length===1?"class":"classes"} · ${compactDuration(remainingMinutes)} scheduled`}
+    else{$("#focusContextLabel").textContent=isTomorrow?"TOMORROW":"DAY SUMMARY";$("#focusContextValue").textContent=`${dayClasses.length} ${dayClasses.length===1?"class":"classes"} · ${compactDuration(dayMinutes)} scheduled`}
+    $("#focusProgress").style.width=`${isNow?Math.min(100,Math.max(0,((now-dateTime(focus,"startTime"))/(dateTime(focus,"endTime")-dateTime(focus,"startTime")))*100)):0}%`;
+  }
+  else{focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-upcoming","is-future");focusPanel.style.removeProperty("--focus-course");$("#focusState").textContent="SCHEDULE";$("#focusCode").textContent="CLEAR";$("#focusTitle").textContent="No upcoming classes";$("#focusTime").textContent="—";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="Use Planner to look ahead";$("#focusCountdownLabel").textContent="STATUS";$("#focusCountdown").textContent="Clear";$("#focusContext").hidden=true;$("#focusProgress").style.width="0"}
   const timelineIso=state.timelineDay==="tomorrow"?tomorrowIso():today,timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   $("#timelineDateTitle").textContent=state.timelineDay==="today"?"Today":"Tomorrow";
   $("#timelineFullDate").textContent=fmtDate(timelineIso,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   $("#todaySwitchDate").textContent=fmtDate(today,{day:"numeric",month:"short"});
   $("#tomorrowSwitchDate").textContent=fmtDate(tomorrowIso(),{day:"numeric",month:"short"});
   $$(".timeline-day-button").forEach(b=>b.classList.toggle("active",b.dataset.timelineDay===state.timelineDay));
-  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineClasses.map(c=>{const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=wasRecentlyAdded(c);return`<article class="vertical-class ${status}" style="--course:${colorFor(c.code)}"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}${added?'<span class="timeline-added">ADDED</span>':""}</strong></div><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><span class="vertical-status">${status==="current"?"HAPPENING NOW":status==="done"?"COMPLETED":status==="cancelled"?"CANCELLED":"UPCOMING"}</span></div></article>`}).join("")}</div>`:`<div class="empty-state">${state.timelineDay==="today"?"Enjoy your free day.":"Nothing scheduled tomorrow."}</div>`;
+  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineClasses.map(c=>{const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=c.status!=="Cancelled"&&wasRecentlyAdded(c);return`<article class="vertical-class ${status}" style="--course:${colorFor(c.code)}"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><div class="timeline-status-row"><span class="vertical-status">${status==="current"?"HAPPENING NOW":status==="done"?"COMPLETED":status==="cancelled"?"CANCELLED":"UPCOMING"}</span>${added?'<span class="timeline-added">ADDED</span>':""}</div></div></article>`}).join("")}</div>`:`<div class="empty-state">${state.timelineDay==="today"?"Enjoy your free day.":"Nothing scheduled tomorrow."}</div>`;
   const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0;
   $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
   const monday=new Date(now);monday.setHours(0,0,0,0);monday.setDate(now.getDate()-((now.getDay()+6)%7));const nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);const week=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")>now&&dateTime(c,"startTime")<nextMonday);const mins=week.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-Math.max(now,dateTime(c,"startTime")))/60000),0),cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;$("#weekClasses").textContent=week.length;$("#weekHours").textContent=`${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;$("#weekCancelled").textContent=cancels;const ts=new Date("2026-08-03T00:00:00+05:30"),te=new Date("2026-10-18T23:59:59+05:30"),ta=state.classes.filter(c=>dateTime(c,"startTime")>=ts&&dateTime(c,"startTime")<=te&&c.status!=="Cancelled"),td=ta.filter(c=>dateTime(c,"endTime")<now).length,tr=Math.max(0,ta.length-td),tp=ta.length?Math.round(td/ta.length*100):0,wl=Math.max(0,Math.ceil((te-now)/(7*24*3600000)));let tc=$("#termProgressCard");if(!tc){tc=document.createElement("section");tc.id="termProgressCard";tc.className="panel term-progress-card";$(".today-progress-card").after(tc)}tc.innerHTML=`<div class="panel-heading"><div><p class="overline">TERM III</p><h2>Progress</h2></div><span class="count-chip">${tp}%</span></div><div class="term-progress-bar"><span style="width:${tp}%"></span></div><div class="term-progress-stats"><article><strong>${td}</strong><span>classes completed</span></article><article><strong>${tr}</strong><span>classes remaining</span></article><article><strong>${wl}</strong><span>weeks remaining</span></article></div>`;
@@ -146,6 +162,10 @@ function agendaPeriod(c){
 function durationLabel(c){
   const d=Math.max(0,minutes(c.endTime)-minutes(c.startTime));
   return`${d} min`;
+}
+function compactDuration(total){
+  const mins=Math.max(0,Math.round(total));
+  return mins>=60?`${Math.floor(mins/60)}h${mins%60?` ${mins%60}m`:""}`:`${mins}m`;
 }
 function agendaStatus(c){
   if(c.status==="Cancelled")return"Cancelled";
@@ -713,7 +733,7 @@ function bind(){
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   $("#themeToggle").addEventListener("click",()=>{state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile()});
-  $("#refreshButton")?.addEventListener("click",async e=>{await syncSchedule(true);e.currentTarget.blur()});
+  $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
   $("#timelineDaySwitch").addEventListener("click",e=>{const b=e.target.closest("[data-timeline-day]");if(!b)return;setTimelineDay(b.dataset.timelineDay,"auto")});
   bindSwipeGesture($(".today-progress-card"),direction=>{
     const next=state.timelineDay==="today"?"tomorrow":"today";
@@ -747,7 +767,7 @@ function bind(){
   $("#openNoteForm").addEventListener("click",()=>{clearDialogValidation(noteDialog);noteDialog.showModal()});
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes()});
   $("#noteSearch").addEventListener("input",renderNotes);
-  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{await syncSchedule(true);e.currentTarget.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));location.reload()}});
+  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));location.reload()}});
   $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const l=$("#fullBusList"),c=l.classList.toggle("collapsed");$("#toggleFullBus").textContent=c?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("planner");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()})
 }
@@ -768,8 +788,9 @@ async function init(){
   maybeOpenOnboarding();
   syncSchedule(false);
   setInterval(()=>{renderHome();renderBuses()},30000);
+  setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260809-review1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260810-focus3",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
