@@ -17,7 +17,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260817-earthy1">
+  <link rel="stylesheet" href="styles.css?v=20260817-earthy2">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -133,13 +133,13 @@
             <p class="rail-section-label">This week</p>
             <p class="week-trend" id="weekTrend" hidden></p>
             <section class="stat-tiles" aria-label="Week progress">
-              <button type="button" class="stat-tile" data-stat-action="classes"><span class="stat-icon" data-icon="books"></span><b id="weekClasses">0</b><span>Classes left</span></button>
+              <button type="button" class="stat-tile" data-stat-action="classes"><b id="weekClasses">0</b><span>Classes left</span></button>
               <button type="button" class="stat-tile stat-tile-hours" data-stat-action="hours">
                 <span class="stat-ring"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-track" cx="20" cy="20" r="16"></circle><circle class="ring-fill" id="hoursRingFill" cx="20" cy="20" r="16"></circle></svg></span>
                 <b id="weekHours">0h</b><span>Hours left</span>
               </button>
-              <button type="button" class="stat-tile stat-tile-cancelled" data-stat-action="cancelled"><span class="stat-icon" data-icon="calendar"></span><b id="weekCancelled">0</b><span>Cancelled</span></button>
-              <button type="button" class="stat-tile stat-tile-added" data-stat-action="added"><span class="stat-icon" data-icon="plus"></span><b id="weekAdded">0</b><span>Added</span></button>
+              <button type="button" class="stat-tile stat-tile-cancelled" data-stat-action="cancelled"><b id="weekCancelled">0</b><span>Cancelled</span></button>
+              <button type="button" class="stat-tile stat-tile-added" data-stat-action="added"><b id="weekAdded">0</b><span>Added</span></button>
             </section>
 
             <p class="rail-section-label">This week's classes</p>
@@ -187,48 +187,10 @@
         </div>
 
         <section class="campus-view active" data-campus-view="bus">
-          <article class="panel route-planner">
-            <div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2></div></div>
-            <div class="route-select-grid">
-              <label><span>From</span><select id="busFrom"></select></label>
-              <button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button>
-              <label><span>To</span><select id="busTo"></select></label>
-            </div>
-            <div class="quick-route-row" id="quickRoutes"></div>
-          </article>
-
-          <div class="campus-grid">
-            <article class="next-bus-card">
-              <p class="overline light">NEXT DEPARTURE</p>
-              <div class="next-bus-head">
-                <div class="next-bus-time" id="nextBusTime">—</div>
-                <div class="gate-tags" id="nextBusGateTags"></div>
-              </div>
-              <h2 id="nextBusRoute">Choose a route</h2>
-              <p id="nextBusMeta">Direct services only</p>
-              <div class="route-visual" id="nextBusVisual"></div>
-              <div class="countdown-box">
-                <div class="countdown-ring" id="countdownRing">
-                  <svg viewBox="0 0 44 44" aria-hidden="true">
-                    <circle class="ring-track" cx="22" cy="22" r="18"></circle>
-                    <circle class="ring-fill" id="countdownRingFill" cx="22" cy="22" r="18"></circle>
-                  </svg>
-                </div>
-                <div class="countdown-copy"><span>Leaves in</span><strong id="nextBusCountdown">—</strong></div>
-              </div>
-            </article>
-            <article class="panel">
-              <div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next departures</h2></div></div>
-              <div id="upcomingBuses" class="bus-list"></div>
-            </article>
-          </div>
-
           <article class="panel">
-            <div class="panel-heading">
-              <div><p class="overline">FULL DAY</p><h2>Matching services</h2></div>
-              <button class="secondary-button small-toggle" id="toggleFullBus">Show all</button>
-            </div>
-            <div id="fullBusList" class="bus-table collapsed"></div>
+            <div class="panel-heading"><div><p class="overline">DEPARTURES</p><h2>Bus schedule</h2></div></div>
+            <div class="filter-chips" id="busFilterChips"></div>
+            <div class="board-list" id="busBoard"></div>
           </article>
         </section>
 
@@ -331,21 +293,6 @@
     </form>
   </dialog>
 
-  <dialog id="dayPreviewSheet" class="class-action-dialog day-preview-sheet">
-    <section class="class-action-sheet">
-      <div class="sheet-handle" aria-hidden="true"></div>
-      <header class="class-action-head">
-        <div>
-          <span class="sheet-code" id="dayPreviewDateLabel">DATE</span>
-          <h2 id="dayPreviewTitle">Classes</h2>
-        </div>
-        <button type="button" class="icon-button sheet-close" id="closeDayPreview" aria-label="Close preview"><span data-icon="close"></span></button>
-      </header>
-      <div class="day-preview-list" id="dayPreviewList"></div>
-      <button type="button" class="secondary-button full-width day-preview-open" id="dayPreviewOpenAgenda">Open full day view</button>
-    </section>
-  </dialog>
-
   <dialog id="termHeatmapDialog" class="class-action-dialog term-heatmap-dialog">
     <section class="class-action-sheet">
       <div class="sheet-handle" aria-hidden="true"></div>
@@ -438,8 +385,8 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260817-earthy1"></script>
-  <script src="app.js?v=20260817-earthy1"></script>
-  <script src="polish.js?v=20260817-earthy1"></script>
+  <script src="campus-data.js?v=20260817-earthy2"></script>
+  <script src="app.js?v=20260817-earthy2"></script>
+  <script src="polish.js?v=20260817-earthy2"></script>
 </body>
 </html>
