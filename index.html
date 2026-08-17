@@ -38,8 +38,11 @@
 
       <div class="top-actions">
         <span class="sync-pill" id="syncPill"><i></i><span>Connecting</span></span>
-        <button class="icon-button refresh-button" id="refreshButton" aria-label="Refresh schedule" title="Refresh schedule"><span data-icon="refresh"></span></button>
-        <button class="icon-button" id="ledgerButton" aria-label="Open tasks and notes" title="Tasks & Notes"><span data-icon="note"></span></button>
+        <button class="icon-button top-more-button" id="topMoreButton" aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span data-icon="more"></span></button>
+        <div class="top-more-menu" id="topMoreMenu">
+          <button class="icon-button refresh-button" id="refreshButton" aria-label="Refresh schedule" title="Refresh schedule"><span data-icon="refresh"></span></button>
+          <button class="icon-button" id="ledgerButton" aria-label="Open tasks and notes" title="Tasks & Notes"><span data-icon="note"></span></button>
+        </div>
         <button class="icon-button notification-button" id="notificationButton" aria-label="Open notifications">
           <span data-icon="bell"></span><b id="notificationBadge" hidden>0</b>
         </button>
@@ -112,24 +115,35 @@
           </div>
 
           <aside class="home-rail">
-            <section class="term-progress-card">
+            <button type="button" class="term-progress-card" id="termProgressCard" aria-label="View term overview by week">
               <div class="term-progress-head"><div><p class="overline">TERM III</p><h2>Progress</h2></div><span class="count-chip" id="termProgressPct">0%</span></div>
-              <div class="term-progress-bar"><span id="termProgressBar"></span></div>
+              <div class="term-progress-bar" id="termProgressBarTrack">
+                <span id="termProgressBar"></span>
+                <i class="term-month-tick" id="termTickSep" style="left:0"></i>
+                <i class="term-month-tick" id="termTickOct" style="left:0"></i>
+              </div>
+              <div class="term-month-labels"><span>AUG</span><span>SEP</span><span>OCT</span></div>
               <div class="term-progress-stats">
                 <article><strong id="termDone">0</strong><span>classes completed</span></article>
                 <article><strong id="termLeft">0</strong><span>classes remaining</span></article>
                 <article><strong id="termWeeksLeft">0</strong><span>weeks remaining</span></article>
               </div>
-            </section>
+            </button>
+
             <p class="rail-section-label">This week</p>
+            <p class="week-trend" id="weekTrend" hidden></p>
             <section class="stat-tiles" aria-label="Week progress">
-              <div class="stat-tile"><span class="stat-icon" data-icon="books"></span><b id="weekClasses">0</b><span>Classes left</span></div>
-              <div class="stat-tile"><span class="stat-icon" data-icon="clock"></span><b id="weekHours">0h</b><span>Hours left</span></div>
-              <div class="stat-tile stat-tile-cancelled"><span class="stat-icon" data-icon="calendar"></span><b id="weekCancelled">0</b><span>Cancelled</span></div>
-              <div class="stat-tile stat-tile-added"><span class="stat-icon" data-icon="plus"></span><b id="weekAdded">0</b><span>Added</span></div>
+              <button type="button" class="stat-tile" data-stat-action="classes"><span class="stat-icon" data-icon="books"></span><b id="weekClasses">0</b><span>Classes left</span></button>
+              <button type="button" class="stat-tile stat-tile-hours" data-stat-action="hours">
+                <span class="stat-ring"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-track" cx="20" cy="20" r="16"></circle><circle class="ring-fill" id="hoursRingFill" cx="20" cy="20" r="16"></circle></svg></span>
+                <b id="weekHours">0h</b><span>Hours left</span>
+              </button>
+              <button type="button" class="stat-tile stat-tile-cancelled" data-stat-action="cancelled"><span class="stat-icon" data-icon="calendar"></span><b id="weekCancelled">0</b><span>Cancelled</span></button>
+              <button type="button" class="stat-tile stat-tile-added" data-stat-action="added"><span class="stat-icon" data-icon="plus"></span><b id="weekAdded">0</b><span>Added</span></button>
             </section>
-            <p class="week-eq-label">This week's classes</p>
-            <div id="weekEq"></div>
+
+            <p class="rail-section-label">This week's classes</p>
+            <div class="week-heatmap" id="weekHeatmap"></div>
           </aside>
         </div>
       </section>
@@ -315,6 +329,36 @@
       <input id="taskDate" type="date">
       <div class="dialog-actions"><button type="button" class="secondary-button dialog-cancel">Cancel</button><button type="button" class="primary-button" id="saveTaskButton">Save</button></div>
     </form>
+  </dialog>
+
+  <dialog id="dayPreviewSheet" class="class-action-dialog day-preview-sheet">
+    <section class="class-action-sheet">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <header class="class-action-head">
+        <div>
+          <span class="sheet-code" id="dayPreviewDateLabel">DATE</span>
+          <h2 id="dayPreviewTitle">Classes</h2>
+        </div>
+        <button type="button" class="icon-button sheet-close" id="closeDayPreview" aria-label="Close preview"><span data-icon="close"></span></button>
+      </header>
+      <div class="day-preview-list" id="dayPreviewList"></div>
+      <button type="button" class="secondary-button full-width day-preview-open" id="dayPreviewOpenAgenda">Open full day view</button>
+    </section>
+  </dialog>
+
+  <dialog id="termHeatmapDialog" class="class-action-dialog term-heatmap-dialog">
+    <section class="class-action-sheet">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <header class="class-action-head">
+        <div>
+          <span class="sheet-code">TERM III</span>
+          <h2>Week by week</h2>
+          <p>Tap a week to jump to it on the calendar.</p>
+        </div>
+        <button type="button" class="icon-button sheet-close" id="closeTermHeatmap" aria-label="Close term overview"><span data-icon="close"></span></button>
+      </header>
+      <div class="term-heatmap-grid" id="termHeatmapGrid"></div>
+    </section>
   </dialog>
 
   <dialog id="classActionDialog" class="class-action-dialog">

@@ -163,7 +163,18 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .desktop-nav-item svg{width:17px;height:17px}
 .desktop-nav-item.active{background:var(--accent-soft);color:var(--accent)}
-.top-actions{display:flex;align-items:center;gap:6px;margin-left:auto}
+.top-actions{display:flex;align-items:center;gap:6px;margin-left:auto;position:relative}
+.icon-button.top-more-button{display:none}
+.top-more-menu{display:contents}
+@media (max-width:400px){
+  .icon-button.top-more-button{display:grid}
+  .top-more-menu{
+    display:none;position:absolute;top:48px;right:0;z-index:50;
+    flex-direction:column;gap:6px;padding:8px;border-radius:var(--radius-md);
+    background:var(--bg-elevated);border:1px solid var(--border);box-shadow:var(--shadow-lg);
+  }
+  .top-more-menu.open{display:flex}
+}
 .icon-button{
   display:grid;place-items:center;width:38px;height:38px;border-radius:11px;border:0;
   background:var(--bg-elevated);color:var(--ink);position:relative;border:1px solid var(--border);
@@ -372,7 +383,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .stat-tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .stat-tile{
   background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 12px;box-shadow:var(--shadow-md);
+  font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;
 }
+.stat-tile:active{transform:scale(.98)}
 .stat-icon{
   display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-bottom:8px;
   border-radius:8px;background:var(--accent-soft);color:var(--accent);
@@ -382,31 +395,49 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .stat-tile-added .stat-icon{background:color-mix(in srgb, var(--live) 16%, transparent);color:var(--live)}
 .stat-tile b{display:block;font-size:22px;font-weight:800;letter-spacing:-.01em}
 .stat-tile span{display:block;margin-top:3px;font-size:11.5px;font-weight:650;color:var(--ink-muted)}
+.stat-ring{display:inline-block;width:26px;height:26px;margin-bottom:8px}
+.stat-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.stat-ring circle{fill:none;stroke-width:4}
+.stat-ring .ring-track{stroke:var(--bg-panel)}
+.stat-ring .ring-fill{
+  stroke:var(--accent);stroke-linecap:round;
+  stroke-dasharray:100;stroke-dashoffset:calc(100 - (100 * var(--pct,0) / 100));
+  transition:stroke-dashoffset .4s ease;
+}
 
-.rail-section-label,.week-eq-label{margin:16px 0 8px;font-size:11.5px;font-weight:750;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
+.rail-section-label{margin:16px 0 8px;font-size:11.5px;font-weight:750;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
 .rail-section-label:first-child{margin-top:0}
+.week-trend{margin:-4px 0 10px;font-size:12px;font-weight:650;color:var(--ink-muted)}
+.week-trend.trend-down{color:var(--live)}
+.week-trend.trend-up{color:var(--amber)}
 
 .term-progress-card{
-  background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;box-shadow:var(--shadow-md);
+  display:block;width:100%;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;box-shadow:var(--shadow-md);
+  font:inherit;color:inherit;text-align:left;cursor:pointer;
 }
+.term-progress-card:active{transform:scale(.99)}
 .term-progress-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .term-progress-head h2{font-size:17px;font-weight:750;margin:2px 0 0}
-.term-progress-bar{height:8px;margin-top:12px;border-radius:99px;background:var(--bg-panel);overflow:hidden}
+.term-progress-bar{position:relative;height:8px;margin-top:12px;border-radius:99px;background:var(--bg-panel);overflow:hidden}
 .term-progress-bar span{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .4s ease}
+.term-month-tick{position:absolute;top:0;bottom:0;width:2px;background:var(--bg-elevated);opacity:.7}
+.term-month-labels{display:flex;justify-content:space-between;margin-top:5px;font-size:9.5px;font-weight:700;color:var(--ink-faint);letter-spacing:.04em}
 .term-progress-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
 .term-progress-stats article{text-align:center}
 .term-progress-stats strong{display:block;font-size:19px;font-weight:800;letter-spacing:-.01em}
 .term-progress-stats span{display:block;margin-top:2px;font-size:10.5px;font-weight:600;color:var(--ink-muted);line-height:1.3}
-#weekEq{
-  display:flex;align-items:flex-end;gap:3px;height:44px;padding:14px 12px;
+
+.week-heatmap{
+  display:flex;justify-content:space-between;gap:4px;height:60px;align-items:flex-end;padding:12px 12px 10px;
   border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-elevated);box-shadow:var(--shadow-md);
 }
-#weekEq:empty{display:none}
-.week-eq-label:has(+ #weekEq:empty){display:none}
-#weekEq i{flex:1;min-width:2px;border-radius:2px;background:var(--border);align-self:flex-end}
-#weekEq i.on{background:var(--accent)}
-#weekEq i.done{background:color-mix(in srgb, var(--ink-muted) 45%, transparent)}
-#weekEq i.off{background:var(--danger)}
+.heatmap-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;flex:1;height:100%}
+.heatmap-bar{width:100%;max-width:20px;min-height:4px;border-radius:3px;background:var(--bg-panel)}
+.heatmap-col.has-classes .heatmap-bar{background:var(--accent)}
+.heatmap-col.cancelled-only .heatmap-bar{background:var(--danger);opacity:.6}
+.heatmap-col small{font-size:10px;font-weight:750;color:var(--ink-faint)}
+.heatmap-col.is-today small{color:var(--accent)}
+.heatmap-col.is-today .heatmap-bar{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent)}
 
 @media (min-width:900px){
   .home-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
@@ -831,6 +862,34 @@ dialog::backdrop{background:rgba(10,8,4,.55);backdrop-filter:blur(2px)}
 .class-action.primary-action{background:var(--accent);border-color:transparent;color:#fff}
 .class-action.primary-action svg{color:#fff}
 .class-action.primary-action small{color:rgba(255,255,255,.8)}
+
+/* ============ Day preview sheet (mobile calendar quick-look) ============ */
+.day-preview-list{display:flex;flex-direction:column;margin-top:14px;max-height:50vh;overflow-y:auto}
+.day-preview-row{
+  display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border);
+}
+.day-preview-row:last-child{border-bottom:0}
+.day-preview-row .bar{width:3px;align-self:stretch;border-radius:2px;background:var(--course,var(--accent));flex:none}
+.day-preview-row .time{min-width:70px;font-size:13px;font-weight:750;color:var(--ink-muted)}
+.day-preview-row .info{flex:1;min-width:0}
+.day-preview-row .info strong{display:block;font-size:14px;font-weight:700}
+.day-preview-row .info span{display:block;margin-top:2px;font-size:12px;color:var(--ink-muted)}
+.day-preview-row.cancelled .info strong{color:var(--danger);text-decoration:line-through}
+.day-preview-empty{padding:20px 4px;text-align:center;color:var(--ink-muted);font-size:13.5px}
+.day-preview-open{margin-top:14px}
+
+/* ============ Term heatmap dialog ============ */
+.term-heatmap-grid{display:flex;flex-direction:column;gap:8px;margin-top:14px;max-height:60vh;overflow-y:auto}
+.term-heatmap-row{
+  display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border);
+  background:none;border-left:0;border-right:0;border-top:0;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;
+}
+.term-heatmap-row:last-child{border-bottom:0}
+.term-heatmap-row.is-current-week{background:var(--accent-soft);border-radius:var(--radius-sm)}
+.term-heatmap-row .label{min-width:96px;font-size:12.5px;font-weight:700;color:var(--ink-muted)}
+.term-heatmap-row .bar-track{flex:1;height:8px;border-radius:99px;background:var(--bg-panel);overflow:hidden}
+.term-heatmap-row .bar-track span{display:block;height:100%;border-radius:inherit;background:var(--accent)}
+.term-heatmap-row .count{min-width:20px;text-align:right;font-size:13px;font-weight:800}
 
 /* ============ Shortcuts ============ */
 .shortcut-card{max-width:400px}

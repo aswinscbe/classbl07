@@ -47,7 +47,8 @@ meal:'<path d="M7 3v8M4 3v5c0 2 1 3 3 3s3-1 3-3V3M7 11v10M16 3v18M16 3c3 2 4 5 4
 refresh:'<path d="M3 12a9 9 0 0 1 15.5-6.3M21 4v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3M3 20v-5h5"/>',
 gcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="M12 14v3"/><path d="M11 14.5h2"/>',
 gtasks:'<path d="m5 12 4 4L19 6"/><path d="M3 12h2M19 12h2"/>',
-close:'<path d="m6 6 12 12M18 6 6 18"/>',swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',sunrise:'<path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4"/>',moon:'<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>'
+close:'<path d="m6 6 12 12M18 6 6 18"/>',swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',sunrise:'<path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4"/>',moon:'<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
+more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
 function renderIcons(){$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
 function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#1c1712":"#efe7d8"}
@@ -209,9 +210,26 @@ function renderHome(){
   $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
   const monday=new Date(now);monday.setHours(0,0,0,0);monday.setDate(now.getDate()-((now.getDay()+6)%7));const nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
   const week=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")>now&&dateTime(c,"startTime")<nextMonday);
+  const thisWeekAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday);
+  const totalWeekMins=thisWeekAll.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-dateTime(c,"startTime"))/60000),0);
   const mins=week.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-Math.max(now,dateTime(c,"startTime")))/60000),0),cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;
   $("#weekClasses").textContent=week.length;$("#weekHours").textContent=`${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;$("#weekCancelled").textContent=cancels;
   $("#weekAdded").textContent=state.notifications.filter(n=>n.type==="added").length;
+  const hoursPct=totalWeekMins?Math.round((mins/totalWeekMins)*100):0;
+  $(".stat-ring")?.style.setProperty("--pct",hoursPct);
+  /* Trend — this week's total classes vs last week's, so the numbers mean something rather than sitting alone. */
+  const lastMonday=new Date(monday);lastMonday.setDate(monday.getDate()-7);
+  const lastWeekAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=lastMonday&&dateTime(c,"startTime")<monday);
+  const trendEl=$("#weekTrend");
+  if(trendEl){
+    if(!thisWeekAll.length&&!lastWeekAll.length){trendEl.hidden=true}
+    else{
+      const diff=thisWeekAll.length-lastWeekAll.length;
+      trendEl.hidden=false;
+      trendEl.textContent=diff===0?"Same as last week":diff>0?`${diff} more class${diff>1?"es":""} than last week`:`${-diff} fewer class${-diff>1?"es":""} than last week`;
+      trendEl.classList.toggle("trend-down",diff<0);trendEl.classList.toggle("trend-up",diff>0);
+    }
+  }
   /* Term-wide progress — classes completed/remaining and weeks left across the full term window. */
   const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
   const termAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=termStart&&dateTime(c,"startTime")<=termEnd);
@@ -219,14 +237,25 @@ function renderHome(){
   const termPct=termAll.length?Math.round(termDone/termAll.length*100):0,termWeeksLeft=Math.max(0,Math.ceil((termEnd-now)/(7*24*3600000)));
   $("#termProgressPct").textContent=`${termPct}%`;$("#termProgressBar").style.width=`${termPct}%`;
   $("#termDone").textContent=termDone;$("#termLeft").textContent=termLeft;$("#termWeeksLeft").textContent=termWeeksLeft;
-  /* Equalizer meter — one bar per class block scheduled this week (Mon–Sun), the only place this idiom is used. */
-  const weekAll=state.classes.filter(c=>dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
-  const eqEl=$("#weekEq");
-  if(eqEl)eqEl.innerHTML=weekAll.map(c=>{
-    const cls=c.status==="Cancelled"?"off":dateTime(c,"endTime")<=now?"done":"on";
-    const dur=Math.max(30,minutes(c.endTime)-minutes(c.startTime)),ht=Math.max(10,Math.min(44,Math.round(dur/5)));
-    return`<i class="${cls}" style="height:${ht}px" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}"></i>`;
-  }).join("");
+  const termTotalMs=termEnd-termStart,sep1=new Date("2026-09-01T00:00:00+05:30"),oct1=new Date("2026-10-01T00:00:00+05:30");
+  const sepTick=$("#termTickSep"),octTick=$("#termTickOct");
+  if(sepTick)sepTick.style.left=`${Math.max(0,Math.min(100,((sep1-termStart)/termTotalMs)*100))}%`;
+  if(octTick)octTick.style.left=`${Math.max(0,Math.min(100,((oct1-termStart)/termTotalMs)*100))}%`;
+  /* Week heatmap — one column per day Mon-Sun, bar height by class count, replacing the old per-class equalizer with a clearer per-day read. */
+  const dayLetters=["M","T","W","T","F","S","S"];
+  const heatEl=$("#weekHeatmap");
+  if(heatEl){
+    let html="";
+    for(let i=0;i<7;i++){
+      const d=new Date(monday);d.setDate(monday.getDate()+i);
+      const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      const dayClasses=state.classes.filter(c=>c.dateIso===iso),active=dayClasses.filter(c=>c.status!=="Cancelled"),hasCancelled=dayClasses.some(c=>c.status==="Cancelled");
+      const ht=active.length?Math.max(14,Math.min(44,active.length*11)):hasCancelled?8:4;
+      const cls=[iso===isoToday()?"is-today":"",active.length?"has-classes":"",!active.length&&hasCancelled?"cancelled-only":""].filter(Boolean).join(" ");
+      html+=`<div class="heatmap-col ${cls}"><span class="heatmap-bar" style="height:${ht}px"></span><small>${dayLetters[i]}</small></div>`;
+    }
+    heatEl.innerHTML=html;
+  }
   const unread=state.notifications.filter(n=>!n.read);
   $("#silentUpdateStrip").hidden=!unread.length;
   if(unread.length){
@@ -279,6 +308,36 @@ function agendaTag(c){
   if(status==="Upcoming")return{cls:"",text:tagCountdown((dateTime(c,"startTime")-new Date())/60000)};
   return{cls:"",text:"UPCOMING"};
 }
+function showDayPreview(iso){
+  const dialog=$("#dayPreviewSheet");if(!dialog)return;
+  const classes=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  $("#dayPreviewDateLabel").textContent=fmtDate(iso,{weekday:"short",day:"numeric",month:"short"}).toUpperCase();
+  $("#dayPreviewTitle").textContent=classes.length?`${classes.length} class${classes.length>1?"es":""}`:"No classes";
+  $("#dayPreviewList").innerHTML=classes.length?classes.map(c=>{
+    const cancelled=c.status==="Cancelled";
+    return`<div class="day-preview-row ${cancelled?"cancelled":""}" style="--course:${colorFor(c.code)}"><span class="bar"></span><span class="time">${esc(fmtRange(c.startTime,c.endTime))}</span><div class="info"><strong>${esc(c.code)} · ${esc(c.course)}</strong><span>${esc(venueOf(c))} · ${esc(c.faculty)}</span></div></div>`;
+  }).join(""):'<div class="day-preview-empty">Nothing scheduled this day.</div>';
+  dialog.showModal();
+}
+function renderTermHeatmap(){
+  const grid=$("#termHeatmapGrid");if(!grid)return;
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
+  const weeks=[];
+  let cur=new Date(termStart);cur.setHours(0,0,0,0);cur.setDate(cur.getDate()-((cur.getDay()+6)%7));
+  const now=new Date();let maxCount=0;
+  while(cur<termEnd){
+    const wStart=new Date(cur),wEnd=new Date(cur);wEnd.setDate(wEnd.getDate()+7);
+    const count=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=Math.max(wStart,termStart)&&dateTime(c,"startTime")<wEnd&&dateTime(c,"startTime")<=termEnd).length;
+    maxCount=Math.max(maxCount,count);
+    weeks.push({start:wStart,end:wEnd,count,isCurrent:now>=wStart&&now<wEnd});
+    cur=wEnd;
+  }
+  grid.innerHTML=weeks.map(w=>{
+    const pct=maxCount?Math.round((w.count/maxCount)*100):0;
+    const label=`${String(w.start.getDate()).padStart(2,"0")} ${new Intl.DateTimeFormat("en-IN",{month:"short"}).format(w.start)}`;
+    return`<button type="button" class="term-heatmap-row ${w.isCurrent?"is-current-week":""}" data-week-start="${w.start.toISOString()}"><span class="label">${esc(label)}</span><span class="bar-track"><span style="width:${pct}%"></span></span><span class="count">${w.count}</span></button>`;
+  }).join("");
+}
 function agendaCardHtml(c){
   const status=agendaStatus(c), tag=agendaTag(c), cls=[
     "agenda-class-card",
@@ -327,7 +386,7 @@ function agendaHtml(classes,tasks){
   }
   return html;
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),hasCancelled=dayClasses.some(c=>c.status==="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,badgeColor=classes.length?colorFor(classes[0].code):"",dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight);html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${hasCancelled?'<span class="calendar-cancel-dot" title="Has a cancelled class"></span>':""}${classes.length?`<span class="calendar-class-count" style="--course:${badgeColor}">${classes.length}</span>`:hasCancelled?`<span class="calendar-class-count cancelled-only">0</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar();requestAnimationFrame(()=>{const agenda=document.getElementById("dayAgenda");if(agenda&&window.matchMedia("(max-width:780px)").matches)agenda.scrollIntoView({behavior:"smooth",block:"start"})})});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks);const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};bindTaskRows($("#dayAgenda"))}
+function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),hasCancelled=dayClasses.some(c=>c.status==="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,badgeColor=classes.length?colorFor(classes[0].code):"",dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight);html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${hasCancelled?'<span class="calendar-cancel-dot" title="Has a cancelled class"></span>':""}${classes.length?`<span class="calendar-class-count" style="--course:${badgeColor}">${classes.length}</span>`:hasCancelled?`<span class="calendar-class-count cancelled-only">0</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar();if(window.matchMedia("(max-width:780px)").matches)showDayPreview(b.dataset.date)});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks);const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};bindTaskRows($("#dayAgenda"))}
 /* Status-aware desktop calendar preview. This declaration intentionally
    replaces the compact legacy renderer above without touching calendar flow. */
 function showCalendarTooltip(target,iso){
@@ -986,6 +1045,9 @@ function bind(){
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   $("#themeToggle").addEventListener("click",()=>{state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile()});
+  $("#topMoreButton")?.addEventListener("click",e=>{e.stopPropagation();const menu=$("#topMoreMenu"),open=menu.classList.toggle("open");$("#topMoreButton").setAttribute("aria-expanded",String(open))});
+  document.addEventListener("click",e=>{const menu=$("#topMoreMenu");if(menu&&menu.classList.contains("open")&&!e.target.closest("#topMoreMenu,#topMoreButton")){menu.classList.remove("open");$("#topMoreButton").setAttribute("aria-expanded","false")}});
+  $("#topMoreMenu")?.addEventListener("click",e=>{if(e.target.closest("button")){$("#topMoreMenu").classList.remove("open");$("#topMoreButton")?.setAttribute("aria-expanded","false")}});
   $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
   $("#timelineDaySwitch").addEventListener("click",e=>{const b=e.target.closest("[data-timeline-day]");if(!b)return;setTimelineDay(b.dataset.timelineDay,"auto")});
   bindSwipeGesture($(".today-progress-card"),direction=>{
@@ -1013,6 +1075,34 @@ function bind(){
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
   bindDismissibleDialog($("#ledgerDialog"));
+  bindDismissibleDialog($("#dayPreviewSheet"));
+  $("#closeDayPreview")?.addEventListener("click",()=>closeDialog($("#dayPreviewSheet")));
+  $("#dayPreviewOpenAgenda")?.addEventListener("click",()=>{
+    closeDialog($("#dayPreviewSheet"));
+    requestAnimationFrame(()=>{const agenda=document.getElementById("dayAgenda");if(agenda)agenda.scrollIntoView({behavior:"smooth",block:"start"})});
+  });
+  bindDismissibleDialog($("#termHeatmapDialog"));
+  $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
+  $("#termProgressCard")?.addEventListener("click",()=>{renderTermHeatmap();$("#termHeatmapDialog").showModal()});
+  $("#termHeatmapGrid")?.addEventListener("click",e=>{
+    const row=e.target.closest(".term-heatmap-row");if(!row)return;
+    const weekStart=new Date(row.dataset.weekStart);
+    state.selectedDate=`${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,"0")}-${String(weekStart.getDate()).padStart(2,"0")}`;
+    state.calendarMonth=new Date(weekStart.getFullYear(),weekStart.getMonth(),1);
+    closeDialog($("#termHeatmapDialog"));
+    showPage("calendar");
+  });
+  $(".stat-tiles")?.addEventListener("click",e=>{
+    const tile=e.target.closest("[data-stat-action]");if(!tile)return;
+    const action=tile.dataset.statAction;
+    if(action==="added"){openNotifications();return}
+    if(action==="cancelled"){
+      const now=new Date();
+      const nextCancelled=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
+      if(nextCancelled){state.selectedDate=nextCancelled.dateIso;state.calendarMonth=new Date(nextCancelled.dateIso+"T00:00:00");state.calendarMonth.setDate(1)}
+    }
+    showPage("calendar");
+  });
   const taskDialog=$("#taskDialog"),noteDialog=$("#noteDialog");
   bindDismissibleDialog(taskDialog);bindDismissibleDialog(noteDialog);
   $("#openTaskForm").addEventListener("click",()=>{editingTaskId=null;$("#taskTitle").value="";$("#taskCourse").value="";$("#taskDate").value="";$("#taskDialog h2").textContent="Add task";$("#saveTaskButton").textContent="Save";clearDialogValidation(taskDialog);taskDialog.showModal()});
