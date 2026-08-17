@@ -112,10 +112,21 @@
           </div>
 
           <aside class="home-rail">
+            <section class="term-progress-card">
+              <div class="term-progress-head"><div><p class="overline">TERM III</p><h2>Progress</h2></div><span class="count-chip" id="termProgressPct">0%</span></div>
+              <div class="term-progress-bar"><span id="termProgressBar"></span></div>
+              <div class="term-progress-stats">
+                <article><strong id="termDone">0</strong><span>classes completed</span></article>
+                <article><strong id="termLeft">0</strong><span>classes remaining</span></article>
+                <article><strong id="termWeeksLeft">0</strong><span>weeks remaining</span></article>
+              </div>
+            </section>
+            <p class="rail-section-label">This week</p>
             <section class="stat-tiles" aria-label="Week progress">
-              <div class="stat-tile"><b id="weekClasses">0</b><span>Classes left</span></div>
-              <div class="stat-tile"><b id="weekHours">0h</b><span>Hours left</span></div>
-              <div class="stat-tile"><b id="weekCancelled">0</b><span>Cancelled</span></div>
+              <div class="stat-tile"><span class="stat-icon" data-icon="books"></span><b id="weekClasses">0</b><span>Classes left</span></div>
+              <div class="stat-tile"><span class="stat-icon" data-icon="clock"></span><b id="weekHours">0h</b><span>Hours left</span></div>
+              <div class="stat-tile stat-tile-cancelled"><span class="stat-icon" data-icon="calendar"></span><b id="weekCancelled">0</b><span>Cancelled</span></div>
+              <div class="stat-tile stat-tile-added"><span class="stat-icon" data-icon="plus"></span><b id="weekAdded">0</b><span>Added</span></div>
             </section>
             <p class="week-eq-label">This week's classes</p>
             <div id="weekEq"></div>
@@ -166,7 +177,7 @@
             <div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2></div></div>
             <div class="route-select-grid">
               <label><span>From</span><select id="busFrom"></select></label>
-              <button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span></button>
+              <button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button>
               <label><span>To</span><select id="busTo"></select></label>
             </div>
             <div class="quick-route-row" id="quickRoutes"></div>
