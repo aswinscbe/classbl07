@@ -991,7 +991,7 @@ function bind(){
   bindSwipeGesture($(".today-progress-card"),direction=>{
     const next=state.timelineDay==="today"?"tomorrow":"today";
     setTimelineDay(next,direction==="left"?"forward":"backward");
-  });
+  },{ignore:"input,select,textarea,a"});
   $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);
   $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();closeNotifications();showToast("Notifications marked as read")});
   $("#clearNotifications")?.addEventListener("click",()=>{
