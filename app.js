@@ -113,8 +113,21 @@ function scheduleIdleSync(){
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
-function setPlannerView(view="calendar"){$$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===view));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===view));document.dispatchEvent(new CustomEvent("planner-view-change",{detail:{view}}))}
-function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner"){state.selectedDate=isoToday();const today=new Date();state.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);setPlannerView("calendar")}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
+function showPage(n){if(n==="home")state.timelineDay="today";$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus()}
+function openCalendarDialog(iso){if(iso){state.selectedDate=iso;const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1)}renderCalendar();$("#calendarDialog").showModal()}
+function renderDateStrip(){
+  const el=$("#dateStrip");if(!el)return;
+  const today=new Date(`${isoToday()}T12:00:00+05:30`),monday=new Date(today);monday.setDate(today.getDate()-((today.getDay()+6)%7));
+  const labels=["MON","TUE","WED","THU","FRI","SAT","SUN"];let html="";
+  for(let i=0;i<7;i++){
+    const d=new Date(monday);d.setDate(monday.getDate()+i);
+    const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);
+    const isToday=iso===isoToday(),count=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length;
+    html+=`<button class="date-pill ${isToday?"today":""}" data-date="${iso}"><span class="dow">${labels[i]}</span><span class="dnum">${d.getDate()}</span>${count?'<i class="dot"></i>':""}</button>`;
+  }
+  el.innerHTML=html;
+  $$(".date-pill",el).forEach(b=>b.addEventListener("click",()=>openCalendarDialog(b.dataset.date)));
+}
 function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderIcons()}
 function decorateTimelineDay(selector,classes,iso){
   const rail=$(selector),list=rail?.querySelector(".vertical-day-timeline");if(!rail)return;
@@ -163,7 +176,7 @@ function renderHome(){
     $("#focusPulse").style.display="none";
     $("#focusKicker").textContent=todays.length?"ALL DONE TODAY":"ALL CLEAR";
     $("#focusCode").textContent="—";$("#focusTitle").textContent="No upcoming classes";
-    $("#focusRange").textContent="—";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="Use Planner to look ahead";$("#heroCourseDot").style.background="";
+    $("#focusRange").textContent="—";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="Open the calendar to look ahead";$("#heroCourseDot").style.background="";
     $("#heroNextInfo").textContent="None left";$("#heroLeftToday").textContent=`${todayLeft} ${todayLeft===1?"class":"classes"}`;
   }
   const timelineIso=state.timelineDay==="tomorrow"?tomorrowIso():today,timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
@@ -205,6 +218,7 @@ function renderHome(){
   }
   $("#homeSyncText").textContent=relativeSyncText()
   renderHomeTasks()
+  renderDateStrip()
 }
 function scheduleHtml(list,lunch=false){if(!list.length)return'<div class="empty-state">Nothing scheduled.</div>';const sorted=[...list].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)),showLunch=lunch&&sorted.some(c=>minutes(c.endTime)<=810)&&sorted.some(c=>minutes(c.startTime)>=870);let html="",added=false;sorted.forEach(c=>{if(showLunch&&!added&&minutes(c.startTime)>=870){html+='<div class="lunch-row"><span>13:30</span><div><strong>Lunch break</strong><br><span>Until 14:30</span></div></div>';added=true}html+=`<article class="schedule-item ${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"><div class="schedule-time">${esc(fmtTime(c.startTime))}<br><span>${esc(fmtTime(c.endTime))}</span></div><div class="schedule-info"><strong>${esc(c.code)} · ${esc(c.course)}</strong><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p>${c.status==="Cancelled"?'<span class="status-badge cancelled">CANCELLED</span>':""}</div></article>`});return html}
 
@@ -505,15 +519,6 @@ function serviceSupports(bus,from,to){
 
 function isMainGateService(bus){return bus.from==="Main Gate"||bus.to==="Main Gate"}
 
-/* Gate-board tag for each bus row — a small fixed set of gate letters mapped from the
-   route's endpoints, in the spirit of an airport departure board. Main Gate services get
-   GATE A, the C&D Housing shuttle gets GATE B, everything else (Phase V <-> Auditorium) GATE C. */
-function gateFor(bus){
-  if(isMainGateService(bus))return"GATE A";
-  if(bus.from==="C&D Housing"||bus.to==="C&D Housing")return"GATE B";
-  return"GATE C";
-}
-
 /* Last-departure-of-the-day flag, computed per route direction (from -> to) straight off
    the existing sorted campus-data.js bus array — self-contained, doesn't touch bus logic. */
 let _lastBusKeys=null;
@@ -601,7 +606,7 @@ function renderBuses(){
     $("#nextBusMeta").textContent=
       isMainGateService(first.b)?"Main Gate service":"Campus shuttle";
     const gateTags=$("#nextBusGateTags");
-    if(gateTags)gateTags.innerHTML=`<span class="gate">${esc(gateFor(first.b))}</span>${isLastBus(first.b)?'<span class="gate last">LAST</span>':""}`;
+    if(gateTags)gateTags.innerHTML=isLastBus(first.b)?'<span class="badge-last">LAST BUS</span>':"";
 
     const remaining=Math.max(0,Math.ceil((first.d-now)/60000));
     const nextDay=first.d.getDate()!==now.getDate()||first.d.getMonth()!==now.getMonth();
@@ -646,7 +651,7 @@ function renderBuses(){
 
 function busRow(bus){
   const route=routeStops(bus).map(busStopLabel).join(" · "),last=isLastBus(bus);
-  return`<article class="gaterow ${last?"last-bus":""}">
+  return`<article class="bus-row ${last?"last-bus":""}">
     <span class="t">${esc(fmtTime(bus.time))}</span>
     <div class="r">
       <strong>${esc(busStopLabel(state.busFrom))} → ${
@@ -654,10 +659,7 @@ function busRow(bus){
       }</strong>
       <span>${esc(route)}</span>
     </div>
-    <div class="gate-tags">
-      <span class="gate">${esc(gateFor(bus))}</span>
-      ${last?'<span class="gate last">LAST</span>':""}
-    </div>
+    ${last?'<span class="badge-last">LAST BUS</span>':""}
   </article>`;
 }
 
@@ -671,17 +673,18 @@ function barcodeHtml(seed){
   return bars.map(v=>`<i style="height:${v}px"></i>`).join("");
 }
 function renderProfile(){$("#profileName").value=state.profile.name||"";$("#profileSection").value=state.profile.section||"A";$("#profileTheme").value=state.profile.theme||"system";
-  $("#stubName").textContent=(state.profile.name||"Student").toUpperCase();
-  $("#stubSection").textContent=state.profile.section||"A";
+  $("#stubName").textContent=state.profile.name||"Student";
+  $("#stubSection").textContent=`Section ${state.profile.section||"A"}`;
+  const avatarDisc=$("#profileAvatarDisc");if(avatarDisc)avatarDisc.setAttribute("data-initials",initials(state.profile.name));
   const bc=$("#stubBarcode");if(bc)bc.innerHTML=barcodeHtml(state.profile.name||state.profile.section);
   $("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>'}
 /* Gate-change / status tag for a notification, matching the bus gate-board and timeline
    tag language depending on what kind of schedule change it is. Presentation only — the
    underlying diff/notification detection in compareSnapshots() is untouched. */
 function notificationTagHtml(n){
-  if(n.type==="venue")return`<span class="gate">GATE CHANGE</span>`;
-  if(n.type==="added")return`<span class="tag now">ADDED</span>`;
-  if(n.type==="cancelled")return`<span class="tag off">CANC.</span>`;
+  if(n.type==="venue")return`<span class="badge badge-venue">Venue changed</span>`;
+  if(n.type==="added")return`<span class="badge badge-added">Added</span>`;
+  if(n.type==="cancelled")return`<span class="badge badge-cancelled">Cancelled</span>`;
   return"";
 }
 function renderNotifications(){const unread=state.notifications.filter(n=>!n.read).length;$("#notificationBadge").hidden=!unread;$("#notificationBadge").textContent=unread;$("#notificationList").innerHTML=state.notifications.length?state.notifications.map(n=>`<article class="notification-item ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><div class="notification-row"><strong>${esc(n.title)}</strong>${notificationTagHtml(n)}</div><p>${esc(n.text)}</p><time>${new Intl.RelativeTimeFormat("en",{numeric:"auto"}).format(-Math.max(1,Math.round((Date.now()-n.createdAt)/3600000)),"hour")}</time></article>`).join(""):'<div class="empty-state">No schedule updates.</div>'}
@@ -915,7 +918,7 @@ function renderElectiveClashWarnings(){
   if(!container)return;
   const selected=$$("#onboardingElectives input:checked").map(i=>i.value);
   const clashes=detectElectiveClashes(selected);
-  container.innerHTML=clashes.length?clashes.map(c=>`<div class="clash-warning"><span class="tag off">CLASH</span><span>${esc(c.a)} × ${esc(c.b)} — ${esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}))}, ${esc(c.aTime)}</span></div>`).join(""):"";
+  container.innerHTML=clashes.length?clashes.map(c=>`<div class="clash-warning"><span class="badge badge-cancelled">Clash</span><span>${esc(c.a)} × ${esc(c.b)} — ${esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}))}, ${esc(c.aTime)}</span></div>`).join(""):"";
 }
 function maybeOpenOnboarding(){
   const dialog=$("#onboardingDialog");
@@ -976,15 +979,17 @@ function bind(){
   window.addEventListener("focus",()=>{scheduleIdleSync();scheduleGoogleTasksSync()});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
   window.addEventListener("online",()=>scheduleIdleSync());
-  $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerView(b.dataset.plannerTab)));
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);renderCalendar()});
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
   bindSwipeGesture($("#dayAgenda"),direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
   $("#dayAgenda").addEventListener("click",event=>{const button=event.target.closest(".agenda-add-task");if(!button)return;const c=state.classes.find(item=>classIdentity(item)===button.dataset.classId);if(!c)return;$("#taskTitle").value="";$("#taskCourse").value=canonical(c.code);$("#taskDate").value=c.dateIso;clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal()});
-  $("#ledgerButton")?.addEventListener("click",()=>{showPage("planner");setPlannerView("ledger")});
+  $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
+  $("#openCalendarButton")?.addEventListener("click",()=>openCalendarDialog());
+  bindDismissibleDialog($("#calendarDialog"));
+  bindDismissibleDialog($("#ledgerDialog"));
   const taskDialog=$("#taskDialog"),noteDialog=$("#noteDialog");
   bindDismissibleDialog(taskDialog);bindDismissibleDialog(noteDialog);
   $("#openTaskForm").addEventListener("click",()=>{editingTaskId=null;$("#taskTitle").value="";$("#taskCourse").value="";$("#taskDate").value="";$("#taskDialog h2").textContent="Add task";$("#saveTaskButton").textContent="Save";clearDialogValidation(taskDialog);taskDialog.showModal()});
@@ -994,7 +999,7 @@ function bind(){
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value,homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
-  $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const l=$("#fullBusList"),c=l.classList.toggle("collapsed");$("#toggleFullBus").textContent=c?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("planner");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
+  $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const l=$("#fullBusList"),c=l.classList.toggle("collapsed");$("#toggleFullBus").textContent=c?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")openCalendarDialog();else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()})
 }
 async function init(){
@@ -1016,7 +1021,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260817-flap1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260817-bigbold1",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

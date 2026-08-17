@@ -34,19 +34,6 @@
     // renderHome() already sets/removes .is-empty on #focusPanel directly; this hook is
     // kept as a safe no-op so the MutationObserver wiring below still has something to call.
   };
-  // Home card ordering (from Profile → Home card order). The quick-capture
-  // row and the week metrics strip (inside .home-grid) are the two
-  // reorderable blocks — swap their DOM order, no layout side effects.
-  const applyHomeOrder = () => {
-    const grid = document.querySelector("#homePage .home-grid");
-    const quick = document.querySelector("#homePage .quick-capture-panel");
-    if (!grid || !quick) return;
-    const layout = localStorage.getItem("classbl07-home-order-v1") || "summary-first";
-    const wantTasksFirst = layout === "tasks-first";
-    const quickIsFirst = quick.nextElementSibling === grid;
-    if (wantTasksFirst && !quickIsFirst) grid.before(quick);
-    else if (!wantTasksFirst && quickIsFirst) quick.before(grid);
-  };
   const decorateCalendar = () => {
     document.querySelectorAll("#calendarGrid .calendar-day").forEach((day, index) => {
       day.classList.toggle("weekend", index % 7 > 4);
@@ -133,42 +120,20 @@
     }
     dialog.showModal();
   };
-  const ensurePlannerFab = () => {
-    let fab = document.getElementById("plannerFab");
-    if (!fab) {
-      fab = document.createElement("button");
-      fab.id = "plannerFab";
-      fab.className = "planner-fab";
-      fab.type = "button";
-      document.body.appendChild(fab);
-      fab.addEventListener("click",()=>document.querySelector("[data-planner-view].active #openTaskForm,[data-planner-view].active #openNoteForm")?.click());
-    }
-    const plannerOpen = document.getElementById("plannerPage")?.classList.contains("active");
-    const view = document.querySelector("[data-planner-view].active")?.dataset.plannerView;
-    fab.hidden = !plannerOpen || !["tasks","notes"].includes(view);
-    if(fab.dataset.view!==view){fab.dataset.view=view||"";fab.innerHTML = view==="notes" ? "<span>+</span> Note" : "<span>+</span> Task"}
-  };
   const start = () => {
     document.title = clean(document.title);
     repair(document.body);
     updateStateClasses();
-    applyHomeOrder();
     decorateCalendar();
-    ensurePlannerFab();
     new MutationObserver(records => records.forEach(record => {
       record.addedNodes.forEach(repair);
       if (record.type === "characterData") repair(record.target);
       updateStateClasses();
-      applyHomeOrder();
       decorateCalendar();
-      ensurePlannerFab();
     })).observe(document.body, {subtree:true, childList:true, characterData:true});
     document.addEventListener("click", event => {
-      const calendarDay = event.target.closest(".calendar-day");
-      if (calendarDay && matchMedia("(max-width:780px)").matches) setTimeout(() => document.querySelector(".agenda-panel")?.scrollIntoView({behavior:"smooth", block:"start"}), 80);
       const card = event.target.closest(".vertical-class,.agenda-class-card,.schedule-item,#focusPanel:not(.is-empty)");
       if (card && !event.target.closest("button,a,input")) openClassSheet(card);
-      setTimeout(ensurePlannerFab,0);
     });
     document.getElementById("sheetAddTask")?.addEventListener("click",()=>openLinkedDialog("task"));
     document.getElementById("sheetAddNote")?.addEventListener("click",()=>openLinkedDialog("note"));
@@ -176,7 +141,6 @@
     document.getElementById("classActionDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
     document.getElementById("onboardingDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
   };
-  window.applyHomeOrder=applyHomeOrder;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
 })();
