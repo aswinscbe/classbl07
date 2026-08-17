@@ -31,9 +31,8 @@
     });
   };
   const updateStateClasses = () => {
-    const panel = document.getElementById("focusPanel");
-    const code = document.getElementById("focusCode");
-    if (panel && code) panel.classList.toggle("is-empty", code.textContent.trim() === "CLEAR");
+    // renderHome() already sets/removes .is-empty on #focusPanel directly; this hook is
+    // kept as a safe no-op so the MutationObserver wiring below still has something to call.
   };
   // Home card ordering (from Profile → Home card order). The quick-capture
   // row and the week metrics strip (inside .home-grid) are the two
@@ -78,7 +77,7 @@
       date=card.dataset.focusDate||isoForOffset(0);
       code=document.getElementById("focusCode")?.textContent.trim()||"";
       title=document.getElementById("focusTitle")?.textContent.trim()||"";
-      time=document.getElementById("focusTime")?.textContent.trim()||"";
+      time=document.getElementById("focusRange")?.textContent.trim()||"";
       meta=[document.getElementById("focusVenue")?.textContent.trim(),document.getElementById("focusFaculty")?.textContent.trim()].filter(Boolean).join(" / ");
     }
     if (card.classList.contains("vertical-class")) {
@@ -87,7 +86,7 @@
       const timeBox = card.querySelector(".vertical-time");
       const startText=timeBox?.childNodes[0]?.textContent?.trim()||"";
       const endText=timeBox?.querySelector("small")?.textContent?.trim()||"";
-      time = [startText,endText].filter(Boolean).join(" – ");
+      time = [startText,endText].filter(Boolean).join("–");
       meta = card.querySelector(".vertical-content p")?.textContent.trim() || "";
       date = document.getElementById("timelineDateTitle")?.textContent.trim()==="Tomorrow" ? isoForOffset(1) : isoForOffset(0);
     }
