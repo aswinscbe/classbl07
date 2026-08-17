@@ -608,7 +608,8 @@ const BUS_FILTERS=[
   {id:"all",label:"All"},
   {id:"to-aud",label:"C&D → Aud.",match:b=>b.from==="C&D Housing"&&b.to==="PGP Auditorium"},
   {id:"to-cd",label:"Aud. → C&D",match:b=>b.from==="PGP Auditorium"&&b.to==="C&D Housing"},
-  {id:"gate",label:"Main Gate",match:b=>isMainGateService(b)}
+  {id:"gate-to-aud",label:"Gate → Aud.",match:b=>b.from==="Main Gate"&&b.to==="PGP Auditorium"},
+  {id:"aud-to-gate",label:"Aud. → Gate",match:b=>b.from==="PGP Auditorium"&&b.to==="Main Gate"}
 ];
 
 function renderCampus(){
