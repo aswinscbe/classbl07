@@ -7,7 +7,7 @@
    outright rather than patching over it.
    ========================================================================= */
 
-:root{
+:root,html[data-theme="light"]{
   color-scheme:light;
   --bg:#f6f5f8;
   --bg-soft:#efeef3;
@@ -140,11 +140,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0
 }
 .home-sync-text:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--emerald)}
 .date-orbit{
-  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;
-  min-width:110px;padding:10px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface-2);
+  display:none; /* redundant with #todayLabel above it; shown only on desktop where there's room to spare */
 }
 .date-orbit span{font-size:11px;font-weight:650;letter-spacing:.03em;color:var(--muted)}
-.date-orbit small{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+.date-orbit small{font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--text);white-space:nowrap}
+@media(min-width:768px){
+  .date-orbit{
+    display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;
+    width:max-content;padding:10px 16px;border-radius:14px;border:1px solid var(--border);background:var(--surface-2);
+  }
+}
 
 /* ---------- hero / focus card ---------- */
 .hero-card{
@@ -166,8 +171,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0
 .hero-card.is-empty .hero-main{display:block}
 .focus-time-label{margin-bottom:4px;font-size:10px;font-weight:650;letter-spacing:.06em;color:var(--muted)}
 .focus-time-hero{
-  font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text);
-  font-size:clamp(32px,4vw,44px);font-weight:500;line-height:1;letter-spacing:-.01em;white-space:nowrap;
+  font-variant-numeric:tabular-nums;color:var(--text);
+  font-size:clamp(24px,5.5vw,42px);font-weight:600;line-height:1.1;letter-spacing:-.01em;white-space:nowrap;
 }
 .hero-card.is-empty .focus-time-label,.hero-card.is-empty .focus-time-hero,.hero-card.is-empty .focus-code{display:none}
 .focus-course-line{display:flex;align-items:center;gap:10px;min-width:0;margin-top:14px}
@@ -191,7 +196,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0
   border:1px solid var(--border);background:var(--surface-2);box-shadow:none;color:var(--text);
 }
 .focus-countdown span{color:var(--muted);font-size:10px!important}
-.focus-countdown strong{display:block;margin-top:5px;font-family:var(--font-mono);font-size:22px!important;line-height:1.05;white-space:nowrap}
+.focus-countdown strong{display:block;margin-top:5px;color:var(--text);font-family:var(--font-mono);font-size:22px!important;line-height:1.05;white-space:nowrap}
 .focus-context{
   display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;
   padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);
@@ -389,6 +394,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0
 /* ---------- campus: bus ---------- */
 .next-bus-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);color:var(--text)}
 .next-bus-time{font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text);font-size:clamp(42px,7vw,60px);line-height:1;letter-spacing:-.02em;font-weight:600}
+.next-bus-card p{color:var(--muted)}
+.next-bus-card h2{color:var(--text)}
+.overline.light{color:var(--muted)}
+.countdown-box{border-top:1px solid var(--border)}
+.countdown-box span{color:var(--muted)}
+.countdown-box strong{color:var(--text)}
+.quick-route-row{display:flex;flex-wrap:wrap;gap:7px}
+.quick-route{
+  padding:8px 12px;border-radius:999px;border:1px solid var(--border);
+  background:var(--surface-2);color:var(--muted);font-size:11.5px;font-weight:650;
+}
+.quick-route.active{background:var(--primary);color:var(--surface-solid);border-color:transparent}
+.route-stop{color:var(--muted)}
+.route-stop i{background:var(--primary)}
 .next-bus-card .countdown-box{margin-top:14px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)}
 .next-bus-card .countdown-box strong{font-size:18px;font-family:var(--font-mono)}
 .bus-list,.bus-table{display:grid;gap:8px}
@@ -536,7 +555,6 @@ dialog::backdrop{background:rgba(10,10,16,.5);backdrop-filter:blur(4px)}
   .home-heading h1{font-size:29px}
   .hero-card{padding:18px;border-radius:18px}
   .hero-card .hero-main{grid-template-columns:1fr;gap:14px}
-  .focus-time-hero{font-size:31px;white-space:normal}
   .focus-course-line{align-items:flex-start;margin-top:12px}
   .focus-course-line h2{font-size:20px!important}
   .hero-card .focus-countdown{width:100%;min-width:0;margin:0;padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
