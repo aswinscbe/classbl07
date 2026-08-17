@@ -66,7 +66,7 @@
             <section class="hero-card" id="focusPanel" aria-live="polite">
               <div class="hero-status-row">
                 <span class="hero-status" id="focusStatusTag"><i id="focusPulse"></i><span id="focusKicker">CHECKING</span></span>
-                <span class="hero-course-dot" id="heroCourseDot"></span>
+                <button type="button" class="icon-button hero-add-task" id="heroAddTask" hidden aria-label="Add task for this class" title="Add task for this class"><span data-icon="plus"></span></button>
               </div>
               <div class="hero-course-line">
                 <span class="hero-code" id="focusCode">—</span>
@@ -131,7 +131,7 @@
               <button class="icon-button" id="nextMonth" aria-label="Next month"><span data-icon="chevron-right"></span></button>
             </div>
             <button class="today-button" id="todayButton"><span data-icon="target"></span>Jump to today</button>
-            <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+            <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span class="weekend">Sat</span><span class="weekend">Sun</span></div>
             <div class="calendar-grid" id="calendarGrid"></div>
             <div class="calendar-legend" id="calendarLegend"></div>
           </article>
@@ -236,7 +236,6 @@
             </form>
           </article>
           <article class="panel">
-            <div class="settings-row"><div><strong>Choose electives</strong><p>Re-open the electives picker. Tasks can be added even without electives.</p></div><button class="secondary-button" id="chooseElectivesButton">Choose</button></div>
             <div class="settings-row"><div><strong>Google Tasks</strong><p>Sync tasks to your Google account.</p><div id="googleTasksStatus"></div></div><span id="googleTasksConnected" hidden><button class="secondary-button" id="disconnectGoogleTasks">Disconnect</button></span><span id="googleTasksDisconnected"><button class="primary-button google-tasks-button" id="connectGoogleTasks">Connect</button></span></div>
             <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
             <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>

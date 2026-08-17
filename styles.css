@@ -272,10 +272,12 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-status i{width:7px;height:7px;border-radius:50%;background:var(--live)}
 .hero-card.is-live .hero-status i{animation:pulse 1.1s infinite}
 .hero-card:not(.is-live) .hero-status i{display:none}
-.hero-course-dot{width:11px;height:11px;border-radius:50%;background:var(--course,var(--accent))}
-.hero-course-line{display:flex;align-items:baseline;gap:10px;margin-top:14px;flex-wrap:wrap}
-.hero-code{font-size:12px;font-weight:800;padding:4px 9px;border-radius:7px;background:color-mix(in srgb, var(--course,var(--accent)) 20%, transparent);color:var(--course,var(--accent))}
-.hero-card h2#focusTitle{font-size:19px;font-weight:750;margin:0}
+.hero-add-task{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb, var(--ink) 8%, transparent);border-color:transparent;flex:none}
+.hero-add-task svg{width:15px;height:15px}
+.hero-add-task:hover{background:color-mix(in srgb, var(--accent) 18%, transparent);color:var(--accent)}
+.hero-course-line{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.hero-code{display:inline-flex;align-items:center;line-height:1;font-size:12px;font-weight:800;padding:5px 9px;border-radius:7px;background:color-mix(in srgb, var(--course,var(--accent)) 20%, transparent);color:var(--course,var(--accent))}
+.hero-card h2#focusTitle{font-size:19px;font-weight:750;line-height:1.2;margin:0}
 .hero-time{font-size:clamp(30px,7vw,36px);font-weight:800;letter-spacing:-.01em;line-height:1;margin-top:10px}
 .hero-meta-grid{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px}
 .hero-meta-grid span{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:var(--ink-muted)}
@@ -310,7 +312,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .timeline-day-button span{font-size:13.5px;font-weight:750}
 .timeline-day-button small{font-size:11.5px;font-weight:600;opacity:.8}
-.timeline-day-button.active{background:var(--bg-elevated);color:var(--ink);border:1px solid var(--border)}
+.timeline-day-button.active{background:var(--accent);color:#fff;border:1px solid var(--accent)}
+.timeline-day-button.active small{color:rgba(255,255,255,.8);opacity:1}
 
 /* ===== Calm schedule rows — shared treatment for Home timeline + Calendar agenda ===== */
 .vertical-day-timeline{display:flex;flex-direction:column}
@@ -515,22 +518,27 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .weekday-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px}
 .weekday-row span{text-align:center;font-size:11.5px;font-weight:750;color:var(--ink-faint)}
+.weekday-row span.weekend{color:var(--accent)}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .calendar-day{
   aspect-ratio:1/1;border:1px solid transparent;background:transparent;border-radius:10px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   color:var(--ink);position:relative;
 }
+.calendar-day.weekend{background:color-mix(in srgb, var(--accent) 6%, transparent)}
 .calendar-day-number{font-size:13.5px;font-weight:650}
+.calendar-day.weekend .calendar-day-number{color:var(--accent)}
 .calendar-day.outside{opacity:.32}
 .calendar-day.today{border-color:var(--accent)}
 .calendar-day.today .calendar-day-number{color:var(--accent);font-weight:800}
 .calendar-day.selected{background:var(--accent);color:#fff}
 .calendar-day.selected .calendar-day-number{color:#fff}
-.calendar-course-dots{display:flex;gap:2px}
-.calendar-course-dots i{width:4px;height:4px;border-radius:50%;background:var(--course,var(--accent))}
-.calendar-day.selected .calendar-course-dots i{background:#fff}
-.calendar-class-count{display:none}
+.calendar-class-count{
+  display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;padding:0 3px;
+  border-radius:999px;background:color-mix(in srgb, var(--course,var(--accent)) 22%, transparent);
+  color:var(--course,var(--accent));font-size:9px;font-weight:800;line-height:1;
+}
+.calendar-day.selected .calendar-class-count{background:rgba(255,255,255,.28);color:#fff}
 .calendar-day.holiday .calendar-day-number{color:var(--danger)}
 .calendar-holiday-mark{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--amber);overflow:hidden;font-size:0;line-height:0;color:transparent}
 .calendar-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
