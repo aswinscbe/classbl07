@@ -171,8 +171,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .icon-button svg{width:18px;height:18px}
 .icon-button:active{transform:scale(.94)}
 .notification-button b{
-  position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;
+  position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:99px;
   background:var(--danger);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;
+  border:2px solid var(--bg-elevated);box-shadow:0 0 0 1px color-mix(in srgb, var(--danger) 45%, transparent);
 }
 .sync-pill{
   display:none;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;
@@ -272,6 +273,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-status i{width:7px;height:7px;border-radius:50%;background:var(--live)}
 .hero-card.is-live .hero-status i{animation:pulse 1.1s infinite}
 .hero-card:not(.is-live) .hero-status i{display:none}
+.hero-empty-icon{display:inline-flex;width:14px;height:14px}
+.hero-empty-icon svg{width:14px;height:14px}
 .hero-add-task{width:30px;height:30px;border-radius:9px;background:color-mix(in srgb, var(--ink) 8%, transparent);border-color:transparent;flex:none}
 .hero-add-task svg{width:15px;height:15px}
 .hero-add-task:hover{background:color-mix(in srgb, var(--accent) 18%, transparent);color:var(--accent)}
@@ -417,10 +420,20 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .route-stop i{width:6px;height:6px;border-radius:50%;background:var(--accent)}
 .countdown-box{
   margin-top:16px;padding-top:14px;border-top:1px solid var(--border);
-  display:flex;align-items:baseline;gap:10px;
+  display:flex;align-items:center;gap:12px;
 }
-.countdown-box span{font-size:11.5px;font-weight:750;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em}
-.countdown-box strong{font-size:19px;font-weight:800}
+.countdown-copy span{display:block;font-size:11.5px;font-weight:750;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em}
+.countdown-copy strong{display:block;margin-top:2px;font-size:19px;font-weight:800}
+.countdown-ring{width:40px;height:40px;flex:none}
+.countdown-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.countdown-ring circle{fill:none;stroke-width:3.5}
+.countdown-ring .ring-track{stroke:var(--border)}
+.countdown-ring .ring-fill{
+  stroke:var(--accent);stroke-linecap:round;
+  stroke-dasharray:113;stroke-dashoffset:calc(113 - (113 * var(--pct,0) / 100));
+  transition:stroke-dashoffset .4s ease;
+}
+.countdown-ring.urgent .ring-fill{stroke:var(--danger)}
 
 .bus-list,.bus-table{display:flex;flex-direction:column}
 .bus-table.collapsed .bus-row:nth-child(n+5){display:none}
@@ -461,6 +474,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .mark.veg{background:var(--live)}
 .mark.nonveg{background:var(--danger)}
 .mark.sweet{background:var(--amber)}
+.dish-icon{font-size:15px;line-height:1;flex:none;opacity:.85}
 
 @media (min-width:900px){
   .mess-columns{display:grid;grid-template-columns:230px 1fr;gap:24px;align-items:start}
@@ -475,6 +489,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .avatar-disc{
   width:56px;height:56px;border-radius:50%;background:var(--accent-soft);flex:none;
   display:grid;place-items:center;color:var(--accent);font-weight:800;font-size:19px;
+  border:2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.avatar-disc.section-b{
+  background:var(--live-soft);color:var(--live);
+  border-color:color-mix(in srgb, var(--live) 35%, transparent);
 }
 .avatar-disc::before{content:attr(data-initials)}
 .avatar-info div#stubName{font-size:17px;font-weight:750}
@@ -542,8 +561,14 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-day.holiday .calendar-day-number{color:var(--danger)}
 .calendar-holiday-mark{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--amber);overflow:hidden;font-size:0;line-height:0;color:transparent}
 .calendar-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--ink-muted)}
-.legend-item i{width:7px;height:7px;border-radius:50%;background:var(--course,var(--accent))}
+.legend-item{
+  display:flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--ink-muted);
+  background:none;border:1px solid transparent;border-radius:99px;padding:4px 9px 4px 7px;cursor:pointer;
+}
+.legend-item i{width:7px;height:7px;border-radius:50%;background:var(--course,var(--accent));flex:none}
+.legend-item:hover{background:var(--bg-panel)}
+.legend-item.active{background:color-mix(in srgb, var(--course,var(--accent)) 16%, transparent);border-color:color-mix(in srgb, var(--course,var(--accent)) 40%, transparent);color:var(--ink)}
+.calendar-day.dimmed{opacity:.28}
 
 .agenda-heading{margin-bottom:10px}
 .agenda-day-controls{display:flex;align-items:center;gap:7px}

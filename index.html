@@ -65,7 +65,7 @@
           <div class="home-main">
             <section class="hero-card" id="focusPanel" aria-live="polite">
               <div class="hero-status-row">
-                <span class="hero-status" id="focusStatusTag"><i id="focusPulse"></i><span id="focusKicker">CHECKING</span></span>
+                <span class="hero-status" id="focusStatusTag"><i id="focusPulse"></i><span class="hero-empty-icon" id="focusEmptyIcon" hidden></span><span id="focusKicker">CHECKING</span></span>
                 <button type="button" class="icon-button hero-add-task" id="heroAddTask" hidden aria-label="Add task for this class" title="Add task for this class"><span data-icon="plus"></span></button>
               </div>
               <div class="hero-course-line">
@@ -180,7 +180,15 @@
               <h2 id="nextBusRoute">Choose a route</h2>
               <p id="nextBusMeta">Direct services only</p>
               <div class="route-visual" id="nextBusVisual"></div>
-              <div class="countdown-box"><span>Leaves in</span><strong id="nextBusCountdown">—</strong></div>
+              <div class="countdown-box">
+                <div class="countdown-ring" id="countdownRing">
+                  <svg viewBox="0 0 44 44" aria-hidden="true">
+                    <circle class="ring-track" cx="22" cy="22" r="18"></circle>
+                    <circle class="ring-fill" id="countdownRingFill" cx="22" cy="22" r="18"></circle>
+                  </svg>
+                </div>
+                <div class="countdown-copy"><span>Leaves in</span><strong id="nextBusCountdown">—</strong></div>
+              </div>
             </article>
             <article class="panel">
               <div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next departures</h2></div></div>
