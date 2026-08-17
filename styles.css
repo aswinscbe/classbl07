@@ -270,6 +270,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-status-row{display:flex;align-items:center;justify-content:space-between}
 .hero-status{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-muted)}
 .hero-card.is-live .hero-status{color:var(--live)}
+.hero-card.is-break .hero-status{color:var(--amber)}
 .hero-status i{width:7px;height:7px;border-radius:50%;background:var(--live)}
 .hero-card.is-live .hero-status i{animation:pulse 1.1s infinite}
 .hero-card:not(.is-live) .hero-status i{display:none}
@@ -282,6 +283,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-code{display:inline-flex;align-items:center;line-height:1;font-size:12px;font-weight:800;padding:5px 9px;border-radius:7px;background:color-mix(in srgb, var(--course,var(--accent)) 20%, transparent);color:var(--course,var(--accent))}
 .hero-card h2#focusTitle{font-size:19px;font-weight:750;line-height:1.2;margin:0}
 .hero-time{font-size:clamp(30px,7vw,36px);font-weight:800;letter-spacing:-.01em;line-height:1;margin-top:10px}
+.hero-progress{height:4px;margin-top:10px;border-radius:99px;background:var(--bg-panel);overflow:hidden}
+.hero-progress span{display:block;height:100%;border-radius:inherit;background:var(--live);transition:width .4s ease}
 .hero-meta-grid{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px}
 .hero-meta-grid span{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:var(--ink-muted)}
 .hero-meta-grid svg{width:16px;height:16px}
@@ -340,7 +343,14 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .timeline-added{display:inline-block;margin-top:5px;font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--live)}
 .vertical-class.current .timeline-code-chip{color:var(--live);background:var(--live-soft)}
 .vertical-class.done{opacity:.55}
-.vertical-class.cancelled .vertical-content strong{text-decoration:line-through}
+.vertical-class.cancelled{background:color-mix(in srgb, var(--danger) 7%, transparent)}
+.vertical-class.cancelled::before{background:var(--danger)}
+.vertical-class.cancelled .timeline-code-chip{background:color-mix(in srgb, var(--danger) 16%, transparent);color:var(--danger)}
+.vertical-class.cancelled .vertical-content strong{
+  color:var(--danger);text-decoration:line-through;text-decoration-color:var(--danger);
+  text-decoration-thickness:2px;text-underline-offset:1px;
+}
+.vertical-class.cancelled .vertical-content p{color:color-mix(in srgb, var(--danger) 55%, var(--ink-muted))}
 .tag{
   flex:none;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-muted);
 }
@@ -365,6 +375,18 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .stat-tile b{display:block;font-size:24px;font-weight:800;letter-spacing:-.01em}
 .stat-tile span{display:block;margin-top:4px;font-size:11.5px;font-weight:650;color:var(--ink-muted)}
+
+.week-eq-label{margin:16px 0 8px;font-size:11.5px;font-weight:750;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
+#weekEq{
+  display:flex;align-items:flex-end;gap:3px;height:44px;padding:14px 12px;
+  border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-elevated);box-shadow:var(--shadow-md);
+}
+#weekEq:empty{display:none}
+.week-eq-label:has(+ #weekEq:empty){display:none}
+#weekEq i{flex:1;min-width:2px;border-radius:2px;background:var(--border);align-self:flex-end}
+#weekEq i.on{background:var(--accent)}
+#weekEq i.done{background:color-mix(in srgb, var(--ink-muted) 45%, transparent)}
+#weekEq i.off{background:var(--danger)}
 
 @media (min-width:900px){
   .home-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
@@ -461,6 +483,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .meal-tab svg{width:15px;height:15px}
 .meal-tab.active{background:var(--live);color:#fff;border-color:transparent}
+.meal-tab.is-now{border-color:var(--accent);color:var(--accent);position:relative}
+.meal-tab.is-now::after{content:"";position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
 .menu-note{margin:0;font-size:12.5px;color:var(--ink-faint);font-weight:500}
 .meal-hero{margin-top:0}
 .meal-hero h3{font-size:17px;font-weight:750;margin:0 0 6px}
@@ -516,7 +540,12 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .settings-row:first-child{padding-top:0}
 .settings-row strong{font-size:14.5px;font-weight:750;display:block}
 .settings-row p{margin:3px 0 0;font-size:12.5px;color:var(--ink-muted);font-weight:500}
-.google-tasks-button{padding:10px 15px;font-size:13px}
+.google-tasks-button{
+  padding:10px 15px;font-size:13px;
+  background:#fff;color:#3c4043;border:1px solid var(--border);
+  box-shadow:0 1px 2px rgba(0,0,0,.15);
+}
+.google-tasks-button:hover{background:#f8f9fa}
 
 @media (min-width:900px){
   .profile-layout{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:start}
@@ -552,11 +581,18 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-day.selected{background:var(--accent);color:#fff}
 .calendar-day.selected .calendar-day-number{color:#fff}
 .calendar-class-count{
-  display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;padding:0 3px;
-  border-radius:999px;background:color-mix(in srgb, var(--course,var(--accent)) 22%, transparent);
-  color:var(--course,var(--accent));font-size:9px;font-weight:800;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;
+  border-radius:999px;background:var(--course,var(--accent));
+  color:#fff;font-size:10px;font-weight:800;line-height:1;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
 }
-.calendar-day.selected .calendar-class-count{background:rgba(255,255,255,.28);color:#fff}
+.calendar-class-count.cancelled-only{background:var(--danger)}
+.calendar-day.selected .calendar-class-count{background:#fff;color:var(--accent);box-shadow:none}
+.calendar-cancel-dot{
+  position:absolute;top:5px;right:7px;width:7px;height:7px;border-radius:50%;
+  background:var(--danger);border:1.5px solid var(--bg-elevated);
+}
+.calendar-day.selected .calendar-cancel-dot{border-color:var(--accent)}
 .calendar-day.holiday .calendar-day-number{color:var(--danger)}
 .calendar-holiday-mark{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--amber);overflow:hidden;font-size:0;line-height:0;color:transparent}
 .calendar-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -601,7 +637,14 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .agenda-actions{display:flex;gap:8px}
 .agenda-add-task,.open-calendar{display:flex;align-items:center;gap:5px;background:var(--bg-panel);border:1px solid var(--border);border-radius:9px;padding:6px 9px;color:var(--ink-muted);font-size:12px;font-weight:650}
 .agenda-add-task svg,.open-calendar svg{width:13px;height:13px}
-.agenda-class-card.cancelled .agenda-course-line h3{text-decoration:line-through}
+.agenda-class-card.cancelled{background:color-mix(in srgb, var(--danger) 7%, transparent)}
+.agenda-class-card.cancelled::before{background:var(--danger)}
+.agenda-class-card.cancelled .agenda-code-chip{background:color-mix(in srgb, var(--danger) 16%, transparent);color:var(--danger)}
+.agenda-class-card.cancelled .agenda-course-line h3{
+  color:var(--danger);text-decoration:line-through;text-decoration-color:var(--danger);
+  text-decoration-thickness:2px;text-underline-offset:1px;
+}
+.agenda-class-card.cancelled .agenda-meta-row{color:color-mix(in srgb, var(--danger) 55%, var(--ink-muted))}
 .agenda-empty{padding:22px 8px;text-align:center;color:var(--ink-muted);font-size:14px;font-weight:600}
 .academic-date-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:10px;border-radius:var(--radius-sm);background:var(--amber-soft);border:1px solid var(--border)}
 .academic-date-banner span{font-size:11px;font-weight:800;color:var(--amber);letter-spacing:.05em;text-transform:uppercase}
