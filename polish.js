@@ -3,7 +3,7 @@
   const replacements = new Map([
     ["Â·", "·"], ["â€”", "—"], ["â€“", "–"], ["â€¦", "…"],
     ["â€™", "’"], ["Ã—", "×"], ["â†’", "→"], ["â€˜", "‘"],
-    ["â€œ", "“"], ["â€", "”"]
+    ["â€œ", "“"], ["â€", "”"]
   ]);
   const clean = value => {
     let output = String(value || "");
@@ -35,37 +35,18 @@
     const code = document.getElementById("focusCode");
     if (panel && code) panel.classList.toggle("is-empty", code.textContent.trim() === "CLEAR");
   };
-  const updateHomeDate = () => {
-    const label=document.getElementById("todayLabel")?.textContent.trim();
-    const day=document.getElementById("dateOrbitDay"),month=document.getElementById("dateOrbitMonth");
-    if(!label||!day||!month)return;
-    const match=label.match(/^([A-Z]+),?\s+(\d+)\s+([A-Z]+)/i);
-    if(match){const dayName=match[1][0]+match[1].slice(1).toLowerCase();const monthName=match[3][0]+match[3].slice(1).toLowerCase();if(day.textContent!==dayName)day.textContent=dayName;if(month.textContent!==`${match[2]} ${monthName}`)month.textContent=`${match[2]} ${monthName}`}
-  };
-  const arrangeHome = () => {
-    const home=document.getElementById("homePage");if(!home)return;
-    let body=document.getElementById("homeDashboardBody");
-    if(!body){body=document.createElement("div");body.id="homeDashboardBody";body.className="home-dashboard-body";home.appendChild(body)}
-    let main=document.getElementById("homeMainRail");
-    if(!main){main=document.createElement("div");main.id="homeMainRail";main.className="home-main-rail";body.appendChild(main)}
-    let rail=document.getElementById("homeSideRail");
-    if(!rail){rail=document.createElement("aside");rail.id="homeSideRail";rail.className="home-side-rail";body.appendChild(rail)}
-    const focus=document.getElementById("focusPanel"),timeline=home.querySelector(".today-progress-card"),homeGrid=home.querySelector(".home-grid");
-    [focus,timeline,homeGrid].forEach(node=>{if(node&&node.parentElement!==main)main.appendChild(node)});
-    if(rail.parentElement!==body)body.appendChild(rail);
-    const progress=document.getElementById("termProgressCard"),week=home.querySelector(".compact-panel"),quick=home.querySelector(".quick-task-panel");
-    let progressWeek=document.getElementById("progressWeekCard");
-    if(!progressWeek){progressWeek=document.createElement("section");progressWeek.id="progressWeekCard";progressWeek.className="panel progress-week-card"}
-    if(progressWeek.parentElement!==rail)rail.appendChild(progressWeek);
-    [progress,week].forEach(node=>{if(node&&node.parentElement!==progressWeek)progressWeek.appendChild(node)});
-    if(quick&&quick.parentElement!==rail)rail.appendChild(quick);
-    const layout=localStorage.getItem("classbl07-home-order-v1")||"summary-first";
-    progressWeek.style.order=layout==="tasks-first"?"2":"1";
-    if(quick)quick.style.order=layout==="tasks-first"?"1":"2";
-    const metricGrid=week?.querySelector(".metric-grid");
-    if(metricGrid&&!document.getElementById("weekAddedMetric")){const item=document.createElement("article");item.id="weekAddedMetric";item.className="metric added-metric";item.innerHTML='<span class="metric-icon">＋</span><strong id="weekAdded">0</strong><span>added</span>';metricGrid.appendChild(item)}
-    const added=[...document.querySelectorAll(".notification-item strong")].filter(el=>/class added/i.test(el.textContent)).length;
-    const addedValue=document.getElementById("weekAdded");if(addedValue&&addedValue.textContent!==String(added))addedValue.textContent=String(added);
+  // Home card ordering (from Profile → Home card order). The quick-capture
+  // row and the week metrics strip (inside .home-grid) are the two
+  // reorderable blocks — swap their DOM order, no layout side effects.
+  const applyHomeOrder = () => {
+    const grid = document.querySelector("#homePage .home-grid");
+    const quick = document.querySelector("#homePage .quick-capture-panel");
+    if (!grid || !quick) return;
+    const layout = localStorage.getItem("classbl07-home-order-v1") || "summary-first";
+    const wantTasksFirst = layout === "tasks-first";
+    const quickIsFirst = quick.nextElementSibling === grid;
+    if (wantTasksFirst && !quickIsFirst) grid.before(quick);
+    else if (!wantTasksFirst && quickIsFirst) quick.before(grid);
   };
   const decorateCalendar = () => {
     document.querySelectorAll("#calendarGrid .calendar-day").forEach((day, index) => {
@@ -79,31 +60,6 @@
     const selected=document.querySelector("#calendarGrid .calendar-day.selected"),holiday=window.BL07_HOLIDAYS?.[selected?.dataset.date],agenda=document.getElementById("dayAgenda");
     let banner=agenda?.querySelector(":scope > .academic-date-banner");
     if(holiday&&agenda){if(!banner){banner=document.createElement("div");banner.className="academic-date-banner";agenda.prepend(banner)}if(banner.dataset.holiday!==holiday){banner.dataset.holiday=holiday;banner.innerHTML=`<span>HOLIDAY</span><strong>${holiday}</strong>`}}else banner?.remove();
-  };
-  const setupQuickCapture = () => {
-    const panel=document.querySelector(".quick-task-panel");
-    const heading=panel?.querySelector(".panel-heading");
-    const form=document.getElementById("quickTaskForm");
-    if(!panel||!heading||!form)return;
-    let toggle=document.getElementById("quickCaptureToggle");
-    if(!toggle){
-      toggle=document.createElement("button");
-      toggle.id="quickCaptureToggle";
-      toggle.type="button";
-      toggle.className="quick-capture-toggle";
-      toggle.setAttribute("aria-expanded","false");
-      toggle.innerHTML='<span class="quick-capture-plus">＋</span><span><b>Capture a task</b><small>Subject and due date are optional</small></span><i aria-hidden="true">›</i>';
-      heading.after(toggle);
-      toggle.addEventListener("click",()=>{
-        const open=panel.classList.toggle("is-open");
-        toggle.setAttribute("aria-expanded",String(open));
-        if(open)setTimeout(()=>document.getElementById("quickTaskTitle")?.focus(),120);
-      });
-      form.addEventListener("submit",()=>setTimeout(()=>{
-        panel.classList.remove("is-open");
-        toggle.setAttribute("aria-expanded","false");
-      },80));
-    }
   };
   const isoForOffset = offset => {
     const now = new Date();
@@ -190,30 +146,22 @@
     }
     const plannerOpen = document.getElementById("plannerPage")?.classList.contains("active");
     const view = document.querySelector("[data-planner-view].active")?.dataset.plannerView;
-    const heading=document.querySelector("#plannerPage .page-heading h1"),subtitle=document.querySelector("#plannerPage .page-heading .subtitle");
-    const copy={calendar:["See the month. Own the day.","Select a date to see classes, tasks and notes."],tasks:["Plan it. Get it done.","Everything you need to finish, without the clutter."],notes:["Keep what matters.","Quick academic notes, organised around your subjects."]};
-    if(heading&&copy[view]&&heading.textContent!==copy[view][0])heading.textContent=copy[view][0];
-    if(subtitle&&copy[view]&&subtitle.textContent!==copy[view][1])subtitle.textContent=copy[view][1];
     fab.hidden = !plannerOpen || !["tasks","notes"].includes(view);
-    if(fab.dataset.view!==view){fab.dataset.view=view||"";fab.innerHTML = view==="notes" ? "<span>＋</span> Note" : "<span>＋</span> Task"}
+    if(fab.dataset.view!==view){fab.dataset.view=view||"";fab.innerHTML = view==="notes" ? "<span>+</span> Note" : "<span>+</span> Task"}
   };
   const start = () => {
     document.title = clean(document.title);
     repair(document.body);
     updateStateClasses();
-    updateHomeDate();
-    arrangeHome();
+    applyHomeOrder();
     decorateCalendar();
-    setupQuickCapture();
     ensurePlannerFab();
     new MutationObserver(records => records.forEach(record => {
       record.addedNodes.forEach(repair);
       if (record.type === "characterData") repair(record.target);
       updateStateClasses();
-      updateHomeDate();
-      arrangeHome();
+      applyHomeOrder();
       decorateCalendar();
-      setupQuickCapture();
       ensurePlannerFab();
     })).observe(document.body, {subtree:true, childList:true, characterData:true});
     document.addEventListener("click", event => {
@@ -229,7 +177,7 @@
     document.getElementById("classActionDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
     document.getElementById("onboardingDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
   };
-  window.applyHomeOrder=arrangeHome;
+  window.applyHomeOrder=applyHomeOrder;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
 })();
