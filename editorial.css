@@ -1,0 +1,281 @@
+/* =========================================================================
+   BL07 — Minimal Editorial skin (visual-overhaul-editorial branch)
+   Loads after styles.css + visual.css and overrides their look only.
+   Every id/class/data-attribute app.js and polish.js use is untouched —
+   this file changes color, spacing, borders and shape, never structure.
+   ========================================================================= */
+
+:root{
+  --e-bg:#f6f5f8;
+  --e-surface:#ffffff;
+  --e-surface-2:#f0eff4;
+  --e-text:#181722;
+  --e-muted:#6f6d7c;
+  --e-faint:#a09eac;
+  --e-line:rgba(24,23,34,.08);
+  --e-line-soft:rgba(24,23,34,.05);
+  --e-accent:#6f5cf0;
+  --e-accent-ink:#ffffff;
+  --e-accent-soft:rgba(111,92,240,.10);
+  --e-emerald:#1f8f5e;
+  --e-amber:#a06a12;
+  --e-danger:#c23d3d;
+  --e-radius-lg:22px;
+  --e-radius:16px;
+  --e-radius-sm:10px;
+  --font-mono:ui-monospace,'SFMono-Regular','JetBrains Mono',monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --e-bg:#0d0e13;
+    --e-surface:#16161d;
+    --e-surface-2:#1b1b23;
+    --e-text:#f1f0f5;
+    --e-muted:#918f9c;
+    --e-faint:#5c5a68;
+    --e-line:rgba(255,255,255,.08);
+    --e-line-soft:rgba(255,255,255,.05);
+    --e-accent:#a596ff;
+    --e-accent-ink:#15111f;
+    --e-accent-soft:rgba(165,150,255,.14);
+    --e-emerald:#6bdb9a;
+    --e-amber:#e8b95c;
+    --e-danger:#ec7b7b;
+  }
+}
+:root[data-theme="dark"]{
+  --e-bg:#0d0e13;
+  --e-surface:#16161d;
+  --e-surface-2:#1b1b23;
+  --e-text:#f1f0f5;
+  --e-muted:#918f9c;
+  --e-faint:#5c5a68;
+  --e-line:rgba(255,255,255,.08);
+  --e-line-soft:rgba(255,255,255,.05);
+  --e-accent:#a596ff;
+  --e-accent-ink:#15111f;
+  --e-accent-soft:rgba(165,150,255,.14);
+  --e-emerald:#6bdb9a;
+  --e-amber:#e8b95c;
+  --e-danger:#ec7b7b;
+}
+
+/* ---------- base ---------- */
+body{
+  background:var(--e-bg) !important;
+  color:var(--e-text) !important;
+  letter-spacing:0;
+}
+h1,h2,h3,strong,b{font-weight:650 !important}
+.overline{color:var(--e-muted) !important;font-weight:650 !important;letter-spacing:.06em !important}
+::selection{background:var(--e-accent-soft)}
+
+/* ---------- topbar ---------- */
+.topbar{
+  background:color-mix(in srgb,var(--e-bg) 88%,transparent) !important;
+  border:0 !important;border-bottom:1px solid var(--e-line) !important;
+  border-radius:0 !important;box-shadow:none !important;
+}
+.brand-mark{background:var(--e-accent) !important;box-shadow:none !important;color:var(--e-accent-ink) !important}
+.icon-button{background:transparent !important;border:1px solid transparent !important;color:var(--e-muted) !important}
+.icon-button:hover{border-color:var(--e-line) !important;color:var(--e-text) !important}
+.desktop-nav-item{color:var(--e-muted) !important;background:transparent !important;border:0 !important}
+.desktop-nav-item.active{color:var(--e-text) !important;background:var(--e-surface-2) !important;border-radius:var(--e-radius-sm) !important}
+.sync-pill{
+  background:transparent !important;border:1px solid var(--e-line) !important;color:var(--e-muted) !important;
+  box-shadow:none !important;
+}
+.sync-pill i{background:var(--e-emerald) !important;box-shadow:none !important}
+
+/* ---------- panels / cards, flattened ---------- */
+.panel,.today-progress-card,.term-progress-card,.quick-task-panel,
+.route-planner,.next-bus-card,.mess-shell,.food-section,.task-item,
+.agenda-class-card,.vertical-class,.note-card,.dialog-card,
+.class-action-sheet,.notification-panel,.calendar-panel,.agenda-panel{
+  background:var(--e-surface) !important;
+  border:1px solid var(--e-line) !important;
+  box-shadow:none !important;
+  border-radius:var(--e-radius) !important;
+}
+.next-bus-card{background:var(--e-surface) !important;color:var(--e-text) !important}
+.next-bus-time{
+  color:var(--e-text) !important;font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-weight:600 !important;
+}
+.hero-card{
+  background:var(--e-surface) !important;
+  border:1px solid var(--e-line) !important;
+  box-shadow:none !important;
+  border-radius:var(--e-radius-lg) !important;
+}
+.hero-glow{display:none !important}
+.hero-copy h2{color:var(--e-text) !important;font-weight:600 !important;letter-spacing:-.02em !important}
+.focus-time-hero,#focusTime{
+  font-family:var(--font-mono) !important;font-variant-numeric:tabular-nums;
+  font-weight:500 !important;letter-spacing:-.01em !important;color:var(--e-text) !important;
+}
+.focus-countdown{
+  background:var(--e-surface-2) !important;border:1px solid var(--e-line) !important;color:var(--e-text) !important;
+}
+.focus-progress{background:var(--e-line) !important}
+.focus-progress span{background:var(--e-accent) !important}
+.live-state .pulse,.hero-kicker i{background:var(--e-emerald) !important;box-shadow:none !important}
+.focus-code,.live-state{color:var(--e-accent) !important}
+
+/* ---------- metrics -> plain stat row ---------- */
+.metric-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:0 !important;
+  background:transparent !important;
+}
+.metric{
+  background:transparent !important;border:0 !important;box-shadow:none !important;
+  border-left:1px solid var(--e-line);padding:2px 16px !important;min-height:0 !important;
+  display:flex !important;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;
+}
+.metric:first-child{border-left:0;padding-left:0 !important}
+.metric-icon{display:none !important}
+.metric strong{font-size:26px !important;font-weight:600 !important;font-family:var(--font-mono);color:var(--e-text) !important}
+.metric span:last-child{color:var(--e-muted) !important;font-size:11.5px !important}
+.added-metric{background:transparent !important}
+
+/* ---------- chips: one shared style ---------- */
+.count-chip,.timeline-code-chip,.agenda-code-chip,.sheet-code,.timeline-added,
+.vertical-status,.agenda-status,.legend-item,.day-pill,.meal-tab,.filter,.tag{
+  border-radius:999px !important;
+  border:1px solid var(--e-line) !important;
+  background:var(--e-surface-2) !important;
+  color:var(--e-muted) !important;
+  box-shadow:none !important;
+  font-weight:650 !important;
+}
+.count-chip{color:var(--e-accent) !important;background:var(--e-accent-soft) !important;border-color:transparent !important}
+.timeline-code-chip{background:var(--e-accent-soft) !important;color:var(--e-accent) !important;border-color:transparent !important}
+.vertical-class.current .vertical-status{color:var(--e-emerald) !important;background:color-mix(in srgb,var(--e-emerald) 12%,transparent) !important;border-color:transparent !important}
+.timeline-added{color:var(--e-emerald) !important;background:color-mix(in srgb,var(--e-emerald) 12%,transparent) !important;border-color:transparent !important}
+
+/* underline-style tabs (subtabs, meal tabs, filters) */
+.subtabs,.meal-tabs,.filter-row,.day-pills{
+  background:transparent !important;border:0 !important;padding:0 !important;
+  display:flex;gap:4px;border-bottom:1px solid var(--e-line) !important;border-radius:0 !important;
+}
+.subtab,.meal-tab,.filter,.day-pill{
+  background:transparent !important;border:0 !important;border-radius:0 !important;
+  border-bottom:2px solid transparent !important;color:var(--e-muted) !important;
+  box-shadow:none !important;padding:10px 12px !important;font-weight:650 !important;
+}
+.subtab.active,.meal-tab.active,.filter.active,.day-pill.active{
+  color:var(--e-accent) !important;background:transparent !important;border-bottom-color:var(--e-accent) !important;
+}
+/* Today/Tomorrow toggle superseded by the dual-day strip below it */
+.timeline-day-switch{display:none !important}
+
+/* ---------- vertical class rows / agenda rows, flattened ---------- */
+.vertical-class,.agenda-class-card{
+  padding:13px 15px !important;
+}
+.vertical-class:before,.agenda-class-card:before,.agenda-class-card:after{display:none !important}
+.vertical-time{color:var(--e-text) !important;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.vertical-content strong{color:var(--e-text) !important}
+.vertical-content p{color:var(--e-muted) !important}
+
+/* ---------- Term III progress: volume meter ---------- */
+.term-progress-bar{
+  height:auto !important;background:transparent !important;overflow:visible !important;
+  display:flex !important;align-items:flex-end;gap:3px;
+}
+.term-progress-bar span{
+  display:none; /* legacy single-fill bar hidden; meter below replaces it visually */
+}
+.term-meter{display:flex;align-items:flex-end;gap:3px;height:36px;margin:4px 0 12px}
+.term-meter i{flex:1;min-width:2px;border-radius:2px;background:var(--e-line);transition:background .2s ease}
+.term-meter i.filled{background:var(--e-accent)}
+.term-progress-stats article{
+  background:var(--e-surface-2) !important;border:0 !important;border-radius:var(--e-radius-sm) !important;
+}
+.term-progress-stats strong{color:var(--e-text) !important;font-family:var(--font-mono)}
+.term-progress-stats span{color:var(--e-muted) !important}
+
+/* ---------- dual-day strip (Today + Tomorrow together) ---------- */
+.dual-day-strip{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.dual-day-strip .day-col{min-width:0}
+.dual-day-strip .day-col + .day-col{border-left:1px solid var(--e-line);padding-left:24px}
+.dual-day-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.dual-day-head b{font-size:12.5px;font-weight:700;color:var(--e-text)}
+.dual-day-head span{font-size:11px;color:var(--e-muted);font-family:var(--font-mono)}
+.dual-day-strip .day-col.is-today .dual-day-head b{color:var(--e-accent)}
+.day-class-row{display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid var(--e-line-soft)}
+.day-class-row:last-child{border-bottom:0}
+.day-class-row time{font-family:var(--font-mono);font-size:12px;color:var(--e-muted);width:48px;flex:none;font-variant-numeric:tabular-nums}
+.day-class-row .dcr-info strong{display:block;font-size:13px;font-weight:600;color:var(--e-text)}
+.day-class-row .dcr-info span{font-size:11px;color:var(--e-muted)}
+.day-empty-note{font-size:12.5px;color:var(--e-muted);padding:9px 0}
+.day-more-link{display:inline-block;margin-top:8px;font-size:11.5px;font-weight:650;color:var(--e-accent);cursor:pointer;background:none;border:0;padding:0}
+.day-more-link:hover{text-decoration:underline}
+
+/* ---------- dialogs ---------- */
+dialog::backdrop{background:rgba(10,10,16,.5) !important;backdrop-filter:blur(4px) !important}
+.dialog-card{box-shadow:0 20px 50px rgba(0,0,0,.18) !important}
+.dialog-card input,.dialog-card select,.dialog-card textarea{
+  background:var(--e-surface-2) !important;border:1px solid var(--e-line) !important;color:var(--e-text) !important;
+}
+.primary-button{
+  background:var(--e-accent) !important;color:var(--e-accent-ink) !important;box-shadow:none !important;border:0 !important;
+}
+.secondary-button{background:var(--e-surface-2) !important;border:1px solid var(--e-line) !important;color:var(--e-text) !important;box-shadow:none !important}
+.danger-button{background:transparent !important;border:1px solid var(--e-danger) !important;color:var(--e-danger) !important}
+.class-action{background:var(--e-surface-2) !important;border:1px solid var(--e-line) !important;box-shadow:none !important}
+.class-action.primary-action{background:var(--e-accent-soft) !important;border-color:transparent !important}
+
+/* ---------- calendar ---------- */
+.calendar-day{background:transparent !important;border:1px solid transparent !important;box-shadow:none !important}
+.calendar-day.today:not(.selected){box-shadow:inset 0 0 0 1.5px var(--e-accent) !important}
+.calendar-day.selected{background:var(--e-accent) !important;color:var(--e-accent-ink) !important;box-shadow:none !important}
+.calendar-day.selected .calendar-day-number,.calendar-day.selected .calendar-class-count{color:var(--e-accent-ink) !important}
+
+/* ---------- tasks / notes ---------- */
+.task-item{padding:12px !important}
+.task-item:before{display:none !important}
+.task-item input{border-color:var(--e-faint) !important}
+.task-item input:checked{border-color:var(--e-accent) !important;background:var(--e-accent) !important}
+
+/* ---------- profile ---------- */
+.profile-hero{background:var(--e-surface) !important;border:1px solid var(--e-line) !important;box-shadow:none !important}
+.settings-row{border-bottom:1px solid var(--e-line-soft) !important}
+.settings-row:last-child{border-bottom:0 !important}
+.selected-elective-chips span{
+  border-radius:999px !important;border:1px solid var(--e-line) !important;background:var(--e-surface-2) !important;
+}
+
+/* ---------- notifications ---------- */
+.notification-panel{background:var(--e-surface) !important;border-left:1px solid var(--e-line) !important}
+
+/* ---------- onboarding ---------- */
+.onboarding-section-choice,.onboarding-elective-choice{
+  background:var(--e-surface-2) !important;border:1px solid var(--e-line) !important;box-shadow:none !important;
+}
+.onboarding-progress span{background:var(--e-line) !important}
+.onboarding-progress span.active{background:var(--e-accent) !important}
+
+/* ---------- bottom nav / fab ---------- */
+.bottom-nav{
+  background:color-mix(in srgb,var(--e-surface) 92%,transparent) !important;
+  border:1px solid var(--e-line) !important;box-shadow:0 10px 30px rgba(0,0,0,.12) !important;
+}
+.nav-item.active{background:var(--e-accent-soft) !important;color:var(--e-accent) !important}
+.planner-fab{background:var(--e-accent) !important;color:var(--e-accent-ink) !important;box-shadow:0 10px 24px rgba(0,0,0,.18) !important}
+
+/* ---------- mobile: bottom-sheet dialogs for consistency ---------- */
+@media(max-width:620px){
+  .term-meter{height:30px}
+  .term-meter i:nth-child(4n)  { display:none } /* thin out to ~15 bars on narrow screens */
+  .dual-day-strip{grid-template-columns:1fr;gap:0}
+  .dual-day-strip .day-col + .day-col{border-left:0;padding-left:0;border-top:1px solid var(--e-line);padding-top:14px;margin-top:14px}
+
+  #taskDialog,#noteDialog,#shortcutDialog{
+    margin:auto 0 0 !important;width:100% !important;max-width:100% !important;
+  }
+  #taskDialog .dialog-card,#noteDialog .dialog-card,#shortcutDialog .dialog-card{
+    border-radius:24px 24px 0 0 !important;width:100% !important;
+    padding-bottom:calc(20px + env(safe-area-inset-bottom)) !important;
+  }
+}

@@ -113,18 +113,18 @@ function scheduleIdleSync(){
 function setPlannerView(view="calendar"){$$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===view));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===view));document.dispatchEvent(new CustomEvent("planner-view-change",{detail:{view}}))}
 function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner"){state.selectedDate=isoToday();const today=new Date();state.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);setPlannerView("calendar")}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
 function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderCampus();renderNotifications();renderIcons();const order=$("#profileHomeOrder");if(order)order.value=state.profile.homeOrder||"summary-first";localStorage.setItem("classbl07-home-order-v1",state.profile.homeOrder||"summary-first")}
-function decorateTimelineDay(selector,classes,iso){
-  const rail=$(selector),list=rail?.querySelector(".vertical-day-timeline");if(!rail)return;
-  rail.querySelectorAll(".free-window-row,.timeline-holiday-banner").forEach(node=>node.remove());
-  const holiday=HOLIDAYS[iso];
-  if(holiday){const banner=document.createElement("div");banner.className="timeline-holiday-banner";banner.innerHTML=`<span>HOLIDAY</span><strong>${esc(holiday)}</strong>`;rail.prepend(banner)}
-  if(!list)return;
-  const cards=[...list.querySelectorAll(".vertical-class")];let previous=null;
-  classes.forEach((current,index)=>{
-    if(current.status==="Cancelled")return;
-    if(previous){const gap=minutes(current.startTime)-minutes(previous.endTime);if(gap>=45){const row=document.createElement("div"),isLunch=minutes(previous.endTime)<=14*60+30&&minutes(current.startTime)>=13*60+30;row.className="free-window-row";row.innerHTML=`<span>${isLunch?"LUNCH + FREE TIME":"FREE WINDOW"}</span><strong>${esc(fmtTime(previous.endTime))} - ${esc(fmtTime(current.startTime))}</strong><small>${esc(compactDuration(gap))}</small>`;cards[index]?.before(row)}}
-    previous=current;
-  });
+const TERM_METER_HEIGHTS=[62,88,48,100,70,40,82,55,34,90,46,68,30,78,52,38,94,44,60,36];
+function termMeterHtml(percent){
+  const total=TERM_METER_HEIGHTS.length,filled=Math.round(total*percent/100);
+  return`<div class="term-progress-bar"><div class="term-meter">${TERM_METER_HEIGHTS.map((h,i)=>`<i class="${i<filled?"filled":""}" style="height:${h}%"></i>`).join("")}</div></div>`;
+}
+function openDayInPlanner(iso){
+  showPage("planner");
+  state.selectedDate=iso;
+  state.calendarMonth=new Date(`${iso}T12:00:00+05:30`);
+  state.calendarMonth.setDate(1);
+  renderCalendar();
+  requestAnimationFrame(()=>document.getElementById("dayAgenda")?.scrollIntoView({behavior:"smooth",block:"start"}));
 }
 function renderHome(){
   const now=new Date(),today=isoToday();$("#todayLabel").textContent=new Intl.DateTimeFormat("en-IN",{weekday:"long",day:"numeric",month:"long"}).format(now).toUpperCase();$("#dateOrbitDay").textContent=String(now.getDate()).padStart(2,"0");$("#dateOrbitMonth").textContent=new Intl.DateTimeFormat("en-IN",{month:"short"}).format(now).toUpperCase();const h=now.getHours(),firstName=String(state.profile.name||"").trim().split(/\s+/)[0],dayGreeting=`Good ${h<12?"morning":h<17?"afternoon":"evening"}`;$("#greeting").textContent=firstName?`${dayGreeting}, ${firstName}.`:`${dayGreeting}.`;
@@ -147,17 +147,26 @@ function renderHome(){
   }
   else{focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-upcoming","is-future");focusPanel.style.removeProperty("--focus-course");$("#focusKicker").textContent=todays.length?"TODAY":"YOUR SCHEDULE";$("#focusState").textContent=todays.length?"You’re done for today":"You’re all clear";$("#focusCode").textContent="CLEAR";$("#focusTitle").textContent="No upcoming classes";$("#focusTime").textContent="—";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="Use Planner to look ahead";$("#focusCountdownLabel").textContent="STATUS";$("#focusCountdown").textContent="Clear";$("#focusContext").hidden=true;$("#focusProgress").style.width="0"}
   if(!focus){delete focusPanel.dataset.focusDate;$("#focusPosition").hidden=true}
-  const timelineIso=state.timelineDay==="tomorrow"?tomorrowIso():today,timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-  $("#timelineDateTitle").textContent=state.timelineDay==="today"?"Today":"Tomorrow";
-  $("#timelineFullDate").textContent=fmtDate(timelineIso,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  const tomorrow=tomorrowIso();
+  const todayClasses=state.classes.filter(c=>c.dateIso===today&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  const tomorrowClasses=state.classes.filter(c=>c.dateIso===tomorrow&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  $("#timelineDateTitle").textContent="Today & Tomorrow";
+  $("#timelineFullDate").textContent=fmtDate(today,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   $("#todaySwitchDate").textContent=fmtDate(today,{day:"numeric",month:"short"});
-  $("#tomorrowSwitchDate").textContent=fmtDate(tomorrowIso(),{day:"numeric",month:"short"});
-  $$(".timeline-day-button").forEach(b=>b.classList.toggle("active",b.dataset.timelineDay===state.timelineDay));
-  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineClasses.map(c=>{const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=c.status!=="Cancelled"&&wasRecentlyAdded(c);return`<article class="vertical-class ${status}" style="--course:${colorFor(c.code)}"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><div class="timeline-status-row"><span class="vertical-status">${status==="current"?"HAPPENING NOW":status==="done"?"COMPLETED":status==="cancelled"?"CANCELLED":"UPCOMING"}</span>${added?'<span class="timeline-added">ADDED</span>':""}</div></div></article>`}).join("")}</div>`:`<div class="empty-state">${state.timelineDay==="today"?"Enjoy your free day.":"Nothing scheduled tomorrow."}</div>`;
-  decorateTimelineDay("#todayProgressRail",timelineClasses,timelineIso);
-  const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0;
-  $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
-  const monday=new Date(now);monday.setHours(0,0,0,0);monday.setDate(now.getDate()-((now.getDay()+6)%7));const nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);const week=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")>now&&dateTime(c,"startTime")<nextMonday);const mins=week.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-Math.max(now,dateTime(c,"startTime")))/60000),0),cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;$("#weekClasses").textContent=week.length;$("#weekHours").textContent=`${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;$("#weekCancelled").textContent=cancels;const ts=new Date("2026-08-03T00:00:00+05:30"),te=new Date("2026-10-18T23:59:59+05:30"),ta=state.classes.filter(c=>dateTime(c,"startTime")>=ts&&dateTime(c,"startTime")<=te&&c.status!=="Cancelled"),td=ta.filter(c=>dateTime(c,"endTime")<now).length,tr=Math.max(0,ta.length-td),tp=ta.length?Math.round(td/ta.length*100):0,wl=Math.max(0,Math.ceil((te-now)/(7*24*3600000)));let tc=$("#termProgressCard");if(!tc){tc=document.createElement("section");tc.id="termProgressCard";tc.className="panel term-progress-card";$(".today-progress-card").after(tc)}tc.innerHTML=`<div class="panel-heading"><div><p class="overline">TERM III</p><h2>Progress</h2></div><span class="count-chip">${tp}%</span></div><div class="term-progress-bar"><span style="width:${tp}%"></span></div><div class="term-progress-stats"><article><strong>${td}</strong><span>classes completed</span></article><article><strong>${tr}</strong><span>classes remaining</span></article><article><strong>${wl}</strong><span>weeks remaining</span></article></div>`;
+  $("#tomorrowSwitchDate").textContent=fmtDate(tomorrow,{day:"numeric",month:"short"});
+  const dayColHtml=(label,iso,list,isToday)=>{
+    const cap=3,shown=list.slice(0,cap),holiday=HOLIDAYS[iso];
+    const rows=shown.map(c=>{const done=isToday&&now>=dateTime(c,"endTime"),current=isToday&&now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime");return`<div class="day-class-row${done?" is-done":""}${current?" is-current":""}" style="--course:${colorFor(c.code)}"><time>${esc(fmtTime(c.startTime))}</time><div class="dcr-info"><strong>${esc(c.code)} · ${esc(c.course)}</strong><span>${esc(venueOf(c))}${current?" · Happening now":""}</span></div></div>`}).join("");
+    const more=list.length>cap?`<button type="button" class="day-more-link" data-open-day="${iso}">+${list.length-cap} more · View full day</button>`:"";
+    const empty=list.length?"":`<div class="day-empty-note">${isToday?"Enjoy your free day.":holiday?"No classes — holiday.":"Nothing scheduled."}</div>`;
+    const holidayTag=holiday?`<span class="day-holiday-tag">${esc(holiday)}</span>`:"";
+    return`<div class="day-col ${isToday?"is-today":""}"><div class="dual-day-head"><b>${label}${holidayTag}</b><span>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span></div>${rows}${empty}${more}</div>`;
+  };
+  $("#todayProgressRail").innerHTML=`<div class="dual-day-strip">${dayColHtml("Today",today,todayClasses,true)}${dayColHtml("Tomorrow",tomorrow,tomorrowClasses,false)}</div>`;
+  $$("#todayProgressRail .day-more-link").forEach(btn=>btn.addEventListener("click",()=>openDayInPlanner(btn.dataset.openDay)));
+  const completed=todayClasses.filter(c=>now>=dateTime(c,"endTime")).length;
+  $("#progressSummary").textContent=`${completed} / ${todayClasses.length}`;
+  const monday=new Date(now);monday.setHours(0,0,0,0);monday.setDate(now.getDate()-((now.getDay()+6)%7));const nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);const week=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")>now&&dateTime(c,"startTime")<nextMonday);const mins=week.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-Math.max(now,dateTime(c,"startTime")))/60000),0),cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;$("#weekClasses").textContent=week.length;$("#weekHours").textContent=`${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;$("#weekCancelled").textContent=cancels;const ts=new Date("2026-08-03T00:00:00+05:30"),te=new Date("2026-10-18T23:59:59+05:30"),ta=state.classes.filter(c=>dateTime(c,"startTime")>=ts&&dateTime(c,"startTime")<=te&&c.status!=="Cancelled"),td=ta.filter(c=>dateTime(c,"endTime")<now).length,tr=Math.max(0,ta.length-td),tp=ta.length?Math.round(td/ta.length*100):0,wl=Math.max(0,Math.ceil((te-now)/(7*24*3600000)));let tc=$("#termProgressCard");if(!tc){tc=document.createElement("section");tc.id="termProgressCard";tc.className="panel term-progress-card";$(".today-progress-card").after(tc)}tc.innerHTML=`<div class="panel-heading"><div><p class="overline">TERM III</p><h2>Progress</h2></div><span class="count-chip">${tp}%</span></div>${termMeterHtml(tp)}<div class="term-progress-stats"><article><strong>${td}</strong><span>classes completed</span></article><article><strong>${tr}</strong><span>classes remaining</span></article><article><strong>${wl}</strong><span>weeks remaining</span></article></div>`;
   const unread=state.notifications.filter(n=>!n.read);
   $("#silentUpdateStrip").hidden=!unread.length;
   if(unread.length){
