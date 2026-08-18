@@ -176,9 +176,18 @@ function renderHome(){
     if(isNow){const pct=Math.max(0,Math.min(100,((now-dateTime(focus,"startTime"))/(dateTime(focus,"endTime")-dateTime(focus,"startTime")))*100));progressBox.hidden=false;$("#heroProgressFill").style.width=`${pct}%`}
     else progressBox.hidden=true;
     $("#focusVenue").textContent=venueOf(focus);$("#focusFaculty").textContent=focus.faculty;$("#heroAddTask").hidden=false;
-    const nextStripClass=scheduled[scheduled.indexOf(focus)+1];
-    $("#heroNextInfo").textContent=nextStripClass?`${canonical(nextStripClass.code)} · ${fmtRange(nextStripClass.startTime,nextStripClass.endTime)} · ${venueOf(nextStripClass)}`:"None left";
-    $("#heroLeftToday").textContent=`${todayLeft} ${todayLeft===1?"class":"classes"}`;
+    const dayList=scheduled.filter(c=>c.dateIso===focus.dateIso),posIndex=dayList.indexOf(focus),nextInDay=dayList[posIndex+1];
+    const heroLineEl=$("#heroLine");
+    if(nextInDay){heroLineEl.hidden=false;heroLineEl.textContent=`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`}
+    else if(dayList.length>1){heroLineEl.hidden=false;heroLineEl.textContent=`Class ${posIndex+1} of ${dayList.length}`}
+    else heroLineEl.hidden=true;
+    const summaryList=focus.dateIso===today?dayList.filter(c=>dateTime(c,"endTime")>now):dayList;
+    const totalMins=summaryList.reduce((sum,c)=>sum+(minutes(c.endTime)-minutes(c.startTime)),0);
+    const durationText=totalMins>=60?`${Math.floor(totalMins/60)}h${totalMins%60?` ${totalMins%60}m`:""}`:`${totalMins}m`;
+    const lastClass=summaryList[summaryList.length-1];
+    const dayLabel=focus.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(focus.dateIso,{day:"numeric",month:"short"});
+    $("#heroSummary").innerHTML=`${dayLabel} · <b>${summaryList.length} ${summaryList.length===1?"class":"classes"}</b> · ${durationText} · Until ${lastClass?fmtTime(lastClass.endTime):"—"}`;
+    const dayCountEl=$("#heroDayCount");dayCountEl.hidden=!dayList.length;dayCountEl.textContent=`${dayList.length} ${dayList.length===1?"class":"classes"} ${dayLabel.toLowerCase()}`;
   }
   else{
     focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-upcoming","is-future","is-break","has-focus");focusPanel.style.removeProperty("--focus-course");delete focusPanel.dataset.focusDate;
@@ -189,7 +198,7 @@ function renderHome(){
     const emptyIcon=$("#focusEmptyIcon");if(emptyIcon){emptyIcon.hidden=false;emptyIcon.innerHTML=icon(todays.length?"check":"moon")}
     $("#focusTitle").textContent=todays.length?"You're all done for today":"No classes today";
     $("#focusRange").textContent="—";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="Open the calendar to look ahead";$("#heroAddTask").hidden=true;$("#heroProgress").hidden=true;
-    $("#heroNextInfo").textContent="None left";$("#heroLeftToday").textContent=`${todayLeft} ${todayLeft===1?"class":"classes"}`;
+    $("#heroLine").hidden=true;$("#heroSummary").textContent="";$("#heroDayCount").hidden=true;
   }
   const glance=$("#heroDayGlance"),todaysAll=state.classes.filter(c=>c.dateIso===today).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   if(glance){
