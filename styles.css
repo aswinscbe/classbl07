@@ -673,11 +673,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .calendar-day{
   aspect-ratio:1/1;border:1px solid transparent;background:transparent;border-radius:10px;
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding-top:11px;
   color:var(--ink);position:relative;
 }
 .calendar-day.weekend{background:color-mix(in srgb, var(--accent) 6%, transparent)}
-.calendar-day-number{font-size:13.5px;font-weight:650}
+.calendar-day-number{
+  position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  font-size:13.5px;font-weight:650;line-height:1;
+}
 .calendar-day.weekend .calendar-day-number{color:var(--accent)}
 .calendar-day.outside{opacity:.32}
 .calendar-day.today{border-color:var(--accent)}
@@ -685,6 +687,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-day.selected{background:var(--accent);color:#fff}
 .calendar-day.selected .calendar-day-number{color:#fff}
 .calendar-class-count{
+  position:absolute;top:30px;left:50%;transform:translateX(-50%);
   display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;
   border-radius:999px;background:var(--course,var(--accent));
   color:#fff;font-size:10px;font-weight:800;line-height:1;
