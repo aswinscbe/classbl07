@@ -24,6 +24,13 @@ function fmtRange(a,b){return`${fmtTime(a)}–${fmtTime(b)}`}
 /* 24h digits for the split-flap hero (independent of the localized fmtTime above) */
 function flapDigits(t){const[h,m]=String(t||"00:00").split(":").map(Number);return`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`}
 function fmtDate(iso,o={weekday:"long",day:"numeric",month:"short"}){return new Intl.DateTimeFormat("en-IN",o).format(new Date(`${iso}T12:00:00+05:30`))}
+const EXAM_SLOT_LABELS={forenoon:"Forenoon",afternoon:"Afternoon",evening:"Evening"};
+function examOn(iso){return(window.EXAM_DATA||[]).find(e=>e.date===iso)}
+function nextExam(){
+  const today=isoToday(),list=(window.EXAM_DATA||[]).filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date));
+  return list[0]||null;
+}
+function examDaysLeft(iso){const now=new Date(`${isoToday()}T00:00:00+05:30`),target=new Date(`${iso}T00:00:00+05:30`);return Math.round((target-now)/86400000)}
 function initials(n){return String(n||"ST").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function icon(name){const p={
 home:'<path d="M3.5 11 12 3.5 20.5 11V20a1 1 0 0 1-1 1h-4v-6h-5v6H4.5a1 1 0 0 1-1-1Z"/>',
@@ -47,6 +54,7 @@ meal:'<path d="M7 3v8M4 3v5c0 2 1 3 3 3s3-1 3-3V3M7 11v10M16 3v18M16 3c3 2 4 5 4
 refresh:'<path d="M3 12a9 9 0 0 1 15.5-6.3M21 4v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3M3 20v-5h5"/>',
 gcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="M12 14v3"/><path d="M11 14.5h2"/>',
 gtasks:'<path d="m5 12 4 4L19 6"/><path d="M3 12h2M19 12h2"/>',
+mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>',
 close:'<path d="m6 6 12 12M18 6 6 18"/>',swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',sunrise:'<path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4"/>',moon:'<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
 more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
@@ -115,8 +123,20 @@ function scheduleIdleSync(){
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
-function showPage(n){if(n==="home")state.timelineDay="today";$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar")renderCalendar()}
-function openCalendarPage(iso){if(iso){state.selectedDate=iso;const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1)}showPage("calendar")}
+function showPage(n){if(n==="home")state.timelineDay="today";$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar")renderCalendar();if(n==="updates")renderUpdatesPage()}
+function openCalendarPage(iso){if(iso){state.selectedDate=iso;const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);state.railStart=mondayIso(iso)}showPage("calendar")}
+function renderExamCard(){
+  const card=$("#examCard");if(!card)return;
+  const exam=nextExam();
+  if(!exam){card.hidden=true;return}
+  card.hidden=false;
+  const firstSlot=Object.keys(exam.slots)[0],subject=exam.slots[firstSlot];
+  const daysLeft=examDaysLeft(exam.date);
+  $("#examCardTag").textContent=daysLeft===0?"EXAM TODAY":daysLeft===1?"EXAM TOMORROW":`NEXT EXAM · IN ${daysLeft} DAYS`;
+  $("#examCardTitle").textContent=subject;
+  $("#examCardMeta").textContent=`${fmtDate(exam.date,{weekday:"short",day:"numeric",month:"short"})} · ${EXAM_SLOT_LABELS[firstSlot]}${Object.keys(exam.slots).length>1?` +${Object.keys(exam.slots).length-1} more`:""}`;
+  card.onclick=()=>openCalendarPage(exam.date);
+}
 function renderDateStrip(){
   const el=$("#dateStrip");if(!el)return;
   const today=new Date(`${isoToday()}T12:00:00+05:30`),monday=new Date(today);monday.setDate(today.getDate()-((today.getDay()+6)%7));
@@ -130,7 +150,7 @@ function renderDateStrip(){
   el.innerHTML=html;
   $$(".date-pill",el).forEach(b=>b.addEventListener("click",()=>openCalendarPage(b.dataset.date)));
 }
-function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderIcons()}
+function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderUpdatesPage();renderIcons()}
 function decorateTimelineDay(selector,classes,iso){
   const rail=$(selector),list=rail?.querySelector(".vertical-day-timeline");if(!rail)return;
   rail.querySelectorAll(".free-window-row,.timeline-holiday-banner").forEach(node=>node.remove());
@@ -154,6 +174,7 @@ function tagCountdown(totalMins){
   return m>=60?`${Math.floor(m/60)}H${m%60?String(m%60).padStart(2,"0")+"M":""}`:`${m}M`;
 }
 function renderHome(){
+  renderExamCard();
   $("#focusPanel")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $$(".stat-tile").forEach(t=>t.classList.toggle("is-loading",!!state.scheduleLoading));
   $("#weekHeatmap")?.classList.toggle("is-loading",!!state.scheduleLoading);
@@ -385,10 +406,16 @@ function agendaCardHtml(c){
     </div>
   </article>`;
 }
-function agendaHtml(classes,tasks){
-  if(!classes.length&&!tasks.length)return'<div class="agenda-empty">Nothing scheduled for this day.</div>';
+function agendaHtml(classes,tasks,exam){
+  if(!classes.length&&!tasks.length&&!exam)return'<div class="agenda-empty">Nothing scheduled for this day.</div>';
+  let html="";
+  if(exam){
+    html+=`<section class="agenda-exam-section"><div class="agenda-group-title">End Term Exams</div>${Object.entries(exam.slots).map(([slot,subject])=>
+      `<article class="agenda-exam-card"><span class="exam-slot">${EXAM_SLOT_LABELS[slot]}</span><strong>${esc(subject)}</strong></article>`
+    ).join("")}</section>`;
+  }
   const periods=["Morning","Afternoon","Evening"];
-  let html='<div class="day-agenda-groups">';
+  html+='<div class="day-agenda-groups">';
   const hasMorning=classes.some(c=>minutes(c.endTime)<=810),hasAfternoon=classes.some(c=>minutes(c.startTime)>=870);
   periods.forEach(period=>{
     const items=classes.filter(c=>agendaPeriod(c)===period).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
@@ -403,7 +430,24 @@ function agendaHtml(classes,tasks){
   }
   return html;
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight),dashes=dayClasses.slice(0,4).map(c=>`<i class="${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"></i>`).join("");html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${dashes?`<span class="calendar-dashes">${dashes}</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar();requestAnimationFrame(()=>{const agenda=document.getElementById("dayAgenda");if(agenda&&window.matchMedia("(max-width:780px)").matches)agenda.scrollIntoView({behavior:"smooth",block:"start"})})});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks);const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};bindTaskRows($("#dayAgenda"))}
+function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight),dashes=dayClasses.slice(0,4).map(c=>`<i class="${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"></i>`).join("");html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${dashes?`<span class="calendar-dashes">${dashes}</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks,examOn(state.selectedDate));const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};bindTaskRows($("#dayAgenda"));renderDateRail()}
+function mondayIso(iso){const d=new Date(`${iso}T12:00:00+05:30`);d.setDate(d.getDate()-((d.getDay()+6)%7));return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
+function shiftRailWeek(delta){const d=new Date(`${state.railStart||mondayIso(state.selectedDate)}T12:00:00+05:30`);d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderDateRail()}
+function renderDateRail(){
+  const el=$("#dateRail");if(!el)return;
+  if(!state.railStart)state.railStart=mondayIso(state.selectedDate);
+  const start=new Date(`${state.railStart}T12:00:00+05:30`);
+  const labels=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const days=[];
+  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);days.push(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d))}
+  el.innerHTML=days.map((iso,i)=>{
+    const dayClasses=state.classes.filter(c=>c.dateIso===iso),count=dayClasses.filter(c=>c.status!=="Cancelled").length,isToday=iso===isoToday(),isSel=iso===state.selectedDate,hasExam=!!examOn(iso);
+    return`<button type="button" class="rail-day ${isSel?"sel":""} ${isToday?"today":""} ${hasExam?"has-exam":""}" data-date="${iso}"><span class="dow">${labels[i]}</span><b>${Number(iso.slice(8))}</b>${count?'<i class="dot"></i>':""}</button>`;
+  }).join("");
+  $$(".rail-day",el).forEach(b=>b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar()}));
+  const label=$("#railWeekLabel");
+  if(label)label.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
+}
 /* Status-aware desktop calendar preview. This declaration intentionally
    replaces the compact legacy renderer above without touching calendar flow. */
 function showCalendarTooltip(target,iso){
@@ -419,7 +463,7 @@ function showCalendarTooltip(target,iso){
   tip.innerHTML=`<div class="calendar-tooltip-head"><h4>${esc(fmtDate(iso))}</h4><small>${esc(summary)}</small></div>${scheduled.length?rows:'<div class="calendar-tooltip-empty">No scheduled classes</div>'}${cancelledRows}`;
   const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-240,r.bottom+8)}px`;tip.classList.add("show")
 }
-function shiftSelectedDate(delta){const day=new Date(`${state.selectedDate}T12:00:00+05:30`);day.setDate(day.getDate()+delta);state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(day);state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);const agenda=$("#dayAgenda");if(agenda){agenda.classList.remove("slide-prev","slide-next");agenda.classList.add(delta>0?"slide-next":"slide-prev")}renderCalendar();requestAnimationFrame(()=>requestAnimationFrame(()=>agenda?.classList.remove("slide-prev","slide-next")))}
+function shiftSelectedDate(delta){const day=new Date(`${state.selectedDate}T12:00:00+05:30`);day.setDate(day.getDate()+delta);state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(day);state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);state.railStart=mondayIso(state.selectedDate);const agenda=$("#dayAgenda");if(agenda){agenda.classList.remove("slide-prev","slide-next");agenda.classList.add(delta>0?"slide-next":"slide-prev")}renderCalendar();requestAnimationFrame(()=>requestAnimationFrame(()=>agenda?.classList.remove("slide-prev","slide-next")))}
 function renderCourseOptions(){const selected=new Set((state.profile.electives||[]).map(canonical));const seen=new Set(),courses=[];state.all.forEach(c=>{const code=canonical(c.baseCode||c.code);const allowed=c.type==="Core"?c.section===state.profile.section:selected.has(code);if(allowed&&!seen.has(code)){seen.add(code);courses.push({code,course:c.course})}});const o=courses.sort((a,b)=>a.course.localeCompare(b.course)).map(e=>`<option value="${esc(e.code)}">${esc(e.code)} · ${esc(e.course)}</option>`).join("");["#quickTaskCourse","#taskCourse","#noteCourse"].forEach(s=>{const el=$(s);if(el)el.innerHTML='<option value="">General</option>'+o})}
 function addTask(title,course,date){
   const t={id:crypto.randomUUID(),title,course:course||"General",date,completed:false,createdAt:Date.now()};
@@ -749,7 +793,7 @@ function notificationTagHtml(n){
   if(n.type==="cancelled")return`<span class="badge badge-cancelled">Cancelled</span>`;
   return"";
 }
-function renderNotifications(){const unread=state.notifications.filter(n=>!n.read).length;$("#notificationBadge").hidden=!unread;$("#notificationBadge").textContent=unread;$("#notificationList").innerHTML=state.notifications.length?state.notifications.map(n=>`<article class="notification-item ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><div class="notification-row"><strong>${esc(n.title)}</strong>${notificationTagHtml(n)}</div><p>${esc(n.text)}</p><time>${new Intl.RelativeTimeFormat("en",{numeric:"auto"}).format(-Math.max(1,Math.round((Date.now()-n.createdAt)/3600000)),"hour")}</time></article>`).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("bell")+'</span><p>No schedule updates</p><small>We’ll let you know when something changes.</small></div>'}
+function renderNotifications(){const unread=state.notifications.filter(n=>!n.read).length;$("#notificationBadge").hidden=!unread;$("#notificationBadge").textContent=unread;$("#notificationList").innerHTML=state.notifications.length?state.notifications.map(n=>`<article class="notification-item ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><span class="notification-chip">${esc(canonical(n.course||"").slice(0,4)||"•")}</span><div class="notification-body"><div class="notification-row"><strong>${esc(n.title)}</strong>${notificationTagHtml(n)}</div><p>${esc(n.text)}</p><time>${new Intl.RelativeTimeFormat("en",{numeric:"auto"}).format(-Math.max(1,Math.round((Date.now()-n.createdAt)/3600000)),"hour")}</time></div></article>`).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("bell")+'</span><p>No schedule updates</p><small>We’ll let you know when something changes.</small></div>'}
 function openNotifications(){const d=$("#notificationDrawer");d.classList.add("open");d.setAttribute("aria-hidden","false")}
 function closeNotifications(){const d=$("#notificationDrawer");d.classList.remove("open");d.setAttribute("aria-hidden","true")}
 
@@ -916,6 +960,104 @@ function renderGoogleTasksStatus(){
   }
 }
 
+/* ===== Gmail-based Updates tab ===== */
+const GMAIL_SCOPE="https://www.googleapis.com/auth/gmail.readonly";
+const GMAIL_TOKEN_KEY="classbl07-nova-gmail-token-v1";
+const GMAIL_UPDATES_KEY="classbl07-nova-gmail-updates-v1";
+const GMAIL_EMAIL_KEY="classbl07-nova-gmail-email-v1";
+let _gmailTokenClient=null,_gmailAccessToken=null;
+
+function getSavedGmailToken(){
+  try{const raw=localStorage.getItem(GMAIL_TOKEN_KEY);if(!raw)return null;const o=JSON.parse(raw);if(o?.access_token&&(!o.expires_at||Date.now()<o.expires_at-60000))return o}catch(e){}
+  return null;
+}
+function saveGmailToken(o){_gmailAccessToken=o.access_token;localStorage.setItem(GMAIL_TOKEN_KEY,JSON.stringify(o))}
+function clearGmailToken(){_gmailAccessToken=null;localStorage.removeItem(GMAIL_TOKEN_KEY);localStorage.removeItem(GMAIL_UPDATES_KEY);localStorage.removeItem(GMAIL_EMAIL_KEY)}
+async function initGmailTokenClient(){
+  if(_gmailTokenClient)return _gmailTokenClient;
+  if(!window.google?.accounts?.oauth2)return null;
+  return new Promise(resolve=>{
+    _gmailTokenClient=window.google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:GMAIL_SCOPE,callback:()=>{}});
+    resolve(_gmailTokenClient);
+  });
+}
+async function connectGmail(){
+  try{
+    const client=await initGmailTokenClient();
+    if(!client)throw new Error("Google Identity Services not loaded");
+    client.callback=async resp=>{
+      if(resp.error)return;
+      saveGmailToken({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000});
+      try{
+        const profileRes=await fetch("https://www.googleapis.com/gmail/v1/users/me/profile",{headers:{Authorization:`Bearer ${_gmailAccessToken}`}});
+        if(profileRes.ok){const p=await profileRes.json();localStorage.setItem(GMAIL_EMAIL_KEY,p.emailAddress||"")}
+      }catch(e){}
+      renderUpdatesPage();
+      await fetchGmailUpdates();
+      renderUpdatesPage();
+    };
+    client.requestAccessToken({prompt:"consent"});
+  }catch(err){alert("Gmail sign-in failed: "+(err.message||err))}
+}
+function disconnectGmail(){clearGmailToken();renderUpdatesPage()}
+
+function myCourseKeywords(){
+  const selected=new Set((state.profile.electives||[]).map(canonical)),seen=new Set(),list=[];
+  state.all.forEach(c=>{
+    const code=canonical(c.baseCode||c.code);
+    const allowed=c.type==="Core"?c.section===state.profile.section:selected.has(code);
+    if(allowed&&!seen.has(code)){seen.add(code);list.push({code,course:c.course})}
+  });
+  (state.electives||[]).forEach(e=>{
+    const code=canonical(e.code);
+    if(selected.has(code)&&!seen.has(code)){seen.add(code);list.push({code,course:e.course})}
+  });
+  return list;
+}
+function matchCourseForText(text){
+  const lower=String(text||"").toLowerCase();
+  for(const c of myCourseKeywords()){
+    if((c.course&&lower.includes(c.course.toLowerCase()))||lower.includes(c.code.toLowerCase()))return c;
+  }
+  return null;
+}
+
+async function fetchGmailUpdates(){
+  if(!_gmailAccessToken)return;
+  const q=encodeURIComponent('(quiz OR exam OR "end term" OR placement OR internship OR assignment OR deadline OR results) newer_than:60d');
+  try{
+    const listRes=await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages?q=${q}&maxResults=25`,{headers:{Authorization:`Bearer ${_gmailAccessToken}`}});
+    if(!listRes.ok)throw new Error("Gmail search failed");
+    const listData=await listRes.json();
+    const ids=(listData.messages||[]).map(m=>m.id),updates=[];
+    for(const id of ids){
+      const msgRes=await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,{headers:{Authorization:`Bearer ${_gmailAccessToken}`}});
+      if(!msgRes.ok)continue;
+      const msg=await msgRes.json();
+      const headers=Object.fromEntries((msg.payload?.headers||[]).map(h=>[h.name,h.value]));
+      const subject=headers.Subject||"(No subject)",snippet=msg.snippet||"";
+      const course=matchCourseForText(`${subject} ${snippet}`);
+      updates.push({id,subject,snippet,course:course?course.code:null,date:msg.internalDate?Number(msg.internalDate):Date.now()});
+    }
+    updates.sort((a,b)=>b.date-a.date);
+    localStorage.setItem(GMAIL_UPDATES_KEY,JSON.stringify({updates,fetchedAt:Date.now()}));
+  }catch(e){console.error(e)}
+}
+function loadGmailUpdates(){try{const raw=localStorage.getItem(GMAIL_UPDATES_KEY);return raw?JSON.parse(raw):null}catch(e){return null}}
+
+function renderUpdatesPage(){
+  const connectPanel=$("#gmailConnectPanel"),statusPanel=$("#gmailStatusPanel"),list=$("#updatesList");
+  if(!connectPanel)return;
+  const token=getSavedGmailToken()||(_gmailAccessToken?{access_token:_gmailAccessToken}:null);
+  if(!token){connectPanel.hidden=false;statusPanel.hidden=true;if(list)list.innerHTML="";return}
+  connectPanel.hidden=true;statusPanel.hidden=false;
+  $("#gmailAccountEmail").textContent=localStorage.getItem(GMAIL_EMAIL_KEY)||"Connected";
+  const cache=loadGmailUpdates(),updates=cache?.updates||[];
+  $("#gmailLastChecked").textContent=cache?.fetchedAt?`Last checked ${new Intl.RelativeTimeFormat("en",{numeric:"auto"}).format(-Math.max(1,Math.round((Date.now()-cache.fetchedAt)/60000)),"minute")}`:"Not checked yet — tap refresh";
+  const relevant=updates.filter(u=>u.course);
+  list.innerHTML=relevant.length?relevant.map(u=>`<article class="update-item"><span class="update-chip" style="--course:${colorFor(u.course)}">${esc(u.course)}</span><div class="update-body"><strong>${esc(u.subject)}</strong><p>${esc(u.snippet)}</p><div class="update-meta"><time>${esc(new Intl.DateTimeFormat("en-IN",{day:"numeric",month:"short"}).format(new Date(u.date)))}</time></div></div></article>`).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("mail")+'</span><p>No matching updates yet</p><small>Quiz, exam and placement mail for your courses will show up here.</small></div>';
+}
+
 function bindOutsideDismiss(dialog){
   if(!dialog)return;
   dialog.addEventListener("click",event=>{
@@ -1040,11 +1182,14 @@ function bind(){
   $("#chooseElectivesInline")?.addEventListener("click",()=>openOnboardingManually());
   $("#connectGoogleTasks")?.addEventListener("click",()=>connectGoogleTasks());
   $("#disconnectGoogleTasks")?.addEventListener("click",()=>disconnectGoogleTasks());
+  $("#connectGmailButton")?.addEventListener("click",()=>connectGmail());
+  $("#disconnectGmailButton")?.addEventListener("click",()=>disconnectGmail());
+  $("#refreshGmailUpdates")?.addEventListener("click",async e=>{const btn=e.currentTarget;btn.classList.add("is-loading");await fetchGmailUpdates();renderUpdatesPage();btn.classList.remove("is-loading")});
   window.addEventListener("focus",()=>{scheduleIdleSync();scheduleGoogleTasksSync()});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
   window.addEventListener("online",()=>scheduleIdleSync());
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
-  $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);renderCalendar()});
+  $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
   bindSwipeGesture($("#dayAgenda"),direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
   $("#dayAgenda").addEventListener("click",event=>{const button=event.target.closest(".agenda-add-task");if(!button)return;const c=state.classes.find(item=>classIdentity(item)===button.dataset.classId);if(!c)return;$("#taskTitle").value="";$("#taskCourse").value=canonical(c.code);$("#taskDate").value=c.dateIso;clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal()});
@@ -1054,6 +1199,11 @@ function bind(){
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
   bindDismissibleDialog($("#ledgerDialog"));
   bindDismissibleDialog($("#termHeatmapDialog"));
+  bindDismissibleDialog($("#monthViewDialog"));
+  $("#closeMonthView")?.addEventListener("click",()=>closeDialog($("#monthViewDialog")));
+  $("#openMonthView")?.addEventListener("click",()=>{const d=new Date(`${state.selectedDate}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();$("#monthViewDialog").showModal()});
+  $("#railPrevWeek")?.addEventListener("click",()=>shiftRailWeek(-1));
+  $("#railNextWeek")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
   $("#termProgressCard")?.addEventListener("click",()=>{renderTermHeatmap();$("#termHeatmapDialog").showModal()});
   $("#termHeatmapGrid")?.addEventListener("click",e=>{
@@ -1100,6 +1250,8 @@ async function init(){
   // Restore Google Tasks token silently
   const savedToken=getSavedGoogleToken();
   if(savedToken){_googleAccessToken=savedToken.access_token;initGoogleTokenClient().catch(()=>{});pullGoogleTasks().then(async()=>{await migrateGoogleTaskNotes();for(const task of state.tasks.filter(t=>!t.googleTaskId))await syncTaskToGoogle(task)}).catch(()=>{})}
+  const savedGmailToken=getSavedGmailToken();
+  if(savedGmailToken){_gmailAccessToken=savedGmailToken.access_token;initGmailTokenClient().catch(()=>{});fetchGmailUpdates().then(renderUpdatesPage).catch(()=>{})}
   renderAll();
   renderGoogleTasksStatus();
   maybeOpenOnboarding();
