@@ -50,22 +50,12 @@
     if(!main){main=document.createElement("div");main.id="homeMainRail";main.className="home-main-rail";body.appendChild(main)}
     let rail=document.getElementById("homeSideRail");
     if(!rail){rail=document.createElement("aside");rail.id="homeSideRail";rail.className="home-side-rail";body.appendChild(rail)}
-    const focus=document.getElementById("focusPanel"),timeline=home.querySelector(".today-progress-card"),homeGrid=home.querySelector(".home-grid");
-    [focus,timeline,homeGrid].forEach(node=>{if(node&&node.parentElement!==main)main.appendChild(node)});
+    const focus=document.getElementById("focusPanel"),density=document.getElementById("weekDensity"),timeline=home.querySelector(".today-progress-card"),homeGrid=home.querySelector(".home-grid");
+    [focus,density,homeGrid,timeline].forEach(node=>{if(node&&node.parentElement!==main)main.appendChild(node)});
     if(rail.parentElement!==body)body.appendChild(rail);
-    const progress=document.getElementById("termProgressCard"),week=home.querySelector(".compact-panel"),quick=home.querySelector(".quick-task-panel");
-    let progressWeek=document.getElementById("progressWeekCard");
-    if(!progressWeek){progressWeek=document.createElement("section");progressWeek.id="progressWeekCard";progressWeek.className="panel progress-week-card"}
-    if(progressWeek.parentElement!==rail)rail.appendChild(progressWeek);
-    [progress,week].forEach(node=>{if(node&&node.parentElement!==progressWeek)progressWeek.appendChild(node)});
+    const quick=home.querySelector(".quick-task-panel");
     if(quick&&quick.parentElement!==rail)rail.appendChild(quick);
-    const layout=localStorage.getItem("classbl07-home-order-v1")||"summary-first";
-    progressWeek.style.order=layout==="tasks-first"?"2":"1";
-    if(quick)quick.style.order=layout==="tasks-first"?"1":"2";
-    const metricGrid=week?.querySelector(".metric-grid");
-    if(metricGrid&&!document.getElementById("weekAddedMetric")){const item=document.createElement("article");item.id="weekAddedMetric";item.className="metric added-metric";item.innerHTML='<span class="metric-icon">＋</span><strong id="weekAdded">0</strong><span>added</span>';metricGrid.appendChild(item)}
-    const added=[...document.querySelectorAll(".notification-item strong")].filter(el=>/class added/i.test(el.textContent)).length;
-    const addedValue=document.getElementById("weekAdded");if(addedValue&&addedValue.textContent!==String(added))addedValue.textContent=String(added);
+    if(quick)quick.style.order="1";
   };
   const decorateCalendar = () => {
     document.querySelectorAll("#calendarGrid .calendar-day").forEach((day, index) => {
@@ -190,10 +180,6 @@
     }
     const plannerOpen = document.getElementById("plannerPage")?.classList.contains("active");
     const view = document.querySelector("[data-planner-view].active")?.dataset.plannerView;
-    const heading=document.querySelector("#plannerPage .page-heading h1"),subtitle=document.querySelector("#plannerPage .page-heading .subtitle");
-    const copy={calendar:["See the month. Own the day.","Select a date to see classes, tasks and notes."],tasks:["Plan it. Get it done.","Everything you need to finish, without the clutter."],notes:["Keep what matters.","Quick academic notes, organised around your subjects."]};
-    if(heading&&copy[view]&&heading.textContent!==copy[view][0])heading.textContent=copy[view][0];
-    if(subtitle&&copy[view]&&subtitle.textContent!==copy[view][1])subtitle.textContent=copy[view][1];
     fab.hidden = !plannerOpen || !["tasks","notes"].includes(view);
     if(fab.dataset.view!==view){fab.dataset.view=view||"";fab.innerHTML = view==="notes" ? "<span>＋</span> Note" : "<span>＋</span> Task"}
   };
@@ -219,7 +205,7 @@
     document.addEventListener("click", event => {
       const calendarDay = event.target.closest(".calendar-day");
       if (calendarDay && matchMedia("(max-width:780px)").matches) setTimeout(() => document.querySelector(".agenda-panel")?.scrollIntoView({behavior:"smooth", block:"start"}), 80);
-      const card = event.target.closest(".vertical-class,.agenda-class-card,.schedule-item,#focusPanel:not(.is-empty)");
+      const card = event.target.closest(".agenda-class-card,.schedule-item,.vertical-class,#focusPanel:not(.is-empty)");
       if (card && !event.target.closest("button,a,input")) openClassSheet(card);
       setTimeout(ensurePlannerFab,0);
     });
