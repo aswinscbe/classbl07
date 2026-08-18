@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="BL07 Term 3 Planner — mobile-first academic companion">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=20260811-focus6">
-  <link rel="stylesheet" href="visual.css?v=20260811-focus6">
+  <link rel="stylesheet" href="styles.css?v=20260818-focus29">
+  <link rel="stylesheet" href="visual.css?v=20260818-focus29">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -42,7 +42,7 @@
           <div>
             <p class="overline" id="todayLabel">TODAY</p>
             <h1 id="greeting">Good evening.</h1>
-            <p class="subtitle">Everything important, at a glance.</p><p class="home-sync-text" id="homeSyncText">Checking the latest schedule…</p>
+            <p class="subtitle">Your day, clearly organised.</p><p class="home-sync-text" id="homeSyncText">Checking the latest schedule…</p>
           </div>
           <div class="date-orbit" aria-hidden="true">
             <span id="dateOrbitDay">06</span>
@@ -51,21 +51,18 @@
         </div>
 
         <section class="hero-card" id="focusPanel" aria-live="polite">
-          <div class="hero-glow hero-glow-one"></div>
-          <div class="hero-glow hero-glow-two"></div>
           <div class="hero-top">
             <div class="focus-state-block">
-              <span class="pulse"></span>
+              <span class="focus-live-capsule" id="focusLiveCapsule">NOW</span>
               <div class="focus-state-copy">
-                <span class="focus-state-kicker" id="focusKicker">YOUR SCHEDULE</span>
+                <span class="focus-state-kicker" id="focusKicker" hidden>YOUR SCHEDULE</span>
                 <strong id="focusState">Checking your day</strong>
               </div>
             </div>
-            <span class="hero-course-dot" id="heroCourseDot"></span>
+            <span class="hero-day-load" id="focusDayLoad">Today</span>
           </div>
           <div class="hero-main">
             <div class="hero-copy">
-              <div class="focus-time-label">CLASS TIME</div>
               <div class="focus-time-hero" id="focusTime">—</div>
               <div class="focus-course-line">
                 <div class="focus-code" id="focusCode">—</div>
@@ -73,11 +70,11 @@
               </div>
               <div class="hero-meta-grid">
                 <span><i data-icon="pin"></i><b id="focusVenue">—</b></span>
-                <span><i data-icon="faculty"></i><b id="focusFaculty">—</b></span>
+                <span id="focusFacultyRow"><i data-icon="faculty"></i><b id="focusFaculty">—</b></span>
               </div>
               <div class="focus-position" id="focusPosition" hidden></div>
             </div>
-            <div class="focus-countdown">
+            <div class="focus-countdown" hidden>
               <span id="focusCountdownLabel">STATUS</span>
               <strong id="focusCountdown">—</strong>
             </div>
@@ -86,7 +83,15 @@
             <span id="focusContextLabel">TODAY</span>
             <strong id="focusContextValue">—</strong>
           </div>
-          <div class="focus-progress"><span id="focusProgress"></span></div>
+          <div class="focus-segments" id="focusSegments" aria-hidden="true"></div>
+        </section>
+
+        <section class="week-density" id="weekDensity" aria-labelledby="weekDensityTitle">
+          <div class="week-density-heading">
+            <strong id="weekDensityTitle">7-day load</strong>
+            <span id="weekDensitySummary">—</span>
+          </div>
+          <div class="week-density-days" id="weekDensityDays"></div>
         </section>
 
         <section class="silent-update-strip" id="silentUpdateStrip" hidden>
@@ -115,19 +120,6 @@
           <div id="todayProgressRail"></div>
         </section>
 
-        <div class="home-grid">
-          <section class="panel compact-panel">
-            <div class="panel-heading">
-              <div><p class="overline">WEEK</p><h2>What remains</h2></div>
-            </div>
-            <div class="metric-grid">
-              <article class="metric"><span class="metric-icon" data-icon="books"></span><strong id="weekClasses">0</strong><span>classes left</span></article>
-              <article class="metric"><span class="metric-icon" data-icon="clock"></span><strong id="weekHours">0h</strong><span>class time left</span></article>
-              <article class="metric"><span class="metric-icon" data-icon="calendar"></span><strong id="weekCancelled">0</strong><span>cancelled</span></article>
-            </div>
-          </section>
-        </div>
-
         <section class="panel quick-task-panel">
           <div class="panel-heading">
             <div><p class="overline">QUICK CAPTURE</p><h2>Add a task</h2></div>
@@ -143,22 +135,6 @@
       </section>
 
       <section class="page" id="plannerPage" data-page="planner">
-        <div class="page-heading planner-heading-actions">
-          <div>
-            <p class="overline">ACADEMIC PLANNER</p>
-            <h1>See the month. Own the day.</h1>
-            <p class="subtitle">Calendar first, with tasks and notes close by.</p>
-          </div>
-          <div class="planner-utility-links" aria-label="Personal shortcuts">
-            <a class="icon-button utility-link" href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noopener" aria-label="Open Google Calendar" title="Google Calendar">
-              <span data-icon="calendar"></span>
-            </a>
-            <a class="icon-button utility-link" href="https://tasks.google.com/" target="_blank" rel="noopener" aria-label="Open Google Tasks" title="Google Tasks">
-              <span data-icon="check"></span>
-            </a>
-          </div>
-        </div>
-
         <div class="subtabs" id="plannerTabs">
           <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span>Calendar</button>
           <button class="subtab" data-planner-tab="tasks"><span data-icon="check"></span>Tasks</button>
@@ -222,16 +198,13 @@
       </section>
 
       <section class="page" id="campusPage" data-page="campus">
-        <div class="page-heading">
-          <div><p class="overline">CAMPUS</p><h1>Move. Eat. Repeat.</h1><p class="subtitle">Bus departures and today’s mess menu.</p></div>
-        </div>
         <div class="subtabs">
           <button class="subtab active" data-campus-tab="bus"><span data-icon="bus"></span>Bus</button>
           <button class="subtab" data-campus-tab="mess"><span data-icon="meal"></span>Mess</button>
         </div>
 
         <section class="campus-view active" data-campus-view="bus"><article class="panel route-planner"><div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2></div></div><div class="route-select-grid"><label><span>From</span><select id="busFrom"></select></label><button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button><label><span>To</span><select id="busTo"></select></label></div><div class="quick-route-row" id="quickRoutes"></div></article><div class="campus-grid"><article class="next-bus-card route-card"><p class="overline light">NEXT DEPARTURE</p><div class="next-bus-time" id="nextBusTime">—</div><h2 id="nextBusRoute">Choose a route</h2><p id="nextBusMeta">Direct services only</p><div class="route-visual" id="nextBusVisual"></div><div class="countdown-box"><span>Leaves in</span><strong id="nextBusCountdown">—</strong></div></article><article class="panel"><div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next departures</h2></div></div><div id="upcomingBuses" class="bus-list"></div></article></div><article class="panel"><div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small-toggle" id="toggleFullBus">Show all</button></div><div id="fullBusList" class="bus-table collapsed"></div></article></section><section class="campus-view" data-campus-view="mess"><article class="panel mess-shell"><div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2></div></div><div class="day-pills" id="messDayPills"></div><div class="meal-tabs" id="mealTabs"><button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button><button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button><button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button></div><p class="menu-note">Menu is tentative and may change with market availability.</p><div id="messMenu" class="meal-showcase"></div></article></section></section><section class="page" id="profilePage" data-page="profile">
-        <div class="page-heading"><div><p class="overline">PROFILE</p><h1>Make it yours.</h1><p class="subtitle">Your section, electives and preferences.</p></div></div>
+        <div class="page-heading"><div><p class="overline">PROFILE</p><h1>Your schedule, your way.</h1><p class="subtitle">Section, electives and preferences in one place.</p></div></div>
         <div class="profile-layout">
           <article class="profile-hero">
             <div class="avatar" id="profileAvatar">ST</div>
@@ -241,14 +214,12 @@
             <form id="profileForm" class="profile-form">
               <label><span>Name</span><input id="profileName" type="text" required></label>
               <label><span>Section</span><select id="profileSection"><option value="A">Section A</option><option value="B">Section B</option></select></label>
-              <div class="selected-electives-card"><span>Electives</span><div id="selectedElectiveChips" class="selected-elective-chips"></div><button class="secondary-button" type="button" id="chooseElectivesInline">Choose electives</button></div>
+              <div class="selected-electives-card"><span>Electives</span><div id="selectedElectiveChips" class="selected-elective-chips"></div><button class="secondary-button" type="button" id="chooseElectivesInline">Edit electives</button></div>
               <label><span>Appearance</span><select id="profileTheme"><option value="system">Follow device</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
-              <label><span>Home card order</span><select id="profileHomeOrder"><option value="summary-first">Progress before quick task</option><option value="tasks-first">Quick task before progress</option></select></label>
               <button class="primary-button" type="submit">Save profile</button>
             </form>
           </article>
           <article class="panel">
-            <div class="settings-row"><div><strong>Choose electives</strong><p>Re-open the electives picker. Tasks can be added even without electives.</p></div><button class="secondary-button" id="chooseElectivesButton">Choose</button></div>
             <div class="settings-row"><div><strong>Google Tasks</strong><p>Sync tasks to your Google account.</p><div id="googleTasksStatus"></div></div><span id="googleTasksConnected" hidden><button class="secondary-button" id="disconnectGoogleTasks">Disconnect</button></span><span id="googleTasksDisconnected"><button class="primary-button google-tasks-button" id="connectGoogleTasks">Connect</button></span></div>
             <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
             <div class="settings-row"><div><strong>Open calendar</strong><p>Open Google Calendar in a new tab.</p></div><a class="secondary-button link-button" href="https://calendar.google.com" target="_blank" rel="noopener">Open</a></div>
@@ -272,13 +243,13 @@
     <div class="notification-panel">
       <div class="notification-head">
         <div><p class="overline">UPDATES</p><h2>Notifications</h2></div>
-        <button class="icon-button" id="closeNotifications"><span data-icon="close"></span></button>
+        <div class="notification-head-actions">
+          <button class="notification-action" id="markNotificationsRead">Mark read</button>
+          <button class="notification-action danger" id="clearNotifications">Clear</button>
+          <button class="icon-button" id="closeNotifications" aria-label="Close notifications"><span data-icon="close"></span></button>
+        </div>
       </div>
       <div id="notificationList" class="notification-list"></div>
-      <div class="notification-actions">
-        <button class="secondary-button" id="markNotificationsRead">Mark all as read</button>
-        <button class="danger-button" id="clearNotifications">Clear all</button>
-      </div>
     </div>
   </aside>
 
@@ -370,8 +341,8 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260811-focus6"></script>
-  <script src="app.js?v=20260811-focus6"></script>
-  <script src="polish.js?v=20260811-focus6"></script>
+  <script src="campus-data.js?v=20260818-focus29"></script>
+  <script src="app.js?v=20260818-focus29"></script>
+  <script src="polish.js?v=20260818-focus29"></script>
 </body>
 </html>
