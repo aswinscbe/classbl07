@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0b1020">
   <meta name="description" content="BL07 Term 3 Planner — mobile-first academic companion">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=20260818-focus29">
-  <link rel="stylesheet" href="visual.css?v=20260818-focus29">
+  <link rel="stylesheet" href="styles.css?v=20260818-focus30">
+  <link rel="stylesheet" href="visual.css?v=20260818-focus30">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -83,7 +83,7 @@
             <span id="focusContextLabel">TODAY</span>
             <strong id="focusContextValue">—</strong>
           </div>
-          <div class="focus-segments" id="focusSegments" aria-hidden="true"></div>
+          <div class="focus-segments" id="focusSegments" role="progressbar" aria-label="Current interval progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden></div>
         </section>
 
         <section class="week-density" id="weekDensity" aria-labelledby="weekDensityTitle">
@@ -296,7 +296,7 @@
 
 
   <dialog id="onboardingDialog" class="onboarding-dialog">
-    <form id="onboardingForm" class="dialog-card onboarding-card">
+    <form id="onboardingForm" class="dialog-card onboarding-card" novalidate>
       <div class="onboarding-progress" aria-hidden="true">
         <span class="active" data-onboarding-progress="1"></span>
         <span data-onboarding-progress="2"></span>
@@ -331,18 +331,26 @@
         <h2>Choose your electives</h2>
         <p class="onboarding-copy">Only selected electives will appear in your personal timetable.</p>
 
+        <div class="elective-selection-toolbar">
+          <span id="electiveSelectionCount" aria-live="polite">0 selected</span>
+          <div>
+            <button type="button" class="text-button" id="selectAllElectives">Select all</button>
+            <button type="button" class="text-button" id="clearAllElectives">Clear all</button>
+          </div>
+        </div>
+
         <div id="onboardingElectives" class="onboarding-elective-list"></div>
 
         <div class="dialog-actions onboarding-actions">
           <button type="button" class="secondary-button" id="onboardingBack">Back</button>
-          <button type="submit" class="primary-button">Finish setup</button>
+          <button type="submit" class="primary-button" id="finishOnboarding">Finish setup</button>
         </div>
       </section>
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260818-focus29"></script>
-  <script src="app.js?v=20260818-focus29"></script>
-  <script src="polish.js?v=20260818-focus29"></script>
+  <script src="campus-data.js?v=20260818-focus30"></script>
+  <script src="app.js?v=20260818-focus30"></script>
+  <script src="polish.js?v=20260818-focus30"></script>
 </body>
 </html>
