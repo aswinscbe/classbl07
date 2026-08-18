@@ -5,7 +5,7 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
 const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFilter:"all",timelineDay:"today",lastUpdated:null,calendarHighlight:null};
+const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:"C&D Housing",busTo:"PGP Auditorium",timelineDay:"today",lastUpdated:null,calendarHighlight:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
@@ -190,6 +190,14 @@ function renderHome(){
     $("#focusTitle").textContent=todays.length?"You're all done for today":"No classes today";
     $("#focusRange").textContent="—";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="Open the calendar to look ahead";$("#heroAddTask").hidden=true;$("#heroProgress").hidden=true;
     $("#heroNextInfo").textContent="None left";$("#heroLeftToday").textContent=`${todayLeft} ${todayLeft===1?"class":"classes"}`;
+  }
+  const glance=$("#heroDayGlance"),todaysAll=state.classes.filter(c=>c.dateIso===today).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  if(glance){
+    glance.hidden=!todaysAll.length;
+    glance.innerHTML=todaysAll.map(c=>{
+      const st=c.status==="Cancelled"?"cancelled":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming";
+      return`<span class="dot ${st}" style="--course:${colorFor(c.code)}" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}"></span>`;
+    }).join("");
   }
   const timelineIso=state.timelineDay==="tomorrow"?tomorrowIso():today,timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   $("#timelineDateTitle").textContent=state.timelineDay==="today"?"Today":"Tomorrow";
@@ -588,6 +596,13 @@ function routeStops(bus){
 }
 
 function isMainGateService(bus){return bus.from==="Main Gate"||bus.to==="Main Gate"}
+const BUS_STOPS=["C&D Housing","Phase V Campus","PGP Auditorium","Main Gate"];
+function serviceSupports(bus,from,to){
+  const stops=routeStops(bus);
+  const fromIndex=stops.indexOf(from);
+  const toIndex=stops.indexOf(to);
+  return fromIndex>=0&&toIndex>fromIndex;
+}
 
 /* Last-departure-of-the-day flag, computed per route direction (from -> to) straight off
    the existing sorted campus-data.js bus array — self-contained, doesn't touch bus logic. */
@@ -604,12 +619,11 @@ function lastBusKeys(){
 }
 function isLastBus(bus){return lastBusKeys().has(`${bus.time}|${bus.from}|${bus.to}`)}
 
-const BUS_FILTERS=[
-  {id:"all",label:"All"},
-  {id:"to-aud",label:"C&D → Aud.",match:b=>b.from==="C&D Housing"&&b.to==="PGP Auditorium"},
-  {id:"to-cd",label:"Aud. → C&D",match:b=>b.from==="PGP Auditorium"&&b.to==="C&D Housing"},
-  {id:"gate-to-aud",label:"Gate → Aud.",match:b=>b.from==="Main Gate"&&b.to==="PGP Auditorium"},
-  {id:"aud-to-gate",label:"Aud. → Gate",match:b=>b.from==="PGP Auditorium"&&b.to==="Main Gate"}
+const BUS_QUICK_ROUTES=[
+  {from:"C&D Housing",to:"PGP Auditorium",label:"C&D → Aud."},
+  {from:"PGP Auditorium",to:"C&D Housing",label:"Aud. → C&D"},
+  {from:"Main Gate",to:"PGP Auditorium",label:"Gate → Aud."},
+  {from:"PGP Auditorium",to:"Main Gate",label:"Aud. → Gate"}
 ];
 
 function renderCampus(){
@@ -619,37 +633,68 @@ function renderCampus(){
 }
 
 function renderBusControls(){
-  const chips=$("#busFilterChips");
-  if(!chips)return;
-  chips.innerHTML=BUS_FILTERS.map(f=>
-    `<button class="filter-chip ${state.busFilter===f.id?"active":""}" data-filter="${f.id}">${esc(f.label)}</button>`
+  const options=BUS_STOPS.map(stop=>
+    `<option value="${esc(stop)}">${esc(busStopLabel(stop))}</option>`
   ).join("");
-  $$(".filter-chip",chips).forEach(button=>
-    button.addEventListener("click",()=>{
-      state.busFilter=button.dataset.filter;
-      renderBusControls();
-      renderBuses();
-    })
-  );
+  $("#busFrom").innerHTML=options;$("#busTo").innerHTML=options;
+  $("#busFrom").value=state.busFrom;$("#busTo").value=state.busTo;
+
+  const chips=$("#busFilterChips");
+  if(chips){
+    chips.innerHTML=BUS_QUICK_ROUTES.map(r=>
+      `<button class="filter-chip ${state.busFrom===r.from&&state.busTo===r.to?"active":""}" data-from="${esc(r.from)}" data-to="${esc(r.to)}">${esc(r.label)}</button>`
+    ).join("");
+    $$(".filter-chip",chips).forEach(button=>
+      button.addEventListener("click",()=>{
+        state.busFrom=button.dataset.from;state.busTo=button.dataset.to;
+        renderBusControls();renderBuses();
+      })
+    );
+  }
 }
 
 function renderBuses(){
   const board=$("#busBoard");
   if(!board)return;
-  const filter=BUS_FILTERS.find(f=>f.id===state.busFilter)||BUS_FILTERS[0];
-  const services=window.CAMPUS_DATA.bus.filter(bus=>!filter.match||filter.match(bus));
+  const now=new Date();
+  const services=window.CAMPUS_DATA.bus.filter(bus=>serviceSupports(bus,state.busFrom,state.busTo));
+
+  const heroRoute=$("#nextBusRoute");
+  if(heroRoute)heroRoute.textContent=`${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;
 
   if(!services.length){
-    board.innerHTML='<div class="empty-state"><span class="empty-state-icon">'+icon("bus")+'</span><p>No service on this route</p><small>Try a different filter above.</small></div>';
+    $("#nextBusTime").textContent="—";$("#nextBusMeta").textContent="No direct service on this route";
+    $("#nextBusCountdown").textContent="—";$("#nextBusCountdown").previousElementSibling.textContent="Leaves in";
+    $("#nextBusVisual").innerHTML="";
+    const gateTags=$("#nextBusGateTags");if(gateTags)gateTags.innerHTML="";
+    const ring=$("#countdownRing");if(ring){ring.style.setProperty("--pct",0);ring.classList.remove("urgent")}
+    board.innerHTML='<div class="empty-state"><span class="empty-state-icon">'+icon("bus")+'</span><p>No service on this route</p><small>Try another origin or destination.</small></div>';
     return;
   }
 
-  const now=new Date();
-  const withTimes=services
-    .map(b=>({b,d:busDate(b)}))
-    .sort((a,b)=>a.d-b.d);
-  const next=withTimes.find(item=>item.d>now);
-  const nextKey=next?`${next.b.time}|${next.b.from}|${next.b.to}`:null;
+  const withTimes=services.map(b=>({b,d:busDate(b)})).sort((a,b)=>a.d-b.d);
+  let next=withTimes.find(item=>item.d>now);
+  const nextDay=!next;
+  if(!next)next=services.map(b=>({b,d:busDate(b,true)})).sort((a,b)=>a.d-b.d)[0];
+  const nextKey=`${next.b.time}|${next.b.from}|${next.b.to}`;
+
+  $("#nextBusTime").textContent=fmtTime(next.b.time);
+  $("#nextBusMeta").textContent=isMainGateService(next.b)?"Main Gate service":"Campus shuttle";
+  const gateTags=$("#nextBusGateTags");
+  if(gateTags)gateTags.innerHTML=isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':"";
+
+  const remaining=Math.max(0,Math.ceil((next.d-now)/60000));
+  $("#nextBusCountdown").previousElementSibling.textContent=nextDay?"Leaves tomorrow in":"Leaves in";
+  $("#nextBusCountdown").textContent=remaining>=60?`${Math.floor(remaining/60)}h ${remaining%60}m`:`${remaining} min`;
+  const ringWindow=60,pct=Math.max(0,Math.min(100,Math.round((remaining/ringWindow)*100)));
+  const ring=$("#countdownRing");
+  if(ring){ring.style.setProperty("--pct",nextDay?100:pct);ring.classList.toggle("urgent",!nextDay&&remaining<=5)}
+
+  const stops=routeStops(next.b);
+  const fromIndex=stops.indexOf(state.busFrom),toIndex=stops.indexOf(state.busTo);
+  $("#nextBusVisual").innerHTML=stops.slice(fromIndex,toIndex+1).map(stop=>
+    `<div class="route-stop"><i></i><span>${esc(busStopLabel(stop))}</span></div>`
+  ).join("");
 
   board.innerHTML=withTimes.map(({b})=>busRow(b,nextKey)).join("");
 }
@@ -1030,7 +1075,7 @@ function bind(){
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value,homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
-$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
+$("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()})
 }
 async function init(){
