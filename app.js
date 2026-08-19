@@ -48,7 +48,7 @@ gtasks:'<path d="m5 12 4 4L19 6"/><path d="M3 12h2M19 12h2"/>',
 close:'<path d="m6 6 12 12M18 6 6 18"/>',swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',sunrise:'<path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4"/>',moon:'<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>'
 };return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
 function renderIcons(){$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
-function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#0b1020":"#f5f7fb"}
+function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#130f15":"#f5f0f4"}
 function filteredClasses(){const selected=new Set((state.profile.electives||[]).map(canonical));return state.all.filter(c=>c.type==="Core"?(state.profile.section==="A"?c.section==="A":c.section==="B"):selected.has(canonical(c.baseCode||c.code)))}
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
 const CANCELLED_FILL_COLORS=new Set(["#ff0000","#cc0000","#c00000"]);
@@ -138,6 +138,18 @@ function scheduleIdleSync(){
 function setPlannerView(view="calendar"){$$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===view));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===view));document.dispatchEvent(new CustomEvent("planner-view-change",{detail:{view}}))}
 function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner"){state.selectedDate=isoToday();const today=new Date();state.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);setPlannerView("calendar")}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
 function renderAll(){migrateProfile();state.classes=filteredClasses();pruneNotifications();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderCampus();renderNotifications();renderIcons()}
+function scheduleGapParts(current,next){
+  const start=minutes(current.endTime),end=minutes(next.startTime),lunchStart=13*60+30,lunchEnd=14*60+30;
+  if(end-start<30)return[];
+  if(start<=lunchStart&&end>=lunchEnd){
+    const parts=[];
+    if(lunchStart-start>=30)parts.push({type:"free",duration:lunchStart-start,detail:`Until lunch · ${fmtTime("13:30")}`});
+    parts.push({type:"lunch",duration:60,detail:`${fmtTime("13:30")} – ${fmtTime("14:30")}`});
+    if(end-lunchEnd>=30)parts.push({type:"free",duration:end-lunchEnd,detail:`Next ${canonical(next.code)} · ${fmtTime(next.startTime)}`});
+    return parts;
+  }
+  return[{type:"free",duration:end-start,detail:`Next ${canonical(next.code)} · ${fmtTime(next.startTime)}`}];
+}
 function decorateTimelineDay(selector,classes,iso){
   const rail=$(selector),list=rail?.querySelector(".vertical-day-timeline");if(!rail)return;
   rail.querySelectorAll(".free-window-row,.short-break-row,.timeline-holiday-banner").forEach(node=>node.remove());
@@ -147,7 +159,7 @@ function decorateTimelineDay(selector,classes,iso){
   const cards=[...list.querySelectorAll(".vertical-class")];let previous=null;
   classes.forEach(current=>{
     if(current.status==="Cancelled")return;
-    if(previous){const gap=minutes(current.startTime)-minutes(previous.endTime);if(gap>=30){const row=document.createElement("div"),isLunch=minutes(previous.endTime)<=14*60+30&&minutes(current.startTime)>=13*60+30,target=cards.find(card=>card.dataset.classId===classIdentity(current)),action=gap>=60?`<button type="button" class="free-window-action" data-free-date="${esc(iso)}" data-free-course="${esc(canonical(current.code))}">Add task</button>`:"";row.className="free-window-row";row.innerHTML=`<span>${isLunch?"LUNCH + FREE":"FREE TIME"}</span><strong>${esc(compactDuration(gap))} available</strong><small>Next ${esc(canonical(current.code))} · ${esc(fmtTime(current.startTime))}</small>${action}`;target?.before(row)}}
+    if(previous){const target=cards.find(card=>card.dataset.classId===classIdentity(current));scheduleGapParts(previous,current).forEach(part=>{const row=document.createElement("div"),isLunch=part.type==="lunch",action=!isLunch&&part.duration>=60?`<button type="button" class="free-window-action" data-free-date="${esc(iso)}" data-free-course="${esc(canonical(current.code))}">Add task</button>`:"";row.className=`free-window-row ${isLunch?"lunch-window":""}`;row.innerHTML=`<span>${isLunch?"LUNCH BREAK":"FREE TIME"}</span><strong>${isLunch?"1h lunch break":`${esc(compactDuration(part.duration))} available`}</strong><small>${esc(part.detail)}</small>${action}`;target?.before(row)})}
     previous=current;
   });
 }
@@ -163,27 +175,37 @@ function loadSummary(classes,boundary="end"){
   const total=classes.reduce((sum,c)=>sum+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0),sorted=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)),edge=boundary==="start"?fmtTime(sorted[0].startTime):`Until ${fmtTime(sorted.at(-1).endTime)}`;
   return`${classes.length} ${classes.length===1?"class":"classes"} · ${compactDuration(total)} · ${edge}`;
 }
+function renderHeroDayGlance(classes,now,dateIso){
+  const glance=$("#heroDayGlance"),items=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  if(!glance)return;
+  glance.hidden=!items.length;
+  glance.innerHTML=items.map(c=>{
+    const status=c.status==="Cancelled"?"cancelled":dateIso<isoToday()||dateIso===isoToday()&&now>=dateTime(c,"endTime")?"done":dateIso===isoToday()&&now>=dateTime(c,"startTime")?"current":"upcoming";
+    return`<span class="hero-class-segment ${status}" style="--course:${colorFor(c.code)}" aria-label="${esc(c.code)} · ${esc(fmtTime(c.startTime))} · ${status}"><i></i><b>${esc(canonical(c.code))}</b></span>`;
+  }).join("");
+}
 function renderHome(){
   const now=new Date(),today=isoToday();$("#todayLabel").textContent=new Intl.DateTimeFormat("en-IN",{weekday:"long",day:"numeric",month:"long"}).format(now).toUpperCase();$("#dateOrbitDay").textContent=String(now.getDate()).padStart(2,"0");$("#dateOrbitMonth").textContent=new Intl.DateTimeFormat("en-IN",{month:"short"}).format(now).toUpperCase();const h=now.getHours(),firstName=String(state.profile.name||"").trim().split(/\s+/)[0],dayGreeting=`Good ${h<12?"morning":h<17?"afternoon":"evening"}`;$("#greeting").textContent=firstName?`${dayGreeting}, ${firstName}.`:`${dayGreeting}.`;
   const scheduled=state.classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
-  const todays=scheduled.filter(c=>c.dateIso===today),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),todayNext=todays.find(c=>now<dateTime(c,"startTime")),previous=todays.filter(c=>now>=dateTime(c,"endTime")).at(-1),future=scheduled.find(c=>now<dateTime(c,"startTime")),focus=current||todayNext||future,todayComplete=Boolean(todays.length&&!current&&!todayNext),loadDate=!todays.length||todayComplete?tomorrowIso():today,loadClasses=scheduled.filter(c=>c.dateIso===loadDate),loadIsToday=loadDate===today,loadIsTomorrow=loadDate===tomorrowIso(),loadLabel=loadIsToday?"Today":loadIsTomorrow?"Tomorrow":fmtDate(loadDate,{weekday:"long"}),loadValue=loadSummary(loadClasses,loadIsToday?"end":"start");
+  const todays=scheduled.filter(c=>c.dateIso===today),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),todayNext=todays.find(c=>now<dateTime(c,"startTime")),previous=todays.filter(c=>now>=dateTime(c,"endTime")).at(-1),future=scheduled.find(c=>now<dateTime(c,"startTime")),focus=current||todayNext||future,todayComplete=Boolean(todays.length&&!current&&!todayNext),loadDate=!todays.length||todayComplete?tomorrowIso():today,loadClasses=scheduled.filter(c=>c.dateIso===loadDate),loadIsToday=loadDate===today,loadIsTomorrow=loadDate===tomorrowIso(),loadLabel=loadIsToday?"Today":loadIsTomorrow?"Tomorrow":fmtDate(loadDate,{weekday:"long"}),loadValue=loadSummary(loadClasses,loadIsToday?"end":"start"),parts=istParts(now),nowMinutes=Number(parts.hour)*60+Number(parts.minute),isLunch=Boolean(!current&&todayNext&&minutes(todayNext.startTime)>=14*60+30&&nowMinutes>=13*60+30&&nowMinutes<14*60+30);
   const focusPanel=$("#focusPanel");
-  $("#focusDayLoad").textContent=!todays.length?"0 classes today":todayComplete?`${todays.length} ${todays.length===1?"class":"classes"} done`:`${todays.length} ${todays.length===1?"class":"classes"} today`;
   if(focus){
-    const isNow=focus===current,isToday=focus.dateIso===today,isTomorrow=focus.dateIso===tomorrowIso(),isFree=Boolean(!current&&todayNext&&previous),isClearToday=Boolean(!todays.length&&future),isDayDone=Boolean(todayComplete&&future),dayClasses=scheduled.filter(c=>c.dateIso===focus.dateIso);
-    focusPanel.classList.remove("is-empty");focusPanel.classList.toggle("is-live",isNow);focusPanel.classList.toggle("is-free",isFree);focusPanel.classList.toggle("is-clear",isClearToday||isDayDone);focusPanel.classList.toggle("is-upcoming",!isNow&&!isFree&&isToday);focusPanel.classList.toggle("is-future",!isToday);focusPanel.style.setProperty("--focus-course",colorFor(focus.code));focusPanel.dataset.focusDate=focus.dateIso;
-    $("#focusLiveCapsule").textContent=isNow?"NOW":isFree?"FREE":isClearToday?"CLEAR":isDayDone?"DONE":"NEXT";
-    $("#focusKicker").textContent=isNow?"HAPPENING NOW":isFree?"FREE TIME":isClearToday?"TODAY IS CLEAR":isDayDone?"DAY COMPLETE":isToday?"UP NEXT":isTomorrow?"LOOKING AHEAD":"NEXT CLASS";
-    $("#focusState").textContent=isNow?"In progress":isFree?"Free window":isClearToday?"Today is clear":isDayDone?"Day complete":isToday?"Next class":isTomorrow?"Looking ahead":fmtDate(focus.dateIso,{weekday:"long",day:"numeric",month:"short"});
-    $("#focusCode").textContent=canonical(focus.code);$("#focusTitle").textContent=(isFree||isClearToday||isDayDone?"Next · ":"")+focus.course;$("#focusTime").textContent=isFree?`${compactDuration((dateTime(focus,"startTime")-now)/60000)} free`:isClearToday?"Free today":isDayDone?"Done for today":isNow?`${fmtTime(focus.startTime)} – ${fmtTime(focus.endTime)}`:`${isTomorrow?"Tomorrow · ":""}${fmtTime(focus.startTime)}`;$("#focusVenue").textContent=venueOf(focus);$("#focusFaculty").textContent=focus.faculty;$("#focusFacultyRow").hidden=!focus.faculty;
+    const isNow=focus===current,isToday=focus.dateIso===today,isTomorrow=focus.dateIso===tomorrowIso(),isFree=Boolean(!current&&todayNext&&previous&&!isLunch),isClearToday=Boolean(!todays.length&&future),isDayDone=Boolean(todayComplete&&future),dayClasses=scheduled.filter(c=>c.dateIso===focus.dateIso),dayIndex=dayClasses.indexOf(focus),remaining=todays.filter(c=>dateTime(c,"endTime")>now).length;
+    focusPanel.classList.remove("is-empty");focusPanel.classList.toggle("is-live",isNow);focusPanel.classList.toggle("is-lunch",isLunch);focusPanel.classList.toggle("is-free",isFree);focusPanel.classList.toggle("is-clear",isClearToday||isDayDone);focusPanel.classList.toggle("is-upcoming",!isNow&&!isFree&&!isLunch&&isToday);focusPanel.classList.toggle("is-future",!isToday);focusPanel.style.setProperty("--focus-course",isLunch?"var(--amber)":colorFor(focus.code));focusPanel.dataset.focusDate=focus.dateIso;
+    $("#focusLiveCapsule").textContent=isNow?"NOW":isLunch?"LUNCH":isFree?"FREE":isClearToday?"CLEAR":isDayDone?"DONE":"NEXT";
+    $("#focusKicker").textContent=isNow?"HAPPENING NOW":isLunch?"LUNCH BREAK":isFree?"FREE TIME":isClearToday?"TODAY IS CLEAR":isDayDone?"DAY COMPLETE":isToday?"UP NEXT":isTomorrow?"LOOKING AHEAD":"NEXT CLASS";
+    $("#focusState").textContent=isNow?"In progress":isLunch?"Lunch break":isFree?"Free window":isClearToday?"Today is clear":isDayDone?"Day complete":isToday?"Next class":isTomorrow?"Looking ahead":fmtDate(focus.dateIso,{weekday:"long",day:"numeric",month:"short"});
+    $("#focusDayLoad").textContent=isLunch?`${remaining} ${remaining===1?"class":"classes"} left`:isToday&&dayIndex>=0?`${dayIndex+1} of ${dayClasses.length}`:isTomorrow?`${dayClasses.length} tomorrow`:`${dayClasses.length} ${dayClasses.length===1?"class":"classes"}`;
+    $("#focusCode").textContent=isLunch?"BREAK":canonical(focus.code);$("#focusTitle").textContent=isLunch?"Lunch break":(isFree||isClearToday||isDayDone?"Next · ":"")+focus.course;$("#focusTime").textContent=isLunch?`${fmtTime("13:30")} – ${fmtTime("14:30")}`:isFree?`${compactDuration((dateTime(focus,"startTime")-now)/60000)} free`:isClearToday?"Free today":isDayDone?"Done for today":`${fmtTime(focus.startTime)} – ${fmtTime(focus.endTime)}`;$("#focusVenue").textContent=isLunch?`Next ${canonical(focus.code)} · ${fmtTime(focus.startTime)}`:venueOf(focus);$("#focusFaculty").textContent=focus.faculty;$("#focusFacultyRow").hidden=isLunch||!focus.faculty;
     const target=isNow?dateTime(focus,"endTime"):dateTime(focus,"startTime"),diff=Math.max(0,Math.ceil((target-now)/60000));
-    $("#focusCountdownLabel").textContent=isNow?`ENDS AT ${fmtTime(focus.endTime)}`:isFree?"NEXT CLASS":isClearToday||isDayDone?"NEXT UP":isToday?"STARTS IN":"DAY LOAD";
-    $("#focusCountdown").textContent=isNow?`${compactDuration(diff)} left`:isFree?fmtTime(focus.startTime):isClearToday||isDayDone?fmtDate(focus.dateIso,{weekday:"short",day:"numeric",month:"short"}):isToday?compactDuration(diff):`${dayClasses.length} ${dayClasses.length===1?"class":"classes"}`;
+    const lunchLeft=Math.max(0,14*60+30-nowMinutes);$("#focusCountdownLabel").textContent=isNow?`ENDS AT ${fmtTime(focus.endTime)}`:isLunch?"LUNCH ENDS":isFree?"NEXT CLASS":isClearToday||isDayDone?"NEXT UP":isToday?"STARTS IN":"DAY LOAD";
+    $("#focusCountdown").textContent=isNow?`${compactDuration(diff)} left`:isLunch?`${compactDuration(lunchLeft)} left`:isFree?fmtTime(focus.startTime):isClearToday||isDayDone?fmtDate(focus.dateIso,{weekday:"short",day:"numeric",month:"short"}):isToday?compactDuration(diff):`${dayClasses.length} ${dayClasses.length===1?"class":"classes"}`;
     const context=$("#focusContext");context.hidden=false;$("#focusContextLabel").textContent=loadLabel;$("#focusContextValue").textContent=loadValue;
-    const position=$("#focusPosition"),dayIndex=isToday?todays.indexOf(focus):-1,after=isNow?todays.find(c=>dateTime(c,"startTime")>=dateTime(focus,"endTime")):null;position.hidden=!(isNow||isFree||dayIndex>=0);position.textContent=isNow?(after?`Next ${canonical(after.code)} · ${fmtTime(after.startTime)}`:"Final class today"):isFree?`Next class · ${fmtTime(focus.startTime)}`:dayIndex>=0?`Class ${dayIndex+1} of ${todays.length}`:"";
-    const liveProgress=isNow?((now-dateTime(focus,"startTime"))/(dateTime(focus,"endTime")-dateTime(focus,"startTime")))*100:isFree&&previous?((now-dateTime(previous,"endTime"))/(dateTime(focus,"startTime")-dateTime(previous,"endTime")))*100:0,segments=$("#focusSegments");segments.hidden=!(isNow||isFree);fillSegments(segments,liveProgress,12);
+    const position=$("#focusPosition"),after=isNow?todays.find(c=>dateTime(c,"startTime")>=dateTime(focus,"endTime")):null;position.hidden=!(isNow||isLunch||isFree||isToday&&dayIndex>=0);position.textContent=isNow?(after?`Next ${canonical(after.code)} · ${fmtTime(after.startTime)}`:"Final class today"):isLunch?`Lunch ends in ${compactDuration(lunchLeft)}`:isFree?`Next class · ${fmtTime(focus.startTime)}`:dayIndex>=0?`Class ${dayIndex+1} of ${todays.length}`:"";
+    const liveProgress=isNow?((now-dateTime(focus,"startTime"))/(dateTime(focus,"endTime")-dateTime(focus,"startTime")))*100:isLunch?((nowMinutes-(13*60+30))/60)*100:isFree&&previous?((now-dateTime(previous,"endTime"))/(dateTime(focus,"startTime")-dateTime(previous,"endTime")))*100:0,segments=$("#focusSegments");segments.hidden=!(isNow||isLunch||isFree);fillSegments(segments,liveProgress,12);
+    const glanceDate=isToday?today:focus.dateIso;renderHeroDayGlance(state.classes.filter(c=>c.dateIso===glanceDate),now,glanceDate);
   }
-  else{focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-free","is-clear","is-upcoming","is-future");focusPanel.style.removeProperty("--focus-course");$("#focusLiveCapsule").textContent="DONE";$("#focusKicker").textContent=todays.length?"DAY COMPLETE":"YOUR SCHEDULE";$("#focusState").textContent=todays.length?"Day complete":"Today is clear";$("#focusCode").textContent="CLEAR";$("#focusTitle").textContent="No upcoming classes";$("#focusTime").textContent=todays.length?"Done for today":"Free today";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="";$("#focusFacultyRow").hidden=true;$("#focusCountdownLabel").textContent="STATUS";$("#focusCountdown").textContent="Clear";$("#focusContext").hidden=false;$("#focusContextLabel").textContent=loadLabel;$("#focusContextValue").textContent=loadValue;$("#focusSegments").hidden=true;fillSegments($("#focusSegments"),0,12)}
+  else{focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-lunch","is-free","is-clear","is-upcoming","is-future");focusPanel.style.removeProperty("--focus-course");$("#focusLiveCapsule").textContent="DONE";$("#focusKicker").textContent=todays.length?"DAY COMPLETE":"YOUR SCHEDULE";$("#focusState").textContent=todays.length?"Day complete":"Today is clear";$("#focusDayLoad").textContent=todays.length?`${todays.length} done`:"No classes";$("#focusCode").textContent="CLEAR";$("#focusTitle").textContent="No upcoming classes";$("#focusTime").textContent=todays.length?"Done for today":"Free today";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="";$("#focusFacultyRow").hidden=true;$("#focusCountdownLabel").textContent="STATUS";$("#focusCountdown").textContent="Clear";$("#focusContext").hidden=false;$("#focusContextLabel").textContent=loadLabel;$("#focusContextValue").textContent=loadValue;$("#focusSegments").hidden=true;fillSegments($("#focusSegments"),0,12);renderHeroDayGlance(state.classes.filter(c=>c.dateIso===today),now,today)}
   if(!focus){delete focusPanel.dataset.focusDate;$("#focusPosition").hidden=true}
   const timelineIso=state.timelineDay==="tomorrow"?tomorrowIso():today,timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   $("#timelineDateTitle").textContent=state.timelineDay==="today"?"Today":"Tomorrow";
@@ -263,11 +285,7 @@ function agendaCardHtml(c){
 }
 function agendaFreeWindowHtml(current,next){
   if(!current||!next||current.status==="Cancelled"||next.status==="Cancelled")return"";
-  const gap=minutes(next.startTime)-minutes(current.endTime);if(gap<15)return"";
-  const isLunch=minutes(current.endTime)<=14*60+30&&minutes(next.startTime)>=13*60+30;
-  if(gap<30)return"";
-  const action=gap>=60?`<button type="button" class="free-window-action" data-free-date="${esc(next.dateIso)}" data-free-course="${esc(canonical(next.code))}">Add task</button>`:"";
-  return `<div class="agenda-free-window"><span>${isLunch?"LUNCH + FREE":"FREE TIME"}</span><strong>${esc(compactDuration(gap))} available</strong><small>Next ${esc(canonical(next.code))} at ${esc(fmtTime(next.startTime))}</small>${action}</div>`;
+  return scheduleGapParts(current,next).map(part=>{const isLunch=part.type==="lunch",action=!isLunch&&part.duration>=60?`<button type="button" class="free-window-action" data-free-date="${esc(next.dateIso)}" data-free-course="${esc(canonical(next.code))}">Add task</button>`:"";return`<div class="agenda-free-window ${isLunch?"lunch-window":""}"><span>${isLunch?"LUNCH BREAK":"FREE TIME"}</span><strong>${isLunch?"1h lunch break":`${esc(compactDuration(part.duration))} available`}</strong><small>${esc(part.detail)}</small>${action}</div>`}).join("");
 }
 function agendaHtml(classes,tasks){
   if(!classes.length&&!tasks.length)return'<div class="agenda-empty">Nothing scheduled for this day.</div>';
@@ -892,7 +910,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-phase1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-phase15",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
