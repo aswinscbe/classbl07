@@ -129,9 +129,10 @@ function decorateTimelineDay(selector,classes,iso){
 }
 function fillSegments(target,percent){if(!target)return;const value=Math.round(Math.max(0,Math.min(100,percent)));if(!target.firstElementChild)target.innerHTML="<i></i>";target.style.setProperty("--focus-progress",`${value}%`);target.setAttribute("aria-valuenow",String(value))}
 function renderWeekDensity(){
-  const base=new Date(`${isoToday()}T12:00:00+05:30`),days=Array.from({length:7},(_,offset)=>{const date=new Date(base);date.setDate(base.getDate()+offset);const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(date),classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),minutesTotal=classes.reduce((sum,c)=>sum+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0);return{iso,classes,minutesTotal}}),classTotal=days.reduce((sum,day)=>sum+day.classes.length,0),minuteTotal=days.reduce((sum,day)=>sum+day.minutesTotal,0);
+  const today=isoToday(),base=new Date(`${today}T12:00:00+05:30`),monday=new Date(base),daysFromMonday=(base.getUTCDay()+6)%7;monday.setDate(base.getDate()-daysFromMonday);
+  const days=Array.from({length:7},(_,offset)=>{const date=new Date(monday);date.setDate(monday.getDate()+offset);const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(date),classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),minutesTotal=classes.reduce((sum,c)=>sum+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0);return{iso,classes,minutesTotal}}),classTotal=days.reduce((sum,day)=>sum+day.classes.length,0),minuteTotal=days.reduce((sum,day)=>sum+day.minutesTotal,0);
   $("#weekDensitySummary").textContent=`${classTotal} ${classTotal===1?"class":"classes"} · ${compactDuration(minuteTotal)}`;
-  $("#weekDensityDays").innerHTML=days.map((day,index)=>{const weekday=fmtDate(day.iso,{weekday:"short"}),label=`${weekday}, ${day.classes.length} ${day.classes.length===1?"class":"classes"}, ${day.minutesTotal?compactDuration(day.minutesTotal):"clear"}`;return`<div class="density-day ${index===0?"today":""}" aria-label="${esc(label)}"><span>${esc(weekday)}</span><strong>${day.classes.length}</strong></div>`}).join("");
+  $("#weekDensityDays").innerHTML=days.map(day=>{const weekday=fmtDate(day.iso,{weekday:"short"}),isToday=day.iso===today,label=`${weekday}, ${day.classes.length} ${day.classes.length===1?"class":"classes"}, ${day.minutesTotal?compactDuration(day.minutesTotal):"clear"}`;return`<div class="density-day ${isToday?"today":""}" aria-label="${esc(label)}"${isToday?' aria-current="date"':""}><span>${esc(weekday)}</span><strong>${day.classes.length}</strong></div>`}).join("");
 }
 function loadSummary(classes,boundary="end"){
   if(!classes.length)return"No classes scheduled";
@@ -867,3 +868,4 @@ async function init(){
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
+

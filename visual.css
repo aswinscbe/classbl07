@@ -1384,3 +1384,77 @@ body{
   .notification-head{align-items:flex-start}.notification-head-actions{gap:3px}.notification-action{padding-inline:7px;font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){.hero-card .focus-segments i{transition:none}}
+
+/* ===== Stable mobile elective chooser ============================ */
+@media(max-width:620px){
+  .onboarding-dialog{
+    width:100%;
+    max-width:100%;
+    height:100dvh;
+    max-height:100dvh;
+    margin:0;
+    overflow:hidden;
+  }
+  .onboarding-dialog .onboarding-card{
+    display:grid;
+    grid-template-rows:auto minmax(0,1fr);
+    width:100%;
+    height:100dvh;
+    max-height:100dvh;
+    min-height:0;
+    padding:18px 16px calc(16px + env(safe-area-inset-bottom))!important;
+    overflow:hidden;
+    scrollbar-gutter:auto;
+  }
+  .onboarding-step.active{
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  #onboardingDialog[data-step="2"] .onboarding-step.active{
+    grid-template-rows:auto auto auto auto minmax(0,1fr) auto;
+    gap:12px;
+    overflow:hidden;
+  }
+  #onboardingDialog[data-step="2"] .onboarding-card{
+    padding-bottom:calc(16px + env(safe-area-inset-bottom))!important;
+  }
+  .elective-selection-toolbar{
+    position:static;
+    z-index:auto;
+    flex-wrap:wrap;
+  }
+  .onboarding-elective-list{
+    grid-template-columns:1fr;
+    min-height:0;
+    max-height:none!important;
+    overflow-x:hidden;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+    padding:2px 2px 12px;
+    scrollbar-gutter:auto;
+  }
+  .onboarding-elective-choice{
+    min-width:0;
+    touch-action:manipulation;
+  }
+  .onboarding-elective-choice span{
+    min-height:62px;
+    overflow-wrap:anywhere;
+  }
+  #onboardingDialog .onboarding-actions{
+    position:static!important;
+    right:auto!important;
+    bottom:auto!important;
+    left:auto!important;
+    margin:0!important;
+    padding:10px 0 0!important;
+    border:0!important;
+    border-top:1px solid var(--border)!important;
+    border-radius:0!important;
+    background:var(--surface-solid)!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+  }
+}
+
