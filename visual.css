@@ -1786,6 +1786,7 @@ h1,h2,h3,.brand-copy strong,.focus-time-hero,.focus-code,.next-bus-time,.date-or
 .hero-card:not(.is-empty) .focus-context span::after{content:none}
 .hero-card .focus-context strong,
 .hero-card:not(.is-empty) .focus-context strong{max-width:none;font-size:14px;font-weight:680;line-height:1.25;color:var(--text);text-align:left}
+.hero-card .focus-segments,.hero-card:not(.is-empty) .focus-segments{display:none!important}
 .density-day{appearance:none;font:inherit;color:inherit;cursor:pointer;transition:background .18s ease,transform .18s ease}
 .density-day:hover{background:var(--surface-2)}
 .density-day:active{transform:translateY(1px)}
