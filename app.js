@@ -176,7 +176,7 @@ function tagCountdown(totalMins){
 function renderHome(){
   renderExamCard();
   $("#focusPanel")?.classList.toggle("is-loading",!!state.scheduleLoading);
-  $$(".stat-tile").forEach(t=>t.classList.toggle("is-loading",!!state.scheduleLoading));
+  $$(".stat-cell").forEach(t=>t.classList.toggle("is-loading",!!state.scheduleLoading));
   $("#weekHeatmap")?.classList.toggle("is-loading",!!state.scheduleLoading);
   const now=new Date(),today=isoToday();$("#todayLabel").textContent=new Intl.DateTimeFormat("en-IN",{weekday:"long",day:"numeric",month:"long"}).format(now).toUpperCase();$("#dateOrbitDay").textContent=String(now.getDate()).padStart(2,"0");$("#dateOrbitMonth").textContent=new Intl.DateTimeFormat("en-IN",{month:"short"}).format(now).toUpperCase();const h=now.getHours(),firstName=String(state.profile.name||"").trim().split(/\s+/)[0],dayGreeting=`Good ${h<12?"morning":h<17?"afternoon":"evening"}`;$("#greeting").textContent=firstName?`${dayGreeting}, ${firstName}.`:`${dayGreeting}.`;
   const scheduled=state.classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
@@ -442,7 +442,7 @@ function renderDateRail(){
   for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);days.push(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d))}
   el.innerHTML=days.map((iso,i)=>{
     const dayClasses=state.classes.filter(c=>c.dateIso===iso),count=dayClasses.filter(c=>c.status!=="Cancelled").length,isToday=iso===isoToday(),isSel=iso===state.selectedDate,hasExam=!!examOn(iso);
-    return`<button type="button" class="rail-day ${isSel?"sel":""} ${isToday?"today":""} ${hasExam?"has-exam":""}" data-date="${iso}"><span class="dow">${labels[i]}</span><b>${Number(iso.slice(8))}</b>${count?'<i class="dot"></i>':""}</button>`;
+    return`<button type="button" class="rail-day ${isSel?"sel":""} ${isToday?"today":""} ${hasExam?"has-exam":""}" data-date="${iso}"><span class="dow">${labels[i]}</span><b>${Number(iso.slice(8))}</b>${count?`<span class="cnt">${count}</span>`:'<span class="cnt empty">·</span>'}</button>`;
   }).join("");
   $$(".rail-day",el).forEach(b=>b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar()}));
   const label=$("#railWeekLabel");
@@ -1027,7 +1027,12 @@ async function fetchGmailUpdates(){
   const q=encodeURIComponent('(quiz OR exam OR "end term" OR placement OR internship OR assignment OR deadline OR results) newer_than:60d');
   try{
     const listRes=await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages?q=${q}&maxResults=25`,{headers:{Authorization:`Bearer ${_gmailAccessToken}`}});
-    if(!listRes.ok)throw new Error("Gmail search failed");
+    if(!listRes.ok){
+      let reason=`HTTP ${listRes.status}`;
+      try{const body=await listRes.json();reason=body?.error?.message||reason}catch(e){}
+      if(listRes.status===403)reason="Gmail API isn't enabled for this Google Cloud project yet — enable it in Google Cloud Console → APIs & Services → Library, then refresh.";
+      throw new Error(reason);
+    }
     const listData=await listRes.json();
     const ids=(listData.messages||[]).map(m=>m.id),updates=[];
     for(const id of ids){
@@ -1040,8 +1045,12 @@ async function fetchGmailUpdates(){
       updates.push({id,subject,snippet,course:course?course.code:null,date:msg.internalDate?Number(msg.internalDate):Date.now()});
     }
     updates.sort((a,b)=>b.date-a.date);
-    localStorage.setItem(GMAIL_UPDATES_KEY,JSON.stringify({updates,fetchedAt:Date.now()}));
-  }catch(e){console.error(e)}
+    localStorage.setItem(GMAIL_UPDATES_KEY,JSON.stringify({updates,fetchedAt:Date.now(),matchedCourses:myCourseKeywords().length}));
+  }catch(e){
+    console.error(e);
+    const prev=loadGmailUpdates();
+    localStorage.setItem(GMAIL_UPDATES_KEY,JSON.stringify({updates:prev?.updates||[],fetchedAt:Date.now(),error:e.message||"Couldn't reach Gmail"}));
+  }
 }
 function loadGmailUpdates(){try{const raw=localStorage.getItem(GMAIL_UPDATES_KEY);return raw?JSON.parse(raw):null}catch(e){return null}}
 
@@ -1054,6 +1063,14 @@ function renderUpdatesPage(){
   $("#gmailAccountEmail").textContent=localStorage.getItem(GMAIL_EMAIL_KEY)||"Connected";
   const cache=loadGmailUpdates(),updates=cache?.updates||[];
   $("#gmailLastChecked").textContent=cache?.fetchedAt?`Last checked ${new Intl.RelativeTimeFormat("en",{numeric:"auto"}).format(-Math.max(1,Math.round((Date.now()-cache.fetchedAt)/60000)),"minute")}`:"Not checked yet — tap refresh";
+  if(cache?.error){
+    list.innerHTML=`<div class="empty-state"><span class="empty-state-icon">${icon("mail")}</span><p>Couldn't check Gmail</p><small>${esc(cache.error)}</small></div>`;
+    return;
+  }
+  if(cache&&cache.matchedCourses===0){
+    list.innerHTML=`<div class="empty-state"><span class="empty-state-icon">${icon("mail")}</span><p>No courses to match against yet</p><small>Set your section and electives on the Profile tab, then refresh — we match mail against those.</small></div>`;
+    return;
+  }
   const relevant=updates.filter(u=>u.course);
   list.innerHTML=relevant.length?relevant.map(u=>`<article class="update-item"><span class="update-chip" style="--course:${colorFor(u.course)}">${esc(u.course)}</span><div class="update-body"><strong>${esc(u.subject)}</strong><p>${esc(u.snippet)}</p><div class="update-meta"><time>${esc(new Intl.DateTimeFormat("en-IN",{day:"numeric",month:"short"}).format(new Date(u.date)))}</time></div></div></article>`).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("mail")+'</span><p>No matching updates yet</p><small>Quiz, exam and placement mail for your courses will show up here.</small></div>';
 }
@@ -1214,7 +1231,7 @@ function bind(){
     closeDialog($("#termHeatmapDialog"));
     showPage("calendar");
   });
-  $(".stat-tiles")?.addEventListener("click",e=>{
+  $(".stat-strip")?.addEventListener("click",e=>{
     const tile=e.target.closest("[data-stat-action]");if(!tile)return;
     const action=tile.dataset.statAction;
     if(action==="added"){openNotifications();return}

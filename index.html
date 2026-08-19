@@ -20,7 +20,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260818-sleek1">
+  <link rel="stylesheet" href="styles.css?v=20260818-sleek2">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -35,8 +35,8 @@
       <nav class="desktop-nav" aria-label="Primary">
         <button class="desktop-nav-item active" data-page-target="home"><span data-icon="home"></span>Home</button>
         <button class="desktop-nav-item" data-page-target="calendar"><span data-icon="calendar"></span>Calendar</button>
-        <button class="desktop-nav-item" data-page-target="campus"><span data-icon="campus"></span>Campus</button>
         <button class="desktop-nav-item" data-page-target="updates"><span data-icon="mail"></span>Updates</button>
+        <button class="desktop-nav-item" data-page-target="campus"><span data-icon="campus"></span>Campus</button>
         <button class="desktop-nav-item" data-page-target="profile"><span data-icon="profile"></span>Profile</button>
       </nav>
 
@@ -105,6 +105,9 @@
               <button class="text-button" id="openUpdatesFromHome">View</button>
             </section>
 
+            <p class="rail-section-label">This week's classes</p>
+            <div class="week-heatmap" id="weekHeatmap"></div>
+
             <section class="today-progress-card panel">
               <div class="panel-heading timeline-heading">
                 <div>
@@ -135,27 +138,20 @@
                 <i class="term-month-tick" id="termTickOct" style="left:0"></i>
               </div>
               <div class="term-month-labels"><span>AUG</span><span>SEP</span><span>OCT</span></div>
-              <div class="term-progress-stats">
-                <article><strong id="termDone">0</strong><span>classes completed</span></article>
-                <article><strong id="termLeft">0</strong><span>classes remaining</span></article>
-                <article><strong id="termWeeksLeft">0</strong><span>weeks remaining</span></article>
-              </div>
+              <p class="term-progress-line"><strong id="termDone">0</strong> done · <strong id="termLeft">0</strong> left · <strong id="termWeeksLeft">0</strong> weeks to go</p>
             </button>
 
             <p class="rail-section-label">This week</p>
             <p class="week-trend" id="weekTrend" hidden></p>
-            <section class="stat-tiles" aria-label="Week progress">
-              <button type="button" class="stat-tile" data-stat-action="classes"><b id="weekClasses">0</b><span>Classes left</span></button>
-              <button type="button" class="stat-tile stat-tile-hours" data-stat-action="hours">
+            <section class="stat-strip" aria-label="Week progress">
+              <button type="button" class="stat-cell" data-stat-action="classes"><b id="weekClasses">0</b><span>Classes left</span></button>
+              <button type="button" class="stat-cell" data-stat-action="hours">
                 <span class="stat-ring"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-track" cx="20" cy="20" r="16"></circle><circle class="ring-fill" id="hoursRingFill" cx="20" cy="20" r="16"></circle></svg></span>
                 <b id="weekHours">0h</b><span>Hours left</span>
               </button>
-              <button type="button" class="stat-tile stat-tile-cancelled" data-stat-action="cancelled"><b id="weekCancelled">0</b><span>Cancelled</span></button>
-              <button type="button" class="stat-tile stat-tile-added" data-stat-action="added"><b id="weekAdded">0</b><span>Added</span></button>
+              <button type="button" class="stat-cell stat-cell-cancelled" data-stat-action="cancelled"><b id="weekCancelled">0</b><span>Cancelled</span></button>
+              <button type="button" class="stat-cell stat-cell-added" data-stat-action="added"><b id="weekAdded">0</b><span>Added</span></button>
             </section>
-
-            <p class="rail-section-label">This week's classes</p>
-            <div class="week-heatmap" id="weekHeatmap"></div>
           </aside>
         </div>
       </section>
@@ -328,8 +324,8 @@
     <nav class="bottom-nav" aria-label="Primary navigation">
       <button class="nav-item active" data-page-target="home"><span data-icon="home"></span><b>Home</b></button>
       <button class="nav-item" data-page-target="calendar"><span data-icon="calendar"></span><b>Calendar</b></button>
-      <button class="nav-item" data-page-target="campus"><span data-icon="campus"></span><b>Campus</b></button>
       <button class="nav-item" data-page-target="updates"><span data-icon="mail"></span><b>Updates</b></button>
+      <button class="nav-item" data-page-target="campus"><span data-icon="campus"></span><b>Campus</b></button>
       <button class="nav-item" data-page-target="profile"><span data-icon="profile"></span><b>Profile</b></button>
     </nav>
   </div>
@@ -470,9 +466,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260818-sleek1"></script>
-  <script src="exam-data.js?v=20260818-sleek1"></script>
-  <script src="app.js?v=20260818-sleek1"></script>
-  <script src="polish.js?v=20260818-sleek1"></script>
+  <script src="campus-data.js?v=20260818-sleek2"></script>
+  <script src="exam-data.js?v=20260818-sleek2"></script>
+  <script src="app.js?v=20260818-sleek2"></script>
+  <script src="polish.js?v=20260818-sleek2"></script>
 </body>
 </html>
