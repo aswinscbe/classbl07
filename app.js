@@ -5,7 +5,7 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
 const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:"Phase V Campus",busTo:"PGP Auditorium",timelineDay:"today",lastUpdated:null};
+const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),notificationFilter:"all",selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:"Phase V Campus",busTo:"PGP Auditorium",timelineDay:"today",lastUpdated:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
@@ -62,6 +62,21 @@ function normalizeScheduleClass(item){
 function normalizeScheduleClasses(items){return Array.isArray(items)?items.map(normalizeScheduleClass):[]}
 function classKey(c){return`${classIdentity(c)}|${c.endTime||""}|${venueOf(c)}`}
 function classIdentity(c){return`${c.dateIso}|${c.startTime}|${canonical(c.code)}`}
+function notificationClass(n){return state.all.find(c=>classIdentity(c)===n.classId)}
+function notificationExpiry(n){
+  const stored=Number(n.expiresAt);if(Number.isFinite(stored)&&stored>0)return stored;
+  const c=notificationClass(n);if(c)return dateTime(c,"endTime").getTime();
+  const dateIso=n.dateIso||String(n.classId||"").split("|")[0];
+  if(dateIso&&dateIso<isoToday())return 0;
+  return Number(n.createdAt||0)+7*86400000;
+}
+function isNotificationActionable(n){return notificationExpiry(n)>Date.now()}
+function pruneNotifications(){
+  const current=state.notifications.filter(isNotificationActionable).slice(0,40);
+  if(current.length!==state.notifications.length){state.notifications=current;save(KEYS.notifications,state.notifications)}
+  return current;
+}
+function notificationRecord(c,type,title,text){return{id:crypto.randomUUID(),classId:classIdentity(c),dateIso:c.dateIso,startTime:c.startTime,endTime:c.endTime,expiresAt:dateTime(c,"endTime").getTime(),type,code:c.code,title,text,course:canonical(c.code),createdAt:Date.now(),read:false}}
 function tomorrowIso(){const d=new Date(`${isoToday()}T12:00:00+05:30`);d.setDate(d.getDate()+1);return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
 function isClassCompleted(c){
   if(c.status==="Cancelled")return false;
@@ -85,7 +100,7 @@ function relativeSyncText(){
 function compareSnapshots(oldList,newList){
   if(!oldList||!oldList.length)return[];
   const oldMap=new Map(oldList.map(c=>[classIdentity(c),c])),out=[];
-  newList.forEach(c=>{const old=oldMap.get(classIdentity(c));if(!old&&c.status!=="Cancelled"&&dateTime(c,"endTime")>new Date())out.push({id:crypto.randomUUID(),classId:classIdentity(c),type:"added",code:c.code,title:`${c.code} class added`,text:`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)} · ${venueOf(c)}`,course:canonical(c.code),createdAt:Date.now(),read:false});else if(old&&old.status!=="Cancelled"&&c.status==="Cancelled")out.push({id:crypto.randomUUID(),classId:classIdentity(c),type:"cancelled",code:c.code,title:`${c.code} class cancelled`,text:`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)}`,course:canonical(c.code),createdAt:Date.now(),read:false})});
+  newList.forEach(c=>{const old=oldMap.get(classIdentity(c));if(!old&&c.status!=="Cancelled"&&dateTime(c,"endTime")>new Date())out.push(notificationRecord(c,"added",`${c.code} class added`,`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)} · ${venueOf(c)}`));else if(old&&old.status!=="Cancelled"&&c.status==="Cancelled"&&dateTime(c,"endTime")>new Date())out.push(notificationRecord(c,"cancelled",`${c.code} class cancelled`,`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)}`));else if(old&&old.status!=="Cancelled"&&c.status!=="Cancelled"&&venueOf(old)!==venueOf(c)&&dateTime(c,"endTime")>new Date())out.push(notificationRecord(c,"venue",`${c.code} venue changed`,`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)} · ${venueOf(c)}`))});
   return out.slice(0,12)
 }
 let _syncInFlight=false,_lastSyncAt=0;
@@ -100,7 +115,7 @@ async function syncSchedule(force=false){
     const u=new URL(API);u.searchParams.set("section",state.profile.section||"A");u.searchParams.set("electives",(state.profile.electives||[]).join(","));u.searchParams.set("includeCancelled","true");if(force)u.searchParams.set("_",Date.now());
     const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`HTTP ${r.status}`);const d=await r.json();if(!d.success)throw new Error(d.error||"API failed");
     const previous=load(KEYS.snapshot,[]),incoming=normalizeScheduleClasses(d.classes),changes=compareSnapshots(previous,incoming);
-    if(changes.length){state.notifications=[...changes,...state.notifications].slice(0,40);save(KEYS.notifications,state.notifications)}
+    if(changes.length){const existing=new Set(state.notifications.map(n=>`${n.type}|${n.classId}|${n.text}`));state.notifications=[...changes.filter(n=>!existing.has(`${n.type}|${n.classId}|${n.text}`)),...state.notifications].slice(0,40);save(KEYS.notifications,state.notifications)}
     state.all=incoming;state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();
     _lastSyncAt=Date.now();
     if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Updated now</span>"}
@@ -122,7 +137,7 @@ function scheduleIdleSync(){
 }
 function setPlannerView(view="calendar"){$$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===view));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===view));document.dispatchEvent(new CustomEvent("planner-view-change",{detail:{view}}))}
 function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner"){state.selectedDate=isoToday();const today=new Date();state.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);setPlannerView("calendar")}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
-function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderCampus();renderNotifications();renderIcons()}
+function renderAll(){migrateProfile();state.classes=filteredClasses();pruneNotifications();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderCampus();renderNotifications();renderIcons()}
 function decorateTimelineDay(selector,classes,iso){
   const rail=$(selector),list=rail?.querySelector(".vertical-day-timeline");if(!rail)return;
   rail.querySelectorAll(".free-window-row,.short-break-row,.timeline-holiday-banner").forEach(node=>node.remove());
@@ -558,11 +573,16 @@ function busRow(bus){
 function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const menu=window.CAMPUS_DATA.mess[state.messDay],items=menu[state.meal]||[],nv=/chicken|fish|egg|omelette/i,sw=/gulab|halwa|ice cream|kheer|custard|badusha|sweet/i,non=items.filter(i=>nv.test(i)),sweet=items.filter(i=>sw.test(i)),veg=items.filter(i=>!nv.test(i)&&!sw.test(i));$("#messMenu").innerHTML=`<article class="meal-hero"><h3>${state.meal[0].toUpperCase()+state.meal.slice(1)}</h3>${veg.length?`<section class="food-section"><div class="food-section-title">Vegetarian</div><div class="food-items">${veg.map(i=>`<div class="food-item veg">${esc(i)}</div>`).join("")}</div></section>`:""}${non.length?`<section class="food-section"><div class="food-section-title">Non-vegetarian</div><div class="food-items">${non.map(i=>`<div class="food-item nonveg">${esc(i)}</div>`).join("")}</div></section>`:""}${sweet.length?`<section class="food-section"><div class="food-section-title">Dessert / Sweet</div><div class="food-items">${sweet.map(i=>`<div class="food-item sweet">${esc(i)}</div>`).join("")}</div></section>`:""}</article>`;$$(".meal-tab").forEach(b=>b.classList.toggle("active",b.dataset.meal===state.meal))}
 function renderProfile(){$("#profileName").value=state.profile.name||"";$("#profileSection").value=state.profile.section||"A";$("#profileTheme").value=state.profile.theme||"system";$("#profileDisplayName").textContent=state.profile.name||"Student";$("#profileSummary").textContent=`PGPBL · Section ${state.profile.section||"A"}`;$("#profileAvatar").textContent=initials(state.profile.name);$("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>'}
 function renderNotifications(){
-  const unread=state.notifications.filter(n=>!n.read).length;$("#notificationBadge").hidden=!unread;$("#notificationBadge").textContent=unread;
-  const mark=$("#markNotificationsRead"),clear=$("#clearNotifications");if(mark)mark.hidden=!unread;if(clear)clear.hidden=!state.notifications.length;
-  if(!state.notifications.length){$("#notificationList").innerHTML='<div class="empty-state notification-empty"><strong>All caught up</strong><span>Schedule changes will appear here.</span></div>';return}
-  const groups=[["Today",[]],["Earlier this week",[]],["Older",[]]];state.notifications.forEach(n=>{const age=(Date.now()-n.createdAt)/86400000;(age<1?groups[0]:age<7?groups[1]:groups[2])[1].push(n)});
-  $("#notificationList").innerHTML=groups.filter(([,items])=>items.length).map(([label,items])=>`<section class="notification-group"><h3>${label}</h3>${items.map(n=>`<article class="notification-item ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><strong>${esc(n.title)}</strong><p>${esc(n.text)}</p><time>${new Intl.RelativeTimeFormat("en",{numeric:"auto"}).format(-Math.max(1,Math.round((Date.now()-n.createdAt)/3600000)),"hour")}</time></article>`).join("")}</section>`).join("");
+  const active=pruneNotifications(),unread=active.filter(n=>!n.read).length;$("#notificationBadge").hidden=!unread;$("#notificationBadge").textContent=unread;
+  const mark=$("#markNotificationsRead");if(mark)mark.hidden=!unread;
+  $$("[data-notification-filter]").forEach(button=>button.classList.toggle("active",button.dataset.notificationFilter===state.notificationFilter));
+  const filtered=active.filter(n=>state.notificationFilter==="all"||state.notificationFilter==="added"&&n.type==="added"||state.notificationFilter==="changes"&&n.type!=="added");
+  if(!filtered.length){$("#notificationList").innerHTML=`<div class="empty-state notification-empty"><span class="notification-empty-icon">✓</span><strong>All caught up</strong><span>${active.length?"No updates match this filter.":"New schedule changes will appear here."}</span></div>`;return}
+  const today=isoToday(),tomorrow=tomorrowIso(),groups=[["Today",[]],["Tomorrow",[]],["Later",[]]];
+  filtered.forEach(n=>{const dateIso=n.dateIso||String(n.classId||"").split("|")[0];(dateIso===today?groups[0]:dateIso===tomorrow?groups[1]:groups[2])[1].push(n)});
+  const typeLabel=n=>n.type==="added"?"Added":n.type==="cancelled"?"Cancelled":"Venue";
+  const relative=n=>{const mins=Math.max(1,Math.round((Date.now()-n.createdAt)/60000));return mins<60?`${mins}m ago`:mins<1440?`${Math.round(mins/60)}h ago`:`${Math.round(mins/1440)}d ago`};
+  $("#notificationList").innerHTML=groups.filter(([,items])=>items.length).map(([label,items])=>`<section class="notification-group"><h3>${label}</h3>${items.map(n=>`<article class="notification-item notification-${esc(n.type)} ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><div class="notification-course-mark">${esc(canonical(n.course||n.code).slice(0,3))}</div><div class="notification-item-copy"><div class="notification-item-top"><span class="notification-type">${typeLabel(n)}</span><time>${relative(n)}</time></div><strong>${esc(n.title)}</strong><p>${esc(n.text)}</p></div><button class="notification-dismiss" type="button" data-dismiss-notification="${esc(n.id)}" aria-label="Dismiss ${esc(n.title)}">${icon("close")}</button></article>`).join("")}</section>`).join("");
 }
 function openNotifications(){const d=$("#notificationDrawer");d.classList.add("open");d.setAttribute("aria-hidden","false")}
 function closeNotifications(){const d=$("#notificationDrawer");d.classList.remove("open");d.setAttribute("aria-hidden","true")}
@@ -824,10 +844,9 @@ function bind(){
     setTimelineDay(next,direction==="left"?"forward":"backward");
   });
   $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);
+  $("#notificationFilters")?.addEventListener("click",e=>{const button=e.target.closest("[data-notification-filter]");if(!button)return;state.notificationFilter=button.dataset.notificationFilter;renderNotifications()});
+  $("#notificationList")?.addEventListener("click",e=>{const button=e.target.closest("[data-dismiss-notification]");if(!button)return;const removed=state.notifications.find(n=>n.id===button.dataset.dismissNotification);state.notifications=state.notifications.filter(n=>n.id!==button.dataset.dismissNotification);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showUndoToast("Notification dismissed",()=>{if(removed){state.notifications.unshift(removed);save(KEYS.notifications,state.notifications);renderNotifications();renderHome()}})});
   $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showToast("Notifications marked as read")});
-  $("#clearNotifications")?.addEventListener("click",()=>{
-    const cleared=state.notifications.map(item=>({...item}));state.notifications=[];save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showUndoToast("Notifications cleared",()=>{state.notifications=cleared;save(KEYS.notifications,state.notifications);renderNotifications();renderHome()});
-  });
   $("#chooseElectivesInline")?.addEventListener("click",()=>openOnboardingManually());
   $("#connectGoogleTasks")?.addEventListener("click",()=>connectGoogleTasks());
   $("#disconnectGoogleTasks")?.addEventListener("click",()=>disconnectGoogleTasks());
@@ -870,10 +889,10 @@ async function init(){
   renderGoogleTasksStatus();
   maybeOpenOnboarding();
   syncSchedule(false);
-  setInterval(()=>{renderHome();renderBuses()},30000);
+  setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-focus32",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-phase1",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
