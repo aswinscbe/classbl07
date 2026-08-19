@@ -1732,6 +1732,19 @@ h1,h2,h3,.brand-copy strong,.focus-time-hero,.focus-code,.next-bus-time,.date-or
   line-height:1.22!important;
   letter-spacing:-.018em!important;
 }
+.hero-card .focus-course-line{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+}
+.hero-card .focus-code{
+  align-self:center;
+  min-height:26px;
+  margin:0;
+  padding:0 9px;
+  line-height:1;
+}
 .hero-card .focus-time-hero,
 .hero-card:not(.is-empty) .focus-time-hero,
 .hero-card.is-free .focus-time-hero{
