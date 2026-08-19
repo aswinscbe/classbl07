@@ -1727,10 +1727,10 @@ h1,h2,h3,.brand-copy strong,.focus-time-hero,.focus-code,.next-bus-time,.date-or
 .hero-card .focus-course-line h2,
 .hero-card:not(.is-empty) .focus-course-line h2,
 .hero-card.is-empty .focus-course-line h2{
-  font-size:clamp(18px,2.25vw,21px)!important;
-  font-weight:650!important;
-  line-height:1.22!important;
-  letter-spacing:-.018em!important;
+  font-size:19px!important;
+  font-weight:750!important;
+  line-height:1.2!important;
+  letter-spacing:-.015em!important;
 }
 .hero-card .focus-course-line{
   display:grid;
@@ -1740,21 +1740,33 @@ h1,h2,h3,.brand-copy strong,.focus-time-hero,.focus-code,.next-bus-time,.date-or
 }
 .hero-card .focus-code{
   align-self:center;
-  min-height:26px;
   margin:0;
-  padding:0 9px;
-  line-height:1;
+}
+.hero-card .focus-code,
+.hero-card:not(.is-empty) .focus-code,
+.hero-card.is-empty .focus-code,
+.vertical-day-timeline .timeline-code-chip,
+.planner-schedule-card .agenda-code-chip{
+  box-sizing:border-box;
+  height:26px!important;
+  min-height:26px!important;
+  padding:0 9px!important;
+  border-radius:8px!important;
+  font-size:11px!important;
+  font-weight:780!important;
+  line-height:1!important;
+  letter-spacing:.045em!important;
 }
 .hero-card .focus-time-hero,
 .hero-card:not(.is-empty) .focus-time-hero,
 .hero-card.is-free .focus-time-hero{
-  margin-top:6px;
-  font-size:clamp(25px,3.4vw,30px);
-  font-weight:680;
-  line-height:1.08;
-  letter-spacing:-.035em;
+  margin-top:10px;
+  font-size:clamp(30px,5vw,36px);
+  font-weight:780;
+  line-height:1;
+  letter-spacing:-.025em;
 }
-.hero-card.is-clear .focus-time-hero{font-size:clamp(20px,2.6vw,23px);font-weight:650;letter-spacing:-.02em}
+.hero-card.is-clear .focus-time-hero{font-size:22px;font-weight:680;line-height:1.1;letter-spacing:-.02em}
 .hero-card .focus-position,
 .hero-card:not(.is-empty) .focus-position{
   display:inline-flex;
@@ -1793,16 +1805,18 @@ h1,h2,h3,.brand-copy strong,.focus-time-hero,.focus-code,.next-bus-time,.date-or
 .density-day:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 
 @media(max-width:620px){
+  .hero-card,.hero-card:not(.is-empty){padding-block:14px;padding-inline:16px}
   .hero-card .focus-course-line h2,
   .hero-card:not(.is-empty) .focus-course-line h2,
-  .hero-card.is-empty .focus-course-line h2{font-size:18px!important}
+  .hero-card.is-empty .focus-course-line h2{font-size:19px!important}
   .hero-card .focus-time-hero,
   .hero-card:not(.is-empty) .focus-time-hero,
-  .hero-card.is-free .focus-time-hero{margin-top:5px;font-size:25px}
-  .hero-card.is-clear .focus-time-hero{font-size:20px}
+  .hero-card.is-free .focus-time-hero{margin-top:9px;font-size:clamp(30px,8vw,34px)}
+  .hero-card.is-clear .focus-time-hero{font-size:21px}
   .hero-card .focus-position,.hero-card:not(.is-empty) .focus-position{margin-top:11px;padding:8px 10px}
   .hero-card .focus-position strong{font-size:14px}
   .hero-card .focus-context,.hero-card:not(.is-empty) .focus-context{align-items:center;flex-wrap:wrap;margin-top:13px;padding:9px 10px}
   .hero-card .focus-context strong,.hero-card:not(.is-empty) .focus-context strong{font-size:13px}
 }
+@media(max-width:340px){.hero-card,.hero-card:not(.is-empty){padding-block:13px;padding-inline:14px}}
 
