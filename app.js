@@ -137,6 +137,14 @@ function scheduleIdleSync(){
 }
 function setPlannerView(view="calendar"){$$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===view));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===view));document.dispatchEvent(new CustomEvent("planner-view-change",{detail:{view}}))}
 function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner"){state.selectedDate=isoToday();const today=new Date();state.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);setPlannerView("calendar")}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
+function openPlannerDate(iso){
+  showPage("planner");
+  state.selectedDate=iso;
+  const date=new Date(`${iso}T12:00:00+05:30`);
+  state.calendarMonth=new Date(date.getFullYear(),date.getMonth(),1);
+  renderCalendar();
+  requestAnimationFrame(()=>$("#dayAgenda")?.scrollIntoView({behavior:"smooth",block:"start"}));
+}
 function renderAll(){migrateProfile();state.classes=filteredClasses();pruneNotifications();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderCampus();renderNotifications();renderIcons()}
 function scheduleGapParts(current,next){
   const start=minutes(current.endTime),end=minutes(next.startTime),lunchStart=13*60+30,lunchEnd=14*60+30;
@@ -168,7 +176,7 @@ function renderWeekDensity(){
   const today=isoToday(),base=new Date(`${today}T12:00:00+05:30`),monday=new Date(base),daysFromMonday=(base.getUTCDay()+6)%7;monday.setDate(base.getDate()-daysFromMonday);
   const days=Array.from({length:7},(_,offset)=>{const date=new Date(monday);date.setDate(monday.getDate()+offset);const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(date),classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),minutesTotal=classes.reduce((sum,c)=>sum+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0);return{iso,classes,minutesTotal}}),classTotal=days.reduce((sum,day)=>sum+day.classes.length,0),minuteTotal=days.reduce((sum,day)=>sum+day.minutesTotal,0);
   $("#weekDensitySummary").textContent=`${classTotal} ${classTotal===1?"class":"classes"} · ${compactDuration(minuteTotal)}`;
-  $("#weekDensityDays").innerHTML=days.map(day=>{const weekday=fmtDate(day.iso,{weekday:"short"}),isToday=day.iso===today,label=`${weekday}, ${day.classes.length} ${day.classes.length===1?"class":"classes"}, ${day.minutesTotal?compactDuration(day.minutesTotal):"clear"}`;return`<div class="density-day ${isToday?"today":""}" aria-label="${esc(label)}"${isToday?' aria-current="date"':""}><span>${esc(weekday)}</span><strong>${day.classes.length}</strong></div>`}).join("");
+  $("#weekDensityDays").innerHTML=days.map(day=>{const weekday=fmtDate(day.iso,{weekday:"short"}),isToday=day.iso===today,label=`Open ${weekday}: ${day.classes.length} ${day.classes.length===1?"class":"classes"}, ${day.minutesTotal?compactDuration(day.minutesTotal):"clear"}`;return`<button type="button" class="density-day ${isToday?"today":""}" data-density-date="${day.iso}" aria-label="${esc(label)}"${isToday?' aria-current="date"':""}><span>${esc(weekday)}</span><strong>${day.classes.length}</strong></button>`}).join("");
 }
 function loadSummary(classes,boundary="end"){
   if(!classes.length)return"No classes scheduled";
@@ -201,7 +209,10 @@ function renderHome(){
     const lunchLeft=Math.max(0,14*60+30-nowMinutes);$("#focusCountdownLabel").textContent=isNow?`ENDS AT ${fmtTime(focus.endTime)}`:isLunch?"LUNCH ENDS":isFree?"NEXT CLASS":isClearToday||isDayDone?"NEXT UP":isToday?"STARTS IN":"DAY LOAD";
     $("#focusCountdown").textContent=isNow?`${compactDuration(diff)} left`:isLunch?`${compactDuration(lunchLeft)} left`:isFree?fmtTime(focus.startTime):isClearToday||isDayDone?fmtDate(focus.dateIso,{weekday:"short",day:"numeric",month:"short"}):isToday?compactDuration(diff):`${dayClasses.length} ${dayClasses.length===1?"class":"classes"}`;
     const context=$("#focusContext");context.hidden=false;$("#focusContextLabel").textContent=loadLabel;$("#focusContextValue").textContent=loadValue;
-    const position=$("#focusPosition"),after=isNow?todays.find(c=>dateTime(c,"startTime")>=dateTime(focus,"endTime")):null;position.hidden=!(isNow||isLunch||isFree||isToday&&dayIndex>=0);position.textContent=isNow?(after?`Next ${canonical(after.code)} · ${fmtTime(after.startTime)}`:"Final class today"):isLunch?`Lunch ends in ${compactDuration(lunchLeft)}`:isFree?`Next class · ${fmtTime(focus.startTime)}`:dayIndex>=0?`Class ${dayIndex+1} of ${todays.length}`:"";
+    const position=$("#focusPosition"),positionLabel=$("#focusPositionLabel"),positionValue=$("#focusPositionValue"),after=isNow?todays.find(c=>dateTime(c,"startTime")>=dateTime(focus,"endTime")):null;
+    position.hidden=!(isNow||isLunch||isFree||isToday&&dayIndex>=0);
+    positionLabel.textContent=isNow&&after?"NEXT":isNow?"TODAY":isLunch?"LUNCH ENDS":isFree?"NEXT":"TODAY";
+    positionValue.textContent=isNow&&after?`${canonical(after.code)} · ${fmtTime(after.startTime)}`:isNow?"Final class":isLunch?compactDuration(lunchLeft):isFree?`${canonical(focus.code)} · ${fmtTime(focus.startTime)}`:dayIndex>=0?`Class ${dayIndex+1} of ${todays.length}`:"";
     const liveProgress=isNow?((now-dateTime(focus,"startTime"))/(dateTime(focus,"endTime")-dateTime(focus,"startTime")))*100:isLunch?((nowMinutes-(13*60+30))/60)*100:isFree&&previous?((now-dateTime(previous,"endTime"))/(dateTime(focus,"startTime")-dateTime(previous,"endTime")))*100:0,segments=$("#focusSegments");segments.hidden=!(isNow||isLunch||isFree);fillSegments(segments,liveProgress,12);
     const glanceDate=isToday?today:focus.dateIso;renderHeroDayGlance(state.classes.filter(c=>c.dateIso===glanceDate),now,glanceDate);
   }
@@ -217,7 +228,7 @@ function renderHome(){
     const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=c.status!=="Cancelled"&&wasRecentlyAdded(c),liveLeft=status==="current"?compactDuration(Math.max(0,(dateTime(c,"endTime")-now)/60000)):"",statusText=status==="current"?`HAPPENING NOW · ${liveLeft} LEFT`:status==="done"?"COMPLETED":status==="cancelled"?"CANCELLED":"UPCOMING";
     return `<article class="vertical-class ${status}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}" tabindex="0" role="button" aria-haspopup="dialog"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><div class="timeline-status-row"><span class="vertical-status">${esc(statusText)}</span>${added?'<span class="timeline-added">ADDED</span>':""}</div></div></article>`;
   }).join("");
-  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineCards}</div>`:`<div class="empty-state free-day-state"><strong>${state.timelineDay==="today"?"Your day is clear":"Tomorrow is open"}</strong><span>${state.timelineDay==="today"?"No classes today—use the time your way.":"Nothing scheduled yet."}</span></div>`;
+  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineCards}</div>`:`<div class="empty-state free-day-state"><strong>${state.timelineDay==="today"?"No classes today":"No classes tomorrow"}</strong><span>Nothing scheduled.</span></div>`;
   decorateTimelineDay("#todayProgressRail",timelineClasses,timelineIso);
   const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0;
   $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
@@ -862,6 +873,7 @@ function bind(){
     setTimelineDay(next,direction==="left"?"forward":"backward");
   });
   $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);
+  $("#weekDensityDays")?.addEventListener("click",event=>{const day=event.target.closest("[data-density-date]");if(day)openPlannerDate(day.dataset.densityDate)});
   $("#notificationFilters")?.addEventListener("click",e=>{const button=e.target.closest("[data-notification-filter]");if(!button)return;state.notificationFilter=button.dataset.notificationFilter;renderNotifications()});
   $("#notificationList")?.addEventListener("click",e=>{const button=e.target.closest("[data-dismiss-notification]");if(!button)return;const removed=state.notifications.find(n=>n.id===button.dataset.dismissNotification);state.notifications=state.notifications.filter(n=>n.id!==button.dataset.dismissNotification);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showUndoToast("Notification dismissed",()=>{if(removed){state.notifications.unshift(removed);save(KEYS.notifications,state.notifications);renderNotifications();renderHome()}})});
   $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showToast("Notifications marked as read")});
@@ -910,7 +922,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-phase15",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-phase15b",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

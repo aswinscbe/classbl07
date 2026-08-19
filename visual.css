@@ -1723,3 +1723,72 @@ h1,h2,h3,.brand-copy strong,.focus-time-hero,.focus-code,.next-bus-time,.date-or
   }
 }
 
+/* ===== Phase 1.5 hero hierarchy and weekly navigation =========== */
+.hero-card .focus-course-line h2,
+.hero-card:not(.is-empty) .focus-course-line h2,
+.hero-card.is-empty .focus-course-line h2{
+  font-size:clamp(18px,2.25vw,21px)!important;
+  font-weight:650!important;
+  line-height:1.22!important;
+  letter-spacing:-.018em!important;
+}
+.hero-card .focus-time-hero,
+.hero-card:not(.is-empty) .focus-time-hero,
+.hero-card.is-free .focus-time-hero{
+  margin-top:6px;
+  font-size:clamp(25px,3.4vw,30px);
+  font-weight:680;
+  line-height:1.08;
+  letter-spacing:-.035em;
+}
+.hero-card.is-clear .focus-time-hero{font-size:clamp(20px,2.6vw,23px);font-weight:650;letter-spacing:-.02em}
+.hero-card .focus-position,
+.hero-card:not(.is-empty) .focus-position{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  margin-top:12px;
+  padding:8px 10px;
+  border:1px solid color-mix(in srgb,var(--focus-course,var(--primary)) 30%,var(--border));
+  border-radius:10px;
+  background:color-mix(in srgb,var(--focus-course,var(--primary)) 8%,var(--surface-2));
+  color:var(--text);
+}
+.hero-card .focus-position[hidden]{display:none!important}
+.hero-card .focus-position span{color:var(--muted);font-size:9px;font-weight:720;letter-spacing:.07em;line-height:1}
+.hero-card .focus-position strong{color:var(--text);font-family:var(--font-display);font-size:15px;font-weight:680;line-height:1.1;letter-spacing:-.015em}
+.hero-card .focus-context,
+.hero-card:not(.is-empty) .focus-context{
+  align-items:center;
+  gap:9px;
+  margin-top:14px;
+  padding:10px 11px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:var(--surface-2);
+}
+.hero-card .focus-context span,
+.hero-card:not(.is-empty) .focus-context span{font-size:11px;font-weight:620;color:var(--muted)}
+.hero-card .focus-context span::after,
+.hero-card:not(.is-empty) .focus-context span::after{content:none}
+.hero-card .focus-context strong,
+.hero-card:not(.is-empty) .focus-context strong{max-width:none;font-size:14px;font-weight:680;line-height:1.25;color:var(--text);text-align:left}
+.density-day{appearance:none;font:inherit;color:inherit;cursor:pointer;transition:background .18s ease,transform .18s ease}
+.density-day:hover{background:var(--surface-2)}
+.density-day:active{transform:translateY(1px)}
+.density-day:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+@media(max-width:620px){
+  .hero-card .focus-course-line h2,
+  .hero-card:not(.is-empty) .focus-course-line h2,
+  .hero-card.is-empty .focus-course-line h2{font-size:18px!important}
+  .hero-card .focus-time-hero,
+  .hero-card:not(.is-empty) .focus-time-hero,
+  .hero-card.is-free .focus-time-hero{margin-top:5px;font-size:25px}
+  .hero-card.is-clear .focus-time-hero{font-size:20px}
+  .hero-card .focus-position,.hero-card:not(.is-empty) .focus-position{margin-top:11px;padding:8px 10px}
+  .hero-card .focus-position strong{font-size:14px}
+  .hero-card .focus-context,.hero-card:not(.is-empty) .focus-context{align-items:center;flex-wrap:wrap;margin-top:13px;padding:9px 10px}
+  .hero-card .focus-context strong,.hero-card:not(.is-empty) .focus-context strong{font-size:13px}
+}
+
