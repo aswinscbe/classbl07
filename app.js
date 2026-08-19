@@ -11,6 +11,9 @@ const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelecto
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
 const colorFor=c=>COURSE_COLORS[canonical(c)]||"#7b8aa2";
 const venueOf=c=>c.venue||c.room||"Venue TBA";
+const EXAM_SLOT_ORDER={Forenoon:0,Afternoon:1,Evening:2};
+function filteredExams(){const selected=new Set((state.profile.electives||[]).map(canonical));return[...(window.EXAM_DATA||[])].filter(exam=>exam.type==="Core"||selected.has(canonical(exam.code))).sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||(EXAM_SLOT_ORDER[a.slot]??9)-(EXAM_SLOT_ORDER[b.slot]??9))}
+function examDayDistance(dateIso){const today=new Date(`${isoToday()}T00:00:00+05:30`),examDate=new Date(`${dateIso}T00:00:00+05:30`);return Math.round((examDate-today)/86400000)}
 function load(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function showToast(message){let toast=$("#appToast");if(!toast){toast=document.createElement("div");toast.id="appToast";toast.setAttribute("role","status");toast.setAttribute("aria-live","polite");document.body.appendChild(toast)}toast.className="app-toast";toast.textContent=message;requestAnimationFrame(()=>toast.classList.add("show"));clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.classList.remove("show"),2400)}
@@ -145,7 +148,8 @@ function openPlannerDate(iso){
   renderCalendar();
   requestAnimationFrame(()=>$("#dayAgenda")?.scrollIntoView({behavior:"smooth",block:"start"}));
 }
-function renderAll(){migrateProfile();state.classes=filteredClasses();pruneNotifications();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderCampus();renderNotifications();renderIcons()}
+function openExamPlanner(){showPage("planner");setPlannerView("exams")}
+function renderAll(){migrateProfile();state.classes=filteredClasses();pruneNotifications();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderExams();renderTasks();renderNotes();renderCampus();renderNotifications();renderIcons()}
 function scheduleGapParts(current,next){
   const start=minutes(current.endTime),end=minutes(next.startTime),lunchStart=13*60+30,lunchEnd=14*60+30;
   if(end-start<30)return[];
@@ -182,6 +186,30 @@ function loadSummary(classes,boundary="end"){
   if(!classes.length)return"No classes scheduled";
   const total=classes.reduce((sum,c)=>sum+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0),sorted=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)),edge=boundary==="start"?fmtTime(sorted[0].startTime):`Until ${fmtTime(sorted.at(-1).endTime)}`;
   return`${classes.length} ${classes.length===1?"class":"classes"} · ${compactDuration(total)} · ${edge}`;
+}
+function renderNextExam(){
+  const card=$("#nextExamCard"),next=filteredExams().find(exam=>exam.dateIso>=isoToday());
+  if(!card)return;
+  const days=next?examDayDistance(next.dateIso):-1;
+  card.hidden=!next||days<0||days>14;
+  if(card.hidden)return;
+  card.style.setProperty("--course",colorFor(next.code));
+  $("#nextExamCode").textContent=next.code;
+  $("#nextExamTitle").textContent=next.course;
+  $("#nextExamMeta").textContent=`${fmtDate(next.dateIso,{weekday:"short",day:"numeric",month:"short"})} · ${next.slot} · Time TBA`;
+  $("#nextExamCountdown").textContent=days===0?"Today":days===1?"Tomorrow":`${days} days`;
+}
+function examListCard(exam){
+  const days=examDayDistance(exam.dateIso),status=days<0?"Completed":days===0?"Today":days===1?"Tomorrow":`${days} days`;
+  return`<article class="exam-list-card ${days<0?"past":""}" style="--course:${colorFor(exam.code)}"><div class="exam-slot"><span>${esc(exam.slot)}</span><strong>${esc(status)}</strong></div><div class="exam-list-copy"><div class="exam-course-line"><span class="exam-code-chip">${esc(exam.code)}</span><h3>${esc(exam.course)}</h3></div><p><span>Time TBA</span><i>·</i><span>Venue TBA</span></p></div><button type="button" class="exam-day-button" data-exam-date="${exam.dateIso}">View day</button></article>`;
+}
+function renderExams(){
+  const exams=filteredExams(),count=$("#examCount"),schedule=$("#examSchedule");
+  if(!schedule)return;
+  if(count)count.textContent=exams.length;
+  if(!exams.length){schedule.innerHTML='<div class="empty-state">No exams match your selected courses.</div>';return}
+  const groups=new Map();exams.forEach(exam=>{if(!groups.has(exam.dateIso))groups.set(exam.dateIso,[]);groups.get(exam.dateIso).push(exam)});
+  schedule.innerHTML=[...groups].map(([date,items])=>`<section class="exam-day-group"><header><div><span>${esc(fmtDate(date,{weekday:"short"}))}</span><strong>${esc(fmtDate(date,{day:"numeric",month:"long",year:"numeric"}))}</strong></div><small>${items.length} ${items.length===1?"exam":"exams"}</small></header><div>${items.map(examListCard).join("")}</div></section>`).join("");
 }
 function renderHeroDayGlance(classes,now,dateIso){
   const glance=$("#heroDayGlance"),items=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
@@ -239,7 +267,7 @@ function renderHome(){
     $("#silentUpdateTitle").textContent=latest.type==="added"?"Class added":latest.type==="cancelled"?"Class cancelled":latest.type==="venue"?"Venue changed":"Schedule updated";
     $("#silentUpdateText").textContent=`${latest.title} · ${latest.text}`;
   }
-  $("#homeSyncText").textContent=relativeSyncText();renderWeekDensity()
+  $("#homeSyncText").textContent=relativeSyncText();renderWeekDensity();renderNextExam()
   renderHomeTasks()
 }
 function scheduleHtml(list){if(!list.length)return'<div class="empty-state">Nothing scheduled.</div>';return[...list].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)).map(c=>`<article class="schedule-item ${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"><div class="schedule-time">${esc(fmtTime(c.startTime))}<br><span>${esc(fmtTime(c.endTime))}</span></div><div class="schedule-info"><strong>${esc(c.code)} · ${esc(c.course)}</strong><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p>${c.status==="Cancelled"?'<span class="status-badge cancelled">CANCELLED</span>':""}</div></article>`).join("")}
@@ -298,10 +326,14 @@ function agendaFreeWindowHtml(current,next){
   if(!current||!next||current.status==="Cancelled"||next.status==="Cancelled")return"";
   return scheduleGapParts(current,next).map(part=>{const isLunch=part.type==="lunch",action=!isLunch&&part.duration>=60?`<button type="button" class="free-window-action" data-free-date="${esc(next.dateIso)}" data-free-course="${esc(canonical(next.code))}">Add task</button>`:"";return`<div class="agenda-free-window ${isLunch?"lunch-window":""}"><span>${isLunch?"LUNCH BREAK":"FREE TIME"}</span><strong>${isLunch?"1h lunch break":`${esc(compactDuration(part.duration))} available`}</strong><small>${esc(part.detail)}</small>${action}</div>`}).join("");
 }
-function agendaHtml(classes,tasks){
-  if(!classes.length&&!tasks.length)return'<div class="agenda-empty">Nothing scheduled for this day.</div>';
+function examAgendaHtml(exams){
+  if(!exams.length)return"";
+  return`<section class="agenda-exam-section"><div class="agenda-group-title">Exams</div>${exams.map(exam=>`<article class="agenda-exam-card" style="--course:${colorFor(exam.code)}"><div class="agenda-exam-slot"><span>${esc(exam.slot)}</span><strong>Time TBA</strong></div><div><div class="exam-course-line"><span class="exam-code-chip">${esc(exam.code)}</span><h3>${esc(exam.course)}</h3></div><p>Venue TBA · Report 10 minutes early</p></div></article>`).join("")}</section>`;
+}
+function agendaHtml(classes,tasks,exams=[]){
+  if(!classes.length&&!tasks.length&&!exams.length)return'<div class="agenda-empty">Nothing scheduled for this day.</div>';
   const periods=["Morning","Afternoon","Evening"];
-  let html='<div class="day-agenda-groups">';
+  let html=examAgendaHtml(exams)+'<div class="day-agenda-groups">';
   const activeClasses=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   periods.forEach(period=>{
     const items=classes.filter(c=>agendaPeriod(c)===period).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
@@ -323,13 +355,35 @@ function showCalendarTooltip(target,iso){
   let tip=$("#calendarTooltip");
   if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}
   const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-  if(!list.length)return;
+  const exams=filteredExams().filter(exam=>exam.dateIso===iso);
+  if(!list.length&&!exams.length)return;
   const scheduled=list.filter(c=>c.status!=="Cancelled"),cancelled=list.filter(c=>c.status==="Cancelled");
-  const summary=`${scheduled.length} scheduled${cancelled.length?` · ${cancelled.length} cancelled`:""}`;
+  const summary=[scheduled.length?`${scheduled.length} scheduled`:"",cancelled.length?`${cancelled.length} cancelled`:"",exams.length?`${exams.length} ${exams.length===1?"exam":"exams"}`:""].filter(Boolean).join(" · ");
   const rows=scheduled.map(c=>`<div class="calendar-tooltip-row" style="--tooltip-course:${colorFor(c.code)}"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("");
   const cancelledRows=cancelled.map(c=>`<div class="calendar-tooltip-row cancelled" style="--tooltip-course:var(--danger)"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong><span>CANCELLED</span></div>`).join("");
-  tip.innerHTML=`<div class="calendar-tooltip-head"><h4>${esc(fmtDate(iso))}</h4><small>${esc(summary)}</small></div>${scheduled.length?rows:'<div class="calendar-tooltip-empty">No scheduled classes</div>'}${cancelledRows}`;
+  const examRows=exams.map(exam=>`<div class="calendar-tooltip-row exam" style="--tooltip-course:${colorFor(exam.code)}"><time>${esc(exam.slot)}</time><strong>${esc(exam.code)} · ${esc(exam.course)}</strong></div>`).join("");
+  tip.innerHTML=`<div class="calendar-tooltip-head"><h4>${esc(fmtDate(iso))}</h4><small>${esc(summary)}</small></div>${rows}${cancelledRows}${examRows}`;
   const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-240,r.bottom+8)}px`;tip.classList.add("show")
+}
+function renderCalendar(){
+  const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth(),exams=filteredExams();
+  $("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);
+  const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";
+  for(let i=0;i<42;i++){
+    const day=new Date(start);day.setDate(start.getDate()+i);
+    const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),dayExams=exams.filter(exam=>exam.dateIso===iso),colors=classes.slice(0,4).map(c=>colorFor(c.code)),labels=[];
+    if(classes.length)labels.push(`${classes.length} class${classes.length===1?"":"es"}`);if(dayExams.length)labels.push(`${dayExams.length} exam${dayExams.length===1?"":"s"}`);
+    html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dayExams.length?"has-exam":""}" data-date="${iso}"><span class="calendar-day-number">${day.getDate()}</span>${dayExams.length?'<span class="calendar-exam-marker">EXAM</span>':""}<span class="calendar-course-dots">${colors.map(c=>`<i style="--course:${c}"></i>`).join("")}</span><span class="calendar-class-count">${esc(labels.join(" · "))}</span></button>`;
+  }
+  $("#calendarGrid").innerHTML=html;
+  $$(".calendar-day").forEach(button=>{button.addEventListener("click",()=>{state.selectedDate=button.dataset.date;renderCalendar();requestAnimationFrame(()=>{const agenda=$("#dayAgenda");if(agenda&&matchMedia("(max-width:780px)").matches)agenda.scrollIntoView({behavior:"smooth",block:"start"})})});button.addEventListener("mouseenter",()=>showCalendarTooltip(button,button.dataset.date));button.addEventListener("mouseleave",hideCalendarTooltip)});
+  const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate),dayExams=exams.filter(exam=>exam.dateIso===state.selectedDate);
+  $("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  $("#agendaCount").textContent=classes.length+tasks.length+dayExams.length;
+  $("#dayAgenda").innerHTML=agendaHtml(classes,tasks,dayExams);
+  const used=[...new Set([...state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)),...exams.filter(exam=>exam.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(exam=>canonical(exam.code))])];
+  $("#calendarLegend").innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("")+(exams.some(exam=>exam.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`))?'<span class="legend-item exam"><i></i>Exam</span>':"");
+  bindTaskRows($("#dayAgenda"));
 }
 function shiftSelectedDate(delta){const day=new Date(`${state.selectedDate}T12:00:00+05:30`);day.setDate(day.getDate()+delta);state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(day);state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);const agenda=$("#dayAgenda");if(agenda){agenda.classList.remove("slide-prev","slide-next");agenda.classList.add(delta>0?"slide-next":"slide-prev")}renderCalendar();requestAnimationFrame(()=>requestAnimationFrame(()=>agenda?.classList.remove("slide-prev","slide-next")))}
 function renderCourseOptions(){const selected=new Set((state.profile.electives||[]).map(canonical));const seen=new Set(),courses=[];state.all.forEach(c=>{const code=canonical(c.baseCode||c.code);const allowed=c.type==="Core"?c.section===state.profile.section:selected.has(code);if(allowed&&!seen.has(code)){seen.add(code);courses.push({code,course:c.course})}});const o=courses.sort((a,b)=>a.course.localeCompare(b.course)).map(e=>`<option value="${esc(e.code)}">${esc(e.code)} · ${esc(e.course)}</option>`).join("");["#quickTaskCourse","#taskCourse","#noteCourse"].forEach(s=>{const el=$(s);if(el)el.innerHTML='<option value="">General</option>'+o})}
@@ -884,6 +938,8 @@ function bind(){
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
   window.addEventListener("online",()=>scheduleIdleSync());
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerView(b.dataset.plannerTab)));
+  $$('[data-open-exams]').forEach(button=>button.addEventListener("click",openExamPlanner));
+  $("#examSchedule")?.addEventListener("click",event=>{const button=event.target.closest("[data-exam-date]");if(button)openPlannerDate(button.dataset.examDate)});
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);renderCalendar()});
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
@@ -922,7 +978,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-phase15e",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-exams1",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
