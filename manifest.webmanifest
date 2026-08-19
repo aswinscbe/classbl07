@@ -3,8 +3,8 @@
   "short_name": "BL07",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#07111f",
-  "theme_color": "#07111f",
+  "background_color": "#130f15",
+  "theme_color": "#130f15",
   "description": "Academic, transport and dining companion for PGPBL07",
   "icons": []
 }
