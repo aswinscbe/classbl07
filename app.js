@@ -51,6 +51,15 @@ function renderIcons(){$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.datas
 function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#0b1020":"#f5f7fb"}
 function filteredClasses(){const selected=new Set((state.profile.electives||[]).map(canonical));return state.all.filter(c=>c.type==="Core"?(state.profile.section==="A"?c.section==="A":c.section==="B"):selected.has(canonical(c.baseCode||c.code)))}
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
+const CANCELLED_FILL_COLORS=new Set(["#ff0000","#cc0000","#c00000"]);
+function normalizeFillColor(value){const fill=String(value||"").trim().toLowerCase();return /^#[0-9a-f]{3}$/.test(fill)?`#${fill.slice(1).split("").map(char=>char.repeat(2)).join("")}`:fill}
+function normalizeScheduleClass(item){
+  const status=String(item?.status||"").trim(),normalized=status.toLowerCase(),fill=normalizeFillColor(item?.fillColor);
+  if(normalized==="cancelled"||normalized==="canceled"||CANCELLED_FILL_COLORS.has(fill))return{...item,status:"Cancelled"};
+  if(normalized==="added")return{...item,status:"Added"};
+  return{...item,status:status||"Scheduled"};
+}
+function normalizeScheduleClasses(items){return Array.isArray(items)?items.map(normalizeScheduleClass):[]}
 function classKey(c){return`${classIdentity(c)}|${c.endTime||""}|${venueOf(c)}`}
 function classIdentity(c){return`${c.dateIso}|${c.startTime}|${canonical(c.code)}`}
 function tomorrowIso(){const d=new Date(`${isoToday()}T12:00:00+05:30`);d.setDate(d.getDate()+1);return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
@@ -90,14 +99,14 @@ async function syncSchedule(force=false){
   try{
     const u=new URL(API);u.searchParams.set("section",state.profile.section||"A");u.searchParams.set("electives",(state.profile.electives||[]).join(","));u.searchParams.set("includeCancelled","true");if(force)u.searchParams.set("_",Date.now());
     const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`HTTP ${r.status}`);const d=await r.json();if(!d.success)throw new Error(d.error||"API failed");
-    const previous=load(KEYS.snapshot,[]),changes=compareSnapshots(previous,d.classes||[]);
+    const previous=load(KEYS.snapshot,[]),incoming=normalizeScheduleClasses(d.classes),changes=compareSnapshots(previous,incoming);
     if(changes.length){state.notifications=[...changes,...state.notifications].slice(0,40);save(KEYS.notifications,state.notifications)}
-    state.all=d.classes||[];state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();
+    state.all=incoming;state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();
     _lastSyncAt=Date.now();
     if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Updated now</span>"}
   }catch(e){
     const c=load(KEYS.cache,null);
-    if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
+    if(c){state.all=normalizeScheduleClasses(c.all);state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
     if(pill){pill.className="sync-pill error";pill.innerHTML="<i></i><span>Offline</span>"}
     console.error(e);
   }finally{
@@ -853,7 +862,7 @@ async function init(){
   renderIcons();
   bind();
   const c=load(KEYS.cache,null);
-  if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
+  if(c){state.all=normalizeScheduleClasses(c.all);state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
   // Restore Google Tasks token silently
   const savedToken=getSavedGoogleToken();
   if(savedToken){_googleAccessToken=savedToken.access_token;initGoogleTokenClient().catch(()=>{});pullGoogleTasks().then(async()=>{await migrateGoogleTaskNotes();for(const task of state.tasks.filter(t=>!t.googleTaskId))await syncTaskToGoogle(task)}).catch(()=>{})}
@@ -864,8 +873,9 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260818-focus30",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-focus32",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
+
 
