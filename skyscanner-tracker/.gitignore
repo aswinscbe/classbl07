@@ -1,0 +1,7 @@
+backend/venv/
+backend/flights.db
+backend/exports/
+backend/debug/
+backend/browser_profile/
+backend/__pycache__/
+*.pyc
