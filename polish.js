@@ -179,16 +179,13 @@
       fab.addEventListener("click",()=>{
         const view=document.querySelector("[data-planner-view].active")?.dataset.plannerView;
         if(view==="notes"){document.getElementById("openNoteForm")?.click();return}
-        document.getElementById("openTaskForm")?.click();
-        const date=view==="exams"?document.querySelector(".exam-list-card:not(.past) [data-exam-date]")?.dataset.examDate:document.querySelector(".calendar-day.selected")?.dataset.date;
-        if(date)document.getElementById("taskDate").value=date;
-        if(view==="exams")document.getElementById("taskTitle").value="Exam preparation";
+        if(view==="tasks")document.getElementById("openTaskForm")?.click();
       });
     }
     const plannerOpen = document.getElementById("plannerPage")?.classList.contains("active");
     const view = document.querySelector("[data-planner-view].active")?.dataset.plannerView;
-    fab.hidden = !plannerOpen;
-    if(fab.dataset.view!==view){fab.dataset.view=view||"";fab.innerHTML = view==="notes" ? "<span>＋</span> Note" : view==="exams" ? "<span>＋</span> Prep task" : view==="calendar" ? "<span>＋</span> Task for day" : "<span>＋</span> Task"}
+    fab.hidden = !plannerOpen || !["tasks","notes"].includes(view);
+    if(fab.dataset.view!==view){fab.dataset.view=view||"";fab.innerHTML = view==="notes" ? "<span>＋</span> Note" : "<span>＋</span> Task"}
   };
   const start = () => {
     document.title = clean(document.title);
