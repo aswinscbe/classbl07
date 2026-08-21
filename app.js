@@ -107,10 +107,15 @@ function compareSnapshots(oldList,newList){
   return out.slice(0,12)
 }
 let _syncInFlight=false,_lastSyncAt=0;
+function setAppState(kind="online",message=""){
+  const banner=$("#appStateBanner"),text=$("#appStateText"),action=$("#appStateAction");if(!banner)return;
+  banner.dataset.state=kind;banner.hidden=kind==="online";if(text)text.textContent=message||"You are offline. Showing the last saved schedule.";if(action){action.hidden=kind!=="update";action.textContent=kind==="update"?"Refresh":""}
+}
 async function syncSchedule(force=false){
   if(_syncInFlight)return;
   if(!force&&Date.now()-_lastSyncAt<30000)return;
   _syncInFlight=true;
+  document.body.classList.add("schedule-loading");
   const pill=$("#syncPill"),refreshBtn=$("#refreshButton");
   if(pill){pill.className="sync-pill syncing";pill.innerHTML="<i></i><span>Checking</span>"}
   if(refreshBtn){refreshBtn.dataset.state="syncing";refreshBtn.setAttribute("aria-busy","true")}
@@ -121,14 +126,17 @@ async function syncSchedule(force=false){
     if(changes.length){const existing=new Set(state.notifications.map(n=>`${n.type}|${n.classId}|${n.text}`));state.notifications=[...changes.filter(n=>!existing.has(`${n.type}|${n.classId}|${n.text}`)),...state.notifications].slice(0,40);save(KEYS.notifications,state.notifications)}
     state.all=incoming;state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();
     _lastSyncAt=Date.now();
+    setAppState("online");
     if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Updated now</span>"}
   }catch(e){
     const c=load(KEYS.cache,null);
     if(c){state.all=normalizeScheduleClasses(c.all);state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
     if(pill){pill.className="sync-pill error";pill.innerHTML="<i></i><span>Offline</span>"}
+    setAppState("offline",c?"You are offline. Showing the last saved schedule.":"Schedule could not load. Check your connection and try again.");
     console.error(e);
   }finally{
     _syncInFlight=false;
+    document.body.classList.remove("schedule-loading");
     if(refreshBtn){refreshBtn.dataset.state="";refreshBtn.setAttribute("aria-busy","false")}
   }
   renderAll();
@@ -153,14 +161,24 @@ function renderAll(){migrateProfile();state.classes=filteredClasses();pruneNotif
 function scheduleGapParts(current,next){
   const start=minutes(current.endTime),end=minutes(next.startTime),lunchStart=13*60+30,lunchEnd=14*60+30;
   if(end-start<30)return[];
-  if(start<=lunchStart&&end>=lunchEnd){
+  if(start<lunchEnd&&end>lunchStart){
+    const lunchFrom=Math.max(start,lunchStart),lunchTo=Math.min(end,lunchEnd);
     const parts=[];
-    if(lunchStart-start>=30)parts.push({type:"free",duration:lunchStart-start,detail:`Until lunch · ${fmtTime("13:30")}`});
-    parts.push({type:"lunch",duration:60,detail:`${fmtTime("13:30")} – ${fmtTime("14:30")}`});
-    if(end-lunchEnd>=30)parts.push({type:"free",duration:end-lunchEnd,detail:`Next ${canonical(next.code)} · ${fmtTime(next.startTime)}`});
+    if(lunchFrom-start>=30)parts.push({type:"free",duration:lunchFrom-start,startTime:current.endTime,endTime:`${String(Math.floor(lunchFrom/60)).padStart(2,"0")}:${String(lunchFrom%60).padStart(2,"0")}`,nextCode:"Lunch"});
+    parts.push({type:"lunch",duration:lunchTo-lunchFrom,startTime:`${String(Math.floor(lunchFrom/60)).padStart(2,"0")}:${String(lunchFrom%60).padStart(2,"0")}`,endTime:`${String(Math.floor(lunchTo/60)).padStart(2,"0")}:${String(lunchTo%60).padStart(2,"0")}`,nextCode:canonical(next.code),nextTime:next.startTime});
+    if(end-lunchTo>=30)parts.push({type:"free",duration:end-lunchTo,startTime:`${String(Math.floor(lunchTo/60)).padStart(2,"0")}:${String(lunchTo%60).padStart(2,"0")}`,endTime:next.startTime,nextCode:canonical(next.code),nextTime:next.startTime});
     return parts;
   }
-  return[{type:"free",duration:end-start,detail:`Next ${canonical(next.code)} · ${fmtTime(next.startTime)}`}];
+  return[{type:"free",duration:end-start,startTime:current.endTime,endTime:next.startTime,nextCode:canonical(next.code),nextTime:next.startTime}];
+}
+function gapWindowHtml(part,{agenda=false,dateIso="",course=""}={}){
+  const isLunch=part.type==="lunch",tag=agenda?"agenda-free-window":"free-window-row",action=!isLunch&&part.duration>=60?`<button type="button" class="free-window-action" data-free-date="${esc(dateIso)}" data-free-course="${esc(course)}">Add task</button>`:"",nextCopy=part.nextCode?`Next: ${esc(part.nextCode)}${part.nextTime?` at ${esc(fmtTime(part.nextTime))}`:""}`:"";
+  return`<div class="${tag} ${isLunch?"lunch-window":""}"><span class="gap-window-label">${isLunch?"LUNCH":"FREE TIME"}</span><strong>${isLunch?`${esc(compactDuration(part.duration))} lunch break`:`${esc(compactDuration(part.duration))} available`}</strong><time>${esc(fmtTime(part.startTime))} – ${esc(fmtTime(part.endTime))}</time>${nextCopy?`<small>${nextCopy}</small>`:""}${action}</div>`;
+}
+function dayLoadStats(classes){
+  const active=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)),classMinutes=active.reduce((sum,c)=>sum+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0);let freeMinutes=0;
+  active.slice(1).forEach((current,index)=>scheduleGapParts(active[index],current).forEach(part=>{if(part.type==="free")freeMinutes+=part.duration}));
+  return{count:active.length,classMinutes,freeMinutes,end:active.at(-1)?.endTime||""};
 }
 function decorateTimelineDay(selector,classes,iso){
   const rail=$(selector),list=rail?.querySelector(".vertical-day-timeline");if(!rail)return;
@@ -171,7 +189,7 @@ function decorateTimelineDay(selector,classes,iso){
   const cards=[...list.querySelectorAll(".vertical-class")];let previous=null;
   classes.forEach(current=>{
     if(current.status==="Cancelled")return;
-    if(previous){const target=cards.find(card=>card.dataset.classId===classIdentity(current));scheduleGapParts(previous,current).forEach(part=>{const row=document.createElement("div"),isLunch=part.type==="lunch",action=!isLunch&&part.duration>=60?`<button type="button" class="free-window-action" data-free-date="${esc(iso)}" data-free-course="${esc(canonical(current.code))}">Add task</button>`:"";row.className=`free-window-row ${isLunch?"lunch-window":""}`;row.innerHTML=`<span>${isLunch?"LUNCH BREAK":"FREE TIME"}</span><strong>${isLunch?"1h lunch break":`${esc(compactDuration(part.duration))} available`}</strong><small>${esc(part.detail)}</small>${action}`;target?.before(row)})}
+    if(previous){const target=cards.find(card=>card.dataset.classId===classIdentity(current));scheduleGapParts(previous,current).forEach(part=>{const shell=document.createElement("div");shell.innerHTML=gapWindowHtml(part,{dateIso:iso,course:canonical(current.code)});target?.before(shell.firstElementChild)})}
     previous=current;
   });
 }
@@ -223,7 +241,7 @@ function renderHeroDayGlance(classes,now,dateIso){
 function renderHome(){
   const now=new Date(),today=isoToday();$("#todayLabel").textContent=new Intl.DateTimeFormat("en-IN",{weekday:"long",day:"numeric",month:"long"}).format(now).toUpperCase();$("#dateOrbitDay").textContent=String(now.getDate()).padStart(2,"0");$("#dateOrbitMonth").textContent=new Intl.DateTimeFormat("en-IN",{month:"short"}).format(now).toUpperCase();const h=now.getHours(),firstName=String(state.profile.name||"").trim().split(/\s+/)[0],dayGreeting=`Good ${h<12?"morning":h<17?"afternoon":"evening"}`;$("#greeting").textContent=firstName?`${dayGreeting}, ${firstName}.`:`${dayGreeting}.`;
   const scheduled=state.classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
-  const todays=scheduled.filter(c=>c.dateIso===today),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),todayNext=todays.find(c=>now<dateTime(c,"startTime")),previous=todays.filter(c=>now>=dateTime(c,"endTime")).at(-1),future=scheduled.find(c=>now<dateTime(c,"startTime")),focus=current||todayNext||future,todayComplete=Boolean(todays.length&&!current&&!todayNext),loadDate=!todays.length||todayComplete?tomorrowIso():today,loadClasses=scheduled.filter(c=>c.dateIso===loadDate),loadIsToday=loadDate===today,loadIsTomorrow=loadDate===tomorrowIso(),loadLabel=loadIsToday?"Today":loadIsTomorrow?"Tomorrow":fmtDate(loadDate,{weekday:"long"}),loadValue=loadSummary(loadClasses,loadIsToday?"end":"start"),parts=istParts(now),nowMinutes=Number(parts.hour)*60+Number(parts.minute),isLunch=Boolean(!current&&todayNext&&minutes(todayNext.startTime)>=14*60+30&&nowMinutes>=13*60+30&&nowMinutes<14*60+30);
+  const todays=scheduled.filter(c=>c.dateIso===today),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),todayNext=todays.find(c=>now<dateTime(c,"startTime")),previous=todays.filter(c=>now>=dateTime(c,"endTime")).at(-1),future=scheduled.find(c=>now<dateTime(c,"startTime")),focus=current||todayNext||future,todayComplete=Boolean(todays.length&&!current&&!todayNext),loadDate=!todays.length||todayComplete?tomorrowIso():today,loadClasses=scheduled.filter(c=>c.dateIso===loadDate),loadIsToday=loadDate===today,loadIsTomorrow=loadDate===tomorrowIso(),loadLabel=loadIsToday?"Today":loadIsTomorrow?"Tomorrow":fmtDate(loadDate,{weekday:"long"}),loadValue=loadSummary(loadClasses,loadIsToday?"end":"start"),parts=istParts(now),nowMinutes=Number(parts.hour)*60+Number(parts.minute),isLunch=Boolean(!current&&todayNext&&nowMinutes>=13*60+30&&nowMinutes<Math.min(14*60+30,minutes(todayNext.startTime)));
   const focusPanel=$("#focusPanel");
   if(focus){
     const isNow=focus===current,isToday=focus.dateIso===today,isTomorrow=focus.dateIso===tomorrowIso(),isFree=Boolean(!current&&todayNext&&previous&&!isLunch),isClearToday=Boolean(!todays.length&&future),isDayDone=Boolean(todayComplete&&future),dayClasses=scheduled.filter(c=>c.dateIso===focus.dateIso),dayIndex=dayClasses.indexOf(focus),remaining=todays.filter(c=>dateTime(c,"endTime")>now).length;
@@ -258,8 +276,9 @@ function renderHome(){
   }).join("");
   $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineCards}</div>`:`<div class="empty-state free-day-state"><strong>${state.timelineDay==="today"?"No classes today":"No classes tomorrow"}</strong><span>Nothing scheduled.</span></div>`;
   decorateTimelineDay("#todayProgressRail",timelineClasses,timelineIso);
-  const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0;
-  $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
+  const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0,stats=dayLoadStats(timelineClasses);
+  $("#progressSummary").textContent=timelineIso===today?`${completed} done`:`${stats.count} ${stats.count===1?"class":"classes"}`;
+  const summary=$("#timelineLoadSummary");if(summary)summary.innerHTML=stats.count?`<span><b>${stats.count}</b> ${stats.count===1?"class":"classes"}</span><span><b>${esc(compactDuration(stats.classMinutes))}</b> class time</span>${stats.freeMinutes?`<span class="summary-free"><b>${esc(compactDuration(stats.freeMinutes))}</b> free</span>`:""}<span>Ends <b>${esc(fmtTime(stats.end))}</b></span>`:'<span class="summary-free"><b>Clear day</b></span>';
   const unread=state.notifications.filter(n=>!n.read);
   $("#silentUpdateStrip").hidden=!unread.length;
   if(unread.length){
@@ -289,11 +308,10 @@ function compactDuration(total){
 function agendaStatus(c){
   if(c.status==="Cancelled")return"Cancelled";
   const now=new Date();
-  if(c.dateIso<isoToday())return"Completed";
-  if(c.dateIso===isoToday()&&now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime"))return"Live";
-  if(c.dateIso===isoToday()&&now>=dateTime(c,"endTime"))return"Completed";
-  if(c.dateIso===isoToday()&&now<dateTime(c,"startTime"))return"Upcoming";
-  return"Scheduled";
+  if(c.dateIso<isoToday())return"Done";
+  if(c.dateIso===isoToday()&&now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime"))return"Now";
+  if(c.dateIso===isoToday()&&now>=dateTime(c,"endTime"))return"Done";
+  return"Next";
 }
 function googleUrl(c){
   const start=String(c.startTime||"").replace(":","")+"00";
@@ -307,7 +325,7 @@ function agendaCardHtml(c){
   const status=agendaStatus(c), cls=[
     "agenda-class-card",
     "planner-schedule-card",
-    status==="Live"?"current":"",
+    status==="Now"?"current":"",
     c.status==="Cancelled"?"cancelled":""
   ].filter(Boolean).join(" ");
   return `<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}" tabindex="0" role="button" aria-haspopup="dialog">
@@ -324,7 +342,7 @@ function agendaCardHtml(c){
 }
 function agendaFreeWindowHtml(current,next){
   if(!current||!next||current.status==="Cancelled"||next.status==="Cancelled")return"";
-  return scheduleGapParts(current,next).map(part=>{const isLunch=part.type==="lunch",action=!isLunch&&part.duration>=60?`<button type="button" class="free-window-action" data-free-date="${esc(next.dateIso)}" data-free-course="${esc(canonical(next.code))}">Add task</button>`:"";return`<div class="agenda-free-window ${isLunch?"lunch-window":""}"><span>${isLunch?"LUNCH BREAK":"FREE TIME"}</span><strong>${isLunch?"1h lunch break":`${esc(compactDuration(part.duration))} available`}</strong><small>${esc(part.detail)}</small>${action}</div>`}).join("");
+  return scheduleGapParts(current,next).map(part=>gapWindowHtml(part,{agenda:true,dateIso:next.dateIso,course:canonical(next.code)})).join("");
 }
 function examAgendaHtml(exams){
   if(!exams.length)return"";
@@ -380,6 +398,7 @@ function renderCalendar(){
   const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate),dayExams=exams.filter(exam=>exam.dateIso===state.selectedDate);
   $("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   $("#agendaCount").textContent=classes.length+tasks.length+dayExams.length;
+  const agendaStats=dayLoadStats(classes),agendaSummary=$("#agendaLoadSummary");if(agendaSummary)agendaSummary.textContent=agendaStats.count?`${agendaStats.count} ${agendaStats.count===1?"class":"classes"} · ${compactDuration(agendaStats.classMinutes)} class time${agendaStats.freeMinutes?` · ${compactDuration(agendaStats.freeMinutes)} free`:""} · Ends ${fmtTime(agendaStats.end)}`:dayExams.length?`${dayExams.length} ${dayExams.length===1?"exam":"exams"}`:"No classes";
   $("#dayAgenda").innerHTML=agendaHtml(classes,tasks,dayExams);
   const used=[...new Set([...state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)),...exams.filter(exam=>exam.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(exam=>canonical(exam.code))])];
   $("#calendarLegend").innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("")+(exams.some(exam=>exam.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`))?'<span class="legend-item exam"><i></i>Exam</span>':"");
@@ -665,7 +684,7 @@ function renderNotifications(){
   filtered.forEach(n=>{const dateIso=n.dateIso||String(n.classId||"").split("|")[0];(dateIso===today?groups[0]:dateIso===tomorrow?groups[1]:groups[2])[1].push(n)});
   const typeLabel=n=>n.type==="added"?"Added":n.type==="cancelled"?"Cancelled":"Venue";
   const relative=n=>{const mins=Math.max(1,Math.round((Date.now()-n.createdAt)/60000));return mins<60?`${mins}m ago`:mins<1440?`${Math.round(mins/60)}h ago`:`${Math.round(mins/1440)}d ago`};
-  $("#notificationList").innerHTML=groups.filter(([,items])=>items.length).map(([label,items])=>`<section class="notification-group"><h3>${label}</h3>${items.map(n=>`<article class="notification-item notification-${esc(n.type)} ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><div class="notification-course-mark">${esc(canonical(n.course||n.code).slice(0,3))}</div><div class="notification-item-copy"><div class="notification-item-top"><span class="notification-type">${typeLabel(n)}</span><time>${relative(n)}</time></div><strong>${esc(n.title)}</strong><p>${esc(n.text)}</p></div><button class="notification-dismiss" type="button" data-dismiss-notification="${esc(n.id)}" aria-label="Dismiss ${esc(n.title)}">${icon("close")}</button></article>`).join("")}</section>`).join("");
+  $("#notificationList").innerHTML=groups.filter(([,items])=>items.length).map(([label,items])=>`<section class="notification-group"><h3>${label}</h3>${items.map(n=>`<article class="notification-item notification-${esc(n.type)} ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><div class="notification-course-mark">${esc(canonical(n.course||n.code).slice(0,3))}</div><div class="notification-item-copy"><div class="notification-item-top"><span class="notification-type">${typeLabel(n)}</span><time>${relative(n)}</time></div><strong>${esc(n.title)}</strong><p>${esc(n.text)}</p><button type="button" class="notification-open-date" data-notification-date="${esc(n.dateIso||"")}">Open date</button></div><button class="notification-dismiss" type="button" data-dismiss-notification="${esc(n.id)}" aria-label="Dismiss ${esc(n.title)}">${icon("close")}</button></article>`).join("")}</section>`).join("");
 }
 function openNotifications(){const d=$("#notificationDrawer");d.classList.add("open");d.setAttribute("aria-hidden","false")}
 function closeNotifications(){const d=$("#notificationDrawer");d.classList.remove("open");d.setAttribute("aria-hidden","true")}
@@ -929,14 +948,16 @@ function bind(){
   $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);
   $("#weekDensityDays")?.addEventListener("click",event=>{const day=event.target.closest("[data-density-date]");if(day)openPlannerDate(day.dataset.densityDate)});
   $("#notificationFilters")?.addEventListener("click",e=>{const button=e.target.closest("[data-notification-filter]");if(!button)return;state.notificationFilter=button.dataset.notificationFilter;renderNotifications()});
-  $("#notificationList")?.addEventListener("click",e=>{const button=e.target.closest("[data-dismiss-notification]");if(!button)return;const removed=state.notifications.find(n=>n.id===button.dataset.dismissNotification);state.notifications=state.notifications.filter(n=>n.id!==button.dataset.dismissNotification);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showUndoToast("Notification dismissed",()=>{if(removed){state.notifications.unshift(removed);save(KEYS.notifications,state.notifications);renderNotifications();renderHome()}})});
+  $("#notificationList")?.addEventListener("click",e=>{const open=e.target.closest("[data-notification-date]");if(open){closeNotifications();openPlannerDate(open.dataset.notificationDate);return}const button=e.target.closest("[data-dismiss-notification]");if(!button)return;const removed=state.notifications.find(n=>n.id===button.dataset.dismissNotification);state.notifications=state.notifications.filter(n=>n.id!==button.dataset.dismissNotification);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showUndoToast("Notification dismissed",()=>{if(removed){state.notifications.unshift(removed);save(KEYS.notifications,state.notifications);renderNotifications();renderHome()}})});
   $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showToast("Notifications marked as read")});
   $("#chooseElectivesInline")?.addEventListener("click",()=>openOnboardingManually());
   $("#connectGoogleTasks")?.addEventListener("click",()=>connectGoogleTasks());
   $("#disconnectGoogleTasks")?.addEventListener("click",()=>disconnectGoogleTasks());
   window.addEventListener("focus",()=>{scheduleIdleSync();scheduleGoogleTasksSync()});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
-  window.addEventListener("online",()=>scheduleIdleSync());
+  window.addEventListener("online",()=>{setAppState("online");scheduleIdleSync()});
+  window.addEventListener("offline",()=>setAppState("offline","You are offline. Showing the last saved schedule."));
+  $("#appStateAction")?.addEventListener("click",()=>location.reload());
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerView(b.dataset.plannerTab)));
   $$('[data-open-exams]').forEach(button=>button.addEventListener("click",openExamPlanner));
   $("#examSchedule")?.addEventListener("click",event=>{const button=event.target.closest("[data-exam-date]");if(button)openPlannerDate(button.dataset.examDate)});
@@ -978,7 +999,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260819-exams1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260821-polish1",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

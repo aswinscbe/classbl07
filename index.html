@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=20260819-exams1">
-  <link rel="stylesheet" href="visual.css?v=20260819-exams1">
+  <link rel="stylesheet" href="styles.css?v=20260821-polish1">
+  <link rel="stylesheet" href="visual.css?v=20260821-polish1">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -126,6 +126,7 @@
             </div>
             <span class="count-chip" id="progressSummary">0 / 0</span>
           </div>
+          <div class="timeline-load-summary" id="timelineLoadSummary" aria-live="polite"></div>
           <div class="timeline-day-switch" id="timelineDaySwitch">
             <button class="timeline-day-button active" data-timeline-day="today">
               <span>Today</span><small id="todaySwitchDate"></small>
@@ -175,7 +176,7 @@
 
             <article class="panel agenda-panel">
               <div class="panel-heading agenda-heading">
-                <div><p class="overline">SELECTED DAY</p><h2 id="agendaDate">Choose a date</h2></div>
+                <div><p class="overline">SELECTED DAY</p><h2 id="agendaDate">Choose a date</h2><p class="agenda-load-summary" id="agendaLoadSummary"></p></div>
                 <div class="agenda-day-controls">
                   <button class="icon-button agenda-day-arrow" id="agendaPrevDay" aria-label="Previous day"><span data-icon="chevron-left"></span></button>
                   <span class="count-chip" id="agendaCount">0</span>
@@ -286,6 +287,11 @@
     </div>
   </aside>
 
+  <div class="app-state-banner" id="appStateBanner" role="status" aria-live="polite" hidden>
+    <span id="appStateText">You are offline. Showing the last saved schedule.</span>
+    <button type="button" id="appStateAction" hidden>Refresh</button>
+  </div>
+
   <dialog id="shortcutDialog"><div class="dialog-card shortcut-card"><div class="dialog-head"><div><p class="overline">KEYBOARD</p><h2>Shortcuts</h2></div><button class="icon-button" id="closeShortcutDialog"><span data-icon="close"></span></button></div><div class="shortcut-grid"><span><kbd>H</kbd><b>Home</b></span><span><kbd>P</kbd><b>Planner</b></span><span><kbd>C</kbd><b>Campus</b></span><span><kbd>R</kbd><b>Refresh</b></span><span><kbd>N</kbd><b>Notifications</b></span><span><kbd>?</kbd><b>Shortcut help</b></span></div></div></dialog>
 
   <dialog id="taskDialog">
@@ -382,10 +388,10 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260819-exams1"></script>
-  <script src="exam-data.js?v=20260819-exams1"></script>
-  <script src="app.js?v=20260819-exams1"></script>
-  <script src="polish.js?v=20260819-exams1"></script>
+  <script src="campus-data.js?v=20260821-polish1"></script>
+  <script src="exam-data.js?v=20260821-polish1"></script>
+  <script src="app.js?v=20260821-polish1"></script>
+  <script src="polish.js?v=20260821-polish1"></script>
 </body>
 </html>
 
