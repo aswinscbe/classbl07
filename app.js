@@ -219,7 +219,7 @@ function renderNextExam(){
 }
 function examListCard(exam){
   const days=examDayDistance(exam.dateIso),status=days<0?"Completed":days===0?"Today":days===1?"Tomorrow":`${days} days`;
-  return`<article class="exam-list-card ${days<0?"past":""}" style="--course:${colorFor(exam.code)}"><div class="exam-slot"><span>${esc(exam.slot)}</span><strong>${esc(status)}</strong></div><div class="exam-list-copy"><div class="exam-course-line"><span class="exam-code-chip">${esc(exam.code)}</span><h3>${esc(exam.course)}</h3></div><p><span>Time TBA</span><i>·</i><span>Venue TBA</span></p></div><button type="button" class="exam-day-button" data-exam-date="${exam.dateIso}">View day</button></article>`;
+  return`<article class="exam-list-card ${days<0?"past":""}" style="--course:${colorFor(exam.code)}"><div class="exam-slot"><span>${esc(exam.slot)}</span><strong>${esc(status)}</strong></div><div class="exam-list-copy"><div class="exam-course-line"><span class="exam-code-chip">${esc(exam.code)}</span><h3>${esc(exam.course)}</h3></div><p><span>Time TBA</span><i>·</i><span>Venue TBA</span></p></div><div class="exam-card-actions">${days>=0?`<button type="button" class="exam-prep-button" data-exam-prep="${exam.dateIso}" data-exam-code="${esc(exam.code)}">Prep task</button>`:""}<button type="button" class="exam-day-button" data-exam-date="${exam.dateIso}">View day</button></div></article>`;
 }
 function renderExams(){
   const exams=filteredExams(),count=$("#examCount"),schedule=$("#examSchedule");
@@ -274,7 +274,7 @@ function renderHome(){
     const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=c.status!=="Cancelled"&&wasRecentlyAdded(c),statusText=status==="current"?"Now":status==="done"?"Done":status==="cancelled"?"Cancelled":"Next";
     return `<article class="vertical-class ${status}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}" tabindex="0" role="button" aria-haspopup="dialog"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><div class="timeline-status-row"><span class="vertical-status">${esc(statusText)}</span>${added?'<span class="timeline-added">ADDED</span>':""}</div></div></article>`;
   }).join("");
-  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineCards}</div>`:`<div class="empty-state free-day-state"><strong>${state.timelineDay==="today"?"No classes today":"No classes tomorrow"}</strong><span>Nothing scheduled.</span></div>`;
+  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineCards}</div>`:`<div class="empty-state free-day-state"><strong>${state.timelineDay==="today"?"Clear day":"Tomorrow is clear"}</strong><span>No classes scheduled—your time is open.</span></div>`;
   decorateTimelineDay("#todayProgressRail",timelineClasses,timelineIso);
   const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0,stats=dayLoadStats(timelineClasses);
   $("#progressSummary").textContent=timelineIso===today?`${completed} done`:`${stats.count} ${stats.count===1?"class":"classes"}`;
@@ -349,7 +349,7 @@ function examAgendaHtml(exams){
   return`<section class="agenda-exam-section"><div class="agenda-group-title">Exams</div>${exams.map(exam=>`<article class="agenda-exam-card" style="--course:${colorFor(exam.code)}"><div class="agenda-exam-slot"><span>${esc(exam.slot)}</span><strong>Time TBA</strong></div><div><div class="exam-course-line"><span class="exam-code-chip">${esc(exam.code)}</span><h3>${esc(exam.course)}</h3></div><p>Venue TBA · Report 10 minutes early</p></div></article>`).join("")}</section>`;
 }
 function agendaHtml(classes,tasks,exams=[]){
-  if(!classes.length&&!tasks.length&&!exams.length)return'<div class="agenda-empty">Nothing scheduled for this day.</div>';
+  if(!classes.length&&!tasks.length&&!exams.length)return'<div class="agenda-empty"><strong>Clear day</strong><span>No classes, exams, or tasks scheduled.</span></div>';
   const periods=["Morning","Afternoon","Evening"];
   let html=examAgendaHtml(exams)+'<div class="day-agenda-groups">';
   const activeClasses=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
@@ -389,9 +389,9 @@ function renderCalendar(){
   const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";
   for(let i=0;i<42;i++){
     const day=new Date(start);day.setDate(start.getDate()+i);
-    const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),dayExams=exams.filter(exam=>exam.dateIso===iso),colors=classes.slice(0,4).map(c=>colorFor(c.code)),labels=[];
-    if(classes.length)labels.push(`${classes.length} class${classes.length===1?"":"es"}`);if(dayExams.length)labels.push(`${dayExams.length} exam${dayExams.length===1?"":"s"}`);
-    html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dayExams.length?"has-exam":""}" data-date="${iso}"><span class="calendar-day-number">${day.getDate()}</span>${dayExams.length?'<span class="calendar-exam-marker">EXAM</span>':""}<span class="calendar-course-dots">${colors.map(c=>`<i style="--course:${c}"></i>`).join("")}</span><span class="calendar-class-count">${esc(labels.join(" · "))}</span></button>`;
+    const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"),dayExams=exams.filter(exam=>exam.dateIso===iso),dayTasks=state.tasks.filter(task=>task.date===iso&&!task.completed),colors=classes.slice(0,4).map(c=>colorFor(c.code)),labels=[];
+    if(classes.length)labels.push(`${classes.length} class${classes.length===1?"":"es"}`);if(dayExams.length)labels.push(`${dayExams.length} exam${dayExams.length===1?"":"s"}`);if(dayTasks.length)labels.push(`${dayTasks.length} task${dayTasks.length===1?"":"s"}`);
+    html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dayExams.length?"has-exam":""} ${dayTasks.length?"has-task":""}" data-date="${iso}"><span class="calendar-day-number">${day.getDate()}</span>${dayExams.length?'<span class="calendar-exam-marker">EXAM</span>':""}${dayTasks.length?'<span class="calendar-task-marker" aria-label="Open task">✓</span>':""}<span class="calendar-course-dots">${colors.map(c=>`<i style="--course:${c}"></i>`).join("")}</span><span class="calendar-class-count">${esc(labels.join(" · "))}</span></button>`;
   }
   $("#calendarGrid").innerHTML=html;
   $$(".calendar-day").forEach(button=>{button.addEventListener("click",()=>{state.selectedDate=button.dataset.date;renderCalendar();requestAnimationFrame(()=>{const agenda=$("#dayAgenda");if(agenda&&matchMedia("(max-width:780px)").matches)agenda.scrollIntoView({behavior:"smooth",block:"start"})})});button.addEventListener("mouseenter",()=>showCalendarTooltip(button,button.dataset.date));button.addEventListener("mouseleave",hideCalendarTooltip)});
@@ -401,7 +401,7 @@ function renderCalendar(){
   const agendaStats=dayLoadStats(classes),agendaSummary=$("#agendaLoadSummary");if(agendaSummary)agendaSummary.textContent=agendaStats.count?`${agendaStats.count} ${agendaStats.count===1?"class":"classes"} · ${compactDuration(agendaStats.classMinutes)} class time${agendaStats.freeMinutes?` · ${compactDuration(agendaStats.freeMinutes)} free`:""} · Ends ${fmtTime(agendaStats.end)}`:dayExams.length?`${dayExams.length} ${dayExams.length===1?"exam":"exams"}`:"No classes";
   $("#dayAgenda").innerHTML=agendaHtml(classes,tasks,dayExams);
   const used=[...new Set([...state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)),...exams.filter(exam=>exam.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(exam=>canonical(exam.code))])];
-  $("#calendarLegend").innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("")+(exams.some(exam=>exam.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`))?'<span class="legend-item exam"><i></i>Exam</span>':"");
+  $("#calendarLegend").innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("")+(exams.some(exam=>exam.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`))?'<span class="legend-item exam"><i></i>Exam</span>':"")+(state.tasks.some(task=>task.date?.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)&&!task.completed)?'<span class="legend-item task"><i></i>Task</span>':"");
   bindTaskRows($("#dayAgenda"));
 }
 function shiftSelectedDate(delta){const day=new Date(`${state.selectedDate}T12:00:00+05:30`);day.setDate(day.getDate()+delta);state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(day);state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);const agenda=$("#dayAgenda");if(agenda){agenda.classList.remove("slide-prev","slide-next");agenda.classList.add(delta>0?"slide-next":"slide-prev")}renderCalendar();requestAnimationFrame(()=>requestAnimationFrame(()=>agenda?.classList.remove("slide-prev","slide-next")))}
@@ -645,34 +645,34 @@ function renderBuses(){
   }
 
   $("#upcomingBuses").innerHTML=upcoming.length
-    ?upcoming.slice(0,5).map(({b})=>busRow(b)).join("")
-    :'<div class="empty-state">No matching direct buses.</div>';
+    ?upcoming.slice(0,5).map(({b,d})=>busRow(b,d)).join("")
+    :'<div class="empty-state"><strong>No direct departures</strong><span>Try reversing the route or choosing another stop.</span></div>';
 
   const allMatching=window.CAMPUS_DATA.bus.filter(bus=>
     serviceSupports(bus,state.busFrom,state.busTo)
   );
 
   $("#fullBusList").innerHTML=allMatching.length
-    ?allMatching.map(busRow).join("")
-    :'<div class="empty-state">No matching direct buses.</div>';
+    ?allMatching.map(bus=>busRow(bus,busDate(bus))).join("")
+    :'<div class="empty-state"><strong>No matching service</strong><span>Choose another origin or destination.</span></div>';
 }
 
-function busRow(bus){
+function busRow(bus,departure=busDate(bus)){
   const route=routeStops(bus).map(busStopLabel).join(" · ");
-  const mainGate=isMainGateService(bus);
-  return`<article class="bus-row ${mainGate?"main-gate":""}">
+  const mainGate=isMainGateService(bus),now=new Date(),diff=Math.ceil((departure-now)/60000),isTomorrow=departure.getDate()!==now.getDate()||departure.getMonth()!==now.getMonth(),elapsed=diff<0,status=isTomorrow?"Tomorrow":elapsed?"Departed":diff<=1?"Due":`${diff} min`;
+  return`<article class="bus-row ${mainGate?"main-gate":""} ${elapsed?"elapsed":""}">
     <time>${esc(fmtTime(bus.time))}</time>
     <div>
       <strong>${esc(busStopLabel(state.busFrom))} → ${
         esc(busStopLabel(state.busTo))
       }</strong>
       <p>${esc(route)}</p>
-      ${mainGate?'<span class="route-badge">MAIN GATE</span>':""}
+      <div class="bus-row-tags"><span class="departure-status ${elapsed?"departed":""}">${esc(status)}</span>${mainGate?'<span class="route-badge">MAIN GATE</span>':""}</div>
     </div>
   </article>`;
 }
 
-function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const menu=window.CAMPUS_DATA.mess[state.messDay],items=menu[state.meal]||[],nv=/chicken|fish|egg|omelette/i,sw=/gulab|halwa|ice cream|kheer|custard|badusha|sweet/i,non=items.filter(i=>nv.test(i)),sweet=items.filter(i=>sw.test(i)),veg=items.filter(i=>!nv.test(i)&&!sw.test(i));$("#messMenu").innerHTML=`<article class="meal-hero"><h3>${state.meal[0].toUpperCase()+state.meal.slice(1)}</h3>${veg.length?`<section class="food-section"><div class="food-section-title">Vegetarian</div><div class="food-items">${veg.map(i=>`<div class="food-item veg">${esc(i)}</div>`).join("")}</div></section>`:""}${non.length?`<section class="food-section"><div class="food-section-title">Non-vegetarian</div><div class="food-items">${non.map(i=>`<div class="food-item nonveg">${esc(i)}</div>`).join("")}</div></section>`:""}${sweet.length?`<section class="food-section"><div class="food-section-title">Dessert / Sweet</div><div class="food-items">${sweet.map(i=>`<div class="food-item sweet">${esc(i)}</div>`).join("")}</div></section>`:""}</article>`;$$(".meal-tab").forEach(b=>b.classList.toggle("active",b.dataset.meal===state.meal))}
+function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"],hour=new Date().getHours(),liveMeal=hour<11?"breakfast":hour<16?"lunch":"dinner",todayKey=weekdayKey(new Date()),serving=state.messDay===todayKey&&state.meal===liveMeal;$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const servingState=$("#messServingState");if(servingState){servingState.textContent=serving?"Serving now":state.messDay===todayKey?`${liveMeal[0].toUpperCase()+liveMeal.slice(1)} is serving`:"Selected menu";servingState.classList.toggle("live",serving)}const menu=window.CAMPUS_DATA.mess[state.messDay],items=menu[state.meal]||[],nv=/chicken|fish|egg|omelette/i,sw=/gulab|halwa|ice cream|kheer|custard|badusha/i,non=items.filter(i=>nv.test(i)),sweet=items.filter(i=>sw.test(i)),veg=items.filter(i=>!nv.test(i)&&!sw.test(i));$("#messMenu").innerHTML=`<article class="meal-hero"><div class="meal-hero-title"><span>${serving?"NOW SERVING":"MENU"}</span><h3>${state.meal[0].toUpperCase()+state.meal.slice(1)}</h3></div>${veg.length?`<section class="food-section veg-section"><div class="food-section-title">Vegetarian</div><div class="food-items">${veg.map(i=>`<div class="food-item veg">${esc(i)}</div>`).join("")}</div></section>`:""}${non.length?`<section class="food-section nonveg-section"><div class="food-section-title">Non-vegetarian</div><div class="food-items">${non.map(i=>`<div class="food-item nonveg">${esc(i)}</div>`).join("")}</div></section>`:""}${sweet.length?`<section class="food-section sweet-section"><div class="food-section-title">Dessert / Sweet</div><div class="food-items">${sweet.map(i=>`<div class="food-item sweet">${esc(i)}</div>`).join("")}</div></section>`:""}</article>`;$$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("serving",b.dataset.meal===liveMeal&&state.messDay===todayKey)})}
 function renderProfile(){$("#profileName").value=state.profile.name||"";$("#profileSection").value=state.profile.section||"A";$("#profileTheme").value=state.profile.theme||"system";$("#profileDisplayName").textContent=state.profile.name||"Student";$("#profileSummary").textContent=`PGPBL · Section ${state.profile.section||"A"}`;$("#profileAvatar").textContent=initials(state.profile.name);$("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>'}
 function renderNotifications(){
   const active=pruneNotifications(),unread=active.filter(n=>!n.read).length;$("#notificationBadge").hidden=!unread;$("#notificationBadge").textContent=unread;
@@ -938,6 +938,7 @@ function bind(){
   $("#themeToggle").addEventListener("click",()=>{state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile()});
   $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
   $("#timelineDaySwitch").addEventListener("click",e=>{const b=e.target.closest("[data-timeline-day]");if(!b)return;setTimelineDay(b.dataset.timelineDay,"auto")});
+  $("#focusPosition")?.addEventListener("click",event=>{event.stopPropagation();const iso=$("#focusPanel")?.dataset.focusDate;if(iso)openPlannerDate(iso)});
   const openFreeTask=button=>{editingTaskId=null;$("#taskTitle").value="";$("#taskCourse").value=button.dataset.freeCourse||"";$("#taskDate").value=button.dataset.freeDate||"";$("#taskDialog h2").textContent="Add task";$("#saveTaskButton").textContent="Save";clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal()};
   $("#todayProgressRail").addEventListener("click",e=>{const button=e.target.closest(".free-window-action");if(button){e.stopPropagation();openFreeTask(button)}});
   $("#todayProgressRail").addEventListener("keydown",e=>{if(!["Enter"," "].includes(e.key))return;const card=e.target.closest(".vertical-class");if(!card)return;e.preventDefault();card.click()});
@@ -949,6 +950,7 @@ function bind(){
   $("#weekDensityDays")?.addEventListener("click",event=>{const day=event.target.closest("[data-density-date]");if(day)openPlannerDate(day.dataset.densityDate)});
   $("#notificationFilters")?.addEventListener("click",e=>{const button=e.target.closest("[data-notification-filter]");if(!button)return;state.notificationFilter=button.dataset.notificationFilter;renderNotifications()});
   $("#notificationList")?.addEventListener("click",e=>{const open=e.target.closest("[data-notification-date]");if(open){closeNotifications();openPlannerDate(open.dataset.notificationDate);return}const button=e.target.closest("[data-dismiss-notification]");if(!button)return;const removed=state.notifications.find(n=>n.id===button.dataset.dismissNotification);state.notifications=state.notifications.filter(n=>n.id!==button.dataset.dismissNotification);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showUndoToast("Notification dismissed",()=>{if(removed){state.notifications.unshift(removed);save(KEYS.notifications,state.notifications);renderNotifications();renderHome()}})});
+  let notificationTouch=null;$("#notificationList")?.addEventListener("touchstart",e=>{const card=e.target.closest(".notification-item");if(card)notificationTouch={card,x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY}},{passive:true});$("#notificationList")?.addEventListener("touchend",e=>{if(!notificationTouch)return;const dx=e.changedTouches[0].clientX-notificationTouch.x,dy=e.changedTouches[0].clientY-notificationTouch.y;if(Math.abs(dx)>72&&Math.abs(dx)>Math.abs(dy)*1.4)notificationTouch.card.querySelector("[data-dismiss-notification]")?.click();notificationTouch=null},{passive:true});
   $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();showToast("Notifications marked as read")});
   $("#chooseElectivesInline")?.addEventListener("click",()=>openOnboardingManually());
   $("#connectGoogleTasks")?.addEventListener("click",()=>connectGoogleTasks());
@@ -960,7 +962,7 @@ function bind(){
   $("#appStateAction")?.addEventListener("click",()=>location.reload());
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerView(b.dataset.plannerTab)));
   $$('[data-open-exams]').forEach(button=>button.addEventListener("click",openExamPlanner));
-  $("#examSchedule")?.addEventListener("click",event=>{const button=event.target.closest("[data-exam-date]");if(button)openPlannerDate(button.dataset.examDate)});
+  $("#examSchedule")?.addEventListener("click",event=>{const prep=event.target.closest("[data-exam-prep]");if(prep){editingTaskId=null;$("#taskTitle").value=`Prepare for ${prep.dataset.examCode} exam`;$("#taskCourse").value=canonical(prep.dataset.examCode);$("#taskDate").value=prep.dataset.examPrep;$("#taskDialog h2").textContent="Add preparation task";$("#saveTaskButton").textContent="Save";clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal();return}const button=event.target.closest("[data-exam-date]");if(button)openPlannerDate(button.dataset.examDate)});
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);renderCalendar()});
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
@@ -999,7 +1001,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260821-polish1",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260821-sleek1",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
