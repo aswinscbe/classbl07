@@ -2070,6 +2070,19 @@ body::before{content:"";position:fixed;z-index:-1;inset:0;pointer-events:none;ba
 .agenda-back-today{min-height:34px;padding:0 9px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
 .app-state-banner[data-state="reconnecting"]{border-color:color-mix(in srgb,var(--cyan) 44%,var(--border))}.app-state-banner[data-state="reconnecting"]::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cyan);animation:syncPulse 1.1s ease-in-out infinite}
 .food-section{padding:15px!important;border:1px solid color-mix(in srgb,var(--primary) 12%,var(--border))!important;border-radius:15px!important;background:color-mix(in srgb,var(--primary) 3%,var(--surface-2))!important;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 55%,transparent),0 7px 20px color-mix(in srgb,#000 5%,transparent)!important}.food-section-title{margin-bottom:8px;font-size:13px!important;font-weight:780!important;letter-spacing:.075em}.food-item{padding:8px 5px 8px 18px!important;color:var(--text);font-size:14px!important;font-weight:570;line-height:1.42}.meal-hero-title h3{font-size:20px!important;font-weight:720!important}.meal-hero-title span{font-size:9px!important}
+@media(min-width:621px){.agenda-heading{position:static!important;top:auto!important;backdrop-filter:none}}
+html[data-theme=light] .next-bus-card{color:var(--text)!important;border-color:rgba(74,61,113,.14)!important;background:linear-gradient(145deg,#fff 0%,#f5eef8 58%,#faf1e9 100%)!important;box-shadow:0 16px 38px rgba(57,45,91,.11)!important}
+html[data-theme=light] .next-bus-card::after{background:color-mix(in srgb,var(--amber) 10%,transparent)}
+html[data-theme=light] .next-bus-card .overline{color:var(--primary)!important}
+html[data-theme=light] .next-bus-card .next-bus-time{color:#7a4e96!important}
+html[data-theme=light] .next-bus-card h2{color:var(--text)!important}
+html[data-theme=light] .next-bus-card p,html[data-theme=light] .next-bus-card .route-stop{color:var(--muted)!important}
+html[data-theme=light] .next-bus-card .route-stop i{background:var(--primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 12%,transparent)}
+html[data-theme=light] .next-bus-card .countdown-box{border:1px solid rgba(74,61,113,.11);border-radius:12px;background:rgba(255,255,255,.68)}
+html[data-theme=light] .next-bus-card .countdown-box span{color:var(--muted)}html[data-theme=light] .next-bus-card .countdown-box strong{color:#a6632c}
+html[data-theme=light] .bus-list .bus-row,html[data-theme=light] .bus-table .bus-row{border-color:rgba(74,61,113,.11);background:#fff;box-shadow:0 6px 18px rgba(57,45,91,.055)}
+html[data-theme=light] .bus-list .bus-row time,html[data-theme=light] .bus-table .bus-row time{color:#8a552d!important}
+html[data-theme=light] .departure-status:not(.departed){background:color-mix(in srgb,var(--cyan) 9%,#fff);color:var(--cyan)}
 @media(min-width:920px) and (max-width:1080px){.calendar-layout{grid-template-columns:minmax(0,1.04fr) minmax(390px,.86fr)}}
 @media(min-width:621px) and (max-width:919px){.calendar-layout{grid-template-columns:minmax(0,1fr)}.agenda-panel{margin-top:2px}}
 @media(max-width:620px){
