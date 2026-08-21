@@ -40,7 +40,7 @@
     const day=document.getElementById("dateOrbitDay"),month=document.getElementById("dateOrbitMonth");
     if(!label||!day||!month)return;
     const match=label.match(/^([A-Z]+),?\s+(\d+)\s+([A-Z]+)/i);
-    if(match){const dayName=match[1][0]+match[1].slice(1).toLowerCase();const monthName=match[3][0]+match[3].slice(1).toLowerCase();if(day.textContent!==dayName)day.textContent=dayName;if(month.textContent!==`${match[2]} ${monthName}`)month.textContent=`${match[2]} ${monthName}`}
+    if(match){const dayName=match[1].slice(0,3).toLowerCase().replace(/^./,value=>value.toUpperCase());const monthName=match[3].slice(0,3).toLowerCase().replace(/^./,value=>value.toUpperCase());if(day.textContent!==dayName)day.textContent=dayName;if(month.textContent!==`${match[2]} ${monthName}`)month.textContent=`${match[2]} ${monthName}`}
   };
   const arrangeHome = () => {
     const home=document.getElementById("homePage");if(!home)return;
