@@ -106,13 +106,23 @@ function compareSnapshots(oldList,newList){
   newList.forEach(c=>{const old=oldMap.get(classIdentity(c));if(!old&&c.status!=="Cancelled"&&dateTime(c,"endTime")>new Date())out.push(notificationRecord(c,"added",`${c.code} class added`,`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)} · ${venueOf(c)}`));else if(old&&old.status!=="Cancelled"&&c.status==="Cancelled"&&dateTime(c,"endTime")>new Date())out.push(notificationRecord(c,"cancelled",`${c.code} class cancelled`,`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)}`));else if(old&&old.status!=="Cancelled"&&c.status!=="Cancelled"&&venueOf(old)!==venueOf(c)&&dateTime(c,"endTime")>new Date())out.push(notificationRecord(c,"venue",`${c.code} venue changed`,`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)} · ${venueOf(c)}`))});
   return out.slice(0,12)
 }
-let _syncInFlight=false,_lastSyncAt=0;
+let _syncInFlight=false,_lastSyncAt=0,_syncAgain=false,_offlineRetryTimer=0;
 function setAppState(kind="online",message=""){
   const banner=$("#appStateBanner"),text=$("#appStateText"),action=$("#appStateAction");if(!banner)return;
   banner.dataset.state=kind;banner.hidden=kind==="online";if(text)text.textContent=message||"You are offline. Showing the last saved schedule.";if(action){action.hidden=kind!=="update";action.textContent=kind==="update"?"Refresh":""}
 }
+function clearOfflineRetry(){if(_offlineRetryTimer){clearTimeout(_offlineRetryTimer);_offlineRetryTimer=0}}
+function scheduleOfflineRetry(){
+  clearOfflineRetry();
+  _offlineRetryTimer=setTimeout(()=>{
+    _offlineRetryTimer=0;
+    if(navigator.onLine){setAppState("reconnecting","Connection restored. Refreshing schedule…");syncSchedule(true)}
+    else scheduleOfflineRetry();
+  },10000)
+}
+function recoverConnectivity(){setAppState("reconnecting","Connection restored. Refreshing schedule…");syncSchedule(true)}
 async function syncSchedule(force=false){
-  if(_syncInFlight)return;
+  if(_syncInFlight){if(force)_syncAgain=true;return}
   if(!force&&Date.now()-_lastSyncAt<30000)return;
   _syncInFlight=true;
   document.body.classList.add("schedule-loading");
@@ -126,6 +136,7 @@ async function syncSchedule(force=false){
     if(changes.length){const existing=new Set(state.notifications.map(n=>`${n.type}|${n.classId}|${n.text}`));state.notifications=[...changes.filter(n=>!existing.has(`${n.type}|${n.classId}|${n.text}`)),...state.notifications].slice(0,40);save(KEYS.notifications,state.notifications)}
     state.all=incoming;state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();
     _lastSyncAt=Date.now();
+    clearOfflineRetry();
     setAppState("online");
     if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Updated now</span>"}
   }catch(e){
@@ -133,11 +144,13 @@ async function syncSchedule(force=false){
     if(c){state.all=normalizeScheduleClasses(c.all);state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
     if(pill){pill.className="sync-pill error";pill.innerHTML="<i></i><span>Offline</span>"}
     setAppState("offline",c?"You are offline. Showing the last saved schedule.":"Schedule could not load. Check your connection and try again.");
+    scheduleOfflineRetry();
     console.error(e);
   }finally{
     _syncInFlight=false;
     document.body.classList.remove("schedule-loading");
     if(refreshBtn){refreshBtn.dataset.state="";refreshBtn.setAttribute("aria-busy","false")}
+    if(_syncAgain){_syncAgain=false;setTimeout(()=>syncSchedule(true),0)}
   }
   renderAll();
 }
@@ -270,14 +283,21 @@ function renderHome(){
   $("#todaySwitchDate").textContent=fmtDate(today,{day:"numeric",month:"short"});
   $("#tomorrowSwitchDate").textContent=fmtDate(tomorrowIso(),{day:"numeric",month:"short"});
   $$(".timeline-day-button").forEach(b=>b.classList.toggle("active",b.dataset.timelineDay===state.timelineDay));
-  const timelineCards=timelineClasses.map(c=>{
+  let markerPlaced=false;
+  const showTimeMarker=timelineIso===today&&timelineClasses.some(c=>c.status!=="Cancelled")&&now>=dateTime(timelineClasses.find(c=>c.status!=="Cancelled"),"startTime")&&now<=dateTime([...timelineClasses].reverse().find(c=>c.status!=="Cancelled"),"endTime");
+  const currentTimeMarker=()=>`<div class="current-time-marker" aria-label="Current time ${esc(fmtTime(`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`))}"><span>${esc(fmtTime(`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`))}</span><i></i></div>`;
+  let timelineCards=timelineClasses.map(c=>{
     const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=c.status!=="Cancelled"&&wasRecentlyAdded(c),statusText=status==="current"?"Now":status==="done"?"Done":status==="cancelled"?"Cancelled":"Next";
-    return `<article class="vertical-class ${status}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}" tabindex="0" role="button" aria-haspopup="dialog"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p><div class="timeline-status-row"><span class="vertical-status">${esc(statusText)}</span>${added?'<span class="timeline-added">ADDED</span>':""}</div></div></article>`;
+    const marker=showTimeMarker&&!markerPlaced&&now<dateTime(c,"startTime")?(markerPlaced=true,currentTimeMarker()):"";
+    return `${marker}<article class="vertical-class ${status}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}" tabindex="0" role="button" aria-haspopup="dialog"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p><span>${esc(venueOf(c))}</span><span>${esc(c.faculty)}</span></p><div class="timeline-status-row"><span class="vertical-status">${esc(statusText)}</span><span class="duration-chip">${esc(durationLabel(c))}</span>${added?'<span class="timeline-added">ADDED</span>':""}</div></div></article>`;
   }).join("");
-  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineCards}</div>`:`<div class="empty-state free-day-state"><strong>${state.timelineDay==="today"?"Clear day":"Tomorrow is clear"}</strong><span>No classes scheduled—your time is open.</span></div>`;
+  if(showTimeMarker&&!markerPlaced)timelineCards+=currentTimeMarker();
+  const nextAfterClear=scheduled.find(c=>c.dateIso>timelineIso),nextClearHtml=nextAfterClear?`<button type="button" class="empty-next-class" data-empty-next-date="${esc(nextAfterClear.dateIso)}"><span>Next class</span><strong>${esc(canonical(nextAfterClear.code))} · ${esc(fmtDate(nextAfterClear.dateIso,{weekday:"short",day:"numeric",month:"short"}))}</strong><small>${esc(fmtTime(nextAfterClear.startTime))}</small></button>`:"";
+  $("#todayProgressRail").innerHTML=timelineClasses.length?`<div class="vertical-day-timeline">${timelineCards}</div>`:`<div class="empty-state free-day-state"><strong>${state.timelineDay==="today"?"Clear day":"Tomorrow is clear"}</strong><span>No classes scheduled—your time is open.</span>${nextClearHtml}</div>`;
+  $("#todayProgressRail .empty-next-class")?.addEventListener("click",event=>openPlannerDate(event.currentTarget.dataset.emptyNextDate));
   decorateTimelineDay("#todayProgressRail",timelineClasses,timelineIso);
   const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0,stats=dayLoadStats(timelineClasses);
-  $("#progressSummary").textContent=timelineIso===today?`${completed} done`:`${stats.count} ${stats.count===1?"class":"classes"}`;
+  $("#progressSummary").innerHTML=timelineIso===today?`<b>${completed}</b><span>done</span>`:`<b>${stats.count}</b><span>${stats.count===1?"class":"classes"}</span>`;
   const summary=$("#timelineLoadSummary");if(summary)summary.innerHTML=stats.count?`<span><b>${stats.count}</b> ${stats.count===1?"class":"classes"}</span><span><b>${esc(compactDuration(stats.classMinutes))}</b> class time</span>${stats.freeMinutes?`<span class="summary-free"><b>${esc(compactDuration(stats.freeMinutes))}</b> free</span>`:""}<span>Ends <b>${esc(fmtTime(stats.end))}</b></span>`:'<span class="summary-free"><b>Clear day</b></span>';
   const unread=state.notifications.filter(n=>!n.read);
   $("#silentUpdateStrip").hidden=!unread.length;
@@ -300,6 +320,10 @@ function agendaPeriod(c){
 function durationLabel(c){
   const d=Math.max(0,minutes(c.endTime)-minutes(c.startTime));
   return`${d} min`;
+}
+function currentTimeMarkerHtml(date=new Date()){
+  const value=`${String(date.getHours()).padStart(2,"0")}:${String(date.getMinutes()).padStart(2,"0")}`;
+  return`<div class="current-time-marker" aria-label="Current time ${esc(fmtTime(value))}"><span>${esc(fmtTime(value))}</span><i></i></div>`
 }
 function compactDuration(total){
   const mins=Math.max(0,Math.round(total));
@@ -335,8 +359,8 @@ function agendaCardHtml(c){
         <span class="agenda-code-chip">${esc(c.code)}</span>
         <h3>${esc(c.course)}</h3>
       </div>
-      <div class="agenda-meta"><div class="agenda-meta-row"><span>${esc(venueOf(c))} · ${esc(c.faculty)}</span></div></div>
-      <div class="timeline-status-row"><span class="agenda-status ${c.status==="Cancelled"?"cancelled":""}">${esc(status.toUpperCase())}</span></div>
+      <div class="agenda-meta"><div class="agenda-meta-row"><span class="agenda-venue">${esc(venueOf(c))}</span><span class="agenda-faculty">${esc(c.faculty)}</span></div></div>
+      <div class="timeline-status-row"><span class="agenda-status ${c.status==="Cancelled"?"cancelled":""}">${esc(status)}</span><span class="duration-chip">${esc(durationLabel(c))}</span></div>
     </div>
   </article>`;
 }
@@ -350,15 +374,17 @@ function examAgendaHtml(exams){
 }
 function agendaHtml(classes,tasks,exams=[]){
   if(!classes.length&&!tasks.length&&!exams.length)return'<div class="agenda-empty"><strong>Clear day</strong><span>No classes, exams, or tasks scheduled.</span></div>';
-  const periods=["Morning","Afternoon","Evening"];
+  const periods=["Morning","Afternoon","Evening"],agendaNow=new Date(),timedClasses=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)),showTimeMarker=state.selectedDate===isoToday()&&timedClasses.length&&agendaNow>=dateTime(timedClasses[0],"startTime")&&agendaNow<=dateTime(timedClasses.at(-1),"endTime");
+  let markerPlaced=false;
   let html=examAgendaHtml(exams)+'<div class="day-agenda-groups">';
   const activeClasses=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   periods.forEach(period=>{
     const items=classes.filter(c=>agendaPeriod(c)===period).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
     if(items.length){
-      html+=`<section class="agenda-group"><div class="agenda-group-title">${period}</div>${items.map(c=>{const index=activeClasses.indexOf(c),next=index>=0?activeClasses[index+1]:null;return agendaCardHtml(c)+agendaFreeWindowHtml(c,next)}).join("")}</section>`;
+      html+=`<section class="agenda-group"><div class="agenda-group-title">${period}</div>${items.map(c=>{const index=activeClasses.indexOf(c),next=index>=0?activeClasses[index+1]:null,marker=showTimeMarker&&!markerPlaced&&agendaNow<dateTime(c,"startTime")?(markerPlaced=true,currentTimeMarkerHtml(agendaNow)):"";return marker+agendaCardHtml(c)+agendaFreeWindowHtml(c,next)}).join("")}</section>`;
     }
   });
+  if(showTimeMarker&&!markerPlaced)html+=currentTimeMarkerHtml(agendaNow);
   html+='</div>';
   if(tasks.length){
     html+=`<section class="agenda-task-section"><div class="agenda-task-heading">Tasks due</div><div class="task-list">${tasks.map(taskHtml).join("")}</div></section>`;
@@ -397,6 +423,7 @@ function renderCalendar(){
   $$(".calendar-day").forEach(button=>{button.addEventListener("click",()=>{state.selectedDate=button.dataset.date;renderCalendar();requestAnimationFrame(()=>{const agenda=$("#dayAgenda");if(agenda&&matchMedia("(max-width:780px)").matches)agenda.scrollIntoView({behavior:"smooth",block:"start"})})});button.addEventListener("mouseenter",()=>showCalendarTooltip(button,button.dataset.date));button.addEventListener("mouseleave",hideCalendarTooltip)});
   const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate),dayExams=exams.filter(exam=>exam.dateIso===state.selectedDate);
   $("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  const agendaBackToday=$("#agendaBackToday");if(agendaBackToday)agendaBackToday.hidden=state.selectedDate===isoToday();
   $("#agendaCount").textContent=classes.length+tasks.length+dayExams.length;
   const agendaStats=dayLoadStats(classes),agendaSummary=$("#agendaLoadSummary");if(agendaSummary)agendaSummary.textContent=agendaStats.count?`${agendaStats.count} ${agendaStats.count===1?"class":"classes"} · ${compactDuration(agendaStats.classMinutes)} class time${agendaStats.freeMinutes?` · ${compactDuration(agendaStats.freeMinutes)} free`:""} · Ends ${fmtTime(agendaStats.end)}`:dayExams.length?`${dayExams.length} ${dayExams.length===1?"exam":"exams"}`:"No classes";
   $("#dayAgenda").innerHTML=agendaHtml(classes,tasks,dayExams);
@@ -659,7 +686,7 @@ function renderBuses(){
 
 function busRow(bus,departure=busDate(bus)){
   const route=routeStops(bus).map(busStopLabel).join(" · ");
-  const mainGate=isMainGateService(bus),now=new Date(),diff=Math.ceil((departure-now)/60000),isTomorrow=departure.getDate()!==now.getDate()||departure.getMonth()!==now.getMonth(),elapsed=diff<0,status=isTomorrow?"Tomorrow":elapsed?"Departed":diff<=1?"Due":`${diff} min`;
+  const mainGate=isMainGateService(bus),now=new Date(),diff=Math.ceil((departure-now)/60000),isTomorrow=departure.getDate()!==now.getDate()||departure.getMonth()!==now.getMonth(),elapsed=diff<0,status=isTomorrow?"Tomorrow":elapsed?"Departed":diff<=1?"Due":diff<=8?"Leaving soon":"On time";
   return`<article class="bus-row ${mainGate?"main-gate":""} ${elapsed?"elapsed":""}">
     <time>${esc(fmtTime(bus.time))}</time>
     <div>
@@ -955,10 +982,10 @@ function bind(){
   $("#chooseElectivesInline")?.addEventListener("click",()=>openOnboardingManually());
   $("#connectGoogleTasks")?.addEventListener("click",()=>connectGoogleTasks());
   $("#disconnectGoogleTasks")?.addEventListener("click",()=>disconnectGoogleTasks());
-  window.addEventListener("focus",()=>{scheduleIdleSync();scheduleGoogleTasksSync()});
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
-  window.addEventListener("online",()=>{setAppState("online");scheduleIdleSync()});
-  window.addEventListener("offline",()=>setAppState("offline","You are offline. Showing the last saved schedule."));
+  window.addEventListener("focus",()=>{const offline=$("#appStateBanner")?.dataset.state==="offline";offline?recoverConnectivity():scheduleIdleSync();scheduleGoogleTasksSync()});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){const offline=$("#appStateBanner")?.dataset.state==="offline";offline?recoverConnectivity():scheduleIdleSync();scheduleGoogleTasksSync()}});
+  window.addEventListener("online",recoverConnectivity);
+  window.addEventListener("offline",()=>{setAppState("offline","You are offline. Showing the last saved schedule.");scheduleOfflineRetry()});
   $("#appStateAction")?.addEventListener("click",()=>location.reload());
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerView(b.dataset.plannerTab)));
   $$('[data-open-exams]').forEach(button=>button.addEventListener("click",openExamPlanner));
@@ -966,6 +993,7 @@ function bind(){
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);renderCalendar()});
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
+  $("#agendaBackToday")?.addEventListener("click",()=>{state.selectedDate=isoToday();const today=new Date();state.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);renderCalendar()});
   bindSwipeGesture($("#dayAgenda"),direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
   $("#dayAgenda").addEventListener("click",event=>{const freeButton=event.target.closest(".free-window-action");if(freeButton){event.stopPropagation();openFreeTask(freeButton);return}const button=event.target.closest(".agenda-add-task");if(!button)return;const c=state.classes.find(item=>classIdentity(item)===button.dataset.classId);if(!c)return;$("#taskTitle").value="";$("#taskCourse").value=canonical(c.code);$("#taskDate").value=c.dateIso;clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal()});
   $("#quickTaskForm").addEventListener("submit",e=>{e.preventDefault();addTask($("#quickTaskTitle").value.trim(),$("#quickTaskCourse").value,$("#quickTaskDate").value);e.target.reset()});

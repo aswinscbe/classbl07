@@ -1532,6 +1532,48 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0
   .bottom-nav{width:min(calc(100% - 16px),520px);bottom:max(8px,env(safe-area-inset-bottom))}
 }
 
+/* Responsive schedule and campus readability pass. */
+.calendar-layout,.calendar-panel,.agenda-panel,#dayAgenda,.agenda-class-card,.agenda-card-body{min-width:0;max-width:100%}
+.calendar-layout{grid-template-columns:minmax(0,1.08fr) minmax(0,.9fr);overflow:clip}
+.calendar-panel,.agenda-panel{overflow:clip}
+.calendar-day.selected{outline:0;box-shadow:inset 0 0 0 2px color-mix(in srgb,#fff 52%,transparent),0 9px 22px color-mix(in srgb,var(--primary) 24%,transparent)}
+.planner-schedule-card .agenda-course-line h3,.planner-schedule-card .agenda-meta-row span{min-width:0;overflow-wrap:anywhere}
+.agenda-meta-row{display:grid;gap:2px}
+.agenda-faculty{color:var(--muted)}
+.duration-chip{display:inline-flex;align-items:center;min-height:20px;padding:0 7px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:9px;font-weight:680;line-height:1;white-space:nowrap}
+.count-chip{display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1}
+.count-chip b{font-size:1.05em;font-weight:800;line-height:1}.count-chip span{font-size:.92em;line-height:1}
+.current-time-marker{display:grid;grid-template-columns:82px minmax(0,1fr);align-items:center;gap:15px;min-height:24px;color:var(--pink);font-size:9px;font-weight:800;letter-spacing:.03em;font-variant-numeric:tabular-nums}
+.current-time-marker span{text-align:right}.current-time-marker i{position:relative;display:block;height:1px;background:color-mix(in srgb,var(--pink) 48%,transparent)}
+.current-time-marker i::before{content:"";position:absolute;left:0;top:50%;width:7px;height:7px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 4px color-mix(in srgb,var(--pink) 12%,transparent);transform:translate(-50%,-50%)}
+.vertical-day-timeline .vertical-class.done{min-height:82px;padding-block:11px;background:color-mix(in srgb,var(--surface-2) 84%,var(--bg));color:var(--muted)}
+.vertical-day-timeline .vertical-content>p{display:grid;gap:2px}
+.empty-next-class{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 12px;width:min(100%,360px);margin-top:12px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);color:var(--text);text-align:left}
+.empty-next-class>span{grid-column:1/-1;color:var(--muted);font-size:9px;font-weight:750;text-transform:uppercase;letter-spacing:.08em}.empty-next-class strong{font-size:13px}.empty-next-class small{align-self:center;color:var(--primary);font-size:11px;font-weight:700}
+.agenda-back-today{min-height:34px;padding:0 9px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.app-state-banner[data-state="reconnecting"]{border-color:color-mix(in srgb,var(--cyan) 44%,var(--border))}.app-state-banner[data-state="reconnecting"]::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cyan);animation:syncPulse 1.1s ease-in-out infinite}
+.food-section{padding:15px!important;border:1px solid color-mix(in srgb,var(--primary) 12%,var(--border))!important;border-radius:15px!important;background:color-mix(in srgb,var(--primary) 3%,var(--surface-2))!important;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 55%,transparent),0 7px 20px color-mix(in srgb,#000 5%,transparent)!important}
+.food-section-title{margin-bottom:8px;font-size:13px!important;font-weight:780!important;letter-spacing:.075em}
+.food-item{padding:8px 5px 8px 18px!important;color:var(--text);font-size:14px!important;font-weight:570;line-height:1.42}
+.meal-hero-title h3{font-size:20px!important;font-weight:720!important}.meal-hero-title span{font-size:9px!important}
+@media(min-width:920px) and (max-width:1080px){.calendar-layout{grid-template-columns:minmax(0,1.04fr) minmax(390px,.86fr)}}
+@media(min-width:621px) and (max-width:919px){.calendar-layout{grid-template-columns:minmax(0,1fr)}.agenda-panel{margin-top:2px}}
+@media(max-width:620px){
+  .calendar-layout{display:grid;grid-template-columns:minmax(0,1fr);overflow:visible}.calendar-panel,.agenda-panel{overflow:clip}
+  #dayAgenda{scroll-margin-top:260px}
+  .agenda-heading{margin:-2px -2px 14px;padding:10px 2px 12px;gap:10px;background:color-mix(in srgb,var(--surface) 96%,transparent);border-bottom:1px solid var(--border)}
+  .agenda-heading h2{font-size:19px!important;line-height:1.2}.agenda-load-summary{max-width:240px;font-size:11px!important;line-height:1.4}
+  .agenda-day-controls{align-items:center}.agenda-back-today{grid-column:1/-1;min-height:29px;padding-inline:7px;font-size:9px}
+  .agenda-class-card.planner-schedule-card{grid-template-columns:84px minmax(0,1fr)!important;gap:15px!important;min-height:104px;padding:15px 13px!important}
+  .planner-schedule-card .agenda-time-block time{font-size:18px!important}.planner-schedule-card .agenda-course-line{gap:8px}.planner-schedule-card .agenda-course-line h3{font-size:16px!important;line-height:1.3!important}
+  .planner-schedule-card .agenda-meta{margin-top:7px}.planner-schedule-card .agenda-meta-row{gap:3px;font-size:13px!important;line-height:1.38!important}.planner-schedule-card .timeline-status-row{margin-top:8px}
+  .vertical-day-timeline .vertical-class{grid-template-columns:84px minmax(0,1fr)!important;gap:15px!important;min-height:100px;padding:14px 13px!important}.vertical-day-timeline .vertical-class.done{min-height:84px;padding-block:11px!important}
+  .vertical-day-timeline .vertical-time{font-size:17px!important}.vertical-day-timeline .timeline-course-line{gap:9px}.vertical-day-timeline .timeline-course-line>strong{font-size:16px!important;line-height:1.3!important}.vertical-day-timeline .vertical-content p{margin-top:7px;font-size:12.5px!important;line-height:1.4}
+  .current-time-marker{grid-template-columns:84px minmax(0,1fr);gap:15px}
+  .timeline-load-summary{align-items:center}.timeline-load-summary span{align-items:center!important;min-height:29px;padding-inline:8px!important;font-size:10px!important;line-height:1!important}.timeline-load-summary b{font-size:11px!important;line-height:1!important}
+  .food-section{padding:14px 12px!important}.food-items{gap:2px!important}.food-item{padding:8px 4px 8px 17px!important;font-size:14px!important;line-height:1.45}.meal-hero{gap:12px}
+}
+
 /* ===== App-wide hierarchy and availability pass · 21 Aug 2026 === */
 :root{
   --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;
@@ -2012,5 +2054,30 @@ body::before{content:"";position:fixed;z-index:-1;inset:0;pointer-events:none;ba
   .exam-list-card{grid-template-columns:1fr}.exam-list-copy{grid-column:1}.exam-card-actions{grid-column:1;justify-content:flex-start}.exam-day-button,.exam-prep-button{min-height:31px}
   .serving-state{min-height:24px;padding-inline:7px;font-size:8px}.meal-hero-title{padding-inline:0}.food-section{padding:13px 3px}.food-items{gap:4px}.food-item{padding:7px 4px 7px 16px!important}
   .notification-item::after{display:none}.profile-form>label,.selected-electives-card{padding:10px}
+}
+
+/* Final responsive authority: containment, schedule legibility and menu hierarchy. */
+.calendar-layout,.calendar-panel,.agenda-panel,#dayAgenda,.agenda-class-card,.agenda-card-body{min-width:0;max-width:100%}
+.calendar-layout{grid-template-columns:minmax(0,1.08fr) minmax(0,.9fr);overflow:clip}.calendar-panel,.agenda-panel{overflow:clip}
+.calendar-day.selected{outline:0!important;outline-offset:0!important;box-shadow:inset 0 0 0 2px color-mix(in srgb,#fff 52%,transparent),0 9px 22px color-mix(in srgb,var(--primary) 24%,transparent)!important}
+.planner-schedule-card .agenda-course-line h3,.planner-schedule-card .agenda-meta-row span{min-width:0;overflow-wrap:anywhere}.agenda-meta-row{display:grid;gap:2px}.agenda-faculty{color:var(--muted)}
+.duration-chip{display:inline-flex;align-items:center;min-height:20px;padding:0 7px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:9px;font-weight:680;line-height:1;white-space:nowrap}
+.count-chip{display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1}.count-chip b{font-size:1.05em;font-weight:800;line-height:1}.count-chip span{font-size:.92em;line-height:1}
+.current-time-marker{display:grid;grid-template-columns:82px minmax(0,1fr);align-items:center;gap:15px;min-height:24px;color:var(--pink);font-size:9px;font-weight:800;letter-spacing:.03em;font-variant-numeric:tabular-nums}.agenda-panel .current-time-marker{grid-template-columns:104px minmax(0,1fr);margin:3px 0 8px}
+.current-time-marker span{text-align:right}.current-time-marker i{position:relative;display:block;height:1px;background:color-mix(in srgb,var(--pink) 48%,transparent)}.current-time-marker i::before{content:"";position:absolute;left:0;top:50%;width:7px;height:7px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 4px color-mix(in srgb,var(--pink) 12%,transparent);transform:translate(-50%,-50%)}
+.vertical-day-timeline .vertical-class.done{min-height:82px;padding-block:11px;background:color-mix(in srgb,var(--surface-2) 84%,var(--bg));color:var(--muted)}.vertical-day-timeline .vertical-content>p{display:grid;gap:2px}
+.empty-next-class{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 12px;width:min(100%,360px);margin-top:12px;padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);color:var(--text);text-align:left}.empty-next-class>span{grid-column:1/-1;color:var(--muted);font-size:9px;font-weight:750;text-transform:uppercase;letter-spacing:.08em}.empty-next-class strong{font-size:13px}.empty-next-class small{align-self:center;color:var(--primary);font-size:11px;font-weight:700}
+.agenda-back-today{min-height:34px;padding:0 9px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.app-state-banner[data-state="reconnecting"]{border-color:color-mix(in srgb,var(--cyan) 44%,var(--border))}.app-state-banner[data-state="reconnecting"]::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cyan);animation:syncPulse 1.1s ease-in-out infinite}
+.food-section{padding:15px!important;border:1px solid color-mix(in srgb,var(--primary) 12%,var(--border))!important;border-radius:15px!important;background:color-mix(in srgb,var(--primary) 3%,var(--surface-2))!important;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 55%,transparent),0 7px 20px color-mix(in srgb,#000 5%,transparent)!important}.food-section-title{margin-bottom:8px;font-size:13px!important;font-weight:780!important;letter-spacing:.075em}.food-item{padding:8px 5px 8px 18px!important;color:var(--text);font-size:14px!important;font-weight:570;line-height:1.42}.meal-hero-title h3{font-size:20px!important;font-weight:720!important}.meal-hero-title span{font-size:9px!important}
+@media(min-width:920px) and (max-width:1080px){.calendar-layout{grid-template-columns:minmax(0,1.04fr) minmax(390px,.86fr)}}
+@media(min-width:621px) and (max-width:919px){.calendar-layout{grid-template-columns:minmax(0,1fr)}.agenda-panel{margin-top:2px}}
+@media(max-width:620px){
+  .calendar-layout{display:grid;grid-template-columns:minmax(0,1fr);overflow:visible}.calendar-panel,.agenda-panel{overflow:clip}
+  .agenda-heading{margin:-2px -2px 14px;padding:10px 2px 12px;gap:10px;background:color-mix(in srgb,var(--surface) 96%,transparent);border-bottom:1px solid var(--border)}.agenda-heading h2{font-size:19px!important;line-height:1.2}.agenda-load-summary{max-width:240px;font-size:11px!important;line-height:1.4}.agenda-day-controls{align-items:center}.agenda-back-today{min-height:29px;padding-inline:7px;font-size:9px}
+  .agenda-class-card.planner-schedule-card{grid-template-columns:84px minmax(0,1fr)!important;gap:15px!important;min-height:104px;padding:15px 13px!important}.planner-schedule-card .agenda-time-block time{font-size:18px!important}.planner-schedule-card .agenda-course-line{gap:8px}.planner-schedule-card .agenda-course-line h3{font-size:16px!important;line-height:1.3!important}.planner-schedule-card .agenda-meta{margin-top:7px}.planner-schedule-card .agenda-meta-row{gap:3px;font-size:13px!important;line-height:1.38!important}.planner-schedule-card .timeline-status-row{margin-top:8px}
+  .vertical-day-timeline .vertical-class{grid-template-columns:84px minmax(0,1fr)!important;gap:15px!important;min-height:100px;padding:14px 13px!important}.vertical-day-timeline .vertical-class.done{min-height:84px;padding-block:11px!important}.vertical-day-timeline .vertical-time{font-size:17px!important}.vertical-day-timeline .timeline-course-line{gap:9px}.vertical-day-timeline .timeline-course-line>strong{font-size:16px!important;line-height:1.3!important}.vertical-day-timeline .vertical-content p{margin-top:7px;font-size:12.5px!important;line-height:1.4}
+  .current-time-marker,.agenda-panel .current-time-marker{grid-template-columns:84px minmax(0,1fr);gap:15px}.timeline-load-summary{align-items:center}.timeline-load-summary span{align-items:center!important;min-height:29px;padding-inline:8px!important;font-size:10px!important;line-height:1!important}.timeline-load-summary b{font-size:11px!important;line-height:1!important}
+  .food-section{padding:14px 12px!important}.food-items{gap:2px!important}.food-item{padding:8px 4px 8px 17px!important;font-size:14px!important;line-height:1.45}.meal-hero{gap:12px}
 }
 
