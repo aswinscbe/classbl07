@@ -4,22 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#130f15">
-  <meta name="description" content="BL07 Term 3 Planner — mobile-first academic companion">
+  <meta name="description" content="BL07 Flow — classes, exams and campus essentials in one clear view">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=20260823-editorial4">
-  <link rel="stylesheet" href="visual.css?v=20260823-editorial4">
-  <title>BL07 · Term 3 Planner</title>
+  <link rel="icon" href="brand-mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=20260824-flow1">
+  <link rel="stylesheet" href="visual.css?v=20260824-flow1">
+  <title>BL07 Flow · Know what’s next</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <button class="brand" data-go="home" aria-label="Open Home">
-        <span class="brand-mark">IIMK</span>
-        <span class="brand-copy"><strong>BL07</strong><small>TERM 3 PLANNER</small></span>
+      <button class="brand" data-go="home" aria-label="Open BL07 Flow home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64">
+            <rect class="brand-frame" x="2" y="2" width="60" height="60" rx="18"></rect>
+            <rect class="brand-block" x="13" y="12" width="15" height="14" rx="5"></rect>
+            <rect class="brand-block muted" x="36" y="12" width="15" height="14" rx="5"></rect>
+            <rect class="brand-block muted" x="13" y="36" width="15" height="15" rx="5"></rect>
+            <rect class="brand-active" x="36" y="36" width="15" height="15" rx="5"></rect>
+            <path class="brand-flow" d="M20.5 19h23v24.5h-23"></path>
+            <circle class="brand-live-ring" cx="43.5" cy="43.5" r="6.2"></circle>
+            <circle class="brand-live-dot" cx="43.5" cy="43.5" r="3.2"></circle>
+          </svg>
+        </span>
+        <span class="brand-copy"><strong>BL07 Flow</strong><small>IIM KOZHIKODE · TERM III</small></span>
       </button>
 
       <nav class="desktop-nav" aria-label="Primary">
@@ -45,6 +57,7 @@
           <div>
             <p class="overline" id="todayLabel">TODAY</p>
             <h1 id="greeting">Good evening.</h1>
+            <p class="home-context-line" id="homeContextLine">Know what’s next.</p>
             <p class="home-sync-text" id="homeSyncText">Checking the latest schedule…</p>
           </div>
           <div class="date-orbit" aria-hidden="true">
@@ -189,10 +202,7 @@
               </div>
               <div class="agenda-utility-bar" aria-label="Schedule controls">
                 <button class="agenda-utility-action" id="jumpNextClass" type="button"><span data-icon="target"></span><span>Jump to next class</span></button>
-                <label class="agenda-filter-toggle" title="Show only future, non-cancelled classes">
-                  <input id="onlyUpcomingClasses" type="checkbox">
-                  <span>Upcoming only</span>
-                </label>
+                <button class="agenda-filter-chip" id="onlyUpcomingClasses" type="button" aria-pressed="false" title="Show only future, non-cancelled classes"><span data-icon="filter"></span><span class="agenda-filter-label">Upcoming</span><b aria-hidden="true">×</b></button>
                 <button class="agenda-utility-action" id="toggleCompletedClasses" type="button"><span data-icon="check"></span><span>Show completed</span></button>
               </div>
               <div id="dayAgenda" class="schedule-list"></div>
@@ -276,11 +286,11 @@
             <div class="settings-row"><div><strong>Google Tasks</strong><p>Sync tasks to your Google account.</p><div id="googleTasksStatus"></div></div><span id="googleTasksConnected" hidden><button class="secondary-button" id="disconnectGoogleTasks">Disconnect</button></span><span id="googleTasksDisconnected"><button class="primary-button google-tasks-button" id="connectGoogleTasks">Connect</button></span></div>
             <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
             <div class="settings-row"><div><strong>Open calendar</strong><p>Open Google Calendar in a new tab.</p></div><a class="secondary-button link-button" href="https://calendar.google.com" target="_blank" rel="noopener">Open</a></div>
-            <div class="settings-row"><div><strong>App version</strong><p>3.0.0</p></div></div>
+            <div class="settings-row"><div><strong>App version</strong><p>3.1.0 · BL07 Flow</p></div></div>
             <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>
           </article>
           <article class="panel profile-features-panel">
-            <div class="panel-heading profile-features-heading"><div><p class="overline">APP GUIDE</p><h2>What you can do</h2><p>Everything available in your BL07 dashboard.</p></div></div>
+            <div class="panel-heading profile-features-heading"><div><p class="overline">APP GUIDE</p><h2>Everything in one place</h2><p>Classes, exams and campus essentials—organised around your day.</p></div></div>
             <div class="profile-feature-grid">
               <div class="profile-feature"><span data-icon="clock"></span><div><strong>Live class timeline</strong><p>See what is happening now and what comes next.</p></div></div>
               <div class="profile-feature"><span data-icon="calendar"></span><div><strong>Weekly workload</strong><p>Compare class load from Monday through Sunday.</p></div></div>
@@ -435,10 +445,10 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260823-editorial4"></script>
-  <script src="exam-data.js?v=20260823-editorial4"></script>
-  <script src="app.js?v=20260823-editorial4"></script>
-  <script src="polish.js?v=20260823-editorial4"></script>
+  <script src="campus-data.js?v=20260824-flow1"></script>
+  <script src="exam-data.js?v=20260824-flow1"></script>
+  <script src="app.js?v=20260824-flow1"></script>
+  <script src="polish.js?v=20260824-flow1"></script>
 </body>
 </html>
 

@@ -44,6 +44,7 @@ check:'<path d="m5 12 4 4L19 6"/>',
 note:'<path d="M5 4h11l3 3v13H5z"/><path d="M8 8h7M8 12h7M8 16h5"/>',
 'chevron-left':'<path d="m15 18-6-6 6-6"/>','chevron-right':'<path d="m9 18 6-6-6-6"/>',
 target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/>',
+filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
 bus:'<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M7 18v3M17 18v3M4 11h16M8 7h8"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/>',
 meal:'<path d="M7 3v8M4 3v5c0 2 1 3 3 3s3-1 3-3V3M7 11v10M16 3v18M16 3c3 2 4 5 4 8h-4"/>',
 refresh:'<path d="M3 12a9 9 0 0 1 15.5-6.3M21 4v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3M3 20v-5h5"/>',
@@ -261,6 +262,19 @@ function renderHome(){
   const now=new Date(),today=isoToday();$("#todayLabel").textContent=new Intl.DateTimeFormat("en-IN",{weekday:"short",day:"numeric",month:"short"}).format(now).toUpperCase();$("#dateOrbitDay").textContent=new Intl.DateTimeFormat("en-IN",{weekday:"short"}).format(now);$("#dateOrbitMonth").textContent=`${now.getDate()} ${new Intl.DateTimeFormat("en-IN",{month:"short"}).format(now)}`;const h=now.getHours(),firstName=String(state.profile.name||"").trim().split(/\s+/)[0],dayGreeting=`Good ${h<12?"morning":h<17?"afternoon":"evening"}`;$("#greeting").textContent=firstName?`${dayGreeting} ${firstName}`:dayGreeting;
   const scheduled=state.classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
   const todays=scheduled.filter(c=>c.dateIso===today),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),todayNext=todays.find(c=>now<dateTime(c,"startTime")),previous=todays.filter(c=>now>=dateTime(c,"endTime")).at(-1),future=scheduled.find(c=>now<dateTime(c,"startTime")),focus=current||todayNext||future,todayComplete=Boolean(todays.length&&!current&&!todayNext),loadDate=!todays.length||todayComplete?tomorrowIso():today,loadClasses=scheduled.filter(c=>c.dateIso===loadDate),loadIsToday=loadDate===today,loadIsTomorrow=loadDate===tomorrowIso(),loadLabel=loadIsToday?"Today":loadIsTomorrow?"Tomorrow":fmtDate(loadDate,{weekday:"long"}),loadValue=loadSummary(loadClasses,loadIsToday?"end":"start"),parts=istParts(now),nowMinutes=Number(parts.hour)*60+Number(parts.minute),isLunch=Boolean(!current&&todayNext&&nowMinutes>=13*60+30&&nowMinutes<Math.min(14*60+30,minutes(todayNext.startTime)));
+  const contextLine=$("#homeContextLine");
+  if(contextLine){
+    const nextCode=todayNext?canonical(todayNext.code):"",futureCode=future?canonical(future.code):"";
+    if(current)contextLine.textContent=`${canonical(current.code)} is underway. It ends at ${fmtTime(current.endTime)}.`;
+    else if(isLunch&&todayNext)contextLine.textContent=`Lunch break now. ${nextCode} begins at ${fmtTime(todayNext.startTime)}.`;
+    else if(todayNext&&previous)contextLine.textContent=`${compactDuration((dateTime(todayNext,"startTime")-now)/60000)} free before ${nextCode}.`;
+    else if(todayNext)contextLine.textContent=todays.length===1?`One class today: ${nextCode} at ${fmtTime(todayNext.startTime)}.`:`${todays.length} classes ahead, starting with ${nextCode} at ${fmtTime(todayNext.startTime)}.`;
+    else if(todayComplete)contextLine.textContent=future&&future.dateIso===tomorrowIso()?`Classes are done. Tomorrow begins with ${futureCode} at ${fmtTime(future.startTime)}.`:"Classes are done for today.";
+    else if(future&&future.dateIso===tomorrowIso())contextLine.textContent=`No classes today. ${futureCode} begins tomorrow at ${fmtTime(future.startTime)}.`;
+    else if(future)contextLine.textContent=`Your next class is ${futureCode} on ${fmtDate(future.dateIso,{weekday:"short",day:"numeric",month:"short"})}.`;
+    else contextLine.textContent="Your schedule is clear.";
+  }
+  $(".brand")?.classList.toggle("is-live",Boolean(current));
   const focusPanel=$("#focusPanel");
   if(focus){
     const isNow=focus===current,isToday=focus.dateIso===today,isTomorrow=focus.dateIso===tomorrowIso(),isFutureDay=!isToday,isFree=Boolean(!current&&todayNext&&previous&&!isLunch),isClearToday=Boolean(!todays.length&&future),isDayDone=Boolean(todayComplete&&future),dayClasses=scheduled.filter(c=>c.dateIso===focus.dateIso),dayIndex=dayClasses.indexOf(focus),remaining=todays.filter(c=>dateTime(c,"endTime")>now).length,futureDate=fmtDate(focus.dateIso,{weekday:"short",day:"numeric",month:"short"});
@@ -474,7 +488,7 @@ function updateNextSubjectLookup(){
 }
 function updateAgendaControls(classes=[]){
   const past=state.selectedDate<isoToday(),completed=classes.filter(c=>agendaStatus(c)==="Done").length,only=$("#onlyUpcomingClasses"),toggle=$("#toggleCompletedClasses"),jump=$("#jumpNextClass");
-  if(only){only.checked=Boolean(state.ui.onlyUpcoming);only.disabled=past;only.closest("label")?.classList.toggle("is-disabled",past);only.closest("label")?.setAttribute("title",past?"Upcoming filtering is unavailable for past dates":"Show only future, non-cancelled classes")}
+  if(only){const active=Boolean(state.ui.onlyUpcoming);only.disabled=past;only.classList.toggle("is-active",active);only.classList.toggle("is-disabled",past);only.setAttribute("aria-pressed",String(active));only.setAttribute("title",past?"Upcoming filtering is unavailable for past dates":active?"Show all scheduled classes":"Show only future, non-cancelled classes");const label=only.querySelector(".agenda-filter-label");if(label)label.textContent=active?"Upcoming only":"Upcoming"}
   if(toggle){toggle.hidden=!completed;toggle.disabled=Boolean(state.ui.onlyUpcoming&&!past);toggle.querySelector("span:last-child").textContent=state.ui.completedCollapsed?`Show completed (${completed})`:"Collapse completed"}
   if(jump)jump.disabled=!upcomingClasses().length;
   updateNextSubjectLookup()
@@ -1047,7 +1061,7 @@ function bind(){
   $("#agendaBackToday")?.addEventListener("click",scrollTodayFocus);
   $("#jumpNextClass")?.addEventListener("click",()=>scrollToPlannerClass(upcomingClasses()[0]||null));
   $("#toggleCompletedClasses")?.addEventListener("click",()=>{state.ui.completedCollapsed=!state.ui.completedCollapsed;saveUi();renderCalendar()});
-  $("#onlyUpcomingClasses")?.addEventListener("change",event=>{state.ui.onlyUpcoming=event.target.checked;saveUi();renderCalendar()});
+  $("#onlyUpcomingClasses")?.addEventListener("click",()=>{state.ui.onlyUpcoming=!state.ui.onlyUpcoming;saveUi();renderCalendar()});
   $("#nextSubjectSelect")?.addEventListener("change",updateNextSubjectLookup);
   $("#nextSubjectResult")?.addEventListener("click",event=>{const c=state.classes.find(item=>classIdentity(item)===event.currentTarget.dataset.classId);if(c)scrollToPlannerClass(c)});
   bindSwipeGesture($("#dayAgenda"),direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
@@ -1085,7 +1099,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260823-editorial4",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260824-flow1",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
