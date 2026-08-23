@@ -2279,3 +2279,113 @@ input,select,textarea,.search-input{border-color:var(--border)!important;border-
   .agenda-free-window .free-window-action{grid-column:2;grid-row:auto;justify-self:start}
 }
 
+/* Editorial visual system: stronger information, quieter containers. */
+:root{
+  --info:color-mix(in srgb,var(--text) 82%,var(--muted));
+  --quiet:color-mix(in srgb,var(--text) 62%,var(--muted));
+  --section-gap:14px;
+}
+html[data-theme=light]{--bg:#f7f4f2;--bg-soft:#f1ecea;--surface-2:#faf7f5;--surface-3:#f2eae8;--border:#e5ddda;--border-strong:#d4c7c3}
+body{font-size:15px;line-height:1.52}
+.page-wrap{padding-top:22px}.section-heading{margin-bottom:15px}.section-subtitle{max-width:62ch;color:var(--quiet)}
+.panel,.calendar-panel,.agenda-panel,.route-planner,.mess-shell,.week-density,.next-exam-card{box-shadow:none}
+.panel-heading{margin-bottom:12px}.panel-heading h2{font-size:20px;line-height:1.2}
+.overline{font-size:9px;letter-spacing:.12em}
+.desktop-nav,.subtabs{box-shadow:none}
+.subtab{font-weight:650}.subtab.active{color:var(--text)}
+
+/* Home: reduce surface competition while preserving the hero. */
+.home-main-rail,.home-side-rail{gap:12px}
+.hero-card,.hero-card:not(.is-empty){border-color:color-mix(in srgb,var(--primary) 22%,var(--border));box-shadow:0 18px 40px -30px color-mix(in srgb,var(--primary) 50%,#000)}
+.week-density{border-color:var(--border);background:transparent}
+.density-day{border:0}.density-day.today{border-color:var(--border-strong)}
+.today-progress-card{border-color:var(--border)}
+.next-exam-card{border-left:3px solid var(--cyan)}
+.silent-update-strip{min-height:54px;border-color:var(--border);background:transparent}
+.quick-task-panel{background:transparent}
+
+/* One schedule-card language across Home and Planner. */
+.vertical-day-timeline .vertical-class,.agenda-class-card.planner-schedule-card{
+  border:1px solid var(--border);border-left:3px solid var(--course);border-radius:11px!important;
+  background:var(--surface-2);box-shadow:none;transition:border-color .2s ease,background-color .2s ease,transform .2s ease,opacity .2s ease;
+}
+.vertical-day-timeline .vertical-class:hover,.agenda-class-card.planner-schedule-card:hover{border-color:color-mix(in srgb,var(--course) 38%,var(--border));border-left-color:var(--course);background:color-mix(in srgb,var(--course) 4%,var(--surface-2))}
+.vertical-day-timeline .vertical-time,.planner-schedule-card .agenda-time-block time{font-variant-numeric:tabular-nums;color:var(--text);font-weight:760!important}
+.vertical-day-timeline .vertical-time small,.planner-schedule-card .agenda-time-block time b{color:var(--quiet);font-weight:560!important}
+.timeline-code-chip,.agenda-code-chip,.focus-code,.exam-code-chip{min-height:24px;padding:0 8px!important;border-radius:7px!important;font-size:9px!important;line-height:22px;letter-spacing:.045em}
+.vertical-day-timeline .timeline-course-line>strong,.planner-schedule-card .agenda-course-line h3{color:var(--text);font-weight:730!important;letter-spacing:-.018em}
+.vertical-day-timeline .vertical-content>p,.planner-schedule-card .agenda-meta-row{color:var(--info)}
+.planner-schedule-card .agenda-venue{display:inline-flex;align-items:center;width:max-content;max-width:100%;color:var(--text)!important;font-weight:700!important}
+.planner-schedule-card .agenda-venue::before{content:"ROOM";margin-right:6px;color:var(--primary);font-size:8px;font-weight:800;letter-spacing:.08em}
+.planner-schedule-card .agenda-faculty{color:var(--quiet)!important}
+.vertical-status,.agenda-status{border:0;background:transparent!important;font-size:9px;font-weight:760;letter-spacing:.06em}
+.duration-chip{border:0;background:transparent;color:var(--quiet)}
+.planner-schedule-card.done{opacity:.7}
+.planner-schedule-card.done.completed-collapsed{min-height:58px!important;padding-block:8px!important}
+.planner-schedule-card.done.completed-collapsed .agenda-meta,.planner-schedule-card.done.completed-collapsed .timeline-status-row{display:none}
+.planner-schedule-card.done.completed-collapsed .agenda-course-line h3{font-size:14px!important}
+.planner-schedule-card.cancelled{opacity:.68;background:color-mix(in srgb,var(--danger) 3%,var(--surface-2))}
+.planner-schedule-card.planner-target{border-color:var(--primary)!important;background:color-mix(in srgb,var(--primary) 11%,var(--surface-2));animation:plannerTarget 1.8s ease}
+@keyframes plannerTarget{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 18%,transparent)}}
+
+/* Lunch and Free Time read as bands, not classes. */
+.vertical-day-timeline .free-window-row,.agenda-free-window{border-radius:10px!important;background:transparent!important}
+.free-window-row:not(.lunch-window),.agenda-free-window:not(.lunch-window){border:1px dashed color-mix(in srgb,var(--cyan) 45%,var(--border))!important}
+.free-window-row.lunch-window,.agenda-free-window.lunch-window{border:1px solid color-mix(in srgb,var(--amber) 42%,var(--border))!important;background:color-mix(in srgb,var(--amber) 5%,transparent)!important}
+.gap-window-label{font-size:9px!important;letter-spacing:.1em}.free-window-row>strong,.agenda-free-window>strong{font-size:14px!important}.free-window-row>time,.agenda-free-window>time{font-variant-numeric:tabular-nums}.free-window-row>small,.agenda-free-window>small{color:var(--quiet)}
+.free-window-action{min-height:30px!important;border-color:var(--border)!important;background:transparent!important;color:var(--primary)!important}
+
+/* Planner: agenda is information-first, controls are compact and persistent. */
+.calendar-layout{align-items:start}.calendar-panel,.agenda-panel{padding:17px}
+.calendar-day{border:1px solid transparent;border-radius:9px;background:transparent}.calendar-day:hover{background:var(--surface-2)}.calendar-day.outside{opacity:.35}
+.calendar-day.selected,.calendar-day.selected.weekend{border-color:var(--primary)!important;background:var(--primary)!important;color:#fff!important}
+.calendar-course-dots i{height:3px;border-radius:999px}.calendar-class-count{color:var(--quiet)}
+.agenda-heading{padding-bottom:12px;border-bottom:1px solid var(--border)}
+.agenda-load-summary{color:var(--quiet);font-size:12px;font-weight:560}
+.agenda-utility-bar{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.agenda-utility-action,.agenda-filter-toggle{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 10px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--quiet);font-size:11px;font-weight:670}
+.agenda-utility-action svg{width:14px;height:14px}.agenda-utility-action:hover:not(:disabled){border-color:var(--border-strong);color:var(--text)}.agenda-utility-action:disabled{opacity:.42}
+.agenda-filter-toggle{cursor:pointer}.agenda-filter-toggle input{width:14px;height:14px;margin:0;accent-color:var(--primary)}.agenda-filter-toggle:has(input:checked){border-color:color-mix(in srgb,var(--primary) 34%,var(--border));background:color-mix(in srgb,var(--primary) 7%,transparent);color:var(--text)}.agenda-filter-toggle.is-disabled{cursor:not-allowed;opacity:.42}
+.subject-next-lookup{display:grid;grid-template-columns:minmax(180px,.72fr) minmax(0,1.28fr);gap:8px;margin:14px 0 0;padding-top:14px;border-top:1px solid var(--border)}
+.subject-next-lookup label{display:grid;gap:5px}.subject-next-lookup label>span{color:var(--primary);font-size:8px;font-weight:800;letter-spacing:.1em}.subject-next-lookup select{min-height:42px!important}
+.subject-next-result{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1px 10px;align-items:center;min-width:0;padding:8px 11px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);text-align:left}
+.subject-next-result>span{grid-row:1/3;color:var(--primary);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.subject-next-result strong{min-width:0;font-size:13px}.subject-next-result small{min-width:0;overflow:hidden;color:var(--quiet);font-size:10px;text-overflow:ellipsis;white-space:nowrap}.subject-next-result:disabled{opacity:.62}
+.agenda-empty{border:0;background:transparent}.agenda-empty.filtered-empty strong{color:var(--primary)}
+
+/* Subject context continues naturally from the class sheet. */
+.sheet-next-class{display:grid;width:100%;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;align-items:center;margin-top:10px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--primary) 26%,var(--border));border-radius:12px;background:color-mix(in srgb,var(--primary) 6%,var(--surface-2));color:var(--text);text-align:left}
+.sheet-next-class>span{grid-row:1/3;color:var(--primary);font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}.sheet-next-class strong{font-size:13px}.sheet-next-class small{overflow:hidden;color:var(--quiet);font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+
+/* Campus: restrained route controls and a stable Bus hero time row. */
+.route-planner{padding:17px}.route-select-grid select{min-height:48px!important}.quick-route{border-radius:8px}
+.campus-grid{gap:14px}.next-bus-card{position:relative;min-width:0;padding:21px;overflow:hidden;border:1px solid color-mix(in srgb,var(--cyan) 30%,var(--border));background:linear-gradient(145deg,color-mix(in srgb,var(--primary) 46%,var(--surface)),color-mix(in srgb,var(--cyan) 27%,var(--surface)));box-shadow:0 22px 48px -32px color-mix(in srgb,var(--cyan) 55%,#000)}
+.next-bus-card::after{right:-90px;bottom:-105px;width:220px;height:220px;opacity:.55}
+.next-bus-head{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px}.next-bus-head .overline{margin:0}.next-bus-day{padding:4px 7px;border:1px solid color-mix(in srgb,#fff 20%,transparent);border-radius:999px;background:color-mix(in srgb,#fff 8%,transparent);color:color-mix(in srgb,#fff 82%,transparent);font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.next-bus-time-row{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:14px;margin-top:13px}
+.next-bus-time{display:block;min-width:0;margin:0;color:#fff;font-size:clamp(44px,5vw,58px)!important;font-weight:780;line-height:1!important;letter-spacing:-.045em!important;white-space:nowrap;font-variant-numeric:tabular-nums}
+.next-bus-countdown{display:grid;justify-items:end;align-content:end;min-width:92px;padding-bottom:3px}.next-bus-countdown span{color:rgba(255,255,255,.68);font-size:9px;font-weight:650}.next-bus-countdown strong{color:#fff;font-size:18px;font-weight:760;line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap}
+.next-bus-card h2{margin-top:14px;color:#fff;font-size:21px}.next-bus-card>p{color:rgba(255,255,255,.7);font-size:12px}.route-visual{margin-top:15px}
+html[data-theme=light] .next-bus-card{background:linear-gradient(145deg,#fff,#f6f0f4 62%,#f6eee6)!important}.next-bus-card .next-bus-head,.next-bus-card .next-bus-time-row,.next-bus-card h2,.next-bus-card>p,.next-bus-card .route-visual{position:relative;z-index:1}
+html[data-theme=light] .next-bus-time,html[data-theme=light] .next-bus-countdown strong{color:var(--primary-strong)!important}html[data-theme=light] .next-bus-countdown span{color:var(--muted)}html[data-theme=light] .next-bus-day{border-color:var(--border);background:var(--surface);color:var(--primary)}
+.bus-list .bus-row{border-radius:10px!important}.bus-list .bus-row time{font-variant-numeric:tabular-nums;font-weight:740}.departure-status{border-radius:6px}
+
+/* Mess, notifications and profile: structure through spacing, not nested cards. */
+.mess-shell{padding:18px}.day-pills,.meal-tabs{padding:3px;border-radius:11px}.food-section{border:0!important;border-top:1px solid var(--border)!important;border-radius:0!important;background:transparent!important;padding:14px 2px!important}.food-item{padding-block:7px!important}
+.notification-item{border-radius:10px;background:transparent}.notification-item.unread{border-color:color-mix(in srgb,var(--primary) 24%,var(--border));background:color-mix(in srgb,var(--primary) 4%,var(--surface))}
+.notification-course-mark{border-radius:8px}.notification-item-copy strong{font-size:13px}.notification-item p{color:var(--quiet)}
+.profile-hero{box-shadow:none!important}.profile-form>label,.selected-electives-card,.settings-row{border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent}.settings-row:last-child{border-bottom:0}
+
+@media(max-width:620px){
+  body{font-size:14px}.page-wrap{padding-inline:14px}.panel,.calendar-panel,.agenda-panel,.route-planner,.mess-shell{border-radius:14px}
+  .hero-card,.hero-card:not(.is-empty){padding:16px 15px}.hero-card .focus-time-hero,.hero-card:not(.is-empty) .focus-time-hero{font-size:29px!important}
+  .vertical-day-timeline .vertical-class,.agenda-class-card.planner-schedule-card{border-radius:10px!important}
+  .planner-schedule-card.done.completed-collapsed{grid-template-columns:70px minmax(0,1fr)!important;min-height:54px!important}
+  .agenda-utility-bar{display:grid;grid-template-columns:1fr 1fr}.agenda-utility-action{justify-content:center}.agenda-filter-toggle{grid-column:1/-1;justify-content:center}
+  .subject-next-lookup{grid-template-columns:1fr}.subject-next-result{min-height:50px}
+  .sheet-next-class{grid-template-columns:1fr}.sheet-next-class>span{grid-row:auto}.sheet-next-class small{white-space:normal}
+  .next-bus-card{padding:18px 16px}.next-bus-time-row{grid-template-columns:minmax(0,1fr) auto;gap:10px}.next-bus-time{font-size:42px!important}.next-bus-countdown{min-width:76px}.next-bus-countdown strong{font-size:16px}.next-bus-card h2{font-size:19px}
+  .route-planner{padding:14px}.mess-shell{padding:14px}
+}
+@media(max-width:350px){.next-bus-time-row{grid-template-columns:1fr}.next-bus-countdown{justify-items:start;padding:0}.next-bus-time{font-size:38px!important}.agenda-utility-bar{grid-template-columns:1fr}.agenda-filter-toggle{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){.planner-schedule-card,.vertical-class,.schedule-list,.planner-target{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+

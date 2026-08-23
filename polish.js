@@ -140,7 +140,7 @@
       const compact=value=>{const match=value?.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);if(!match)return"";let hour=Number(match[1]);if(match[3].toLowerCase()==="pm"&&hour<12)hour+=12;if(match[3].toLowerCase()==="am"&&hour===12)hour=0;return`${String(hour).padStart(2,"0")}${match[2]}00`};
       if(times.length>1){const day=date.replaceAll("-","");calendar=`https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=Asia%2FKolkata&text=${encodeURIComponent(`${code} · ${title}`)}&dates=${day}T${compact(times[0])}/${day}T${compact(times[1])}&location=${encodeURIComponent(meta.split("·")[0]?.trim()||"")}`}
     }
-    return {code:code.split("-")[0],fullCode:code,title,time,meta,date,calendar};
+    return {code:code.split("-")[0],fullCode:code,title,time,meta,date,calendar,identity:id};
   };
   let activeClass = null;
   const openClassSheet = card => {
@@ -151,6 +151,15 @@
     const calendar = document.getElementById("sheetAddCalendar");
     calendar.hidden = !activeClass.calendar;
     if (activeClass.calendar) calendar.href = activeClass.calendar;
+    const next=window.BL07NextSubject?.(activeClass.code,activeClass.identity||"");
+    const nextButton=document.getElementById("sheetNextClass");
+    if(nextButton){
+      nextButton.hidden=!activeClass.code;
+      nextButton.dataset.classId=next?.id||"";
+      nextButton.disabled=!next;
+      document.getElementById("sheetNextClassValue").textContent=next?next.date+" · "+next.time:`No future ${activeClass.code} class`;
+      document.getElementById("sheetNextClassMeta").textContent=next?next.venue+" · "+next.course:"Nothing else is scheduled yet";
+    }
     document.getElementById("classActionDialog").showModal();
   };
   const openLinkedDialog = type => {
@@ -215,6 +224,7 @@
     });
     document.getElementById("sheetAddTask")?.addEventListener("click",()=>openLinkedDialog("task"));
     document.getElementById("sheetAddNote")?.addEventListener("click",()=>openLinkedDialog("note"));
+    document.getElementById("sheetNextClass")?.addEventListener("click",event=>{const id=event.currentTarget.dataset.classId;if(!id)return;document.getElementById("classActionDialog").close();window.BL07OpenPlannerClass?.(id)});
     document.querySelector(".sheet-close")?.addEventListener("click",()=>document.getElementById("classActionDialog").close());
     document.getElementById("classActionDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
     document.getElementById("onboardingDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});

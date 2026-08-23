@@ -1,11 +1,11 @@
 (() => {
 "use strict";
 const API="https://script.google.com/macros/s/AKfycbxQWG7cS3quE0C8BBtRVx8PExapIvuqAB5-KLGzQMnOoDNKBMcblxMpztO77jME6EwShQ/exec";
-const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2"};
+const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2",ui:"classbl07-nova-ui-v1"};
 const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),notificationFilter:"all",selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:"Phase V Campus",busTo:"PGP Auditorium",timelineDay:"today",lastUpdated:null};
+const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),ui:load(KEYS.ui,{plannerTab:"calendar",campusTab:"bus",onlyUpcoming:false,completedCollapsed:true}),notificationFilter:"all",selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:"Phase V Campus",busTo:"PGP Auditorium",timelineDay:"today",lastUpdated:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
@@ -16,6 +16,7 @@ function filteredExams(){const selected=new Set((state.profile.electives||[]).ma
 function examDayDistance(dateIso){const today=new Date(`${isoToday()}T00:00:00+05:30`),examDate=new Date(`${dateIso}T00:00:00+05:30`);return Math.round((examDate-today)/86400000)}
 function load(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function saveUi(){save(KEYS.ui,state.ui)}
 function showToast(message){let toast=$("#appToast");if(!toast){toast=document.createElement("div");toast.id="appToast";toast.setAttribute("role","status");toast.setAttribute("aria-live","polite");document.body.appendChild(toast)}toast.className="app-toast";toast.textContent=message;requestAnimationFrame(()=>toast.classList.add("show"));clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.classList.remove("show"),2400)}
 function showUndoToast(message,onUndo){let toast=$("#appToast");if(!toast){toast=document.createElement("div");toast.id="appToast";toast.className="app-toast";toast.setAttribute("role","status");toast.setAttribute("aria-live","polite");document.body.appendChild(toast)}toast.className="app-toast has-action";toast.innerHTML="";const label=document.createElement("span"),button=document.createElement("button");label.textContent=message;button.type="button";button.textContent="Undo";button.addEventListener("click",()=>{clearTimeout(showToast.timer);onUndo();toast.classList.remove("show");setTimeout(()=>toast.classList.remove("has-action"),220)},{once:true});toast.append(label,button);requestAnimationFrame(()=>toast.classList.add("show"));clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>{toast.classList.remove("show");setTimeout(()=>toast.classList.remove("has-action"),220)},5000)}
 function istParts(date=new Date()){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23",weekday:"long"}).formatToParts(date);return Object.fromEntries(parts.map(p=>[p.type,p.value]))}
@@ -159,10 +160,12 @@ function scheduleIdleSync(){
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
-function setPlannerView(view="calendar"){$$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===view));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===view));document.dispatchEvent(new CustomEvent("planner-view-change",{detail:{view}}))}
-function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner"){state.selectedDate=isoToday();const today=new Date();state.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);setPlannerView("calendar")}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
+function setPlannerView(view="calendar",remember=true){const valid=["calendar","exams","tasks","notes"].includes(view)?view:"calendar";if(remember){state.ui.plannerTab=valid;saveUi()}$$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===valid));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===valid));document.dispatchEvent(new CustomEvent("planner-view-change",{detail:{view:valid}}))}
+function setCampusView(view="bus",remember=true){const valid=["bus","mess"].includes(view)?view:"bus";if(remember){state.ui.campusTab=valid;saveUi()}$$(".subtab[data-campus-tab]").forEach(b=>b.classList.toggle("active",b.dataset.campusTab===valid));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===valid))}
+function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner")setPlannerView(state.ui.plannerTab||"calendar",false);if(n==="campus")setCampusView(state.ui.campusTab||"bus",false);$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
 function openPlannerDate(iso){
   showPage("planner");
+  setPlannerView("calendar");
   state.selectedDate=iso;
   const date=new Date(`${iso}T12:00:00+05:30`);
   state.calendarMonth=new Date(date.getFullYear(),date.getMonth(),1);
@@ -350,6 +353,8 @@ function agendaCardHtml(c){
     "agenda-class-card",
     "planner-schedule-card",
     status==="Now"?"current":"",
+    status==="Done"?"done":"",
+    status==="Done"&&state.ui.completedCollapsed?"completed-collapsed":"",
     c.status==="Cancelled"?"cancelled":""
   ].filter(Boolean).join(" ");
   return `<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}" tabindex="0" role="button" aria-haspopup="dialog">
@@ -373,6 +378,10 @@ function examAgendaHtml(exams){
   return`<section class="agenda-exam-section"><div class="agenda-group-title">Exams</div>${exams.map(exam=>`<article class="agenda-exam-card" style="--course:${colorFor(exam.code)}"><div class="agenda-exam-slot"><span>${esc(exam.slot)}</span><strong>Time TBA</strong></div><div><div class="exam-course-line"><span class="exam-code-chip">${esc(exam.code)}</span><h3>${esc(exam.course)}</h3></div><p>Venue TBA · Report 10 minutes early</p></div></article>`).join("")}</section>`;
 }
 function agendaHtml(classes,tasks,exams=[]){
+  const upcomingFilter=state.ui.onlyUpcoming&&state.selectedDate>=isoToday(),originalClassCount=classes.length;
+  if(upcomingFilter)classes=classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")>new Date());
+  const filteredToEmpty=upcomingFilter&&originalClassCount&&!classes.length;
+  if(filteredToEmpty&&!tasks.length&&!exams.length)return'<div class="agenda-empty filtered-empty"><strong>No upcoming classes</strong><span>Turn off “Only upcoming” to see the complete day.</span></div>';
   if(!classes.length&&!tasks.length&&!exams.length)return'<div class="agenda-empty"><strong>Clear day</strong><span>No classes, exams, or tasks scheduled.</span></div>';
   const periods=["Morning","Afternoon","Evening"],agendaNow=new Date(),timedClasses=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)),showTimeMarker=state.selectedDate===isoToday()&&timedClasses.length&&agendaNow>=dateTime(timedClasses[0],"startTime")&&agendaNow<=dateTime(timedClasses.at(-1),"endTime");
   let markerPlaced=false;
@@ -430,9 +439,46 @@ function renderCalendar(){
   const used=[...new Set([...state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)),...exams.filter(exam=>exam.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(exam=>canonical(exam.code))])];
   $("#calendarLegend").innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("")+(exams.some(exam=>exam.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`))?'<span class="legend-item exam"><i></i>Exam</span>':"")+(state.tasks.some(task=>task.date?.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)&&!task.completed)?'<span class="legend-item task"><i></i>Task</span>':"");
   bindTaskRows($("#dayAgenda"));
+  updateAgendaControls(classes);
 }
 function shiftSelectedDate(delta){const day=new Date(`${state.selectedDate}T12:00:00+05:30`);day.setDate(day.getDate()+delta);state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(day);state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);const agenda=$("#dayAgenda");if(agenda){agenda.classList.remove("slide-prev","slide-next");agenda.classList.add(delta>0?"slide-next":"slide-prev")}renderCalendar();requestAnimationFrame(()=>requestAnimationFrame(()=>agenda?.classList.remove("slide-prev","slide-next")))}
-function renderCourseOptions(){const selected=new Set((state.profile.electives||[]).map(canonical));const seen=new Set(),courses=[];state.all.forEach(c=>{const code=canonical(c.baseCode||c.code);const allowed=c.type==="Core"?c.section===state.profile.section:selected.has(code);if(allowed&&!seen.has(code)){seen.add(code);courses.push({code,course:c.course})}});const o=courses.sort((a,b)=>a.course.localeCompare(b.course)).map(e=>`<option value="${esc(e.code)}">${esc(e.code)} · ${esc(e.course)}</option>`).join("");["#quickTaskCourse","#taskCourse","#noteCourse"].forEach(s=>{const el=$(s);if(el)el.innerHTML='<option value="">General</option>'+o})}
+function upcomingClasses(code=""){const now=new Date(),wanted=canonical(code);return state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>now&&(!wanted||canonical(c.code)===wanted)).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))}
+function nextSubjectClass(code,afterIdentity=""){
+  const wanted=canonical(code);if(!wanted)return null;
+  let after=Date.now();
+  if(afterIdentity){const active=state.classes.find(c=>classIdentity(c)===afterIdentity);if(active)after=dateTime(active,"startTime").getTime()}
+  return state.classes.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===wanted&&dateTime(c,"startTime").getTime()>after).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0]||null
+}
+function scrollToPlannerClass(c,{announce=true}={}){
+  if(!c){if(announce)showToast("No upcoming classes scheduled");return}
+  showPage("planner");setPlannerView("calendar");state.selectedDate=c.dateIso;const date=new Date(`${c.dateIso}T12:00:00+05:30`);state.calendarMonth=new Date(date.getFullYear(),date.getMonth(),1);renderCalendar();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{const identity=classIdentity(c),card=$$("[data-class-id]").find(element=>element.dataset.classId===identity);card?.scrollIntoView({behavior:"smooth",block:"center"});card?.classList.add("planner-target");setTimeout(()=>card?.classList.remove("planner-target"),1800)}))
+}
+function scrollTodayFocus(){
+  const now=new Date(),today=isoToday(),classes=state.classes.filter(c=>c.dateIso===today&&c.status!=="Cancelled").sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime")),target=classes.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime"))||classes.find(c=>dateTime(c,"startTime")>now);
+  showPage("planner");setPlannerView("calendar");state.selectedDate=today;state.calendarMonth=new Date(now.getFullYear(),now.getMonth(),1);renderCalendar();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{const identity=target?classIdentity(target):"",card=target?$$('[data-class-id]').find(element=>element.dataset.classId===identity):$("#dayAgenda");card?.scrollIntoView({behavior:"smooth",block:target?"center":"start"});if(target){card.classList.add("planner-target");setTimeout(()=>card.classList.remove("planner-target"),1800)}else showToast(classes.length?"Today’s classes are complete":"No classes scheduled today")}))
+}
+function updateNextSubjectLookup(){
+  const select=$("#nextSubjectSelect"),result=$("#nextSubjectResult");if(!select||!result)return;
+  const code=select.value,next=nextSubjectClass(code);
+  result.hidden=!code;
+  result.disabled=!next;
+  $("#nextSubjectResultLabel").textContent=code?`Next ${code}`:"Next class";
+  $("#nextSubjectResultValue").textContent=next?`${fmtDate(next.dateIso,{weekday:"short",day:"numeric",month:"short"})} · ${fmtTime(next.startTime)}`:"No future class scheduled";
+  $("#nextSubjectResultMeta").textContent=next?`${venueOf(next)} · ${next.course}`:"";
+  result.dataset.classId=next?classIdentity(next):""
+}
+function updateAgendaControls(classes=[]){
+  const past=state.selectedDate<isoToday(),completed=classes.filter(c=>agendaStatus(c)==="Done").length,only=$("#onlyUpcomingClasses"),toggle=$("#toggleCompletedClasses"),jump=$("#jumpNextClass");
+  if(only){only.checked=Boolean(state.ui.onlyUpcoming);only.disabled=past;only.closest("label")?.classList.toggle("is-disabled",past);only.closest("label")?.setAttribute("title",past?"Upcoming filtering is unavailable for past dates":"Show only future, non-cancelled classes")}
+  if(toggle){toggle.hidden=!completed;toggle.disabled=Boolean(state.ui.onlyUpcoming&&!past);toggle.querySelector("span:last-child").textContent=state.ui.completedCollapsed?`Show completed (${completed})`:"Collapse completed"}
+  if(jump)jump.disabled=!upcomingClasses().length;
+  updateNextSubjectLookup()
+}
+window.BL07NextSubject=(code,afterIdentity="")=>{const c=nextSubjectClass(code,afterIdentity);return c?{id:classIdentity(c),code:canonical(c.code),date:fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}),time:fmtTime(c.startTime),venue:venueOf(c),course:c.course}:null};
+window.BL07OpenPlannerClass=id=>{const c=state.classes.find(item=>classIdentity(item)===id);if(c)scrollToPlannerClass(c)};
+function renderCourseOptions(){const selected=new Set((state.profile.electives||[]).map(canonical));const seen=new Set(),courses=[];state.all.forEach(c=>{const code=canonical(c.baseCode||c.code);const allowed=c.type==="Core"?c.section===state.profile.section:selected.has(code);if(allowed&&!seen.has(code)){seen.add(code);courses.push({code,course:c.course})}});const o=courses.sort((a,b)=>a.course.localeCompare(b.course)).map(e=>`<option value="${esc(e.code)}">${esc(e.code)} · ${esc(e.course)}</option>`).join("");["#quickTaskCourse","#taskCourse","#noteCourse"].forEach(s=>{const el=$(s);if(el)el.innerHTML='<option value="">General</option>'+o});const subject=$("#nextSubjectSelect");if(subject){const current=subject.value;subject.innerHTML='<option value="">Choose a subject</option>'+o;subject.value=[...subject.options].some(option=>option.value===current)?current:"";updateNextSubjectLookup()}}
 function addTask(title,course,date){
   const t={id:crypto.randomUUID(),title,course:course||"General",date,completed:false,createdAt:Date.now()};
   state.tasks.unshift(t);
@@ -646,7 +692,8 @@ function renderBuses(){
 
     const remaining=Math.max(0,Math.ceil((first.d-now)/60000));
     const nextDay=first.d.getDate()!==now.getDate()||first.d.getMonth()!==now.getMonth();
-    $("#nextBusCountdown").previousElementSibling.textContent=nextDay?"Leaves tomorrow in":"Leaves in";
+    $("#nextBusCountdownLabel").textContent=nextDay?"Leaves tomorrow in":"Leaves in";
+    $("#nextBusDay").hidden=!nextDay;
     $("#nextBusCountdown").textContent=remaining>=60
       ?`${Math.floor(remaining/60)}h ${remaining%60}m`
       :`${remaining} min`;
@@ -667,7 +714,8 @@ function renderBuses(){
     $("#nextBusRoute").textContent="No direct service";
     $("#nextBusMeta").textContent="Try another origin or destination";
     $("#nextBusCountdown").textContent="—";
-    $("#nextBusCountdown").previousElementSibling.textContent="Leaves in";
+    $("#nextBusCountdownLabel").textContent="Leaves in";
+    $("#nextBusDay").hidden=true;
     $("#nextBusVisual").innerHTML="";
   }
 
@@ -990,10 +1038,15 @@ function bind(){
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerView(b.dataset.plannerTab)));
   $$('[data-open-exams]').forEach(button=>button.addEventListener("click",openExamPlanner));
   $("#examSchedule")?.addEventListener("click",event=>{const prep=event.target.closest("[data-exam-prep]");if(prep){editingTaskId=null;$("#taskTitle").value=`Prepare for ${prep.dataset.examCode} exam`;$("#taskCourse").value=canonical(prep.dataset.examCode);$("#taskDate").value=prep.dataset.examPrep;$("#taskDialog h2").textContent="Add preparation task";$("#saveTaskButton").textContent="Save";clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal();return}const button=event.target.closest("[data-exam-date]");if(button)openPlannerDate(button.dataset.examDate)});
-  $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
-  $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);renderCalendar()});
+  $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>setCampusView(b.dataset.campusTab)));
+  $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",scrollTodayFocus);
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
-  $("#agendaBackToday")?.addEventListener("click",()=>{state.selectedDate=isoToday();const today=new Date();state.calendarMonth=new Date(today.getFullYear(),today.getMonth(),1);renderCalendar()});
+  $("#agendaBackToday")?.addEventListener("click",scrollTodayFocus);
+  $("#jumpNextClass")?.addEventListener("click",()=>scrollToPlannerClass(upcomingClasses()[0]||null));
+  $("#toggleCompletedClasses")?.addEventListener("click",()=>{state.ui.completedCollapsed=!state.ui.completedCollapsed;saveUi();renderCalendar()});
+  $("#onlyUpcomingClasses")?.addEventListener("change",event=>{state.ui.onlyUpcoming=event.target.checked;saveUi();renderCalendar()});
+  $("#nextSubjectSelect")?.addEventListener("change",updateNextSubjectLookup);
+  $("#nextSubjectResult")?.addEventListener("click",event=>{const c=state.classes.find(item=>classIdentity(item)===event.currentTarget.dataset.classId);if(c)scrollToPlannerClass(c)});
   bindSwipeGesture($("#dayAgenda"),direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
   $("#dayAgenda").addEventListener("click",event=>{const freeButton=event.target.closest(".free-window-action");if(freeButton){event.stopPropagation();openFreeTask(freeButton);return}const button=event.target.closest(".agenda-add-task");if(!button)return;const c=state.classes.find(item=>classIdentity(item)===button.dataset.classId);if(!c)return;$("#taskTitle").value="";$("#taskCourse").value=canonical(c.code);$("#taskDate").value=c.dateIso;clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal()});
   $("#quickTaskForm").addEventListener("submit",e=>{e.preventDefault();addTask($("#quickTaskTitle").value.trim(),$("#quickTaskCourse").value,$("#quickTaskDate").value);e.target.reset()});
@@ -1007,7 +1060,7 @@ function bind(){
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes()});
   $("#noteSearch").addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));location.reload()}});
-  $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const l=$("#fullBusList"),c=l.classList.toggle("collapsed");$("#toggleFullBus").textContent=c?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("planner");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
+  $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const l=$("#fullBusList"),c=l.classList.toggle("collapsed");$("#toggleFullBus").textContent=c?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName)||document.querySelector("dialog[open]"))return;const plannerCalendar=$("#plannerPage")?.classList.contains("active")&&$('[data-planner-view="calendar"]')?.classList.contains("active");if(plannerCalendar&&e.key==="ArrowLeft"){e.preventDefault();shiftSelectedDate(-1);return}if(plannerCalendar&&e.key==="ArrowRight"){e.preventDefault();shiftSelectedDate(1);return}const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("planner");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()})
 }
 async function init(){
@@ -1029,7 +1082,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260823-clean5",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260823-editorial1",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

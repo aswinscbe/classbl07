@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=20260823-clean5">
-  <link rel="stylesheet" href="visual.css?v=20260823-clean5">
+  <link rel="stylesheet" href="styles.css?v=20260823-editorial1">
+  <link rel="stylesheet" href="visual.css?v=20260823-editorial1">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -187,7 +187,23 @@
                   <button class="icon-button agenda-day-arrow" id="agendaNextDay" aria-label="Next day"><span data-icon="chevron-right"></span></button>
                 </div>
               </div>
+              <div class="agenda-utility-bar" aria-label="Schedule controls">
+                <button class="agenda-utility-action" id="jumpNextClass" type="button"><span data-icon="target"></span><span>Jump to next class</span></button>
+                <button class="agenda-utility-action" id="toggleCompletedClasses" type="button"><span data-icon="check"></span><span>Show completed</span></button>
+                <label class="agenda-filter-toggle" title="Show only future, non-cancelled classes">
+                  <input id="onlyUpcomingClasses" type="checkbox">
+                  <span>Only upcoming</span>
+                </label>
+              </div>
               <div id="dayAgenda" class="schedule-list"></div>
+              <div class="subject-next-lookup">
+                <label for="nextSubjectSelect"><span>NEXT SUBJECT</span><select id="nextSubjectSelect"><option value="">Choose a subject</option></select></label>
+                <button id="nextSubjectResult" class="subject-next-result" type="button" hidden>
+                  <span id="nextSubjectResultLabel">Next class</span>
+                  <strong id="nextSubjectResultValue">—</strong>
+                  <small id="nextSubjectResultMeta">—</small>
+                </button>
+              </div>
             </article>
           </div>
         </section>
@@ -240,7 +256,7 @@
           <button class="subtab" data-campus-tab="mess"><span data-icon="meal"></span>Mess</button>
         </div>
 
-        <section class="campus-view active" data-campus-view="bus"><article class="panel route-planner"><div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2></div></div><div class="route-select-grid"><label><span>From</span><select id="busFrom"></select></label><button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button><label><span>To</span><select id="busTo"></select></label></div><div class="quick-route-row" id="quickRoutes"></div></article><div class="campus-grid"><article class="next-bus-card route-card"><p class="overline light">NEXT DEPARTURE</p><div class="next-bus-time" id="nextBusTime">—</div><h2 id="nextBusRoute">Choose a route</h2><p id="nextBusMeta">Direct services only</p><div class="route-visual" id="nextBusVisual"></div><div class="countdown-box"><span>Leaves in</span><strong id="nextBusCountdown">—</strong></div></article><article class="panel"><div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next departures</h2></div></div><div id="upcomingBuses" class="bus-list"></div></article></div><article class="panel"><div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small-toggle" id="toggleFullBus">Show all</button></div><div id="fullBusList" class="bus-table collapsed"></div></article></section><section class="campus-view" data-campus-view="mess"><article class="panel mess-shell"><div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2></div><span class="serving-state" id="messServingState">Selected menu</span></div><div class="day-pills" id="messDayPills"></div><div class="meal-tabs" id="mealTabs"><button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button><button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button><button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button></div><p class="menu-note">Menu is tentative and may change with market availability.</p><div id="messMenu" class="meal-showcase"></div></article></section></section><section class="page" id="profilePage" data-page="profile">
+        <section class="campus-view active" data-campus-view="bus"><article class="panel route-planner"><div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2></div></div><div class="route-select-grid"><label><span>From</span><select id="busFrom"></select></label><button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button><label><span>To</span><select id="busTo"></select></label></div><div class="quick-route-row" id="quickRoutes"></div></article><div class="campus-grid"><article class="next-bus-card route-card"><div class="next-bus-head"><p class="overline light">NEXT DEPARTURE</p><span class="next-bus-day" id="nextBusDay" hidden>Tomorrow</span></div><div class="next-bus-time-row"><time class="next-bus-time" id="nextBusTime">—</time><div class="next-bus-countdown"><span id="nextBusCountdownLabel">Leaves in</span><strong id="nextBusCountdown">—</strong></div></div><h2 id="nextBusRoute">Choose a route</h2><p id="nextBusMeta">Direct services only</p><div class="route-visual" id="nextBusVisual"></div></article><article class="panel"><div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next departures</h2></div></div><div id="upcomingBuses" class="bus-list"></div></article></div><article class="panel"><div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small-toggle" id="toggleFullBus">Show all</button></div><div id="fullBusList" class="bus-table collapsed"></div></article></section><section class="campus-view" data-campus-view="mess"><article class="panel mess-shell"><div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2></div><span class="serving-state" id="messServingState">Selected menu</span></div><div class="day-pills" id="messDayPills"></div><div class="meal-tabs" id="mealTabs"><button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button><button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button><button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button></div><p class="menu-note">Menu is tentative and may change with market availability.</p><div id="messMenu" class="meal-showcase"></div></article></section></section><section class="page" id="profilePage" data-page="profile">
         <div class="page-heading section-heading"><div><p class="overline">ACCOUNT</p><h1>Profile</h1><p class="section-subtitle">Your timetable, electives and preferences.</p></div></div>
         <div class="profile-layout">
           <article class="profile-hero">
@@ -327,6 +343,11 @@
         <button type="button" class="class-action" id="sheetAddNote"><span data-icon="note"></span><b>Add note</b><small>Capture an important point</small></button>
         <a class="class-action" id="sheetAddCalendar" target="_blank" rel="noopener"><span data-icon="calendar"></span><b>Add to Calendar</b><small>Save the class to Google Calendar</small></a>
       </div>
+      <button type="button" class="sheet-next-class" id="sheetNextClass" hidden>
+        <span>Next class for this subject</span>
+        <strong id="sheetNextClassValue">—</strong>
+        <small id="sheetNextClassMeta">—</small>
+      </button>
     </section>
   </dialog>
 
@@ -395,10 +416,10 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260823-clean5"></script>
-  <script src="exam-data.js?v=20260823-clean5"></script>
-  <script src="app.js?v=20260823-clean5"></script>
-  <script src="polish.js?v=20260823-clean5"></script>
+  <script src="campus-data.js?v=20260823-editorial1"></script>
+  <script src="exam-data.js?v=20260823-editorial1"></script>
+  <script src="app.js?v=20260823-editorial1"></script>
+  <script src="polish.js?v=20260823-editorial1"></script>
 </body>
 </html>
 
