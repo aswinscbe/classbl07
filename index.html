@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=20260823-editorial2">
-  <link rel="stylesheet" href="visual.css?v=20260823-editorial2">
+  <link rel="stylesheet" href="styles.css?v=20260823-editorial4">
+  <link rel="stylesheet" href="visual.css?v=20260823-editorial4">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -157,10 +157,10 @@
           <div><p class="overline">PLANNER</p><h1>Planner</h1><p class="section-subtitle">Classes, exams, tasks and notes.</p></div>
         </div>
         <div class="subtabs" id="plannerTabs">
-          <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span>Calendar</button>
-          <button class="subtab" data-planner-tab="exams"><span data-icon="books"></span>Exams</button>
-          <button class="subtab" data-planner-tab="tasks"><span data-icon="check"></span>Tasks</button>
-          <button class="subtab" data-planner-tab="notes"><span data-icon="note"></span>Notes</button>
+          <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span><span class="planner-tab-label">Calendar</span></button>
+          <button class="subtab" data-planner-tab="exams"><span data-icon="books"></span><span class="planner-tab-label">Exams</span><b class="planner-tab-badge" id="plannerExamBadge" hidden>0</b></button>
+          <button class="subtab" data-planner-tab="tasks"><span data-icon="check"></span><span class="planner-tab-label">Tasks</span><b class="planner-tab-badge" id="plannerTaskBadge" hidden>0</b></button>
+          <button class="subtab" data-planner-tab="notes"><span data-icon="note"></span><span class="planner-tab-label">Notes</span><b class="planner-tab-badge" id="plannerNoteBadge" hidden>0</b></button>
         </div>
 
         <section class="planner-view active" data-planner-view="calendar">
@@ -189,11 +189,11 @@
               </div>
               <div class="agenda-utility-bar" aria-label="Schedule controls">
                 <button class="agenda-utility-action" id="jumpNextClass" type="button"><span data-icon="target"></span><span>Jump to next class</span></button>
-                <button class="agenda-utility-action" id="toggleCompletedClasses" type="button"><span data-icon="check"></span><span>Show completed</span></button>
                 <label class="agenda-filter-toggle" title="Show only future, non-cancelled classes">
                   <input id="onlyUpcomingClasses" type="checkbox">
-                  <span>Only upcoming</span>
+                  <span>Upcoming only</span>
                 </label>
+                <button class="agenda-utility-action" id="toggleCompletedClasses" type="button"><span data-icon="check"></span><span>Show completed</span></button>
               </div>
               <div id="dayAgenda" class="schedule-list"></div>
               <div class="subject-next-lookup">
@@ -220,7 +220,7 @@
         </section>
 
         <section class="planner-view" data-planner-view="tasks">
-          <article class="panel">
+          <article class="panel profile-preferences-panel">
             <div class="panel-heading">
               <div><p class="overline">TASKS</p><h2>Tasks</h2></div>
               <button class="primary-button small" id="openTaskForm"><span data-icon="plus"></span>New task</button>
@@ -236,7 +236,7 @@
         </section>
 
         <section class="planner-view" data-planner-view="notes">
-          <article class="panel">
+          <article class="panel profile-settings-panel">
             <div class="panel-heading">
               <div><p class="overline">NOTES</p><h2>Notes</h2></div>
               <button class="primary-button small" id="openNoteForm"><span data-icon="plus"></span>New note</button>
@@ -278,6 +278,25 @@
             <div class="settings-row"><div><strong>Open calendar</strong><p>Open Google Calendar in a new tab.</p></div><a class="secondary-button link-button" href="https://calendar.google.com" target="_blank" rel="noopener">Open</a></div>
             <div class="settings-row"><div><strong>App version</strong><p>3.0.0</p></div></div>
             <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>
+          </article>
+          <article class="panel profile-features-panel">
+            <div class="panel-heading profile-features-heading"><div><p class="overline">APP GUIDE</p><h2>What you can do</h2><p>Everything available in your BL07 dashboard.</p></div></div>
+            <div class="profile-feature-grid">
+              <div class="profile-feature"><span data-icon="clock"></span><div><strong>Live class timeline</strong><p>See what is happening now and what comes next.</p></div></div>
+              <div class="profile-feature"><span data-icon="calendar"></span><div><strong>Weekly workload</strong><p>Compare class load from Monday through Sunday.</p></div></div>
+              <div class="profile-feature"><span data-icon="books"></span><div><strong>Planner and exams</strong><p>Browse classes, exam dates and preparation actions.</p></div></div>
+              <div class="profile-feature"><span data-icon="check"></span><div><strong>Tasks and notes</strong><p>Capture coursework and keep it linked to a subject.</p></div></div>
+              <div class="profile-feature"><span data-icon="target"></span><div><strong>Next class by subject</strong><p>Find the next DBST, SM or elective session instantly.</p></div></div>
+              <div class="profile-feature"><span data-icon="bus"></span><div><strong>Campus bus</strong><p>Check the next departure and matching services.</p></div></div>
+              <div class="profile-feature"><span data-icon="meal"></span><div><strong>Mess menu</strong><p>View meals by day and serving period.</p></div></div>
+              <div class="profile-feature"><span data-icon="bell"></span><div><strong>Schedule updates</strong><p>Keep only relevant, active class changes visible.</p></div></div>
+              <div class="profile-feature"><span data-icon="refresh"></span><div><strong>Offline access</strong><p>Continue using the last saved schedule offline.</p></div></div>
+            </div>
+            <div class="profile-quick-actions" aria-label="Open app features">
+              <button class="secondary-button" type="button" data-page-target="planner"><span data-icon="calendar"></span>Open Planner</button>
+              <button class="secondary-button" type="button" data-open-exams><span data-icon="books"></span>View exams</button>
+              <button class="secondary-button" type="button" data-page-target="campus"><span data-icon="campus"></span>Check campus</button>
+            </div>
           </article>
         </div>
       </section>
@@ -416,10 +435,10 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260823-editorial2"></script>
-  <script src="exam-data.js?v=20260823-editorial2"></script>
-  <script src="app.js?v=20260823-editorial2"></script>
-  <script src="polish.js?v=20260823-editorial2"></script>
+  <script src="campus-data.js?v=20260823-editorial4"></script>
+  <script src="exam-data.js?v=20260823-editorial4"></script>
+  <script src="app.js?v=20260823-editorial4"></script>
+  <script src="polish.js?v=20260823-editorial4"></script>
 </body>
 </html>
 

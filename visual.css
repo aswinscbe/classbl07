@@ -2395,3 +2395,33 @@ html[data-theme=light] .next-bus-time,html[data-theme=light] .next-bus-countdown
 @media(max-width:350px){.next-bus-time-row{grid-template-columns:1fr}.next-bus-countdown{justify-items:start;padding:0}.next-bus-time{font-size:38px!important}.agenda-utility-bar{grid-template-columns:1fr}.agenda-filter-toggle{grid-column:auto}}
 @media(prefers-reduced-motion:reduce){.planner-schedule-card,.vertical-class,.schedule-list,.planner-target{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
+/* Planner navigation and compact schedule controls. */
+#plannerTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:6px;overflow:visible}
+#plannerTabs .subtab{position:relative;justify-content:center;min-width:0;min-height:48px;padding:0 10px;border:1px solid transparent;border-radius:10px;color:var(--quiet);font-size:12px;font-weight:720;gap:7px}
+#plannerTabs .subtab svg{width:17px;height:17px}
+#plannerTabs .subtab.active{border-color:color-mix(in srgb,var(--primary) 30%,var(--border));background:color-mix(in srgb,var(--primary) 12%,var(--surface-2));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 8%,transparent);color:var(--text)}
+#plannerTabs .subtab.active svg{color:var(--primary)}
+.planner-tab-label{min-width:0;white-space:nowrap}.planner-tab-badge{display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--surface-3);color:var(--quiet);font-size:8px;font-weight:800;line-height:1}.subtab.active .planner-tab-badge{background:var(--primary);color:#fff}.planner-tab-badge[hidden]{display:none}
+.agenda-filter-toggle{flex:none;align-self:center;height:28px;min-height:28px;padding:0 8px 0 7px;border-radius:999px;font-size:9px;font-weight:720;gap:6px;white-space:nowrap}
+.agenda-filter-toggle input{position:relative;width:24px;height:14px;margin:0;appearance:none;border:1px solid var(--border-strong);border-radius:999px;background:var(--surface-3);cursor:pointer;transition:background-color .18s ease,border-color .18s ease}
+.agenda-filter-toggle input::after{content:"";position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:var(--quiet);transition:transform .18s ease,background-color .18s ease}
+.agenda-filter-toggle input:checked{border-color:var(--primary);background:var(--primary)}.agenda-filter-toggle input:checked::after{transform:translateX(10px);background:#fff}
+.agenda-filter-toggle:has(input:checked){background:color-mix(in srgb,var(--primary) 7%,transparent)}
+
+/* Profile feature guide: informative, compact and secondary to preferences. */
+.profile-features-panel{padding:18px}.profile-features-heading{margin-bottom:14px}.profile-features-heading p:last-child{margin:4px 0 0;color:var(--quiet);font-size:11px}
+.profile-feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;overflow:hidden;border:1px solid var(--border);border-radius:13px;background:var(--border)}
+.profile-feature{display:grid;grid-template-columns:31px minmax(0,1fr);align-items:start;gap:9px;min-width:0;padding:12px;background:var(--surface)}
+.profile-feature>span{display:grid;place-items:center;width:31px;height:31px;border-radius:9px;background:color-mix(in srgb,var(--primary) 9%,var(--surface-2));color:var(--primary)}.profile-feature svg{width:15px;height:15px}.profile-feature strong{display:block;font-size:11px;font-weight:720;line-height:1.25}.profile-feature p{margin:3px 0 0;color:var(--quiet);font-size:9px;line-height:1.4}
+.profile-quick-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.profile-quick-actions .secondary-button{display:inline-flex;align-items:center;gap:6px;min-height:34px;font-size:10px}.profile-quick-actions svg{width:14px;height:14px}
+@media(min-width:921px){.profile-layout{grid-template-columns:minmax(0,1.35fr) minmax(340px,.65fr)}.profile-hero{grid-column:1/-1}.profile-preferences-panel{grid-column:1;grid-row:2}.profile-settings-panel{grid-column:2;grid-row:2;position:sticky;top:94px}.profile-features-panel{grid-column:1/-1;grid-row:3}}
+@media(max-width:720px){.profile-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){
+  #plannerTabs{gap:5px;padding:5px}
+  #plannerTabs .subtab{min-height:46px;padding:0 5px;gap:4px;font-size:10.5px}
+  #plannerTabs .subtab svg{width:16px;height:16px}.planner-tab-badge{position:absolute;top:4px;right:4px;min-width:15px;height:15px;font-size:7px}
+  .agenda-utility-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.agenda-utility-action{flex:1 1 128px}.agenda-filter-toggle{flex:0 0 auto;grid-column:auto;justify-content:flex-start;margin-left:auto}
+  .profile-features-panel{padding:14px}.profile-feature-grid{grid-template-columns:1fr}.profile-feature{padding:11px}.profile-quick-actions{display:grid;grid-template-columns:1fr 1fr}.profile-quick-actions .secondary-button{justify-content:center}.profile-quick-actions .secondary-button:last-child{grid-column:1/-1}
+}
+@media(max-width:350px){#plannerTabs .subtab{min-height:44px;font-size:9.5px}.planner-tab-label{letter-spacing:-.01em}.agenda-filter-toggle{font-size:8.5px}}
+

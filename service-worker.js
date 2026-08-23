@@ -1,7 +1,7 @@
 const CACHE="classbl07-review-20260809-1";
-const CACHE_VERSION="20260823-editorial2";
+const CACHE_VERSION="20260823-editorial4";
 const ACTIVE_CACHE=`${CACHE}-${CACHE_VERSION}`;
-const SHELL=["./index.html","./styles.css?v=20260823-editorial2","./visual.css?v=20260823-editorial2","./app.js?v=20260823-editorial2","./polish.js?v=20260823-editorial2","./campus-data.js?v=20260823-editorial2","./exam-data.js?v=20260823-editorial2","./manifest.webmanifest"];
+const SHELL=["./index.html","./styles.css?v=20260823-editorial4","./visual.css?v=20260823-editorial4","./app.js?v=20260823-editorial4","./polish.js?v=20260823-editorial4","./campus-data.js?v=20260823-editorial4","./exam-data.js?v=20260823-editorial4","./manifest.webmanifest"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(ACTIVE_CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==ACTIVE_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{
