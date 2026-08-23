@@ -10,8 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="brand-mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20260824-flow1">
-  <link rel="stylesheet" href="visual.css?v=20260824-flow1">
+  <link rel="stylesheet" href="styles.css?v=20260824-flow2">
+  <link rel="stylesheet" href="visual.css?v=20260824-flow2">
   <title>BL07 Flow · Know what’s next</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -22,16 +22,11 @@
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 64 64">
             <rect class="brand-frame" x="2" y="2" width="60" height="60" rx="18"></rect>
-            <rect class="brand-block" x="13" y="12" width="15" height="14" rx="5"></rect>
-            <rect class="brand-block muted" x="36" y="12" width="15" height="14" rx="5"></rect>
-            <rect class="brand-block muted" x="13" y="36" width="15" height="15" rx="5"></rect>
-            <rect class="brand-active" x="36" y="36" width="15" height="15" rx="5"></rect>
-            <path class="brand-flow" d="M20.5 19h23v24.5h-23"></path>
-            <circle class="brand-live-ring" cx="43.5" cy="43.5" r="6.2"></circle>
-            <circle class="brand-live-dot" cx="43.5" cy="43.5" r="3.2"></circle>
+            <rect class="brand-zero" x="13.5" y="10.5" width="29" height="43" rx="14.5"></rect>
+            <path class="brand-seven" d="M31 15.5h20L35 49"></path>
           </svg>
         </span>
-        <span class="brand-copy"><strong>BL07 Flow</strong><small>IIM KOZHIKODE · TERM III</small></span>
+        <span class="brand-copy"><strong><span>BL07</span><em> Flow</em></strong><small>IIM KOZHIKODE · TERM III</small></span>
       </button>
 
       <nav class="desktop-nav" aria-label="Primary">
@@ -111,6 +106,7 @@
             <strong id="weekDensityTitle">This Week Load</strong>
             <span id="weekDensitySummary">—</span>
           </div>
+          <p class="section-context-line" id="weekDensityInsight">Reading this week’s rhythm…</p>
           <div class="week-density-days" id="weekDensityDays"></div>
         </section>
 
@@ -140,6 +136,7 @@
             <span class="count-chip" id="progressSummary">0 / 0</span>
           </div>
           <div class="timeline-load-summary" id="timelineLoadSummary" aria-live="polite"></div>
+          <p class="section-context-line" id="timelineContextLine"></p>
           <div class="timeline-day-switch" id="timelineDaySwitch">
             <button class="timeline-day-button active" data-timeline-day="today">
               <span>Today</span><small id="todaySwitchDate"></small>
@@ -192,7 +189,7 @@
 
             <article class="panel agenda-panel">
               <div class="panel-heading agenda-heading">
-                <div><p class="overline">SELECTED DAY</p><h2 id="agendaDate">Choose a date</h2><p class="agenda-load-summary" id="agendaLoadSummary"></p></div>
+                <div><p class="overline">SELECTED DAY</p><h2 id="agendaDate">Choose a date</h2><p class="agenda-load-summary" id="agendaLoadSummary"></p><p class="section-context-line agenda-context-line" id="agendaContextLine"></p></div>
                 <div class="agenda-day-controls">
                   <button class="text-button agenda-back-today" id="agendaBackToday" type="button" hidden>Today</button>
                   <button class="icon-button agenda-day-arrow" id="agendaPrevDay" aria-label="Previous day"><span data-icon="chevron-left"></span></button>
@@ -224,6 +221,7 @@
               <div><p class="overline">TERM III</p><h2>End-term exams</h2></div>
               <span class="count-chip" id="examCount">0</span>
             </div>
+            <p class="section-context-line" id="examContextLine"></p>
             <div class="exam-advisory"><span data-icon="calendar"></span><p>Exact start times and venues have not been announced. Report 10 minutes before the confirmed time and carry your institute ID.</p></div>
             <div class="exam-schedule" id="examSchedule"></div>
           </article>
@@ -266,7 +264,7 @@
           <button class="subtab" data-campus-tab="mess"><span data-icon="meal"></span>Mess</button>
         </div>
 
-        <section class="campus-view active" data-campus-view="bus"><article class="panel route-planner"><div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2></div></div><div class="route-select-grid"><label><span>From</span><select id="busFrom"></select></label><button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button><label><span>To</span><select id="busTo"></select></label></div><div class="quick-route-row" id="quickRoutes"></div></article><div class="campus-grid"><article class="next-bus-card route-card"><div class="next-bus-head"><p class="overline light">NEXT DEPARTURE</p><span class="next-bus-day" id="nextBusDay" hidden>Tomorrow</span></div><div class="next-bus-time-row"><time class="next-bus-time" id="nextBusTime">—</time><div class="next-bus-countdown"><span id="nextBusCountdownLabel">Leaves in</span><strong id="nextBusCountdown">—</strong></div></div><h2 id="nextBusRoute">Choose a route</h2><p id="nextBusMeta">Direct services only</p><div class="route-visual" id="nextBusVisual"></div></article><article class="panel"><div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next departures</h2></div></div><div id="upcomingBuses" class="bus-list"></div></article></div><article class="panel"><div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small-toggle" id="toggleFullBus">Show all</button></div><div id="fullBusList" class="bus-table collapsed"></div></article></section><section class="campus-view" data-campus-view="mess"><article class="panel mess-shell"><div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2></div><span class="serving-state" id="messServingState">Selected menu</span></div><div class="day-pills" id="messDayPills"></div><div class="meal-tabs" id="mealTabs"><button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button><button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button><button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button></div><p class="menu-note">Menu is tentative and may change with market availability.</p><div id="messMenu" class="meal-showcase"></div></article></section></section><section class="page" id="profilePage" data-page="profile">
+        <section class="campus-view active" data-campus-view="bus"><article class="panel route-planner"><div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2><p class="section-context-line" id="busContextLine">Choose two stops to see the next direct service.</p></div></div><div class="route-select-grid"><label><span>From</span><select id="busFrom"></select></label><button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button><label><span>To</span><select id="busTo"></select></label></div><div class="quick-route-row" id="quickRoutes"></div></article><div class="campus-grid"><article class="next-bus-card route-card"><div class="next-bus-head"><p class="overline light">NEXT DEPARTURE</p><span class="next-bus-day" id="nextBusDay" hidden>Tomorrow</span></div><div class="next-bus-time-row"><time class="next-bus-time" id="nextBusTime">—</time><div class="next-bus-countdown"><span id="nextBusCountdownLabel">Leaves in</span><strong id="nextBusCountdown">—</strong></div></div><h2 id="nextBusRoute">Choose a route</h2><p id="nextBusMeta">Direct services only</p><div class="route-visual" id="nextBusVisual"></div></article><article class="panel"><div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next departures</h2></div></div><div id="upcomingBuses" class="bus-list"></div></article></div><article class="panel"><div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small-toggle" id="toggleFullBus">Show all</button></div><div id="fullBusList" class="bus-table collapsed"></div></article></section><section class="campus-view" data-campus-view="mess"><article class="panel mess-shell"><div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2><p class="section-context-line" id="messContextLine"></p></div><span class="serving-state" id="messServingState">Selected menu</span></div><div class="day-pills" id="messDayPills"></div><div class="meal-tabs" id="mealTabs"><button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button><button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button><button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button></div><p class="menu-note">Menu is tentative and may change with market availability.</p><div id="messMenu" class="meal-showcase"></div></article></section></section><section class="page" id="profilePage" data-page="profile">
         <div class="page-heading section-heading"><div><p class="overline">ACCOUNT</p><h1>Profile</h1><p class="section-subtitle">Your timetable, electives and preferences.</p></div></div>
         <div class="profile-layout">
           <article class="profile-hero">
@@ -324,7 +322,7 @@
     <div class="notification-backdrop" id="notificationBackdrop"></div>
     <div class="notification-panel">
       <div class="notification-head">
-        <div><p class="overline">UPDATES</p><h2>Notifications</h2><p class="notification-head-copy">Only active schedule changes</p></div>
+        <div><p class="overline">UPDATES</p><h2>Notifications</h2><p class="notification-head-copy" id="notificationHeadCopy">Only active schedule changes</p></div>
         <div class="notification-head-actions">
           <button class="notification-action" id="markNotificationsRead">Mark read</button>
           <button class="icon-button" id="closeNotifications" aria-label="Close notifications"><span data-icon="close"></span></button>
@@ -445,10 +443,10 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260824-flow1"></script>
-  <script src="exam-data.js?v=20260824-flow1"></script>
-  <script src="app.js?v=20260824-flow1"></script>
-  <script src="polish.js?v=20260824-flow1"></script>
+  <script src="campus-data.js?v=20260824-flow2"></script>
+  <script src="exam-data.js?v=20260824-flow2"></script>
+  <script src="app.js?v=20260824-flow2"></script>
+  <script src="polish.js?v=20260824-flow2"></script>
 </body>
 </html>
 
