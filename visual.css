@@ -2259,3 +2259,23 @@ input,select,textarea,.search-input{border-color:var(--border)!important;border-
   .planner-schedule-card .agenda-meta-row{font-size:12.5px!important;line-height:1.42!important}
 }
 
+/* Planner width safety: prevent medium-web clipping and intrinsic gap-row overflow. */
+.calendar-layout,.calendar-panel,.agenda-panel,.schedule-list,.agenda-group,.agenda-class-card.planner-schedule-card,.agenda-free-window{min-width:0;max-width:100%}
+.schedule-list,.agenda-free-window,.agenda-class-card.planner-schedule-card{width:100%;box-sizing:border-box}
+.agenda-free-window{grid-template-columns:80px minmax(0,1fr) minmax(0,auto) auto!important;column-gap:10px}
+.agenda-free-window>small{min-width:0;max-width:150px;overflow-wrap:anywhere;white-space:normal}
+.agenda-free-window .free-window-action{justify-self:end;white-space:nowrap}
+.planner-schedule-card .agenda-course-line{align-items:flex-start}
+.planner-schedule-card .agenda-course-line h3{min-width:0}
+
+@media(max-width:620px){
+  .agenda-free-window{grid-template-columns:76px minmax(0,1fr) auto!important}
+  .agenda-free-window>small{grid-column:2;max-width:none}
+  .agenda-free-window .free-window-action{grid-column:3;grid-row:1/4}
+}
+
+@media(max-width:380px){
+  .agenda-free-window{grid-template-columns:66px minmax(0,1fr)!important}
+  .agenda-free-window .free-window-action{grid-column:2;grid-row:auto;justify-self:start}
+}
+
