@@ -222,7 +222,7 @@ function renderNextExam(){
   const card=$("#nextExamCard"),next=filteredExams().find(exam=>exam.dateIso>=isoToday());
   if(!card)return;
   const days=next?examDayDistance(next.dateIso):-1;
-  card.hidden=!next||days<0||days>14;
+  card.hidden=!next||days<0;
   if(card.hidden)return;
   card.style.setProperty("--course",colorFor(next.code));
   $("#nextExamCode").textContent=next.code;
@@ -268,10 +268,10 @@ function renderHome(){
     const lunchLeft=Math.max(0,14*60+30-nowMinutes);$("#focusCountdownLabel").textContent=isNow?`ENDS AT ${fmtTime(focus.endTime)}`:isLunch?"LUNCH ENDS":isFree?"NEXT CLASS":isClearToday||isDayDone?"NEXT UP":isToday?"STARTS IN":"DAY LOAD";
     $("#focusCountdown").textContent=isNow?`${compactDuration(diff)} left`:isLunch?`${compactDuration(lunchLeft)} left`:isFree?fmtTime(focus.startTime):isClearToday||isDayDone?fmtDate(focus.dateIso,{weekday:"short",day:"numeric",month:"short"}):isToday?compactDuration(diff):`${dayClasses.length} ${dayClasses.length===1?"class":"classes"}`;
     const context=$("#focusContext");context.hidden=false;$("#focusContextLabel").textContent=loadLabel;$("#focusContextValue").textContent=loadValue;
-    const position=$("#focusPosition"),positionLabel=$("#focusPositionLabel"),positionValue=$("#focusPositionValue"),after=isNow?todays.find(c=>dateTime(c,"startTime")>=dateTime(focus,"endTime")):null;
-    position.hidden=!(isNow||isLunch||isFree||isToday&&dayIndex>=0);
-    positionLabel.textContent=isNow&&after?"NEXT":isNow?"TODAY":isLunch?"LUNCH ENDS":isFree?"NEXT":"TODAY";
-    positionValue.textContent=isNow&&after?`${canonical(after.code)} · ${fmtTime(after.startTime)}`:isNow?"Final class":isLunch?compactDuration(lunchLeft):isFree?`${canonical(focus.code)} · ${fmtTime(focus.startTime)}`:dayIndex>=0?`Class ${dayIndex+1} of ${todays.length}`:"";
+    const position=$("#focusPosition"),positionLabel=$("#focusPositionLabel"),positionValue=$("#focusPositionValue"),after=isNow?todays.find(c=>dateTime(c,"startTime")>=dateTime(focus,"endTime")):!isToday?dayClasses[dayIndex+1]:null;
+    position.hidden=!(isNow||isLunch||isFree||isToday&&dayIndex>=0||after);
+    positionLabel.textContent=after?"NEXT":isNow?"TODAY":isLunch?"LUNCH ENDS":isFree?"NEXT":"TODAY";
+    positionValue.textContent=after?`${canonical(after.code)} · ${fmtTime(after.startTime)}`:isNow?"Final class":isLunch?compactDuration(lunchLeft):isFree?`${canonical(focus.code)} · ${fmtTime(focus.startTime)}`:dayIndex>=0?`Class ${dayIndex+1} of ${todays.length}`:"";
     const liveProgress=isNow?((now-dateTime(focus,"startTime"))/(dateTime(focus,"endTime")-dateTime(focus,"startTime")))*100:isLunch?((nowMinutes-(13*60+30))/60)*100:isFree&&previous?((now-dateTime(previous,"endTime"))/(dateTime(focus,"startTime")-dateTime(previous,"endTime")))*100:0,segments=$("#focusSegments");segments.hidden=!(isNow||isLunch||isFree);fillSegments(segments,liveProgress,12);
     const glanceDate=isToday?today:focus.dateIso;renderHeroDayGlance(state.classes.filter(c=>c.dateIso===glanceDate),now,glanceDate);
   }
@@ -1029,7 +1029,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260821-readable1",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260823-clean1",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
