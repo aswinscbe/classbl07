@@ -2189,3 +2189,73 @@ input,select,textarea,.search-input{border-color:var(--border)!important;border-
 .calendar-day.selected,.calendar-day.selected.weekend{outline:0!important;background:var(--primary)!important;box-shadow:none!important;color:#fff!important}
 .home-heading .overline{display:block;margin-bottom:5px}.home-sync-text{padding:0;border:0;background:none}
 
+/* Final information hierarchy: fewer competing surfaces, clearer schedule states. */
+.home-main-rail{gap:12px}
+.hero-card.is-future,.hero-card.is-future.is-clear{background:color-mix(in srgb,var(--primary) 8%,var(--surface));border-color:color-mix(in srgb,var(--primary) 25%,var(--border))}
+.hero-card.is-future .focus-live-capsule{border-color:color-mix(in srgb,var(--cyan) 38%,var(--border));background:color-mix(in srgb,var(--cyan) 10%,var(--surface));color:var(--cyan)}
+.hero-card.is-future .focus-state-copy strong{font-weight:740}
+.hero-card.is-future .hero-day-load{font-weight:680;color:var(--text)}
+.hero-card.is-future .focus-time-hero{font-size:34px!important}
+.hero-card .focus-state-kicker{letter-spacing:.08em}
+.hero-card .focus-course-line h2{max-width:34ch}
+.hero-card .focus-position{min-height:28px}
+.hero-card .focus-context{margin-top:13px!important;padding-top:11px!important}
+.hero-card .focus-context strong{font-size:13px}
+.week-density{position:relative;z-index:1}
+.today-progress-card{box-shadow:none}
+.timeline-load-summary{gap:0;margin:7px 0 1px;color:var(--muted)}
+.timeline-load-summary span{position:relative;min-height:auto!important;padding:0 10px!important;border:0!important;border-radius:0!important;background:transparent!important;font-size:11px!important}
+.timeline-load-summary span:first-child{padding-left:0!important}
+.timeline-load-summary span+span::before{position:absolute;left:-2px;content:"·";color:var(--muted)}
+.timeline-load-summary b{font-size:11px!important;color:var(--text)!important}
+.timeline-load-summary .summary-free b{color:var(--cyan)!important}
+.next-exam-card{padding:13px 15px;background:var(--surface);border-color:var(--border);box-shadow:none}
+.next-exam-icon{width:38px;height:38px}
+.next-exam-copy .overline{margin-bottom:4px}
+.next-exam-course-line h2{font-size:16px}
+.next-exam-copy>p:last-child{font-size:12px}
+.quick-task-panel{box-shadow:none}
+.agenda-empty,.free-day-state{min-height:0;padding:24px 14px}
+.notification-item{padding:12px}
+.notification-course-mark{width:36px;height:36px}
+.profile-layout .panel,.route-planner,.mess-shell{box-shadow:none}
+
+/* Crisp secondary information: readable at a glance without adding more chrome. */
+.hero-card .hero-meta-grid span,.hero-card:not(.is-empty) .hero-meta-grid span{color:color-mix(in srgb,var(--text) 76%,var(--muted))}
+.hero-card .hero-meta-grid b,.hero-card:not(.is-empty) .hero-meta-grid b{color:color-mix(in srgb,var(--text) 84%,var(--muted));font-size:13.5px!important;font-weight:620}
+.hero-card .hero-meta-grid svg{color:var(--cyan)}
+.vertical-day-timeline .vertical-content>p{display:block!important;margin-top:6px!important;overflow:visible;text-overflow:clip;white-space:normal;color:color-mix(in srgb,var(--text) 76%,var(--muted));font-size:13px!important;font-weight:570;line-height:1.4}
+.vertical-day-timeline .vertical-content>p span+span::before{content:" · ";color:color-mix(in srgb,var(--text) 46%,var(--muted))}
+.planner-schedule-card .agenda-meta{margin-top:7px}
+.planner-schedule-card .agenda-meta-row{display:grid!important;gap:3px;overflow:visible;text-overflow:clip;white-space:normal;color:color-mix(in srgb,var(--text) 76%,var(--muted));font-size:13px!important;font-weight:570!important;line-height:1.4!important}
+.planner-schedule-card .agenda-meta-row .agenda-venue{color:color-mix(in srgb,var(--text) 88%,var(--muted));font-weight:650}
+.planner-schedule-card .agenda-meta-row .agenda-faculty{color:color-mix(in srgb,var(--text) 70%,var(--muted))}
+.planner-schedule-card .agenda-meta-row .agenda-faculty::before{content:none}
+.schedule-info p,.notification-item p,.bus-row small,.settings-row small{color:color-mix(in srgb,var(--text) 72%,var(--muted));font-weight:540}
+.notification-item p{font-size:11.5px;line-height:1.5}
+.food-item{font-weight:600}
+
+@media(max-width:620px){
+  .home-dashboard-body{margin-top:15px}
+  .hero-card,.hero-card:not(.is-empty){padding:17px 16px}
+  .hero-card .hero-top,.hero-card:not(.is-empty) .hero-top{margin-bottom:14px}
+  .hero-card .focus-time-hero,.hero-card:not(.is-empty) .focus-time-hero{margin-top:9px;font-size:30px}
+  .hero-card .focus-course-line,.hero-card:not(.is-empty) .focus-course-line{margin-top:11px}
+  .hero-card .focus-course-line h2,.hero-card:not(.is-empty) .focus-course-line h2{font-size:19px!important}
+  .hero-card .hero-meta-grid,.hero-card:not(.is-empty) .hero-meta-grid{margin-top:10px}
+  .hero-card .hero-meta-grid b,.hero-card:not(.is-empty) .hero-meta-grid b{font-size:13px!important;line-height:1.42}
+  .hero-card .focus-context,.hero-card:not(.is-empty) .focus-context{margin-top:11px!important;padding-top:10px!important}
+  .hero-card.is-future .hero-day-load{display:none!important}
+  .hero-card.is-future .focus-time-hero{font-size:30px!important}
+  .hero-day-glance{margin-top:12px}
+  .week-density{padding:11px 12px}
+  .today-progress-card{padding:14px}
+  .timeline-load-summary{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .timeline-load-summary::-webkit-scrollbar{display:none}
+  .timeline-load-summary span{flex:none;font-size:10px!important}
+  .timeline-load-summary b{font-size:10px!important}
+  .next-exam-card{padding:12px 13px}
+  .calendar-panel,.agenda-panel,.route-planner,.mess-shell{padding:13px}
+  .planner-schedule-card .agenda-meta-row{font-size:12.5px!important;line-height:1.42!important}
+}
+
