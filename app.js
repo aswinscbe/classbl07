@@ -164,7 +164,7 @@ function scheduleIdleSync(){
 }
 function setPlannerView(view="calendar",remember=true){const valid=["calendar","exams","tasks","notes"].includes(view)?view:"calendar";if(remember){state.ui.plannerTab=valid;saveUi()}$$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===valid));$$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===valid));if(remember&&matchMedia("(max-width:780px)").matches)requestAnimationFrame(()=>requestAnimationFrame(()=>$(`.planner-view[data-planner-view="${valid}"]`)?.scrollIntoView({behavior:"smooth",block:"start"})));document.dispatchEvent(new CustomEvent("planner-view-change",{detail:{view:valid}}))}
 function setCampusView(view="bus",remember=true){const valid=["bus","mess"].includes(view)?view:"bus";if(remember){state.ui.campusTab=valid;saveUi()}$$(".subtab[data-campus-tab]").forEach(b=>b.classList.toggle("active",b.dataset.campusTab===valid));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===valid))}
-function showPage(n){if(n==="home")state.timelineDay="today";if(n==="planner")setPlannerView(state.ui.plannerTab||"calendar",false);if(n==="campus")setCampusView(state.ui.campusTab||"bus",false);$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
+function showPage(n){hideCalendarTooltip();if(n==="home")state.timelineDay="today";if(n==="planner")setPlannerView(state.ui.plannerTab||"calendar",false);if(n==="campus")setCampusView(state.ui.campusTab||"bus",false);$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="planner")renderCalendar();if(n==="campus")renderCampus()}
 function openPlannerDate(iso){
   showPage("planner");
   setPlannerView("calendar");
@@ -435,6 +435,7 @@ function renderPlannerWeek(){
   root.innerHTML=Array.from({length:7},(_,index)=>{const day=new Date(start);day.setDate(start.getDate()+index);const iso=isoFromDate(day),count=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length,hasExam=exams.some(exam=>exam.dateIso===iso);return`<button type="button" class="planner-week-day ${iso===state.selectedDate?"selected":""} ${iso===isoToday()?"today":""} ${hasExam?"has-exam":""}" data-week-date="${iso}" aria-label="${esc(fmtDate(iso,{weekday:"long",day:"numeric",month:"long"}))}, ${count} ${count===1?"class":"classes"}"><span>${esc(fmtDate(iso,{weekday:"short"}))}</span><strong>${day.getDate()}</strong><i>${count||"·"}</i></button>`}).join("");
 }
 function setPlannerMonthView(open=false){
+  hideCalendarTooltip();
   const view=$('[data-planner-view="calendar"]'),toggle=$("#toggleMonthView");
   if(!view||!toggle)return;
   view.classList.toggle("show-month",open);
@@ -443,15 +444,21 @@ function setPlannerMonthView(open=false){
   toggle.classList.toggle("is-active",open)
 }
 
+/* Removing the node prevents a stale preview from surviving navigation,
+   touch emulation, viewport changes, or a calendar re-render. */
+function hideCalendarTooltip(){
+  $("#calendarTooltip")?.remove()
+}
+
 /* Status-aware desktop calendar preview. This declaration intentionally
    replaces the compact legacy renderer above without touching calendar flow. */
 function showCalendarTooltip(target,iso){
-  if(matchMedia("(hover: none)").matches)return;
+  if(matchMedia("(hover: none)").matches||matchMedia("(max-width:780px)").matches){hideCalendarTooltip();return}
   let tip=$("#calendarTooltip");
   if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}
   const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   const exams=filteredExams().filter(exam=>exam.dateIso===iso);
-  if(!list.length&&!exams.length)return;
+  if(!list.length&&!exams.length){hideCalendarTooltip();return}
   const scheduled=list.filter(c=>c.status!=="Cancelled"),cancelled=list.filter(c=>c.status==="Cancelled");
   const summary=[scheduled.length?`${scheduled.length} scheduled`:"",cancelled.length?`${cancelled.length} cancelled`:"",exams.length?`${exams.length} ${exams.length===1?"exam":"exams"}`:""].filter(Boolean).join(" · ");
   const rows=scheduled.map(c=>`<div class="calendar-tooltip-row" style="--tooltip-course:${colorFor(c.code)}"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("");
@@ -461,6 +468,7 @@ function showCalendarTooltip(target,iso){
   const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-240,r.bottom+8)}px`;tip.classList.add("show")
 }
 function renderCalendar(){
+  hideCalendarTooltip();
   const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth(),exams=filteredExams();
   $("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);
   const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";
@@ -1082,6 +1090,8 @@ function bind(){
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){const offline=$("#appStateBanner")?.dataset.state==="offline";offline?recoverConnectivity():scheduleIdleSync();scheduleGoogleTasksSync()}});
   window.addEventListener("online",recoverConnectivity);
   window.addEventListener("offline",()=>{setAppState("offline","You are offline. Showing the last saved schedule.");scheduleOfflineRetry()});
+  document.addEventListener("scroll",hideCalendarTooltip,true);
+  window.addEventListener("resize",hideCalendarTooltip,{passive:true});
   $("#appStateAction")?.addEventListener("click",()=>location.reload());
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerView(b.dataset.plannerTab)));
   $$('[data-open-exams]').forEach(button=>button.addEventListener("click",openExamPlanner));
@@ -1135,10 +1145,9 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260824-planner4",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260824-stable2",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
-
 
 

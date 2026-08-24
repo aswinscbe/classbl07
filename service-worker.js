@@ -1,7 +1,7 @@
 const CACHE="classbl07-review-20260809-1";
-const CACHE_VERSION="20260824-planner4";
+const CACHE_VERSION="20260824-stable2";
 const ACTIVE_CACHE=`${CACHE}-${CACHE_VERSION}`;
-const SHELL=["./index.html","./styles.css?v=20260824-planner4","./visual.css?v=20260824-planner4","./app.js?v=20260824-planner4","./polish.js?v=20260824-planner4","./campus-data.js?v=20260824-planner4","./exam-data.js?v=20260824-planner4","./brand-mark.svg?v=20260824-planner4","./manifest.webmanifest"];
+const SHELL=["./index.html","./styles.css?v=20260824-stable2","./visual-base.css?v=20260824-stable2","./visual.css?v=20260824-stable2","./planner-final.css?v=20260824-stable2","./app.js?v=20260824-stable2","./polish.js?v=20260824-stable2","./campus-data.js?v=20260824-stable2","./exam-data.js?v=20260824-stable2","./brand-mark.svg?v=20260824-stable2","./manifest.webmanifest"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(ACTIVE_CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==ACTIVE_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{
@@ -11,6 +11,5 @@ self.addEventListener("fetch",e=>{
   if(e.request.mode==="navigate"){e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(ACTIVE_CACHE).then(cache=>cache.put("./index.html",copy));return r}).catch(()=>caches.match("./index.html")));return}
   e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(ACTIVE_CACHE).then(cache=>cache.put(e.request,copy));return r}).catch(()=>caches.match(e.request)));
 });
-
 
 
