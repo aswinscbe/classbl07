@@ -11,6 +11,20 @@ const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelecto
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
 const colorFor=c=>COURSE_COLORS[canonical(c)]||"#7b8aa2";
 const venueOf=c=>c.venue||c.room||"Venue TBA";
+const SESSION_TARGET=24;
+function subjectSessions(code){
+  const wanted=canonical(code);
+  return state.classes.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===wanted).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
+}
+function subjectSessionProgress(code,now=new Date()){
+  const sessions=subjectSessions(code),completed=sessions.filter(c=>dateTime(c,"endTime")<=now).length;
+  return{completed:Math.min(completed,SESSION_TARGET),remaining:Math.max(0,SESSION_TARGET-completed),scheduled:sessions.length,total:SESSION_TARGET};
+}
+function subjectSessionOrdinal(c){
+  if(!c||c.status==="Cancelled")return 0;
+  const identity=classIdentity(c),index=subjectSessions(c.code).findIndex(item=>classIdentity(item)===identity);
+  return index<0?0:index+1;
+}
 const EXAM_SLOT_ORDER={Forenoon:0,Afternoon:1,Evening:2};
 function filteredExams(){const selected=new Set((state.profile.electives||[]).map(canonical));return[...(window.EXAM_DATA||[])].filter(exam=>exam.type==="Core"||selected.has(canonical(exam.code))).sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||(EXAM_SLOT_ORDER[a.slot]??9)-(EXAM_SLOT_ORDER[b.slot]??9))}
 function examDayDistance(dateIso){const today=new Date(`${isoToday()}T00:00:00+05:30`),examDate=new Date(`${dateIso}T00:00:00+05:30`);return Math.round((examDate-today)/86400000)}
@@ -281,7 +295,7 @@ function renderHome(){
   }
   const focusPanel=$("#focusPanel");
   if(focus){
-    const isNow=focus===current,isToday=focus.dateIso===today,isTomorrow=focus.dateIso===tomorrowIso(),isFutureDay=!isToday,isFree=Boolean(!current&&todayNext&&previous&&!isLunch),isClearToday=Boolean(!todays.length&&future),isDayDone=Boolean(todayComplete&&future),dayClasses=scheduled.filter(c=>c.dateIso===focus.dateIso),dayIndex=dayClasses.indexOf(focus),remaining=todays.filter(c=>dateTime(c,"endTime")>now).length,futureDate=fmtDate(focus.dateIso,{weekday:"short",day:"numeric",month:"short"});
+    const isNow=focus===current,isToday=focus.dateIso===today,isTomorrow=focus.dateIso===tomorrowIso(),isFutureDay=!isToday,isFree=Boolean(!current&&todayNext&&previous&&!isLunch),isClearToday=Boolean(!todays.length&&future),isDayDone=Boolean(todayComplete&&future),dayClasses=scheduled.filter(c=>c.dateIso===focus.dateIso),dayIndex=dayClasses.indexOf(focus),finalClass=dayClasses.at(-1),remaining=todays.filter(c=>dateTime(c,"endTime")>now).length,futureDate=fmtDate(focus.dateIso,{weekday:"short",day:"numeric",month:"short"});
     focusPanel.classList.remove("is-empty");focusPanel.classList.toggle("is-live",isNow);focusPanel.classList.toggle("is-lunch",isLunch);focusPanel.classList.toggle("is-free",isFree);focusPanel.classList.toggle("is-clear",(isClearToday||isDayDone)&&!isFutureDay);focusPanel.classList.toggle("is-upcoming",!isNow&&!isFree&&!isLunch&&isToday);focusPanel.classList.toggle("is-future",isFutureDay);focusPanel.style.setProperty("--focus-course",isLunch?"var(--amber)":colorFor(focus.code));focusPanel.dataset.focusDate=focus.dateIso;
     $("#focusLiveCapsule").textContent=isNow?"NOW":isLunch?"LUNCH":isFree?"FREE":isFutureDay?(isTomorrow?"TOMORROW":"UPCOMING"):"NEXT";
     $("#focusKicker").textContent=isNow?"HAPPENING NOW":isLunch?"LUNCH BREAK":isFree?"FREE TIME":isFutureDay?(isTomorrow?"FIRST CLASS TOMORROW":"LOOKING AHEAD"):"UP NEXT";
@@ -296,10 +310,22 @@ function renderHome(){
     position.hidden=!(isNow||isLunch||isFree||isToday&&dayIndex>=0||after);
     positionLabel.textContent=after?"UP NEXT":isNow?"TODAY":isLunch||isFree?"UP NEXT":"TODAY";
     positionValue.textContent=after?`${canonical(after.code)} · ${fmtTime(after.startTime)}`:isNow?`${todays.length} classes today`:isLunch||isFree?`${canonical(focus.code)} · ${fmtTime(focus.startTime)}`:dayIndex>=0?`${dayIndex+1} of ${todays.length}`:"";
+    const sessionOrdinal=subjectSessionOrdinal(focus),sessionProgress=subjectSessionProgress(focus.code),sessionInsight=$("#focusSessionInsight"),finalInsight=$("#focusFinalInsight"),insightGrid=$("#heroInsightGrid");
+    insightGrid.hidden=false;sessionInsight.hidden=false;finalInsight.hidden=!finalClass;
+    $("#focusSessionValue").textContent=`${canonical(focus.code)} · ${sessionOrdinal?`Session ${sessionOrdinal} of ${SESSION_TARGET}`:`${sessionProgress.completed} of ${SESSION_TARGET} completed`}`;
+    $("#focusFinalLabel").textContent=isToday?"FINAL CLASS TODAY":`FINAL ${fmtDate(focus.dateIso,{weekday:"short"}).toUpperCase()}`;
+    $("#focusFinalValue").textContent=finalClass?`${canonical(finalClass.code)} · ${fmtTime(finalClass.startTime)}–${fmtTime(finalClass.endTime)}`:"—";
+    const liveProgress=$("#heroLiveProgress"),liveTrack=$(".hero-live-progress-track"),liveBar=$("#focusProgressBar");
+    liveProgress.hidden=!isNow;
+    if(isNow){
+      const duration=Math.max(1,dateTime(focus,"endTime")-dateTime(focus,"startTime")),elapsed=Math.max(0,now-dateTime(focus,"startTime")),percent=Math.max(0,Math.min(100,Math.round(elapsed/duration*100)));
+      $("#focusProgressLabel").textContent=`ENDS ${fmtTime(focus.endTime)}`;$("#focusProgressValue").textContent=`${compactDuration(diff)} left`;
+      liveBar.style.width=`${percent}%`;liveTrack.setAttribute("aria-valuenow",String(percent));
+    }else{liveBar.style.width="0%";liveTrack.setAttribute("aria-valuenow","0")}
     const segments=$("#focusSegments");segments.hidden=true;
     const glanceDate=isToday?today:focus.dateIso;renderHeroDayGlance(state.classes.filter(c=>c.dateIso===glanceDate),now,glanceDate);
   }
-  else{focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-lunch","is-free","is-clear","is-upcoming","is-future");focusPanel.style.removeProperty("--focus-course");$("#focusLiveCapsule").textContent="DONE";$("#focusKicker").textContent=todays.length?"DAY COMPLETE":"YOUR SCHEDULE";$("#focusState").textContent=todays.length?"Day complete":"Today is clear";$("#focusDayLoad").textContent=todays.length?`${todays.length} done`:"No classes";$("#focusCode").textContent="CLEAR";$("#focusTitle").textContent="No upcoming classes";$("#focusTime").textContent=todays.length?"Done for today":"Free today";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="";$("#focusFacultyRow").hidden=true;$("#focusCountdownLabel").textContent="STATUS";$("#focusCountdown").textContent="Clear";$("#focusContext").hidden=false;$("#focusContextLabel").textContent=loadLabel;$("#focusContextValue").textContent=loadValue;$("#focusSegments").hidden=true;fillSegments($("#focusSegments"),0,12);renderHeroDayGlance(state.classes.filter(c=>c.dateIso===today),now,today)}
+  else{focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-lunch","is-free","is-clear","is-upcoming","is-future");focusPanel.style.removeProperty("--focus-course");$("#focusLiveCapsule").textContent="DONE";$("#focusKicker").textContent=todays.length?"DAY COMPLETE":"YOUR SCHEDULE";$("#focusState").textContent=todays.length?"Day complete":"Today is clear";$("#focusDayLoad").textContent=todays.length?`${todays.length} done`:"No classes";$("#focusCode").textContent="CLEAR";$("#focusTitle").textContent="No upcoming classes";$("#focusTime").textContent=todays.length?"Done for today":"Free today";$("#focusVenue").textContent="—";$("#focusFaculty").textContent="";$("#focusFacultyRow").hidden=true;$("#focusCountdownLabel").textContent="STATUS";$("#focusCountdown").textContent="Clear";$("#focusContext").hidden=false;$("#focusContextLabel").textContent=loadLabel;$("#focusContextValue").textContent=loadValue;$("#heroLiveProgress").hidden=true;$("#heroInsightGrid").hidden=true;$("#focusSegments").hidden=true;fillSegments($("#focusSegments"),0,12);renderHeroDayGlance(state.classes.filter(c=>c.dateIso===today),now,today)}
   if(!focus){delete focusPanel.dataset.focusDate;$("#focusPosition").hidden=true}
   const timelineIso=state.timelineDay==="tomorrow"?tomorrowIso():today,timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   $("#timelineDateTitle").textContent=state.timelineDay==="today"?"Today":"Tomorrow";
@@ -314,7 +340,7 @@ function renderHome(){
   let timelineCards=timelineClasses.map(c=>{
     const status=c.status==="Cancelled"?"cancelled":timelineIso!==today?"upcoming":now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming",added=c.status!=="Cancelled"&&wasRecentlyAdded(c),statusText=status==="current"?"Now":status==="done"?"Done":status==="cancelled"?"Cancelled":c===immediateNext?"Next":"";
     const marker=showTimeMarker&&!markerPlaced&&now<dateTime(c,"startTime")?(markerPlaced=true,currentTimeMarker()):"";
-    return `${marker}<article class="vertical-class ${status}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}" tabindex="0" role="button" aria-haspopup="dialog"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p><span>${esc(venueOf(c))}</span><span>${esc(c.faculty)}</span></p><div class="timeline-status-row">${statusText?`<span class="vertical-status">${esc(statusText)}</span>`:""}<span class="duration-chip">${esc(durationLabel(c))}</span>${added?'<span class="timeline-added">ADDED</span>':""}</div></div></article>`;
+    return `${marker}<article class="vertical-class ${status}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}" tabindex="0" role="button" aria-haspopup="dialog"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p><span>${esc(venueOf(c))}</span><span>${esc(c.faculty)}</span></p><div class="timeline-status-row">${statusText?`<span class="vertical-status">${esc(statusText)}</span>`:""}<span class="duration-chip">${esc(durationLabel(c))}</span><span class="session-chip">${c.status==="Cancelled"?"Not counted":`Session ${subjectSessionOrdinal(c)} of ${SESSION_TARGET}`}</span>${added?'<span class="timeline-added">ADDED</span>':""}</div></div></article>`;
   }).join("");
   if(showTimeMarker&&!markerPlaced)timelineCards+=currentTimeMarker();
   const nextAfterClear=scheduled.find(c=>c.dateIso>timelineIso),nextClearHtml=nextAfterClear?`<button type="button" class="empty-next-class" data-empty-next-date="${esc(nextAfterClear.dateIso)}"><span>Next class</span><strong>${esc(canonical(nextAfterClear.code))} · ${esc(fmtDate(nextAfterClear.dateIso,{weekday:"short",day:"numeric",month:"short"}))}</strong><small>${esc(fmtTime(nextAfterClear.startTime))}</small></button>`:"";
@@ -389,7 +415,7 @@ function agendaCardHtml(c){
         <h3>${esc(c.course)}</h3>
       </div>
       <div class="agenda-meta"><div class="agenda-meta-row"><span class="agenda-venue">${esc(venueOf(c))}</span><span class="agenda-faculty">${esc(c.faculty)}</span></div></div>
-      <div class="timeline-status-row">${status?`<span class="agenda-status ${c.status==="Cancelled"?"cancelled":""}">${esc(status)}</span>`:""}<span class="duration-chip">${esc(durationLabel(c))}</span></div>
+      <div class="timeline-status-row">${status?`<span class="agenda-status ${c.status==="Cancelled"?"cancelled":""}">${esc(status)}</span>`:""}<span class="duration-chip">${esc(durationLabel(c))}</span><span class="session-chip">${c.status==="Cancelled"?"Not counted":`Session ${subjectSessionOrdinal(c)} of ${SESSION_TARGET}`}</span></div>
     </div>
   </article>`;
 }
@@ -691,6 +717,12 @@ function getUpcomingBuses(){
     .sort((a,b)=>a.d-b.d);
 }
 
+function isIntermediateBusStop(bus,stop=state.busFrom){return routeStops(bus).indexOf(stop)>0}
+function getRecentOriginDeparture(){
+  const now=new Date();
+  return window.CAMPUS_DATA.bus.filter(bus=>serviceSupports(bus,state.busFrom,state.busTo)&&isIntermediateBusStop(bus)).map(bus=>({b:bus,d:busDate(bus)})).filter(item=>item.d<=now).sort((a,b)=>b.d-a.d)[0]||null;
+}
+
 function renderCampus(){
   renderBusControls();
   renderBuses();
@@ -734,28 +766,28 @@ function renderBusControls(){
 }
 
 function renderBuses(){
-  const upcoming=getUpcomingBuses();
-  const first=upcoming[0];
+  const upcoming=getUpcomingBuses(),first=upcoming[0],recent=getRecentOriginDeparture(),uncertain=Boolean(recent),display=uncertain?recent:first;
   const now=new Date();
+  const upcomingHeading=$("#upcomingBuses")?.closest(".panel")?.querySelector("h2");if(upcomingHeading)upcomingHeading.textContent="Next departures";
   const busContext=$("#busContextLine");
-  if(busContext)busContext.textContent=upcoming.length?`${upcoming.length} upcoming direct ${upcoming.length===1?"service":"services"} from ${busStopLabel(state.busFrom)} to ${busStopLabel(state.busTo)}.`:`No upcoming direct service for this route.`;
+  if(busContext)busContext.textContent=uncertain?`Origin departure times shown · ${busStopLabel(state.busFrom)} arrival varies.`:upcoming.length?`${upcoming.length} upcoming direct ${upcoming.length===1?"service":"services"} from ${busStopLabel(state.busFrom)} to ${busStopLabel(state.busTo)}.`:`No upcoming direct service for this route.`;
 
-  if(first){
-    $("#nextBusTime").textContent=fmtTime(first.b.time);
+  if(display){
+    $("#nextBusEyebrow").textContent=uncertain?"LAST ORIGIN DEPARTURE":"NEXT DEPARTURE";
+    $("#nextBusTime").textContent=fmtTime(display.b.time);
     $("#nextBusRoute").textContent=
       `${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;
-    $("#nextBusMeta").textContent=
-      isMainGateService(first.b)?"Main Gate service":"Campus shuttle";
+    $("#nextBusMeta").textContent=uncertain?`${busStopLabel(state.busFrom)} arrival varies`:isMainGateService(display.b)?"Main Gate service":"Campus shuttle";
 
-    const remaining=Math.max(0,Math.ceil((first.d-now)/60000));
-    const nextDay=first.d.getDate()!==now.getDate()||first.d.getMonth()!==now.getMonth();
-    $("#nextBusCountdownLabel").textContent=nextDay?"Leaves tomorrow in":"Leaves in";
+    const countdownTarget=uncertain?first:display,remaining=countdownTarget?Math.max(0,Math.ceil((countdownTarget.d-now)/60000)):0;
+    const nextDay=Boolean(countdownTarget&&(countdownTarget.d.getDate()!==now.getDate()||countdownTarget.d.getMonth()!==now.getMonth()));
+    $("#nextBusCountdownLabel").textContent=uncertain?"NEXT ORIGIN DEPARTURE":nextDay?"Leaves tomorrow in":"Leaves in";
     $("#nextBusDay").hidden=!nextDay;
-    $("#nextBusCountdown").textContent=remaining>=60
-      ?`${Math.floor(remaining/60)}h ${remaining%60}m`
-      :`${remaining} min`;
+    const countdownHint=$("#nextBusCountdownHint");
+    if(uncertain){$("#nextBusCountdown").textContent=countdownTarget?fmtTime(countdownTarget.b.time):"—";countdownHint.textContent=countdownTarget?`in ${remaining>=60?`${Math.floor(remaining/60)}h ${remaining%60}m`:`${remaining} min`}`:"No more today";countdownHint.hidden=false}
+    else{$("#nextBusCountdown").textContent=countdownTarget?(remaining>=60?`${Math.floor(remaining/60)}h ${remaining%60}m`:`${remaining} min`):"No more today";countdownHint.hidden=true}
 
-    const stops=routeStops(first.b);
+    const stops=routeStops(display.b);
     const fromIndex=stops.indexOf(state.busFrom);
     const toIndex=stops.indexOf(state.busTo);
 
@@ -766,14 +798,18 @@ function renderBuses(){
           esc(busStopLabel(stop))
         }</span></div>`
       ).join("");
+    $("#busArrivalNote").hidden=true;
   }else{
+    $("#nextBusEyebrow").textContent="NEXT DEPARTURE";
     $("#nextBusTime").textContent="—";
     $("#nextBusRoute").textContent="No direct service";
     $("#nextBusMeta").textContent="Try another origin or destination";
     $("#nextBusCountdown").textContent="—";
     $("#nextBusCountdownLabel").textContent="Leaves in";
+    $("#nextBusCountdownHint").hidden=true;
     $("#nextBusDay").hidden=true;
     $("#nextBusVisual").innerHTML="";
+    $("#busArrivalNote").hidden=true;
   }
 
   $("#upcomingBuses").innerHTML=upcoming.length
@@ -791,7 +827,7 @@ function renderBuses(){
 
 function busRow(bus,departure=busDate(bus)){
   const route=routeStops(bus).map(busStopLabel).join(" · ");
-  const mainGate=isMainGateService(bus),now=new Date(),diff=Math.ceil((departure-now)/60000),isTomorrow=departure.getDate()!==now.getDate()||departure.getMonth()!==now.getMonth(),elapsed=diff<0,status=isTomorrow?"Tomorrow":elapsed?"Departed":diff<=1?"Due":diff<=8?"Leaving soon":"On time";
+  const mainGate=isMainGateService(bus),intermediate=isIntermediateBusStop(bus),now=new Date(),diff=Math.ceil((departure-now)/60000),isTomorrow=departure.getDate()!==now.getDate()||departure.getMonth()!==now.getMonth(),elapsed=diff<0,status=isTomorrow?"Tomorrow":intermediate?"Origin time":elapsed?"Departed":diff<=1?"Due":diff<=8?"Leaving soon":"On time";
   return`<article class="bus-row ${mainGate?"main-gate":""} ${elapsed?"elapsed":""}">
     <time>${esc(fmtTime(bus.time))}</time>
     <div>
@@ -799,13 +835,18 @@ function busRow(bus,departure=busDate(bus)){
         esc(busStopLabel(state.busTo))
       }</strong>
       <p>${esc(route)}</p>
-      <div class="bus-row-tags"><span class="departure-status ${elapsed?"departed":""}">${esc(status)}</span>${mainGate?'<span class="route-badge">MAIN GATE</span>':""}</div>
+      <div class="bus-row-tags"><span class="departure-status ${elapsed&&!intermediate?"departed":""}">${esc(status)}</span>${mainGate?'<span class="route-badge">MAIN GATE</span>':""}</div>
     </div>
   </article>`;
 }
 
 function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"],hour=new Date().getHours(),liveMeal=hour<11?"breakfast":hour<16?"lunch":"dinner",todayKey=weekdayKey(new Date()),serving=state.messDay===todayKey&&state.meal===liveMeal;$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const servingState=$("#messServingState");if(servingState){servingState.textContent=serving?"Serving now":state.messDay===todayKey?`${liveMeal[0].toUpperCase()+liveMeal.slice(1)} is serving`:"Selected menu";servingState.classList.toggle("live",serving)}const messContext=$("#messContextLine");if(messContext)messContext.textContent=serving?`${state.meal[0].toUpperCase()+state.meal.slice(1)} is being served now.`:state.messDay===todayKey?`${liveMeal[0].toUpperCase()+liveMeal.slice(1)} is being served now · viewing ${state.meal}.`:`Viewing ${state.messDay[0].toUpperCase()+state.messDay.slice(1)} ${state.meal}.`;const menu=window.CAMPUS_DATA.mess[state.messDay],items=menu[state.meal]||[],nv=/chicken|fish|egg|omelette/i,sw=/gulab|halwa|ice cream|kheer|custard|badusha/i,non=items.filter(i=>nv.test(i)),sweet=items.filter(i=>sw.test(i)),veg=items.filter(i=>!nv.test(i)&&!sw.test(i));$("#messMenu").innerHTML=`<article class="meal-hero"><div class="meal-hero-title"><span>${serving?"NOW SERVING":"MENU"}</span><h3>${state.meal[0].toUpperCase()+state.meal.slice(1)}</h3></div>${veg.length?`<section class="food-section veg-section"><div class="food-section-title">Vegetarian</div><div class="food-items">${veg.map(i=>`<div class="food-item veg">${esc(i)}</div>`).join("")}</div></section>`:""}${non.length?`<section class="food-section nonveg-section"><div class="food-section-title">Non-vegetarian</div><div class="food-items">${non.map(i=>`<div class="food-item nonveg">${esc(i)}</div>`).join("")}</div></section>`:""}${sweet.length?`<section class="food-section sweet-section"><div class="food-section-title">Dessert / Sweet</div><div class="food-items">${sweet.map(i=>`<div class="food-item sweet">${esc(i)}</div>`).join("")}</div></section>`:""}</article>`;$$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("serving",b.dataset.meal===liveMeal&&state.messDay===todayKey)})}
-function renderProfile(){$("#profileName").value=state.profile.name||"";$("#profileSection").value=state.profile.section||"A";$("#profileTheme").value=state.profile.theme||"system";$("#profileDisplayName").textContent=state.profile.name||"Student";$("#profileSummary").textContent=`PGPBL · Section ${state.profile.section||"A"}`;$("#profileAvatar").textContent=initials(state.profile.name);$("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>'}
+function renderCourseProgress(){
+  const root=$("#courseProgressGrid");if(!root)return;
+  const courses=new Map();state.classes.forEach(c=>{const code=canonical(c.code);if(!courses.has(code))courses.set(code,c.course)});
+  root.innerHTML=[...courses].sort(([a],[b])=>a.localeCompare(b)).map(([code,course])=>{const progress=subjectSessionProgress(code),percent=Math.min(100,Math.round(progress.completed/SESSION_TARGET*100));return`<article class="course-progress-item" style="--course:${colorFor(code)};--session-progress:${percent}%"><div class="course-progress-ring"><strong>${progress.completed}</strong><span>/${SESSION_TARGET}</span></div><div><span class="course-progress-code">${esc(code)}</span><strong>${esc(course)}</strong><p>${progress.remaining} remaining · cancelled classes excluded</p></div></article>`}).join("")||'<div class="empty-state">Course progress will appear after the schedule loads.</div>';
+}
+function renderProfile(){$("#profileName").value=state.profile.name||"";$("#profileSection").value=state.profile.section||"A";$("#profileTheme").value=state.profile.theme||"system";$("#profileDisplayName").textContent=state.profile.name||"Student";$("#profileSummary").textContent=`PGPBL · Section ${state.profile.section||"A"}`;$("#profileAvatar").textContent=initials(state.profile.name);$("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>';renderCourseProgress()}
 function renderNotifications(){
   const active=pruneNotifications().sort((a,b)=>`${a.dateIso||""}|${a.startTime||""}`.localeCompare(`${b.dateIso||""}|${b.startTime||""}`)||(a.type==="cancelled"?-1:a.type==="added"?0:1)-(b.type==="cancelled"?-1:b.type==="added"?0:1)),unread=active.filter(n=>!n.read).length;$("#notificationBadge").hidden=!unread;$("#notificationBadge").textContent=unread;
   const headCopy=$("#notificationHeadCopy");if(headCopy)headCopy.textContent=active.length?`${active.length} active ${active.length===1?"change":"changes"}${unread?` · ${unread} unread`:""}`:"Your upcoming schedule is unchanged.";
@@ -1145,7 +1186,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260824-stable2",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260824-stable6",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
