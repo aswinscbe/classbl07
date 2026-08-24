@@ -773,18 +773,18 @@ function renderBuses(){
   if(busContext)busContext.textContent=uncertain?`Origin departure times shown · ${busStopLabel(state.busFrom)} arrival varies.`:upcoming.length?`${upcoming.length} upcoming direct ${upcoming.length===1?"service":"services"} from ${busStopLabel(state.busFrom)} to ${busStopLabel(state.busTo)}.`:`No upcoming direct service for this route.`;
 
   if(display){
-    $("#nextBusEyebrow").textContent=uncertain?"LAST ORIGIN DEPARTURE":"NEXT DEPARTURE";
-    $("#nextBusTime").textContent=fmtTime(display.b.time);
+    $("#nextBusEyebrow").textContent=uncertain?"NEXT ORIGIN DEPARTURE":"NEXT DEPARTURE";
+    $("#nextBusTime").textContent=fmtTime((uncertain&&first?first:display).b.time);
     $("#nextBusRoute").textContent=
       `${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;
     $("#nextBusMeta").textContent=uncertain?`${busStopLabel(state.busFrom)} arrival varies`:isMainGateService(display.b)?"Main Gate service":"Campus shuttle";
 
     const countdownTarget=uncertain?first:display,remaining=countdownTarget?Math.max(0,Math.ceil((countdownTarget.d-now)/60000)):0;
     const nextDay=Boolean(countdownTarget&&(countdownTarget.d.getDate()!==now.getDate()||countdownTarget.d.getMonth()!==now.getMonth()));
-    $("#nextBusCountdownLabel").textContent=uncertain?"NEXT ORIGIN DEPARTURE":nextDay?"Leaves tomorrow in":"Leaves in";
+    $("#nextBusCountdownLabel").textContent=uncertain?"LAST ORIGIN DEPARTURE":nextDay?"Leaves tomorrow in":"Leaves in";
     $("#nextBusDay").hidden=!nextDay;
     const countdownHint=$("#nextBusCountdownHint");
-    if(uncertain){$("#nextBusCountdown").textContent=countdownTarget?fmtTime(countdownTarget.b.time):"—";countdownHint.textContent=countdownTarget?`in ${remaining>=60?`${Math.floor(remaining/60)}h ${remaining%60}m`:`${remaining} min`}`:"No more today";countdownHint.hidden=false}
+    if(uncertain){$("#nextBusCountdown").textContent=fmtTime(display.b.time);countdownHint.hidden=true}
     else{$("#nextBusCountdown").textContent=countdownTarget?(remaining>=60?`${Math.floor(remaining/60)}h ${remaining%60}m`:`${remaining} min`):"No more today";countdownHint.hidden=true}
 
     const stops=routeStops(display.b);
@@ -1186,7 +1186,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260824-stable6",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260824-stable7",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
