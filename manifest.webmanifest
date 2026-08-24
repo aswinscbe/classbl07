@@ -8,10 +8,11 @@
   "description": "Classes, exams and campus essentials in one clear view",
   "icons": [
     {
-      "src": "brand-mark.svg",
+      "src": "brand-mark.svg?v=20260824-premium1",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]
 }
+
