@@ -51,7 +51,7 @@
     let rail=document.getElementById("homeSideRail");
     if(!rail){rail=document.createElement("aside");rail.id="homeSideRail";rail.className="home-side-rail";body.appendChild(rail)}
     const focus=document.getElementById("focusPanel"),exam=document.getElementById("nextExamCard"),updates=document.getElementById("silentUpdateStrip"),density=document.getElementById("weekDensity"),timeline=home.querySelector(".today-progress-card"),homeGrid=home.querySelector(".home-grid");
-    [focus,density,timeline,exam,updates,homeGrid].forEach(node=>{if(node&&node.parentElement!==main)main.appendChild(node)});
+    [updates,focus,density,timeline,exam,homeGrid].forEach(node=>{if(node&&node.parentElement!==main)main.appendChild(node)});
     if(rail.parentElement!==body)body.appendChild(rail);
     const quick=home.querySelector(".quick-task-panel");
     if(quick&&quick.parentElement!==rail)rail.appendChild(quick);
@@ -233,3 +233,4 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
 })();
+

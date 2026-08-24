@@ -434,6 +434,14 @@ function renderPlannerWeek(){
   const exams=filteredExams();
   root.innerHTML=Array.from({length:7},(_,index)=>{const day=new Date(start);day.setDate(start.getDate()+index);const iso=isoFromDate(day),count=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length,hasExam=exams.some(exam=>exam.dateIso===iso);return`<button type="button" class="planner-week-day ${iso===state.selectedDate?"selected":""} ${iso===isoToday()?"today":""} ${hasExam?"has-exam":""}" data-week-date="${iso}" aria-label="${esc(fmtDate(iso,{weekday:"long",day:"numeric",month:"long"}))}, ${count} ${count===1?"class":"classes"}"><span>${esc(fmtDate(iso,{weekday:"short"}))}</span><strong>${day.getDate()}</strong><i>${count||"·"}</i></button>`}).join("");
 }
+function setPlannerMonthView(open=false){
+  const view=$('[data-planner-view="calendar"]'),toggle=$("#toggleMonthView");
+  if(!view||!toggle)return;
+  view.classList.toggle("show-month",open);
+  toggle.setAttribute("aria-expanded",String(open));
+  toggle.setAttribute("aria-label",open?"Close month view":"Open month view");
+  toggle.classList.toggle("is-active",open)
+}
 
 /* Status-aware desktop calendar preview. This declaration intentionally
    replaces the compact legacy renderer above without touching calendar flow. */
@@ -463,7 +471,7 @@ function renderCalendar(){
     html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dayExams.length?"has-exam":""} ${dayTasks.length?"has-task":""}" data-date="${iso}"><span class="calendar-day-number">${day.getDate()}</span>${dayExams.length?'<span class="calendar-exam-marker">EXAM</span>':""}${dayTasks.length?'<span class="calendar-task-marker" aria-label="Open task">✓</span>':""}<span class="calendar-course-dots">${colors.map(c=>`<i style="--course:${c}"></i>`).join("")}</span><span class="calendar-class-count">${esc(labels.join(" · "))}</span></button>`;
   }
   $("#calendarGrid").innerHTML=html;
-  $$(".calendar-day").forEach(button=>{button.addEventListener("click",()=>{state.selectedDate=button.dataset.date;renderCalendar();requestAnimationFrame(()=>{const agenda=$("#dayAgenda");if(agenda&&matchMedia("(max-width:780px)").matches)agenda.scrollIntoView({behavior:"smooth",block:"start"})})});button.addEventListener("mouseenter",()=>showCalendarTooltip(button,button.dataset.date));button.addEventListener("mouseleave",hideCalendarTooltip)});
+  $$(".calendar-day").forEach(button=>{button.addEventListener("click",()=>{state.selectedDate=button.dataset.date;setPlannerMonthView(false);renderCalendar();requestAnimationFrame(()=>$("#plannerWeekNavigator")?.scrollIntoView({behavior:"smooth",block:"start"}))});button.addEventListener("mouseenter",()=>showCalendarTooltip(button,button.dataset.date));button.addEventListener("mouseleave",hideCalendarTooltip)});
   const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate),dayExams=exams.filter(exam=>exam.dateIso===state.selectedDate);
   $("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   const agendaBackToday=$("#agendaBackToday");if(agendaBackToday)agendaBackToday.hidden=state.selectedDate===isoToday();
@@ -592,6 +600,8 @@ function bindSwipeGesture(el,onSwipe,{ignore="input,select,textarea,button,a",th
   };
   el.addEventListener("touchstart",start,{passive:true});
   el.addEventListener("touchend",end);
+  el.addEventListener("pointerdown",start,{passive:true});
+  el.addEventListener("pointerup",end);
   el.addEventListener("mousedown",start);
   el.addEventListener("mouseup",end);
 }
@@ -796,7 +806,7 @@ function renderNotifications(){
   const filtered=active.filter(n=>state.notificationFilter==="all"||state.notificationFilter==="added"&&n.type==="added"||state.notificationFilter==="changes"&&n.type!=="added");
   if(!filtered.length){$("#notificationList").innerHTML=`<div class="empty-state notification-empty"><span class="notification-empty-icon">✓</span><strong>All caught up</strong><span>${active.length?"No updates match this filter.":"New schedule changes will appear here."}</span></div>`;return}
   const typeLabel=n=>n.type==="added"?"Added":n.type==="cancelled"?"Cancelled":"Venue";
-  $("#notificationList").innerHTML=`<section class="notification-group schedule-change-group"><div class="notification-group-heading"><span>SCHEDULE CHANGES</span><strong>${filtered.length}</strong></div>${filtered.map(n=>`<article class="notification-item notification-${esc(n.type)} ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><div class="notification-course-mark">${esc(canonical(n.course||n.code).slice(0,4))}</div><div class="notification-item-copy"><span class="notification-type">${typeLabel(n)}</span><strong>${esc(n.title)}</strong><p>${esc(n.text)}</p><button type="button" class="notification-open-date" data-notification-date="${esc(n.dateIso||"")}">Open in Planner <span aria-hidden="true">→</span></button></div><button class="notification-dismiss" type="button" data-dismiss-notification="${esc(n.id)}" aria-label="Dismiss ${esc(n.title)}">${icon("close")}</button></article>`).join("")}</section>`;
+  $("#notificationList").innerHTML=`<section class="notification-group schedule-change-group"><div class="notification-group-heading"><span>SCHEDULE CHANGES</span><strong>${filtered.length}</strong></div>${filtered.map(n=>`<article class="notification-item notification-${esc(n.type)} ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><div class="notification-item-copy"><div class="notification-item-kicker"><span class="notification-course-mark">${esc(canonical(n.course||n.code).slice(0,4))}</span><span class="notification-type">${typeLabel(n)}</span></div><strong>${esc(n.title)}</strong><p>${esc(n.text)}</p><button type="button" class="notification-open-date" data-notification-date="${esc(n.dateIso||"")}">Open in Planner <span aria-hidden="true">→</span></button></div><button class="notification-dismiss" type="button" data-dismiss-notification="${esc(n.id)}" aria-label="Dismiss ${esc(n.title)}">${icon("close")}</button></article>`).join("")}</section>`;
 }
 function openNotifications(){const d=$("#notificationDrawer");d.classList.add("open");d.setAttribute("aria-hidden","false")}
 function closeNotifications(){const d=$("#notificationDrawer");d.classList.remove("open");d.setAttribute("aria-hidden","true")}
@@ -1080,7 +1090,8 @@ function bind(){
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",scrollTodayFocus);
   $("#plannerWeekDays")?.addEventListener("click",event=>{const day=event.target.closest("[data-week-date]");if(!day)return;state.selectedDate=day.dataset.weekDate;const date=new Date(`${state.selectedDate}T12:00:00+05:30`);state.calendarMonth=new Date(date.getFullYear(),date.getMonth(),1);renderCalendar()});
   $("#prevWeek")?.addEventListener("click",()=>shiftSelectedDate(-7));$("#nextWeek")?.addEventListener("click",()=>shiftSelectedDate(7));$("#weekTodayButton")?.addEventListener("click",scrollTodayFocus);
-  $("#toggleMonthView")?.addEventListener("click",event=>{const view=$('[data-planner-view="calendar"]'),open=view.classList.toggle("show-month");event.currentTarget.setAttribute("aria-expanded",String(open));event.currentTarget.setAttribute("aria-label",open?"Close month view":"Open month view")});
+  $("#toggleMonthView")?.addEventListener("click",event=>setPlannerMonthView(event.currentTarget.getAttribute("aria-expanded")!=="true"));
+  $("#closeMonthView")?.addEventListener("click",()=>setPlannerMonthView(false));
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
   $("#agendaBackToday")?.addEventListener("click",scrollTodayFocus);
   $("#jumpNextClass")?.addEventListener("click",()=>scrollToPlannerClass(upcomingClasses()[0]||null));
@@ -1089,6 +1100,7 @@ function bind(){
   $("#nextSubjectSelect")?.addEventListener("change",updateNextSubjectLookup);
   $("#nextSubjectResult")?.addEventListener("click",event=>{const c=state.classes.find(item=>classIdentity(item)===event.currentTarget.dataset.classId);if(c)scrollToPlannerClass(c)});
   bindSwipeGesture($("#dayAgenda"),direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
+  bindSwipeGesture($("#plannerWeekNavigator"),direction=>shiftSelectedDate(direction==="left"?7:-7),{ignore:"input,select,textarea,a",threshold:44});
   $("#dayAgenda").addEventListener("click",event=>{const freeButton=event.target.closest(".free-window-action");if(freeButton){event.stopPropagation();openFreeTask(freeButton);return}const button=event.target.closest(".agenda-add-task");if(!button)return;const c=state.classes.find(item=>classIdentity(item)===button.dataset.classId);if(!c)return;$("#taskTitle").value="";$("#taskCourse").value=canonical(c.code);$("#taskDate").value=c.dateIso;clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal()});
   $("#quickTaskForm").addEventListener("submit",e=>{e.preventDefault();addTask($("#quickTaskTitle").value.trim(),$("#quickTaskCourse").value,$("#quickTaskDate").value);e.target.reset()});
   const taskDialog=$("#taskDialog"),noteDialog=$("#noteDialog");

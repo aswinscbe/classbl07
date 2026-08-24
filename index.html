@@ -10,8 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="brand-mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20260824-premium1">
-  <link rel="stylesheet" href="visual.css?v=20260824-premium1">
+  <link rel="stylesheet" href="styles.css?v=20260824-planner4">
+  <link rel="stylesheet" href="visual.css?v=20260824-planner4">
   <title>BL07 Flow · Know what’s next</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -52,11 +52,11 @@
       <div class="top-actions">
         <span class="sync-pill" id="syncPill"><i></i><span>Connecting</span></span>
         <button class="icon-button refresh-button" id="refreshButton" aria-label="Refresh schedule" title="Refresh schedule"><span data-icon="refresh"></span></button>
-        <button class="icon-button tasks-quick-button" id="tasksQuickButton" aria-label="Open tasks" title="Open tasks"><span data-icon="check"></span><b id="tasksQuickBadge" hidden>0</b></button>
         <button class="icon-button notification-button" id="notificationButton" aria-label="Open notifications">
           <span data-icon="bell"></span><b id="notificationBadge" hidden>0</b>
         </button>
         <button class="icon-button" id="themeToggle" aria-label="Toggle theme"><span data-icon="theme"></span></button>
+        <button class="icon-button profile-quick-button" data-page-target="profile" aria-label="Open profile" title="Profile"><span data-icon="profile"></span></button>
       </div>
     </header>
 
@@ -70,6 +70,12 @@
             <p class="home-sync-text" id="homeSyncText">Checking the latest schedule…</p>
           </div>
         </div>
+
+        <section class="silent-update-strip" id="silentUpdateStrip" hidden>
+          <div class="silent-update-icon"><span data-icon="spark"></span></div>
+          <div><strong id="silentUpdateTitle">Schedule updated</strong><p id="silentUpdateText">New changes are available.</p></div>
+          <button class="text-button" id="openUpdatesFromHome">View</button>
+        </section>
 
         <section class="hero-card" id="focusPanel" aria-live="polite">
           <div class="hero-top">
@@ -128,12 +134,6 @@
             <p id="nextExamMeta">—</p>
           </div>
           <div class="next-exam-side"><strong id="nextExamCountdown">—</strong><button type="button" class="text-button" data-open-exams>View schedule</button></div>
-        </section>
-
-        <section class="silent-update-strip" id="silentUpdateStrip" hidden>
-          <div class="silent-update-icon"><span data-icon="spark"></span></div>
-          <div><strong id="silentUpdateTitle">Schedule updated</strong><p id="silentUpdateText">New changes are available.</p></div>
-          <button class="text-button" id="openUpdatesFromHome">View</button>
         </section>
 
         <section class="today-progress-card panel">
@@ -198,6 +198,7 @@
           </article>
           <div class="calendar-layout">
             <article class="panel calendar-panel">
+              <button class="month-back-button" id="closeMonthView" type="button"><span data-icon="chevron-left"></span><span>Week schedule</span></button>
               <div class="calendar-head">
                 <button class="icon-button" id="prevMonth" aria-label="Previous month"><span data-icon="chevron-left"></span></button>
                 <div><p class="overline">MONTH</p><h2 id="calendarTitle">August 2026</h2></div>
@@ -465,10 +466,10 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260824-premium1"></script>
-  <script src="exam-data.js?v=20260824-premium1"></script>
-  <script src="app.js?v=20260824-premium1"></script>
-  <script src="polish.js?v=20260824-premium1"></script>
+  <script src="campus-data.js?v=20260824-planner4"></script>
+  <script src="exam-data.js?v=20260824-planner4"></script>
+  <script src="app.js?v=20260824-planner4"></script>
+  <script src="polish.js?v=20260824-planner4"></script>
 </body>
 </html>
 
