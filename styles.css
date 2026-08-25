@@ -1643,9 +1643,7 @@ html[data-theme="light"] #focusPanel.hero-premium{
   border-radius:999px!important;background:color-mix(in srgb, var(--text) 8%, transparent)!important;color:var(--text)!important;
   font-size:10.5px!important;font-weight:800!important;letter-spacing:.05em!important;
 }
-#focusPanel.hero-premium.is-live #focusLiveCapsule{
-  background:color-mix(in srgb, var(--emerald) 18%, transparent)!important;color:var(--emerald)!important;
-}
+#focusPanel.hero-premium.is-live #focusLiveCapsule{color:var(--emerald)!important}
 #focusPanel.hero-premium .focus-state-copy{display:none!important}
 #focusPanel.hero-premium #focusCountdownAction{
   display:flex!important;align-items:baseline!important;gap:5px!important;min-width:0!important;min-height:0!important;
