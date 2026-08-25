@@ -8,6 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://script.google.com">
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>
     (function(){
@@ -20,7 +21,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260825-plumcopper">
+  <link rel="stylesheet" href="styles.css?v=20260825-plumcopper2">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -469,6 +470,13 @@
         <h2>Choose your electives</h2>
         <p class="onboarding-copy">Only selected electives will appear in your personal timetable.</p>
 
+        <div class="elective-bulk-row">
+          <span id="electiveSelectionCount" class="elective-selection-count">0 selected</span>
+          <span class="elective-bulk-actions">
+            <button type="button" class="text-button" id="selectAllElectives">Select all</button>
+            <button type="button" class="text-button" id="clearAllElectives">Clear all</button>
+          </span>
+        </div>
         <div id="onboardingElectives" class="onboarding-elective-list"></div>
         <div id="electiveClashWarnings" class="elective-clash-warnings"></div>
 
@@ -480,9 +488,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260825-plumcopper"></script>
-  <script src="exam-data.js?v=20260825-plumcopper"></script>
-  <script src="app.js?v=20260825-plumcopper"></script>
-  <script src="polish.js?v=20260825-plumcopper"></script>
+  <script src="campus-data.js?v=20260825-plumcopper2"></script>
+  <script src="exam-data.js?v=20260825-plumcopper2"></script>
+  <script src="app.js?v=20260825-plumcopper2"></script>
+  <script src="polish.js?v=20260825-plumcopper2"></script>
 </body>
 </html>

@@ -497,7 +497,7 @@ function agendaHtml(classes,tasks,exam,dayIso){
   }
   return html;
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight),dashes=dayClasses.slice(0,4).map(c=>`<i class="${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"></i>`).join("");html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${dashes?`<span class="calendar-dashes">${dashes}</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const allDayClasses=state.classes.filter(c=>c.dateIso===state.selectedDate),classes=state.agendaShowCompleted?allDayClasses:allDayClasses.filter(c=>!isClassCompleted(c)),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks,examOn(state.selectedDate),state.selectedDate);
+function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight),dashes=dayClasses.slice(0,4).map(c=>`<i class="${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"></i>`).join("");html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${dashes?`<span class="calendar-dashes">${dashes}</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const allDayClasses=state.classes.filter(c=>c.dateIso===state.selectedDate),classes=state.agendaShowCompleted?allDayClasses:allDayClasses.filter(c=>!isClassCompleted(c)),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.filter(c=>c.status!=="Cancelled").length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks,examOn(state.selectedDate),state.selectedDate);
   $("#toggleCompletedButton")?.classList.toggle("active",!!state.agendaShowCompleted);
   const hiddenCompletedCount=allDayClasses.length-classes.length;
   if($("#toggleCompletedButton"))$("#toggleCompletedButton").textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};bindTaskRows($("#dayAgenda"));renderDateRail()}
@@ -685,6 +685,7 @@ function openOnboardingManually(){
   const saved=new Set((state.profile.electives||[]).map(canonical));
   $$("#onboardingElectives input").forEach(cb=>cb.checked=saved.has(canonical(cb.value)));
   renderElectiveClashWarnings();
+  updateElectiveSelectionState();
   setOnboardingStep(1);
   dialog.showModal();
 }
@@ -1083,6 +1084,14 @@ function renderOnboardingElectives(){
     </label>
   `).join("");
   renderElectiveClashWarnings();
+  updateElectiveSelectionState();
+}
+function updateElectiveSelectionState(){
+  const boxes=$$("#onboardingElectives input"),selected=boxes.filter(box=>box.checked).length,count=$("#electiveSelectionCount");
+  if(count)count.textContent=`${selected} of ${boxes.length} selected`;
+  const all=$("#selectAllElectives"),clear=$("#clearAllElectives");
+  if(all)all.disabled=!boxes.length||selected===boxes.length;
+  if(clear)clear.disabled=!selected;
 }
 
 /* ===== Elective clash detector =====
@@ -1130,6 +1139,7 @@ function maybeOpenOnboarding(){
   const nameInput=$("#onboardingName");
   if(nameInput)nameInput.value=state.profile.name||"";
   renderElectiveClashWarnings();
+  updateElectiveSelectionState();
   setOnboardingStep(1);
   dialog.showModal();
 }
@@ -1148,7 +1158,9 @@ function completeOnboarding(){
 }
 function bind(){
   $("#onboardingContinue")?.addEventListener("click",()=>{const input=$("#onboardingName");if(!input?.value.trim()){input?.focus();input?.reportValidity();return}setOnboardingStep(2)});
-  $("#onboardingElectives")?.addEventListener("change",e=>{if(e.target.matches('input[type="checkbox"]'))renderElectiveClashWarnings()});
+  $("#onboardingElectives")?.addEventListener("change",e=>{if(e.target.matches('input[type="checkbox"]')){renderElectiveClashWarnings();updateElectiveSelectionState()}});
+  $("#selectAllElectives")?.addEventListener("click",()=>{$$("#onboardingElectives input").forEach(cb=>cb.checked=true);renderElectiveClashWarnings();updateElectiveSelectionState()});
+  $("#clearAllElectives")?.addEventListener("click",()=>{$$("#onboardingElectives input").forEach(cb=>cb.checked=false);renderElectiveClashWarnings();updateElectiveSelectionState()});
   $("#onboardingBack")?.addEventListener("click",()=>setOnboardingStep(1));
   $("#onboardingForm")?.addEventListener("submit",event=>{event.preventDefault();completeOnboarding()});
   bindOutsideDismiss($("#taskDialog"));
@@ -1267,7 +1279,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260825-plumcopper",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260825-plumcopper2",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
