@@ -526,7 +526,7 @@ function renderCalendar(){
   const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate),dayExams=exams.filter(exam=>exam.dateIso===state.selectedDate);
   $("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   const agendaBackToday=$("#agendaBackToday");if(agendaBackToday)agendaBackToday.hidden=state.selectedDate===isoToday();
-  $("#agendaCount").textContent=classes.length+tasks.length+dayExams.length;
+  $("#agendaCount").textContent=classes.filter(c=>c.status!=="Cancelled").length+tasks.length+dayExams.length;
   const agendaStats=dayLoadStats(classes),agendaSummary=$("#agendaLoadSummary");if(agendaSummary)agendaSummary.textContent=agendaStats.count?`${agendaStats.count} ${agendaStats.count===1?"class":"classes"} · ${compactDuration(agendaStats.classMinutes)} class time${agendaStats.freeMinutes?` · ${compactDuration(agendaStats.freeMinutes)} free`:""} · Ends ${fmtTime(agendaStats.end)}`:dayExams.length?`${dayExams.length} ${dayExams.length===1?"exam":"exams"}`:"No classes";
   const agendaContext=$("#agendaContextLine"),activeClasses=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   if(agendaContext)agendaContext.textContent=activeClasses.length?state.selectedDate===isoToday()?`Today runs from ${fmtTime(activeClasses[0].startTime)} to ${fmtTime(activeClasses.at(-1).endTime)}.`:`First class is ${canonical(activeClasses[0].code)} at ${fmtTime(activeClasses[0].startTime)}.`:dayExams.length?`${dayExams.length===1?canonical(dayExams[0].code):dayExams.length+" exams"} on this date.`:tasks.length?`${tasks.length} ${tasks.length===1?"task":"tasks"} saved for this day.`:"Nothing scheduled—this day is open.";
@@ -1211,7 +1211,7 @@ async function init(){
   setInterval(()=>{pruneNotifications();renderHome();renderNotifications();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260825-system7",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260825-system10",{updateViaCache:"none"}).then(reg=>{const announce=worker=>{if(!worker)return;worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)setAppState("update","A newer dashboard version is ready.")})};announce(reg.installing);reg.addEventListener("updatefound",()=>announce(reg.installing))}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
