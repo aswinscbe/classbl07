@@ -14,6 +14,17 @@ const venueOf=c=>c.venue||c.room||"Venue TBA";
 function load(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function showToast(message){let toast=$("#appToast");if(!toast){toast=document.createElement("div");toast.id="appToast";toast.className="app-toast";toast.setAttribute("role","status");toast.setAttribute("aria-live","polite");document.body.appendChild(toast)}toast.textContent=message;toast.classList.remove("show");requestAnimationFrame(()=>toast.classList.add("show"));clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.classList.remove("show"),2400)}
+function updateOfflineBanner(reconnected){
+  const el=$("#offlineBanner");if(!el)return;
+  if(navigator.onLine){
+    if(reconnected&&!el.hidden){
+      el.classList.add("reconnected");el.querySelector("span:last-child").textContent="Back online — syncing your schedule.";
+      setTimeout(()=>{el.hidden=true;el.classList.remove("reconnected")},2200);
+    }else{el.hidden=true}
+  }else{
+    el.hidden=false;el.classList.remove("reconnected");el.querySelector("span:last-child").textContent="You're offline — showing your last saved schedule.";
+  }
+}
 function istParts(date=new Date()){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23",weekday:"long"}).formatToParts(date);return Object.fromEntries(parts.map(p=>[p.type,p.value]))}
 function isoToday(){const p=istParts();return`${p.year}-${p.month}-${p.day}`}
 function weekdayKey(d=new Date()){return istParts(d).weekday.toLowerCase()}
@@ -31,6 +42,9 @@ function nextExam(){
   return list[0]||null;
 }
 function examDaysLeft(iso){const now=new Date(`${isoToday()}T00:00:00+05:30`),target=new Date(`${iso}T00:00:00+05:30`);return Math.round((target-now)/86400000)}
+const SESSION_TARGET=24;
+function subjectSessions(code){const want=canonical(code);return state.all.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===want).sort((a,b)=>dateTime(a)-dateTime(b))}
+function subjectSessionOrdinal(c){if(c.status==="Cancelled")return null;const list=subjectSessions(c.code);const i=list.findIndex(x=>classIdentity(x)===classIdentity(c));return i<0?null:i+1}
 function initials(n){return String(n||"ST").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function icon(name){const p={
 home:'<path d="M3.5 11 12 3.5 20.5 11V20a1 1 0 0 1-1 1h-4v-6h-5v6H4.5a1 1 0 0 1-1-1Z"/>',
@@ -55,6 +69,7 @@ refresh:'<path d="M3 12a9 9 0 0 1 15.5-6.3M21 4v5h-5"/><path d="M21 12a9 9 0 0 1
 gcal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="M12 14v3"/><path d="M11 14.5h2"/>',
 gtasks:'<path d="m5 12 4 4L19 6"/><path d="M3 12h2M19 12h2"/>',
 mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>',
+exams:'<path d="M7 3h10a1 1 0 0 1 1 1v16l-6-3-6 3V4a1 1 0 0 1 1-1Z"/><path d="M9 8h6M9 12h4"/>',
 close:'<path d="m6 6 12 12M18 6 6 18"/>',swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',sunrise:'<path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4"/>',moon:'<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
 more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
@@ -123,19 +138,62 @@ function scheduleIdleSync(){
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
-function showPage(n){if(n==="home")state.timelineDay="today";$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar")renderCalendar();if(n==="updates")renderUpdatesPage()}
+function showPage(n){if(n==="home")state.timelineDay="today";$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar")renderCalendar();if(n==="exams")renderExamsPage()}
 function openCalendarPage(iso){if(iso){state.selectedDate=iso;const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);state.railStart=mondayIso(iso)}showPage("calendar")}
 function renderExamCard(){
   const card=$("#examCard");if(!card)return;
   const exam=nextExam();
   if(!exam){card.hidden=true;return}
   card.hidden=false;
-  const firstSlot=Object.keys(exam.slots)[0],subject=exam.slots[firstSlot];
+  const firstSlot=Object.keys(exam.slots)[0],entry=exam.slots[firstSlot];
   const daysLeft=examDaysLeft(exam.date);
   $("#examCardTag").textContent=daysLeft===0?"EXAM TODAY":daysLeft===1?"EXAM TOMORROW":`NEXT EXAM · IN ${daysLeft} DAYS`;
-  $("#examCardTitle").textContent=subject;
+  $("#examCardTitle").textContent=entry.subject;
   $("#examCardMeta").textContent=`${fmtDate(exam.date,{weekday:"short",day:"numeric",month:"short"})} · ${EXAM_SLOT_LABELS[firstSlot]}${Object.keys(exam.slots).length>1?` +${Object.keys(exam.slots).length-1} more`:""}`;
-  card.onclick=()=>openCalendarPage(exam.date);
+  card.onclick=()=>showPage("exams");
+}
+function renderExamsPage(){
+  const list=$("#examsList"),hero=$("#examHero");
+  if(!list)return;
+  const allExams=[...(window.EXAM_DATA||[])].sort((a,b)=>a.date.localeCompare(b.date));
+  if(hero){
+    const next=nextExam();
+    if(next){
+      hero.hidden=false;
+      const firstSlot=Object.keys(next.slots)[0],entry=next.slots[firstSlot];
+      const daysLeft=examDaysLeft(next.date);
+      hero.style.setProperty("--course",colorFor(entry.code));
+      $("#examHeroTag").textContent=daysLeft===0?"EXAM TODAY":daysLeft===1?"EXAM TOMORROW":"NEXT EXAM";
+      $("#examHeroCode").textContent=entry.code;
+      $("#examHeroTitle").textContent=entry.subject;
+      $("#examHeroMeta").textContent=`${fmtDate(next.date,{weekday:"long",day:"numeric",month:"long"})} · ${EXAM_SLOT_LABELS[firstSlot]}${Object.keys(next.slots).length>1?` +${Object.keys(next.slots).length-1} more that day`:""}`;
+      $("#examHeroDays").textContent=daysLeft<=0?"Today":`${daysLeft}d`;
+      $("#examHeroPrep").onclick=()=>{addTask(`Prep: ${entry.subject}`,entry.code,next.date);showToast("Prep task added")};
+    }else hero.hidden=true;
+  }
+  if(!allExams.length){
+    list.innerHTML='<div class="empty-state"><span class="empty-state-icon">'+icon("exams")+'</span><p>No exams scheduled</p><small>Your end-term timetable will show up here once announced.</small></div>';
+    return;
+  }
+  list.innerHTML=allExams.map(exam=>{
+    const daysLeft=examDaysLeft(exam.date),isPast=daysLeft<0,slots=Object.entries(exam.slots);
+    return`<section class="exam-day-group ${isPast?"past":""}">
+      <div class="exam-day-head">
+        <span class="exam-day-dow">${esc(fmtDate(exam.date,{weekday:"short"}))}</span>
+        <h3>${esc(fmtDate(exam.date,{day:"numeric",month:"long",year:"numeric"}))}</h3>
+        <span class="exam-day-count">${slots.length} ${slots.length===1?"exam":"exams"}</span>
+      </div>
+      ${slots.map(([slot,entry])=>`<article class="exam-slot-card" style="--course:${colorFor(entry.code)}">
+        <span class="exam-slot-label">${EXAM_SLOT_LABELS[slot]}</span>
+        <span class="exam-slot-code">${esc(entry.code)}</span>
+        <strong>${esc(entry.subject)}</strong>
+        <div class="exam-slot-actions">
+          <span class="exam-slot-days">${isPast?"Done":daysLeft===0?"Today":`${daysLeft}d`}</span>
+          <button type="button" class="text-button" data-prep-code="${esc(entry.code)}" data-prep-subject="${esc(entry.subject)}" data-prep-date="${exam.date}">+ Prep task</button>
+        </div>
+      </article>`).join("")}
+    </section>`;
+  }).join("");
 }
 function renderDateStrip(){
   const el=$("#dateStrip");if(!el)return;
@@ -150,7 +208,7 @@ function renderDateStrip(){
   el.innerHTML=html;
   $$(".date-pill",el).forEach(b=>b.addEventListener("click",()=>openCalendarPage(b.dataset.date)));
 }
-function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderUpdatesPage();renderIcons()}
+function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
 function decorateTimelineDay(selector,classes,iso){
   const rail=$(selector),list=rail?.querySelector(".vertical-day-timeline");if(!rail)return;
   rail.querySelectorAll(".free-window-row,.timeline-holiday-banner").forEach(node=>node.remove());
@@ -246,7 +304,8 @@ function renderHome(){
     else{tagText="UPCOMING";}
     let prefix="";
     if(showTimelineLunch&&!timelineLunchAdded&&minutes(c.startTime)>=870){prefix='<div class="agenda-lunch-divider"><span>13:30–14:30</span><strong>Lunch break</strong></div>';timelineLunchAdded=true}
-    return`${prefix}<article class="vertical-class ${status}" style="--course:${colorFor(c.code)}"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p>${esc(venueOf(c))} · ${esc(c.faculty)}</p>${added?'<span class="timeline-added">ADDED</span>':""}</div><span class="tag ${tagClass}">${esc(tagText)}</span></article>`}).join("")}</div>`:`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${state.timelineDay==="today"?"Enjoy your free day.":"Nothing scheduled tomorrow."}</small></div>`;
+    const sessionN=subjectSessionOrdinal(c);
+    return`${prefix}<article class="vertical-class ${status}" style="--course:${colorFor(c.code)}"><div class="vertical-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div><div class="vertical-content"><div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong></div><p>${esc(venueOf(c))} · ${esc(c.faculty)}${sessionN?` · Session ${sessionN}/${SESSION_TARGET}`:""}</p>${added?'<span class="timeline-added">ADDED</span>':""}</div><span class="tag ${tagClass}">${esc(tagText)}</span></article>`}).join("")}</div>`:`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${state.timelineDay==="today"?"Enjoy your free day.":"Nothing scheduled tomorrow."}</small></div>`;
   decorateTimelineDay("#todayProgressRail",timelineClasses,timelineIso);
   const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0;
   $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
@@ -401,36 +460,47 @@ function agendaCardHtml(c){
       </div>
     </div>
     <div class="agenda-card-footer">
-      <span>${esc(c.type)}${c.section&&c.section!=="All"?` · Section ${esc(c.section)}`:""}</span>
+      <span>${esc(c.type)}${c.section&&c.section!=="All"?` · Section ${esc(c.section)}`:""}${(()=>{const n=subjectSessionOrdinal(c);return n?` · Session ${n}/${SESSION_TARGET}`:""})()}</span>
       <span class="agenda-actions"><button class="agenda-add-task" type="button" data-class-id="${esc(classIdentity(c))}">${icon("plus")} Add task</button>${c.status!=="Cancelled"?`<a class="open-calendar" href="${esc(googleUrl(c))}" target="_blank" rel="noopener" aria-label="Open in Google Calendar">${icon("gcal")} Calendar</a>`:""}</span>
     </div>
   </article>`;
 }
-function agendaHtml(classes,tasks,exam){
+function agendaHtml(classes,tasks,exam,dayIso){
   if(!classes.length&&!tasks.length&&!exam)return'<div class="agenda-empty">Nothing scheduled for this day.</div>';
   let html="";
   if(exam){
-    html+=`<section class="agenda-exam-section"><div class="agenda-group-title">End Term Exams</div>${Object.entries(exam.slots).map(([slot,subject])=>
-      `<article class="agenda-exam-card"><span class="exam-slot">${EXAM_SLOT_LABELS[slot]}</span><strong>${esc(subject)}</strong></article>`
+    html+=`<section class="agenda-exam-section"><div class="agenda-group-title">End Term Exams</div>${Object.entries(exam.slots).map(([slot,entry])=>
+      `<article class="agenda-exam-card"><span class="exam-slot">${EXAM_SLOT_LABELS[slot]}</span><span class="agenda-exam-code" style="--course:${colorFor(entry.code)}">${esc(entry.code)}</span><strong>${esc(entry.subject)}</strong></article>`
     ).join("")}</section>`;
   }
   const periods=["Morning","Afternoon","Evening"];
   html+='<div class="day-agenda-groups">';
   const hasMorning=classes.some(c=>minutes(c.endTime)<=810),hasAfternoon=classes.some(c=>minutes(c.startTime)>=870);
+  const isToday=dayIso===isoToday(),nowMin=isToday?minutes(istParts().hour+":"+istParts().minute):-1;
+  let nowInserted=!isToday;
   periods.forEach(period=>{
     const items=classes.filter(c=>agendaPeriod(c)===period).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
     if(items.length){
-      html+=`<section class="agenda-group"><div class="agenda-group-title">${period}</div>${items.map(agendaCardHtml).join("")}</section>`;
+      let body="";
+      items.forEach(c=>{
+        if(!nowInserted&&c.status!=="Cancelled"&&minutes(c.startTime)>nowMin){body+='<div class="agenda-now-divider"><span class="agenda-now-dot"></span><span>NOW</span><i></i></div>';nowInserted=true}
+        body+=agendaCardHtml(c);
+      });
+      html+=`<section class="agenda-group"><div class="agenda-group-title">${period}</div>${body}</section>`;
       if(period==="Morning"&&hasMorning&&hasAfternoon)html+='<div class="agenda-lunch-divider"><span>13:30–14:30</span><strong>Lunch break</strong></div>';
     }
   });
+  if(!nowInserted&&isToday)html+='<div class="agenda-now-divider trailing"><span class="agenda-now-dot"></span><span>NOW</span><i></i></div>';
   html+='</div>';
   if(tasks.length){
     html+=`<section class="agenda-task-section"><div class="agenda-task-heading">Tasks due</div><div class="task-list">${tasks.map(taskHtml).join("")}</div></section>`;
   }
   return html;
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight),dashes=dayClasses.slice(0,4).map(c=>`<i class="${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"></i>`).join("");html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${dashes?`<span class="calendar-dashes">${dashes}</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const classes=state.classes.filter(c=>c.dateIso===state.selectedDate),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks,examOn(state.selectedDate));const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};bindTaskRows($("#dayAgenda"));renderDateRail()}
+function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight),dashes=dayClasses.slice(0,4).map(c=>`<i class="${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"></i>`).join("");html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${dashes?`<span class="calendar-dashes">${dashes}</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const allDayClasses=state.classes.filter(c=>c.dateIso===state.selectedDate),classes=state.agendaShowCompleted?allDayClasses:allDayClasses.filter(c=>!isClassCompleted(c)),tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long",year:"numeric"});$("#agendaCount").textContent=classes.length+tasks.length;$("#dayAgenda").innerHTML=agendaHtml(classes,tasks,examOn(state.selectedDate),state.selectedDate);
+  $("#toggleCompletedButton")?.classList.toggle("active",!!state.agendaShowCompleted);
+  const hiddenCompletedCount=allDayClasses.length-classes.length;
+  if($("#toggleCompletedButton"))$("#toggleCompletedButton").textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};bindTaskRows($("#dayAgenda"));renderDateRail()}
 function mondayIso(iso){const d=new Date(`${iso}T12:00:00+05:30`);d.setDate(d.getDate()-((d.getDay()+6)%7));return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
 function shiftRailWeek(delta){const d=new Date(`${state.railStart||mondayIso(state.selectedDate)}T12:00:00+05:30`);d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderDateRail()}
 function renderDateRail(){
@@ -734,7 +804,7 @@ function renderBuses(){
   $("#nextBusTime").textContent=fmtTime(next.b.time);
   $("#nextBusMeta").textContent=isMainGateService(next.b)?"Main Gate service":"Campus shuttle";
   const gateTags=$("#nextBusGateTags");
-  if(gateTags)gateTags.innerHTML=isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':"";
+  if(gateTags)gateTags.innerHTML=`${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(next.b.from))}">ORIGIN TIME</span>`:""}`;
 
   const remaining=Math.max(0,Math.ceil((next.d-now)/60000));
   $("#nextBusCountdown").previousElementSibling.textContent=nextDay?"Leaves tomorrow in":"Leaves in";
@@ -765,6 +835,7 @@ function busRow(bus,nextKey){
       ${isNext?'<span class="tag tag-next">NEXT</span>':""}
       ${mainGate?'<span class="tag tag-gate">MAIN GATE</span>':""}
       ${last?'<span class="tag tag-last">LAST BUS</span>':""}
+      ${bus.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(bus.from))}">ORIGIN TIME</span>`:""}
     </div>
   </article>`;
 }
@@ -783,7 +854,24 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";$("#prof
   $("#stubSection").textContent=`Section ${state.profile.section||"A"}`;
   const avatarDisc=$("#profileAvatarDisc");if(avatarDisc){avatarDisc.setAttribute("data-initials",initials(state.profile.name));avatarDisc.classList.toggle("section-b",state.profile.section==="B")}
   const bc=$("#stubBarcode");if(bc)bc.innerHTML=barcodeHtml(state.profile.name||state.profile.section);
-  $("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>'}
+  $("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>'
+  renderSessionRings();
+}
+function renderSessionRings(){
+  const el=$("#sessionRings");if(!el)return;
+  const codes=[...new Set(state.classes.map(c=>canonical(c.code)))].sort();
+  if(!codes.length){el.innerHTML='<p class="empty-inline">No courses scheduled yet.</p>';return}
+  const now=new Date();
+  el.innerHTML=codes.map(code=>{
+    const sessions=subjectSessions(code);
+    const done=sessions.filter(c=>dateTime(c,"endTime")<=now).length;
+    const pct=sessions.length?Math.round((done/sessions.length)*100):0;
+    return`<div class="session-ring-item" style="--course:${colorFor(code)}">
+      <span class="session-ring"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-track" cx="20" cy="20" r="16"></circle><circle class="ring-fill" style="--pct:${pct}" cx="20" cy="20" r="16"></circle></svg><b>${done}</b></span>
+      <div class="session-ring-meta"><strong>${esc(code)}</strong><span>${done}/${sessions.length} sessions</span></div>
+    </div>`;
+  }).join("");
+}
 /* Gate-change / status tag for a notification, matching the bus gate-board and timeline
    tag language depending on what kind of schedule change it is. Presentation only — the
    underlying diff/notification detection in compareSnapshots() is untouched. */
@@ -960,120 +1048,6 @@ function renderGoogleTasksStatus(){
   }
 }
 
-/* ===== Gmail-based Updates tab ===== */
-const GMAIL_SCOPE="https://www.googleapis.com/auth/gmail.readonly";
-const GMAIL_TOKEN_KEY="classbl07-nova-gmail-token-v1";
-const GMAIL_UPDATES_KEY="classbl07-nova-gmail-updates-v1";
-const GMAIL_EMAIL_KEY="classbl07-nova-gmail-email-v1";
-let _gmailTokenClient=null,_gmailAccessToken=null;
-
-function getSavedGmailToken(){
-  try{const raw=localStorage.getItem(GMAIL_TOKEN_KEY);if(!raw)return null;const o=JSON.parse(raw);if(o?.access_token&&(!o.expires_at||Date.now()<o.expires_at-60000))return o}catch(e){}
-  return null;
-}
-function saveGmailToken(o){_gmailAccessToken=o.access_token;localStorage.setItem(GMAIL_TOKEN_KEY,JSON.stringify(o))}
-function clearGmailToken(){_gmailAccessToken=null;localStorage.removeItem(GMAIL_TOKEN_KEY);localStorage.removeItem(GMAIL_UPDATES_KEY);localStorage.removeItem(GMAIL_EMAIL_KEY)}
-async function initGmailTokenClient(){
-  if(_gmailTokenClient)return _gmailTokenClient;
-  if(!window.google?.accounts?.oauth2)return null;
-  return new Promise(resolve=>{
-    _gmailTokenClient=window.google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:GMAIL_SCOPE,callback:()=>{}});
-    resolve(_gmailTokenClient);
-  });
-}
-async function connectGmail(){
-  try{
-    const client=await initGmailTokenClient();
-    if(!client)throw new Error("Google Identity Services not loaded");
-    client.callback=async resp=>{
-      if(resp.error)return;
-      saveGmailToken({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000});
-      try{
-        const profileRes=await fetch("https://www.googleapis.com/gmail/v1/users/me/profile",{headers:{Authorization:`Bearer ${_gmailAccessToken}`}});
-        if(profileRes.ok){const p=await profileRes.json();localStorage.setItem(GMAIL_EMAIL_KEY,p.emailAddress||"")}
-      }catch(e){}
-      renderUpdatesPage();
-      await fetchGmailUpdates();
-      renderUpdatesPage();
-    };
-    client.requestAccessToken({prompt:"consent"});
-  }catch(err){alert("Gmail sign-in failed: "+(err.message||err))}
-}
-function disconnectGmail(){clearGmailToken();renderUpdatesPage()}
-
-function myCourseKeywords(){
-  const selected=new Set((state.profile.electives||[]).map(canonical)),seen=new Set(),list=[];
-  state.all.forEach(c=>{
-    const code=canonical(c.baseCode||c.code);
-    const allowed=c.type==="Core"?c.section===state.profile.section:selected.has(code);
-    if(allowed&&!seen.has(code)){seen.add(code);list.push({code,course:c.course})}
-  });
-  (state.electives||[]).forEach(e=>{
-    const code=canonical(e.code);
-    if(selected.has(code)&&!seen.has(code)){seen.add(code);list.push({code,course:e.course})}
-  });
-  return list;
-}
-function matchCourseForText(text){
-  const lower=String(text||"").toLowerCase();
-  for(const c of myCourseKeywords()){
-    if((c.course&&lower.includes(c.course.toLowerCase()))||lower.includes(c.code.toLowerCase()))return c;
-  }
-  return null;
-}
-
-async function fetchGmailUpdates(){
-  if(!_gmailAccessToken)return;
-  const q=encodeURIComponent('(quiz OR exam OR "end term" OR placement OR internship OR assignment OR deadline OR results) newer_than:60d');
-  try{
-    const listRes=await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages?q=${q}&maxResults=25`,{headers:{Authorization:`Bearer ${_gmailAccessToken}`}});
-    if(!listRes.ok){
-      let reason=`HTTP ${listRes.status}`;
-      try{const body=await listRes.json();reason=body?.error?.message||reason}catch(e){}
-      if(listRes.status===403)reason="Gmail API isn't enabled for this Google Cloud project yet — enable it in Google Cloud Console → APIs & Services → Library, then refresh.";
-      throw new Error(reason);
-    }
-    const listData=await listRes.json();
-    const ids=(listData.messages||[]).map(m=>m.id),updates=[];
-    for(const id of ids){
-      const msgRes=await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,{headers:{Authorization:`Bearer ${_gmailAccessToken}`}});
-      if(!msgRes.ok)continue;
-      const msg=await msgRes.json();
-      const headers=Object.fromEntries((msg.payload?.headers||[]).map(h=>[h.name,h.value]));
-      const subject=headers.Subject||"(No subject)",snippet=msg.snippet||"";
-      const course=matchCourseForText(`${subject} ${snippet}`);
-      updates.push({id,subject,snippet,course:course?course.code:null,date:msg.internalDate?Number(msg.internalDate):Date.now()});
-    }
-    updates.sort((a,b)=>b.date-a.date);
-    localStorage.setItem(GMAIL_UPDATES_KEY,JSON.stringify({updates,fetchedAt:Date.now(),matchedCourses:myCourseKeywords().length}));
-  }catch(e){
-    console.error(e);
-    const prev=loadGmailUpdates();
-    localStorage.setItem(GMAIL_UPDATES_KEY,JSON.stringify({updates:prev?.updates||[],fetchedAt:Date.now(),error:e.message||"Couldn't reach Gmail"}));
-  }
-}
-function loadGmailUpdates(){try{const raw=localStorage.getItem(GMAIL_UPDATES_KEY);return raw?JSON.parse(raw):null}catch(e){return null}}
-
-function renderUpdatesPage(){
-  const connectPanel=$("#gmailConnectPanel"),statusPanel=$("#gmailStatusPanel"),list=$("#updatesList");
-  if(!connectPanel)return;
-  const token=getSavedGmailToken()||(_gmailAccessToken?{access_token:_gmailAccessToken}:null);
-  if(!token){connectPanel.hidden=false;statusPanel.hidden=true;if(list)list.innerHTML="";return}
-  connectPanel.hidden=true;statusPanel.hidden=false;
-  $("#gmailAccountEmail").textContent=localStorage.getItem(GMAIL_EMAIL_KEY)||"Connected";
-  const cache=loadGmailUpdates(),updates=cache?.updates||[];
-  $("#gmailLastChecked").textContent=cache?.fetchedAt?`Last checked ${new Intl.RelativeTimeFormat("en",{numeric:"auto"}).format(-Math.max(1,Math.round((Date.now()-cache.fetchedAt)/60000)),"minute")}`:"Not checked yet — tap refresh";
-  if(cache?.error){
-    list.innerHTML=`<div class="empty-state"><span class="empty-state-icon">${icon("mail")}</span><p>Couldn't check Gmail</p><small>${esc(cache.error)}</small></div>`;
-    return;
-  }
-  if(cache&&cache.matchedCourses===0){
-    list.innerHTML=`<div class="empty-state"><span class="empty-state-icon">${icon("mail")}</span><p>No courses to match against yet</p><small>Set your section and electives on the Profile tab, then refresh — we match mail against those.</small></div>`;
-    return;
-  }
-  const relevant=updates.filter(u=>u.course);
-  list.innerHTML=relevant.length?relevant.map(u=>`<article class="update-item"><span class="update-chip" style="--course:${colorFor(u.course)}">${esc(u.course)}</span><div class="update-body"><strong>${esc(u.subject)}</strong><p>${esc(u.snippet)}</p><div class="update-meta"><time>${esc(new Intl.DateTimeFormat("en-IN",{day:"numeric",month:"short"}).format(new Date(u.date)))}</time></div></div></article>`).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("mail")+'</span><p>No matching updates yet</p><small>Quiz, exam and placement mail for your courses will show up here.</small></div>';
-}
 
 function bindOutsideDismiss(dialog){
   if(!dialog)return;
@@ -1199,15 +1173,33 @@ function bind(){
   $("#chooseElectivesInline")?.addEventListener("click",()=>openOnboardingManually());
   $("#connectGoogleTasks")?.addEventListener("click",()=>connectGoogleTasks());
   $("#disconnectGoogleTasks")?.addEventListener("click",()=>disconnectGoogleTasks());
-  $("#connectGmailButton")?.addEventListener("click",()=>connectGmail());
-  $("#disconnectGmailButton")?.addEventListener("click",()=>disconnectGmail());
-  $("#refreshGmailUpdates")?.addEventListener("click",async e=>{const btn=e.currentTarget;btn.classList.add("is-loading");await fetchGmailUpdates();renderUpdatesPage();btn.classList.remove("is-loading")});
+  $("#examsList")?.addEventListener("click",e=>{
+    const btn=e.target.closest("[data-prep-code]");if(!btn)return;
+    addTask(`Prep: ${btn.dataset.prepSubject}`,btn.dataset.prepCode,btn.dataset.prepDate);
+    showToast("Prep task added");
+  });
   window.addEventListener("focus",()=>{scheduleIdleSync();scheduleGoogleTasksSync()});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
-  window.addEventListener("online",()=>scheduleIdleSync());
+  $("#quickCaptureForm")?.addEventListener("submit",e=>{
+    e.preventDefault();
+    const input=$("#quickCaptureInput"),title=input.value.trim();
+    if(!title)return;
+    addTask(title,"General",isoToday());
+    input.value="";
+    showToast("Task added");
+  });
+  window.addEventListener("online",()=>{scheduleIdleSync();updateOfflineBanner(true)});
+  window.addEventListener("offline",()=>updateOfflineBanner(false));
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
+  $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
+  $("#jumpToNextClassButton")?.addEventListener("click",()=>{
+    const now=Date.now(),next=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime").getTime()>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
+    if(!next){showToast("No upcoming classes");return}
+    openCalendarPage(next.dateIso);
+    requestAnimationFrame(()=>{const card=$(`.agenda-class-card[data-class-id="${CSS.escape(classIdentity(next))}"]`);if(card)card.scrollIntoView({behavior:"smooth",block:"center"})});
+  });
   bindSwipeGesture($("#dayAgenda"),direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
   $("#dayAgenda").addEventListener("click",event=>{const button=event.target.closest(".agenda-add-task");if(!button)return;const c=state.classes.find(item=>classIdentity(item)===button.dataset.classId);if(!c)return;$("#taskTitle").value="";$("#taskCourse").value=canonical(c.code);$("#taskDate").value=c.dateIso;clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal()});
   $("#heroAddTask")?.addEventListener("click",()=>{const panel=$("#focusPanel");if(!panel.dataset.focusCourse)return;$("#taskTitle").value="";$("#taskCourse").value=panel.dataset.focusCourse;$("#taskDate").value=panel.dataset.focusDate||"";clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal()});
@@ -1261,14 +1253,13 @@ async function init(){
   applyTheme();
   renderIcons();
   bind();
+  updateOfflineBanner();
   const c=load(KEYS.cache,null);
   if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
   else state.scheduleLoading=true;
   // Restore Google Tasks token silently
   const savedToken=getSavedGoogleToken();
   if(savedToken){_googleAccessToken=savedToken.access_token;initGoogleTokenClient().catch(()=>{});pullGoogleTasks().then(async()=>{await migrateGoogleTaskNotes();for(const task of state.tasks.filter(t=>!t.googleTaskId))await syncTaskToGoogle(task)}).catch(()=>{})}
-  const savedGmailToken=getSavedGmailToken();
-  if(savedGmailToken){_gmailAccessToken=savedGmailToken.access_token;initGmailTokenClient().catch(()=>{});fetchGmailUpdates().then(renderUpdatesPage).catch(()=>{})}
   renderAll();
   renderGoogleTasksStatus();
   maybeOpenOnboarding();
@@ -1276,7 +1267,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260817-earthy1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260825-plumcopper",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

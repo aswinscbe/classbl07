@@ -349,35 +349,49 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-day-glance .dot.cancelled{background:var(--danger)}
 .hero-day-glance .dot.upcoming{background:color-mix(in srgb, var(--course,var(--accent-2)) 65%, var(--on-grad-line))}
 
-.gmail-connect-panel{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;padding:32px 24px}
-.gmail-connect-icon{
-  width:52px;height:52px;border-radius:16px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;
-  background:var(--accent-soft);color:var(--accent);
+.exam-hero{
+  margin-top:14px;padding:20px;border-radius:var(--radius-xl);
+  background:var(--grad);color:var(--on-grad);
+  box-shadow:var(--shadow-lg), 0 18px 40px -18px var(--grad-glow);border:1px solid rgba(255,255,255,.07);
 }
-.gmail-connect-icon svg{width:24px;height:24px}
-.gmail-connect-panel h2{font-size:17px;font-weight:700;margin:0}
-.gmail-connect-panel p{font-size:13px;color:var(--ink-muted);margin:0;max-width:34ch;line-height:1.5}
-.gmail-connect-panel .primary-button{margin-top:10px;width:auto;padding:11px 22px}
-.gmail-status-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.gmail-status-row h2{font-size:15.5px;font-weight:700;margin:2px 0 0}
-.gmail-status-actions{display:flex;align-items:center;gap:8px}
-.gmail-last-checked{margin:10px 0 0;font-size:12px;color:var(--ink-faint);font-weight:550}
-.updates-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
-.update-item{
-  display:flex;gap:12px;padding:13px 14px;border-radius:var(--radius-md);
-  background:var(--bg-panel);border:1px solid var(--border);
+.exam-hero-tag{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--on-grad-muted)}
+.exam-hero-course{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.exam-hero-code{
+  display:inline-flex;align-items:center;line-height:1;font-size:12px;font-weight:800;padding:5px 9px;border-radius:7px;
+  background:color-mix(in srgb, var(--course,var(--accent-2)) 30%, transparent);color:#fff;
 }
-.update-chip{
-  flex:none;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+.exam-hero h2{font-size:19px;font-weight:750;line-height:1.25;margin:0;color:var(--on-grad)}
+.exam-hero-meta{margin:8px 0 0;font-size:13px;color:var(--on-grad-muted);font-weight:550}
+.exam-hero-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;
+  padding-top:14px;border-top:1px solid var(--on-grad-line);
+}
+.exam-hero-row div span{display:block;font-size:10.5px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--on-grad-muted)}
+.exam-hero-row div b{display:block;margin-top:2px;font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--on-grad)}
+.exam-hero-row .secondary-button{background:rgba(255,255,255,.14);color:var(--on-grad);border-color:transparent;width:auto}
+
+.exams-list{display:flex;flex-direction:column;gap:16px;margin-top:18px}
+.exam-day-group.past{opacity:.5}
+.exam-day-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.exam-day-dow{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-2)}
+.exam-day-head h3{font-size:14.5px;font-weight:700;margin:0;flex:1}
+.exam-day-count{font-size:11px;font-weight:650;color:var(--ink-faint)}
+.exam-slot-card{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;padding:12px 14px;border-radius:var(--radius-md);
+  background:var(--bg-panel);border:1px solid var(--border);margin-bottom:6px;
+}
+.exam-slot-label{
+  flex:none;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);
+  width:100%;
+}
+.exam-slot-code{
+  flex:none;font-size:11px;font-weight:800;padding:3px 7px;border-radius:6px;
   background:color-mix(in srgb, var(--course,var(--accent)) 20%, transparent);color:var(--course,var(--accent));
-  font-family:var(--font-display);font-size:10.5px;font-weight:700;
 }
-.update-body{flex:1;min-width:0}
-.update-body strong{display:block;font-size:14px;font-weight:650}
-.update-body p{margin:3px 0 0;font-size:12.5px;color:var(--ink-muted);font-weight:500;line-height:1.4}
-.update-meta{display:flex;align-items:center;gap:8px;margin-top:7px}
-.update-meta time{font-size:11px;color:var(--ink-faint);font-weight:600}
-.update-meta a{font-size:11.5px;font-weight:700;color:var(--accent)}
+.exam-slot-card strong{font-size:13.5px;font-weight:650;flex:1;min-width:0}
+.exam-slot-actions{display:flex;align-items:center;gap:12px;width:100%;justify-content:space-between;margin-top:2px}
+.exam-slot-days{font-size:11.5px;font-weight:700;color:var(--ink-muted)}
+.exam-slot-actions .text-button{font-size:12px;padding:2px}
 
 .exam-card{
   display:block;width:100%;text-align:left;margin-top:12px;padding:15px 18px;border-radius:var(--radius-lg);
@@ -629,6 +643,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .tag-next{background:color-mix(in srgb, var(--accent) 18%, transparent);color:var(--accent)}
 .tag-gate{background:color-mix(in srgb, var(--amber) 18%, transparent);color:var(--amber)}
 .tag-last{background:color-mix(in srgb, var(--danger) 16%, transparent);color:var(--danger)}
+.tag-origin{background:color-mix(in srgb, var(--ink-muted) 16%, transparent);color:var(--ink-muted)}
 
 /* ============ Campus / Mess ============ */
 .mess-columns{display:flex;flex-direction:column;gap:16px}
@@ -802,9 +817,63 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   flex:none;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-2);
   padding:3px 7px;border-radius:99px;background:color-mix(in srgb, var(--accent-2) 18%, transparent);
 }
+.agenda-exam-card .agenda-exam-code{
+  flex:none;font-size:11px;font-weight:800;padding:3px 7px;border-radius:6px;
+  background:color-mix(in srgb, var(--course,var(--accent)) 20%, transparent);color:var(--course,var(--accent));
+}
 .agenda-exam-card strong{font-size:13.5px;font-weight:650}
 .agenda-lunch-divider{display:flex;align-items:center;gap:10px;padding:8px 4px;color:var(--ink-faint);font-size:12.5px;font-weight:600}
 .agenda-lunch-divider strong{color:var(--ink-muted)}
+.agenda-now-divider{display:flex;align-items:center;gap:8px;padding:6px 4px;margin:2px 0}
+.agenda-now-divider span:not(.agenda-now-dot){font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--live)}
+.agenda-now-divider i{flex:1;height:1.5px;background:linear-gradient(90deg, var(--live), transparent)}
+.agenda-now-dot{width:7px;height:7px;border-radius:50%;background:var(--live);box-shadow:0 0 0 3px var(--live-soft);animation:pulse 1.8s ease-in-out infinite}
+.agenda-now-divider.trailing{opacity:.7}
+
+.offline-banner{
+  display:flex;align-items:center;gap:8px;justify-content:center;
+  padding:8px 16px;font-size:12.5px;font-weight:650;
+  background:var(--danger-soft);color:var(--danger);
+  border-bottom:1px solid color-mix(in srgb, var(--danger) 25%, transparent);
+  animation:offline-drop .28s ease;
+}
+.offline-dot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex:none;animation:pulse 1.8s ease-in-out infinite}
+@keyframes offline-drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.offline-banner.reconnected{background:var(--live-soft);color:var(--live);border-bottom-color:color-mix(in srgb, var(--live) 25%, transparent)}
+.offline-banner.reconnected .offline-dot{background:var(--live);animation:none}
+
+.session-rings{display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:10px}
+.session-ring-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:color-mix(in srgb, var(--course,var(--accent)) 8%, var(--bg-panel));border:1px solid color-mix(in srgb, var(--course,var(--accent)) 18%, var(--border))}
+.session-ring{position:relative;width:40px;height:40px;flex:none;display:grid;place-items:center}
+.session-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.session-ring circle{fill:none;stroke-width:4}
+.session-ring .ring-track{stroke:color-mix(in srgb, var(--course,var(--accent)) 14%, transparent)}
+.session-ring .ring-fill{stroke:var(--course,var(--accent));stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:calc(100 - (100 * var(--pct,0) / 100));transition:stroke-dashoffset .4s ease}
+.session-ring b{position:relative;font-size:13px;font-weight:800;color:var(--course,var(--accent))}
+.session-ring-meta{display:flex;flex-direction:column;min-width:0}
+.session-ring-meta strong{font-size:13px;font-weight:750}
+.session-ring-meta span{font-size:11px;color:var(--ink-muted);font-weight:600}
+.empty-inline{font-size:13px;color:var(--ink-muted);padding:4px 0}
+
+.quick-capture{
+  display:flex;align-items:center;gap:8px;padding:9px 8px 9px 14px;
+  background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.quick-capture:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent)}
+.quick-capture-icon{flex:none;width:16px;height:16px;color:var(--ink-faint)}
+.quick-capture-icon svg{width:100%;height:100%}
+.quick-capture input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:14px;color:var(--ink);outline:none}
+.quick-capture input::placeholder{color:var(--ink-faint)}
+.quick-capture-submit{
+  flex:none;width:28px;height:28px;border-radius:9px;border:0;display:grid;place-items:center;
+  background:var(--accent);color:#fff;cursor:pointer;transition:transform .12s ease, opacity .12s ease;
+}
+.quick-capture-submit svg{width:16px;height:16px}
+.quick-capture-submit:active{transform:scale(.9)}
+.quick-capture input:placeholder-shown+.quick-capture-submit{opacity:.45;pointer-events:none}
+
+.agenda-utility-row{margin:2px 0 4px}
 
 /* Calm agenda class rows — same visual language as the Home timeline rows */
 .agenda-class-card{

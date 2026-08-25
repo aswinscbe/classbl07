@@ -20,7 +20,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260818-sleek2">
+  <link rel="stylesheet" href="styles.css?v=20260825-plumcopper">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -35,7 +35,7 @@
       <nav class="desktop-nav" aria-label="Primary">
         <button class="desktop-nav-item active" data-page-target="home"><span data-icon="home"></span>Home</button>
         <button class="desktop-nav-item" data-page-target="calendar"><span data-icon="calendar"></span>Calendar</button>
-        <button class="desktop-nav-item" data-page-target="updates"><span data-icon="mail"></span>Updates</button>
+        <button class="desktop-nav-item" data-page-target="exams"><span data-icon="exams"></span>Exams</button>
         <button class="desktop-nav-item" data-page-target="campus"><span data-icon="campus"></span>Campus</button>
         <button class="desktop-nav-item" data-page-target="profile"><span data-icon="profile"></span>Profile</button>
       </nav>
@@ -53,6 +53,11 @@
         <button class="icon-button" id="themeToggle" aria-label="Toggle theme"><span data-icon="theme"></span></button>
       </div>
     </header>
+
+    <div class="offline-banner" id="offlineBanner" hidden>
+      <span class="offline-dot"></span>
+      <span>You're offline — showing your last saved schedule.</span>
+    </div>
 
     <main class="page-wrap">
       <section class="page active" id="homePage" data-page="home">
@@ -92,6 +97,12 @@
               <p class="hero-summary" id="heroSummary"></p>
               <div class="hero-day-glance" id="heroDayGlance" hidden></div>
             </section>
+
+            <form class="quick-capture" id="quickCaptureForm">
+              <span data-icon="plus" class="quick-capture-icon"></span>
+              <input type="text" id="quickCaptureInput" placeholder="Add a task for today…" maxlength="120" autocomplete="off">
+              <button type="submit" class="quick-capture-submit" aria-label="Add task"><span data-icon="chevron-right"></span></button>
+            </form>
 
             <button type="button" class="exam-card" id="examCard" hidden>
               <span class="exam-card-tag" id="examCardTag">NEXT EXAM</span>
@@ -177,6 +188,10 @@
                 <span class="count-chip" id="agendaCount">0</span>
                 <button class="icon-button agenda-day-arrow" id="agendaNextDay" aria-label="Next day"><span data-icon="chevron-right"></span></button>
               </div>
+            </div>
+            <div class="filter-chips agenda-utility-row" id="agendaUtilityRow">
+              <button type="button" class="filter-chip" id="jumpToNextClassButton">Jump to next class</button>
+              <button type="button" class="filter-chip" id="toggleCompletedButton">Show completed</button>
             </div>
             <div id="dayAgenda" class="schedule-list"></div>
           </article>
@@ -269,28 +284,23 @@
         </section>
       </section>
 
-      <section class="page" id="updatesPage" data-page="updates">
-        <div class="page-heading"><div><p class="overline">UPDATES</p><h1>Updates</h1><p class="subtitle">Quiz, exam and placement mail for your courses.</p></div></div>
+      <section class="page" id="examsPage" data-page="exams">
+        <div class="page-heading"><div><p class="overline">TERM III</p><h1>Exams</h1><p class="subtitle">End-term schedule and prep.</p></div></div>
 
-        <article class="panel gmail-connect-panel" id="gmailConnectPanel">
-          <div class="gmail-connect-icon"><span data-icon="mail"></span></div>
-          <h2>Connect your Gmail</h2>
-          <p>We'll scan your inbox for quiz, exam and placement mail and match it against your core courses and electives &mdash; nothing is stored outside your device.</p>
-          <button type="button" class="primary-button" id="connectGmailButton">Connect Gmail</button>
-        </article>
-
-        <article class="panel" id="gmailStatusPanel" hidden>
-          <div class="gmail-status-row">
-            <div><p class="overline">CONNECTED AS</p><h2 id="gmailAccountEmail">—</h2></div>
-            <div class="gmail-status-actions">
-              <button type="button" class="icon-button" id="refreshGmailUpdates" aria-label="Refresh updates"><span data-icon="refresh"></span></button>
-              <button type="button" class="secondary-button small" id="disconnectGmailButton">Disconnect</button>
-            </div>
+        <article class="exam-hero" id="examHero" hidden>
+          <span class="exam-hero-tag" id="examHeroTag">NEXT EXAM</span>
+          <div class="exam-hero-course">
+            <span class="exam-hero-code" id="examHeroCode">—</span>
+            <h2 id="examHeroTitle">—</h2>
           </div>
-          <p class="gmail-last-checked" id="gmailLastChecked"></p>
+          <p class="exam-hero-meta" id="examHeroMeta">—</p>
+          <div class="exam-hero-row">
+            <div><span>In</span><b id="examHeroDays">—</b></div>
+            <button type="button" class="secondary-button small" id="examHeroPrep">+ Prep task</button>
+          </div>
         </article>
 
-        <div id="updatesList" class="updates-list"></div>
+        <div id="examsList" class="exams-list"></div>
       </section>
 
       <section class="page" id="profilePage" data-page="profile">
@@ -302,6 +312,10 @@
               <div id="stubName">Student</div>
               <span id="stubSection">Section A</span>
             </div>
+          </article>
+          <article class="panel sessions-panel">
+            <p class="rail-section-label">Sessions delivered</p>
+            <div id="sessionRings" class="session-rings"></div>
           </article>
           <article class="panel">
             <form id="profileForm" class="profile-form">
@@ -324,7 +338,7 @@
     <nav class="bottom-nav" aria-label="Primary navigation">
       <button class="nav-item active" data-page-target="home"><span data-icon="home"></span><b>Home</b></button>
       <button class="nav-item" data-page-target="calendar"><span data-icon="calendar"></span><b>Calendar</b></button>
-      <button class="nav-item" data-page-target="updates"><span data-icon="mail"></span><b>Updates</b></button>
+      <button class="nav-item" data-page-target="exams"><span data-icon="exams"></span><b>Exams</b></button>
       <button class="nav-item" data-page-target="campus"><span data-icon="campus"></span><b>Campus</b></button>
       <button class="nav-item" data-page-target="profile"><span data-icon="profile"></span><b>Profile</b></button>
     </nav>
@@ -466,9 +480,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260818-sleek2"></script>
-  <script src="exam-data.js?v=20260818-sleek2"></script>
-  <script src="app.js?v=20260818-sleek2"></script>
-  <script src="polish.js?v=20260818-sleek2"></script>
+  <script src="campus-data.js?v=20260825-plumcopper"></script>
+  <script src="exam-data.js?v=20260825-plumcopper"></script>
+  <script src="app.js?v=20260825-plumcopper"></script>
+  <script src="polish.js?v=20260825-plumcopper"></script>
 </body>
 </html>
