@@ -10,11 +10,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="brand-mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20260825-system3">
-  <link rel="stylesheet" href="visual-base.css?v=20260825-system3">
-  <link rel="stylesheet" href="visual.css?v=20260825-system3">
-  <link rel="stylesheet" href="planner-final.css?v=20260825-system3">
-  <link rel="stylesheet" href="premium-system.css?v=20260825-system3">
+  <link rel="stylesheet" href="styles.css?v=20260825-system6">
+  <link rel="stylesheet" href="visual-base.css?v=20260825-system6">
+  <link rel="stylesheet" href="visual.css?v=20260825-system6">
+  <link rel="stylesheet" href="planner-final.css?v=20260825-system6">
+  <link rel="stylesheet" href="premium-system.css?v=20260825-system6">
   <title>BL07 Flow · Know what’s next</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -302,35 +302,39 @@
         </div>
 
         <section class="campus-view active" data-campus-view="bus"><article class="panel route-planner"><div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2><p class="section-context-line" id="busContextLine">Choose two stops to see the next direct service.</p></div></div><div class="route-select-grid"><label><span>From</span><select id="busFrom"></select></label><button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button><label><span>To</span><select id="busTo"></select></label></div><div class="quick-route-row" id="quickRoutes"></div></article><div class="campus-grid"><article class="next-bus-card route-card"><div class="next-bus-head"><p class="overline light" id="nextBusEyebrow">NEXT DEPARTURE</p><span class="next-bus-day" id="nextBusDay" hidden>Tomorrow</span></div><div class="next-bus-time-row"><time class="next-bus-time" id="nextBusTime">—</time><div class="next-bus-countdown"><span id="nextBusCountdownLabel">Leaves in</span><strong id="nextBusCountdown">—</strong><small id="nextBusCountdownHint" hidden>—</small></div></div><h2 id="nextBusRoute">Choose a route</h2><p id="nextBusMeta">Direct services only</p><div class="route-visual" id="nextBusVisual"></div><p class="bus-arrival-note" id="busArrivalNote" hidden>Intermediate-stop arrival times vary. Times shown are origin departures.</p></article><article class="panel"><div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next origin departures</h2></div></div><div id="upcomingBuses" class="bus-list"></div></article></div><article class="panel"><div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small-toggle" id="toggleFullBus">Show all</button></div><div id="fullBusList" class="bus-table collapsed"></div></article></section><section class="campus-view" data-campus-view="mess"><article class="panel mess-shell"><div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2><p class="section-context-line" id="messContextLine"></p></div><span class="serving-state" id="messServingState">Selected menu</span></div><div class="day-pills" id="messDayPills"></div><div class="meal-tabs" id="mealTabs"><button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button><button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button><button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button></div><p class="menu-note">Menu is tentative and may change with market availability.</p><div id="messMenu" class="meal-showcase"></div></article></section></section><section class="page" id="profilePage" data-page="profile">
-        <div class="page-heading section-heading"><div><p class="overline">ACCOUNT</p><h1>Profile</h1><p class="section-subtitle">Your timetable, electives and preferences.</p></div></div>
+        <div class="page-heading section-heading profile-page-heading"><div><p class="overline">ACCOUNT</p><h1>Profile</h1><p class="section-subtitle">Your timetable, electives and preferences.</p></div><span class="profile-sync-summary" id="profileSyncStatus">Schedule not synced</span></div>
         <div class="profile-layout">
           <article class="profile-hero">
             <div class="avatar" id="profileAvatar">ST</div>
             <div><h2 id="profileDisplayName">Student</h2><p id="profileSummary">PGPBL / Section A</p></div>
           </article>
           <article class="panel course-progress-panel">
-            <div class="panel-heading"><div><p class="overline">COURSE PROGRESS</p><h2>Sessions delivered</h2><p>Each subject has 24 sessions. Cancelled classes are excluded.</p></div></div>
+            <div class="panel-heading course-progress-heading"><div><p class="overline">COURSE PROGRESS</p><h2>Sessions delivered</h2><p>Each subject has 24 sessions. Cancelled classes are excluded.</p></div><div class="course-progress-summary" aria-label="Overall course progress"><strong id="profileTotalCompleted">0</strong><span>completed</span><small id="profileTotalRemaining">0 remaining</small></div></div>
             <div class="course-progress-grid" id="courseProgressGrid"></div>
           </article>
-          <article class="panel">
+          <article class="panel profile-account-panel">
             <form id="profileForm" class="profile-form">
+              <p class="profile-group-label">ACCOUNT DETAILS</p>
               <label><span>Name</span><input id="profileName" type="text" required></label>
               <label><span>Section</span><select id="profileSection"><option value="A">Section A</option><option value="B">Section B</option></select></label>
               <div class="selected-electives-card"><span>Electives</span><div id="selectedElectiveChips" class="selected-elective-chips"></div><button class="secondary-button" type="button" id="chooseElectivesInline">Edit electives</button></div>
+              <p class="profile-group-label profile-appearance-label">APPEARANCE</p>
               <label><span>Appearance</span><select id="profileTheme"><option value="system">Follow device</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
               <button class="primary-button" type="submit">Save profile</button>
             </form>
           </article>
-          <article class="panel">
+          <article class="panel profile-connections-panel">
+            <p class="profile-group-label">CONNECTIONS</p>
             <div class="settings-row"><div><strong>Google Tasks</strong><p>Sync tasks to your Google account.</p><div id="googleTasksStatus"></div></div><span id="googleTasksConnected" hidden><button class="secondary-button" id="disconnectGoogleTasks">Disconnect</button></span><span id="googleTasksDisconnected"><button class="primary-button google-tasks-button" id="connectGoogleTasks">Connect</button></span></div>
             <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
             <div class="settings-row"><div><strong>Open calendar</strong><p>Open Google Calendar in a new tab.</p></div><a class="secondary-button link-button" href="https://calendar.google.com" target="_blank" rel="noopener">Open</a></div>
+            <p class="profile-group-label profile-data-label">DATA &amp; APP</p>
             <div class="settings-row"><div><strong>App version</strong><p>3.1.0 · BL07 Flow</p></div></div>
             <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>
           </article>
           <article class="panel profile-features-panel">
-            <div class="panel-heading profile-features-heading"><div><p class="overline">APP GUIDE</p><h2>Everything in one place</h2><p>Classes, exams and campus essentials—organised around your day.</p></div></div>
-            <div class="profile-feature-grid">
+            <div class="panel-heading profile-features-heading"><div><p class="overline">APP GUIDE</p><h2>Everything in one place</h2><p>Classes, exams and campus essentials—organised around your day.</p></div><button class="icon-button profile-guide-toggle" id="toggleProfileGuide" type="button" aria-expanded="true" aria-controls="profileGuideContent" aria-label="Collapse app guide"><span data-icon="chevron-right"></span></button></div>
+            <div class="profile-guide-content" id="profileGuideContent"><div class="profile-feature-grid">
               <div class="profile-feature"><span data-icon="clock"></span><div><strong>Live class timeline</strong><p>See what is happening now and what comes next.</p></div></div>
               <div class="profile-feature"><span data-icon="calendar"></span><div><strong>Weekly workload</strong><p>Compare class load from Monday through Sunday.</p></div></div>
               <div class="profile-feature"><span data-icon="books"></span><div><strong>Planner and exams</strong><p>Browse classes, exam dates and preparation actions.</p></div></div>
@@ -345,6 +349,7 @@
               <button class="secondary-button" type="button" data-page-target="planner"><span data-icon="calendar"></span>Open Planner</button>
               <button class="secondary-button" type="button" data-open-exams><span data-icon="books"></span>View exams</button>
               <button class="secondary-button" type="button" data-page-target="campus"><span data-icon="campus"></span>Check campus</button>
+            </div>
             </div>
           </article>
         </div>
@@ -484,10 +489,10 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260825-system3"></script>
-  <script src="exam-data.js?v=20260825-system3"></script>
-  <script src="app.js?v=20260825-system3"></script>
-  <script src="polish.js?v=20260825-system3"></script>
+  <script src="campus-data.js?v=20260825-system6"></script>
+  <script src="exam-data.js?v=20260825-system6"></script>
+  <script src="app.js?v=20260825-system6"></script>
+  <script src="polish.js?v=20260825-system6"></script>
 </body>
 </html>
 

@@ -1,7 +1,7 @@
 const CACHE="classbl07-review-20260809-1";
-const CACHE_VERSION="20260825-system3";
+const CACHE_VERSION="20260825-system6";
 const ACTIVE_CACHE=`${CACHE}-${CACHE_VERSION}`;
-const SHELL=["./index.html","./styles.css?v=20260825-system3","./visual-base.css?v=20260825-system3","./visual.css?v=20260825-system3","./planner-final.css?v=20260825-system3","./premium-system.css?v=20260825-system3","./app.js?v=20260825-system3","./polish.js?v=20260825-system3","./campus-data.js?v=20260825-system3","./exam-data.js?v=20260825-system3","./brand-mark.svg?v=20260825-system3","./manifest.webmanifest"];
+const SHELL=["./index.html","./styles.css?v=20260825-system6","./visual-base.css?v=20260825-system6","./visual.css?v=20260825-system6","./planner-final.css?v=20260825-system6","./premium-system.css?v=20260825-system6","./app.js?v=20260825-system6","./polish.js?v=20260825-system6","./campus-data.js?v=20260825-system6","./exam-data.js?v=20260825-system6","./brand-mark.svg?v=20260825-system6","./manifest.webmanifest"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(ACTIVE_CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==ACTIVE_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{
