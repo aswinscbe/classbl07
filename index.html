@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="brand-mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20260825-consolidated1">
+  <link rel="stylesheet" href="styles.css?v=20260825-premium1">
   <title>BL07 Flow · Know what’s next</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -19,18 +19,19 @@
   <div class="app-shell">
     <header class="topbar">
       <button class="brand" data-go="home" aria-label="Open BL07 Flow home">
-        <span class="brand-mark" aria-hidden="true">
+        <span class="brand-copy brand-copy-mini" aria-hidden="true"><b>IIMK</b><b>BL</b></span>
+        <span class="brand-mark brand-mark-premium" aria-hidden="true">
           <svg viewBox="0 0 64 64">
             <defs>
-              <linearGradient id="brandFrameGradient" x1="8" y1="5" x2="57" y2="60" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#825783"></stop>
-                <stop offset=".54" stop-color="#563557"></stop>
-                <stop offset="1" stop-color="#241629"></stop>
+              <linearGradient id="brandFrameGradient" x1="6" y1="3" x2="58" y2="61" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#a5673f"></stop>
+                <stop offset=".5" stop-color="#6b3a6f"></stop>
+                <stop offset="1" stop-color="#241129"></stop>
               </linearGradient>
               <linearGradient id="brandDigitGradient" x1="17" y1="14" x2="49" y2="51" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#fffaf4"></stop>
-                <stop offset=".72" stop-color="#f4e7dc"></stop>
-                <stop offset="1" stop-color="#d99873"></stop>
+                <stop stop-color="#fffdf9"></stop>
+                <stop offset=".65" stop-color="#f7e8d8"></stop>
+                <stop offset="1" stop-color="#e8b478"></stop>
               </linearGradient>
               <filter id="brandGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
             </defs>
@@ -39,7 +40,6 @@
             <text class="brand-digits" x="32" y="44" text-anchor="middle" filter="url(#brandGlow)">07</text>
           </svg>
         </span>
-        <span class="brand-copy"><strong><span>BL07</span><em> Flow</em></strong><small>IIM KOZHIKODE · TERM III</small></span>
       </button>
 
       <nav class="desktop-nav" aria-label="Primary">
@@ -77,13 +77,17 @@
           <button class="text-button" id="openUpdatesFromHome">View</button>
         </section>
 
-        <section class="hero-card" id="focusPanel" aria-live="polite">
+        <section class="hero-card hero-premium" id="focusPanel" aria-live="polite">
           <div class="hero-top">
             <div class="focus-state-block">
               <span class="focus-live-capsule" id="focusLiveCapsule">NOW</span>
               <div class="focus-state-copy">
                 <span class="focus-state-kicker" id="focusKicker" hidden>YOUR SCHEDULE</span>
                 <strong id="focusState">Checking your day</strong>
+              </div>
+              <div class="focus-countdown" id="focusCountdownAction" role="button" tabindex="0" aria-label="Open this class in Planner" hidden>
+                <span id="focusCountdownLabel">STATUS</span>
+                <strong id="focusCountdown">—</strong>
               </div>
             </div>
             <span class="hero-day-load" id="focusDayLoad">Today</span>
@@ -110,10 +114,6 @@
                 <span id="focusPositionLabel">NEXT</span>
                 <strong id="focusPositionValue">—</strong>
               </button>
-              <div class="focus-countdown" id="focusCountdownAction" role="button" tabindex="0" aria-label="Open this class in Planner" hidden>
-                <span id="focusCountdownLabel">STATUS</span>
-                <strong id="focusCountdown">—</strong>
-              </div>
             </div>
           </div>
           <div class="focus-context" id="focusContext" hidden>
@@ -490,10 +490,10 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260825-consolidated1"></script>
-  <script src="exam-data.js?v=20260825-consolidated1"></script>
-  <script src="app.js?v=20260825-consolidated1"></script>
-  <script src="polish.js?v=20260825-consolidated1"></script>
+  <script src="campus-data.js?v=20260825-premium1"></script>
+  <script src="exam-data.js?v=20260825-premium1"></script>
+  <script src="app.js?v=20260825-premium1"></script>
+  <script src="polish.js?v=20260825-premium1"></script>
 </body>
 </html>
 

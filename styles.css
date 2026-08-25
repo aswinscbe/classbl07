@@ -1603,3 +1603,132 @@ html[data-theme="light"] .timeline-day-button.active, html[data-theme="light"] .
 @media (max-width:520px){.course-progress-heading{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important}.course-progress-heading>div:first-child>p{grid-column:1/-1}.course-progress-summary{min-width:96px;padding:9px 10px}.course-progress-summary strong{font-size:20px}.course-progress-grid{grid-template-columns:minmax(0,1fr)!important}.course-progress-item{min-height:78px!important;grid-template-columns:48px minmax(0,1fr)!important;padding:11px 12px!important}.selected-elective-chips{grid-template-columns:minmax(0,1fr)!important}.hero-card.is-live::after,.hero-card.is-final-live::after{top:17px;bottom:17px;width:3px}}
 @media (min-width:1101px){.page-wrap{width:min(1240px,100%)!important;padding-inline:26px!important}.home-dashboard-body{grid-template-columns:minmax(0,1.72fr) minmax(310px,.72fr)!important;gap:20px!important}.home-main-rail,.home-side-rail{gap:16px!important}.home-side-rail{top:88px!important}.hero-card:not(.is-empty){padding:22px 23px!important}.hero-card.is-just-done{padding:18px 20px!important}.hero-card.is-just-done .focus-course-line h2{font-size:21px!important}.hero-card.is-just-done .focus-time-hero{font-size:26px!important}#plannerTabs{width:min(100%,760px)!important}[data-planner-view="calendar"]:not(.show-month) .calendar-layout{display:block!important}[data-planner-view="calendar"]:not(.show-month) .agenda-panel{display:block!important}.planner-week-navigator{position:sticky!important;top:82px!important;z-index:12!important}.planner-week-head{display:grid!important;grid-template-columns:38px minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important}.planner-week-head>strong{text-align:center!important}.planner-week-actions{display:flex!important;align-items:center!important;gap:7px!important}.planner-week-day{min-height:76px!important}.agenda-heading{display:flex!important}.agenda-load-summary,.agenda-context-line{display:none!important}.agenda-utility-bar{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:8px!important}.agenda-utility-action,.agenda-filter-chip{width:auto!important;min-height:38px!important;padding-inline:12px!important}.subject-next-lookup{margin-left:auto!important;min-width:min(360px,100%)!important}[data-planner-view="calendar"].show-month .calendar-layout{display:grid!important;grid-template-columns:minmax(0,1.35fr) minmax(360px,.65fr)!important;gap:18px!important;align-items:start!important}[data-planner-view="calendar"].show-month .calendar-panel{display:block!important;max-width:none!important;margin:0!important}[data-planner-view="calendar"].show-month .agenda-panel{display:block!important;position:sticky!important;top:88px!important}.calendar-day{aspect-ratio:auto!important;min-height:76px!important;height:76px!important;padding:8px!important;border:1px solid var(--border)!important;border-radius:11px!important;background:var(--surface-2)!important}.calendar-day.weekend:not(.selected),.calendar-day.weekend.outside:not(.selected){background:var(--surface-2)!important}.calendar-day.outside{opacity:.5!important}.calendar-day.selected{background:linear-gradient(150deg,#7d4c82,#57365c)!important}.calendar-class-count{color:var(--muted)!important;font-size:8px!important;line-height:1.25!important}.calendar-day.selected .calendar-class-count{color:rgba(255,255,255,.82)!important}.profile-layout{display:grid!important;grid-template-columns:minmax(340px,.76fr) minmax(0,1.24fr)!important;grid-template-areas:none!important;gap:18px!important;align-items:start!important}.profile-column{display:grid!important;gap:16px!important;align-content:start!important;min-width:0!important}.profile-layout>.profile-column-primary,.profile-layout>.profile-column-secondary{grid-column:auto!important;grid-row:auto!important}.profile-hero,.course-progress-panel,.profile-account-panel,.profile-connections-panel,.profile-features-panel{grid-area:auto!important}.profile-hero{min-height:108px!important}.course-progress-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.profile-features-panel .profile-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.campus-view>.panel,.campus-grid>*{min-width:0!important}.route-planner,.mess-shell{padding:20px!important}}
 @media (min-width:781px) and (max-width:1100px){.profile-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important}.profile-column{display:contents!important}.profile-hero{order:1}.course-progress-panel{order:2}.profile-account-panel{order:3}.profile-connections-panel{order:4}.profile-features-panel{order:5}.planner-week-navigator{position:sticky!important;top:76px!important;z-index:12!important}}
+
+/* ===== Premium pass: Home hero card =====================================
+   Legacy hero rules stack up to specificity (0,4,0) (chained :not()
+   selectors), so class-based overrides can lose even with !important.
+   Anchoring every rule at #focusPanel (an ID) guarantees these win
+   regardless of how many classes/pseudo-classes a legacy rule stacks. */
+#focusPanel.hero-premium{
+  padding:24px 22px!important;
+  border-radius:26px!important;
+  background:linear-gradient(135deg,#241629 0%,#4a2a4f 48%,#8a5a3f 100%)!important;
+  border:1px solid rgba(255,232,245,.14)!important;
+  box-shadow:0 26px 60px -20px rgba(20,6,20,.55),inset 0 1px 0 rgba(255,255,255,.06)!important;
+  color:#f8f0f6!important;
+  display:flex!important;flex-direction:column!important;
+}
+html[data-theme="light"] #focusPanel.hero-premium{
+  background:linear-gradient(135deg,#8a4f90 0%,#a5673f 65%,#c98a4f 115%)!important;
+  border-color:rgba(255,255,255,.22)!important;
+  box-shadow:0 22px 50px -22px rgba(90,50,40,.42),inset 0 1px 0 rgba(255,255,255,.14)!important;
+  color:#fff8f2!important;
+}
+#focusPanel.hero-premium .hero-top{
+  order:1!important;margin:0 0 16px!important;display:flex!important;align-items:flex-start!important;
+  justify-content:space-between!important;gap:12px!important;
+}
+#focusPanel.hero-premium .focus-state-block{
+  display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:9px!important;min-width:0!important;
+}
+#focusPanel.hero-premium #focusLiveCapsule{
+  min-width:0!important;height:auto!important;padding:4px 10px!important;border:1px solid rgba(255,255,255,.28)!important;
+  border-radius:999px!important;background:rgba(255,255,255,.14)!important;color:inherit!important;
+  font-size:9.5px!important;font-weight:800!important;letter-spacing:.09em!important;
+}
+#focusPanel.hero-premium .focus-state-copy{display:none!important}
+#focusPanel.hero-premium #focusCountdownAction{
+  display:flex!important;align-items:baseline!important;gap:5px!important;min-width:0!important;min-height:0!important;
+  padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important;
+  text-align:left!important;width:auto!important;
+}
+#focusPanel.hero-premium #focusCountdownAction[hidden]{display:none!important}
+#focusPanel.hero-premium #focusCountdownLabel{
+  font-size:10px!important;font-weight:700!important;letter-spacing:.04em!important;
+  color:rgba(255,244,250,.72)!important;text-transform:none!important;
+}
+#focusPanel.hero-premium #focusCountdown{font-size:13px!important;font-weight:800!important;color:inherit!important;margin:0!important}
+#focusPanel.hero-premium #focusDayLoad{
+  flex:none!important;font-size:11px!important;font-weight:650!important;
+  color:rgba(255,244,250,.62)!important;background:transparent!important;border:0!important;padding:0!important;
+}
+#focusPanel.hero-premium .hero-main{order:2!important}
+#focusPanel.hero-premium .hero-copy{display:flex!important;flex-direction:column!important}
+#focusPanel.hero-premium #focusCourseAction{
+  order:1!important;margin:0 0 4px!important;display:flex!important;align-items:center!important;gap:9px!important;
+}
+#focusPanel.hero-premium #focusCode{
+  border-color:rgba(255,255,255,.3)!important;background:rgba(255,255,255,.12)!important;color:inherit!important;
+}
+#focusPanel.hero-premium #focusTitle{
+  color:inherit!important;font-family:var(--font-display)!important;font-weight:700!important;
+  font-size:clamp(19px,3.4vw,23px)!important;line-height:1.18!important;
+}
+#focusPanel.hero-premium .focus-course-open{color:rgba(255,244,250,.55)!important}
+#focusPanel.hero-premium #focusTime{
+  order:2!important;margin:0 0 14px!important;color:inherit!important;
+  font-size:clamp(30px,7vw,38px)!important;font-weight:800!important;letter-spacing:-.03em!important;line-height:1.04!important;
+  text-shadow:none!important;
+}
+#focusPanel.hero-premium #heroLiveProgress{order:3!important;margin:0 0 12px!important}
+#focusPanel.hero-premium .hero-meta-grid{
+  order:4!important;display:flex!important;flex-wrap:wrap!important;gap:6px 18px!important;margin:0!important;
+}
+#focusPanel.hero-premium .hero-meta-grid span{color:rgba(255,244,250,.85)!important}
+#focusPanel.hero-premium .hero-meta-grid i{opacity:.75}
+#focusPanel.hero-premium .hero-meta-grid b{color:inherit!important;font-weight:650!important}
+#focusPanel.hero-premium #focusPosition{display:none!important}
+#focusPanel.hero-premium #focusContext{order:3!important}
+#focusPanel.hero-premium #heroInsightGrid{
+  order:4!important;margin:16px 0 0!important;padding-top:14px!important;
+  border-top:1px solid rgba(255,255,255,.16)!important;
+  display:flex!important;gap:22px!important;
+}
+#focusPanel.hero-premium #heroInsightGrid[hidden]{display:none!important}
+#focusPanel.hero-premium .hero-insight[hidden]{display:none!important}
+#focusPanel.hero-premium .hero-insight{padding:0!important;border:0!important;background:transparent!important}
+#focusPanel.hero-premium .hero-insight span{
+  display:block!important;font-size:9px!important;font-weight:750!important;letter-spacing:.08em!important;
+  color:rgba(255,244,250,.6)!important;margin-bottom:2px!important;
+}
+#focusPanel.hero-premium .hero-insight strong{font-size:13px!important;font-weight:700!important;color:inherit!important}
+#focusPanel.hero-premium #focusSegments{order:5!important}
+#focusPanel.hero-premium #heroDayGlance{order:6!important;margin-top:12px!important}
+
+/* ===== Premium pass: brand mark ========================================= */
+.brand-copy.brand-copy-mini{
+  display:flex!important;flex-direction:column!important;align-items:flex-end!important;justify-content:center!important;
+  gap:0!important;flex:none!important;line-height:1.05!important;white-space:nowrap!important;
+}
+.brand-copy-mini b{
+  font-family:var(--font-display);font-weight:750;font-size:10px;letter-spacing:.09em;
+  color:var(--muted);text-transform:uppercase;
+}
+.brand-copy-mini b:last-child{color:var(--primary);font-weight:800}
+.brand-mark.brand-mark-premium{
+  width:38px!important;height:38px!important;flex-basis:38px!important;
+  background:none!important;box-shadow:0 6px 18px color-mix(in srgb, var(--primary) 38%, transparent)!important;
+  border-radius:12px!important;
+}
+.brand-mark-premium svg{filter:drop-shadow(0 1px 0 rgba(255,255,255,.15))}
+
+/* ===== Premium pass: schedule/day-agenda hierarchy (less chip noise) =====
+   Keep every piece of info (nothing removed) — just stop the quiet facts
+   (duration, session number) from competing visually with real status
+   badges (Cancelled/Now/Next). */
+.timeline-status-row .session-chip{
+  display:inline-flex!important;align-items:center!important;
+  padding:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important;color:var(--faint)!important;
+  font-size:9px!important;font-weight:600!important;letter-spacing:.02em!important;
+}
+.timeline-status-row .session-chip::before{content:"·";margin-right:7px;color:var(--faint);font-weight:700}
+.timeline-status-row .duration-chip::before{content:"·";margin-right:7px;color:var(--faint);font-weight:700}
+.timeline-status-row .duration-chip:first-child::before,
+.timeline-status-row .vertical-status:first-child + .duration-chip::before{content:none;margin-right:0}
+.timeline-status-row{row-gap:5px!important}
+
+/* Premium pass: profile course-progress grid (2-col, per-course tinted cards) */
+#courseProgressGrid.course-progress-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+#courseProgressGrid .course-progress-item{background:linear-gradient(160deg,color-mix(in srgb,var(--course) 18%,var(--surface-2)) 0%,var(--surface-2) 68%)!important;border-color:color-mix(in srgb,var(--course) 40%,var(--border))!important;box-shadow:none!important;padding:12px!important;min-height:86px!important;}
+#courseProgressGrid .course-progress-ring{background:radial-gradient(circle at center, color-mix(in srgb,var(--course) 16%,var(--surface-2)) 59%, transparent 61%), conic-gradient(var(--course) var(--session-progress), color-mix(in srgb,var(--course) 22%,var(--border)) 0)!important;}
