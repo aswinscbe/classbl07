@@ -44,6 +44,10 @@
   --tint-cyan:rgba(201,138,79,.10);
   --tint-violet:rgba(161,109,163,.13);
   --type-base:14px;--type-body:14px;--type-card:16px;--type-label:9px;--type-meta:12px;--type-module:19px;--type-page:38px;--type-sm:12px;--type-title:18px;--type-xs:10px;
+  --fs-2xs:9px;--fs-xs:10px;--fs-sm:11.5px;--fs-base:13.5px;--fs-md:15px;--fs-lg:17px;--fs-xl:20px;--fs-2xl:27px;--fs-display:34px;
+  --elevation-1:0 2px 10px rgba(0,0,0,.16);
+  --elevation-2:0 12px 30px rgba(0,0,0,.24);
+  --elevation-3:0 26px 58px rgba(0,0,0,.34);
 }
 html[data-theme="light"]{
   --bg:#f4f0f2;
@@ -74,6 +78,9 @@ html[data-theme="light"]{
   --premium-shadow:0 13px 32px rgba(52,34,50,.105);
   --tint-cyan:rgba(165,103,63,.10);
   --tint-violet:rgba(121,71,127,.13);
+  --elevation-1:0 2px 10px rgba(60,30,55,.08);
+  --elevation-2:0 12px 30px rgba(60,30,55,.12);
+  --elevation-3:0 26px 58px rgba(60,30,55,.16);
 }
 
 body{background:
@@ -1741,3 +1748,28 @@ html[data-theme="light"] #focusPanel.hero-premium{
 #courseProgressGrid.course-progress-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
 #courseProgressGrid .course-progress-item{background:linear-gradient(160deg,color-mix(in srgb,var(--course) 18%,var(--surface-2)) 0%,var(--surface-2) 68%)!important;border-color:color-mix(in srgb,var(--course) 40%,var(--border))!important;box-shadow:none!important;padding:12px!important;min-height:86px!important;}
 #courseProgressGrid .course-progress-ring{background:radial-gradient(circle at center, color-mix(in srgb,var(--course) 16%,var(--surface-2)) 59%, transparent 61%), conic-gradient(var(--course) var(--session-progress), color-mix(in srgb,var(--course) 22%,var(--border)) 0)!important;}
+
+/* ===== Design foundation pass: consolidated type scale =================
+   .overline/.page-heading h1/.panel-heading h2 had ~10+ scattered,
+   conflicting declarations left over from the old 5-stylesheet era
+   (different sizes, colors, weights depending on which file's rule won).
+   One canonical rule per element, using the new --fs-*/--elevation-*
+   scale, so every page reads with the same typographic voice. The
+   double-class .overline.overline trick matches the (0,2,0) specificity
+   of the highest scattered overrides (e.g. .home-heading .overline) so
+   this wins regardless of source order; a couple of narrowly-scoped
+   component overrides (e.g. the bus card's light-theme eyebrow) keep
+   their own higher-specificity rule on top, which is correct - those are
+   deliberate exceptions, not part of the base type system. */
+.overline.overline{
+  margin:0 0 6px;font-size:var(--fs-xs);font-weight:780;letter-spacing:.09em;
+  text-transform:uppercase;color:color-mix(in srgb,var(--primary) 72%,var(--text));
+}
+.page-heading h1,.home-heading h1{
+  font-size:var(--fs-2xl)!important;line-height:1.16!important;letter-spacing:-.03em!important;
+  font-weight:750!important;margin:2px 0 0!important;color:var(--text)!important;
+}
+.panel-heading h2,.calendar-head h2{
+  font-size:var(--fs-xl)!important;line-height:1.2!important;letter-spacing:-.02em!important;
+  font-weight:700!important;font-family:var(--font-display)!important;
+}
