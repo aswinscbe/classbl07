@@ -1665,8 +1665,8 @@ html[data-theme="light"] #focusPanel.hero-premium{
 }
 #focusPanel.hero-premium #focusCountdown{font-size:13px!important;font-weight:800!important;color:var(--text)!important;margin:0!important}
 #focusPanel.hero-premium #focusDayLoad{
-  flex:none!important;font-size:11px!important;font-weight:650!important;
-  color:var(--muted)!important;background:transparent!important;border:0!important;padding:0!important;
+  flex:none!important;font-size:14px!important;font-weight:750!important;
+  color:var(--text)!important;background:transparent!important;border:0!important;padding:0!important;
 }
 #focusPanel.hero-premium .hero-main{order:2!important}
 #focusPanel.hero-premium .hero-copy{display:flex!important;flex-direction:column!important}
@@ -1800,20 +1800,6 @@ html[data-theme="light"] #focusPanel.hero-premium{
 .calendar-panel,.agenda-panel{box-shadow:var(--elevation-1)!important}
 .planner-week-navigator{box-shadow:var(--elevation-2)!important}
 
-/* ===== Home pass: hero quick-add-task button =============================
-   New functional addition - lets you add a task for the current/next
-   class directly from the hero, without scrolling to Quick Capture and
-   picking the subject manually. Styled as a small quiet chip matching
-   the status pill treatment already established for the hero. */
-#focusPanel.hero-premium #heroAddTask{
-  width:28px!important;height:28px!important;border-radius:999px!important;
-  background:color-mix(in srgb, var(--text) 8%, transparent)!important;border:0!important;
-  color:var(--text)!important;flex:none!important;backdrop-filter:none!important;
-  margin-left:auto!important;
-}
-#focusPanel.hero-premium #heroAddTask svg{width:14px!important;height:14px!important}
-#focusPanel.hero-premium #heroAddTask:hover{background:color-mix(in srgb, var(--text) 14%, transparent)!important}
-
 /* ===== Home pass 2: Next Exam countdown as visual centerpiece ============
    #nextExamCountdown had zero dedicated styling - just default <strong>
    text ("Today"/"Tomorrow"/"N days"). Split into a big number + small
@@ -1833,3 +1819,68 @@ html[data-theme="light"] #focusPanel.hero-premium{
 /* Consistent elevation across Home's stacked cards, matching the
    foundation scale used everywhere else. */
 .today-progress-card,.next-exam-card,.quick-task-panel{box-shadow:var(--elevation-1)!important}
+
+/* ===== Home pass 3: compact Week Load, integrated with hero ============= */
+#weekDensity{
+  margin-top:8px!important;padding:12px 16px!important;border-radius:18px!important;
+  background:color-mix(in srgb,var(--primary) 4%,var(--surface))!important;
+  border:1px solid var(--border)!important;box-shadow:var(--elevation-1)!important;
+}
+#weekDensity .week-density-heading{gap:2px!important}
+#weekDensityTitle{font-size:var(--fs-sm)!important;font-weight:750!important}
+#weekDensitySummary{font-size:var(--fs-xs)!important;color:var(--muted)!important}
+#weekDensity .section-context-line{margin:2px 0 0!important;font-size:var(--fs-xs)!important}
+#weekDensityDays{gap:5px!important;margin-top:8px!important}
+#weekDensityDays .density-day{padding:5px 2px!important;border-radius:10px!important;gap:3px!important}
+#weekDensityDays .density-day span{font-size:9px!important}
+#weekDensityDays .density-day strong{font-size:13px!important}
+
+/* ===== Home pass 4: collapse "done" classes on Home's timeline ==========
+   Complaint: too much scrolling, but don't want to lose info that
+   matters. Classes that already happened today are the lowest-value
+   info once they're over - collapse those to a slim one-line row
+   (time + course + "Done"), while current/upcoming classes on the
+   same list keep their full detail untouched. Scoped to #todayProgressRail
+   only, so Planner's separate agenda list (with its own "Show completed"
+   toggle) is unaffected. */
+#todayProgressRail .vertical-class.done{
+  min-height:0!important;padding:10px 13px!important;align-items:center!important;
+}
+#todayProgressRail .vertical-class.done .vertical-content p{display:none!important}
+#todayProgressRail .vertical-class.done .timeline-status-row .duration-chip,
+#todayProgressRail .vertical-class.done .timeline-status-row .session-chip{display:none!important}
+#todayProgressRail .vertical-class.done .timeline-status-row{margin-top:3px!important}
+#todayProgressRail .vertical-class.done .timeline-course-line{margin:0!important}
+#todayProgressRail .vertical-class.done .vertical-time{font-size:14px!important}
+
+/* ===== Home pass 5: brand mark polish + unified top-action icons ========= */
+.brand-mark.brand-mark-premium{
+  width:42px!important;height:42px!important;flex-basis:42px!important;
+  box-shadow:0 6px 20px color-mix(in srgb,var(--primary) 42%,transparent)!important;
+  border-radius:13px!important;
+}
+.brand-copy.brand-copy-mini{gap:1px!important}
+.brand-copy-mini b{font-size:10.5px!important;letter-spacing:.07em!important}
+/* Profile icon previously stood out as a solid gradient-filled button
+   while refresh/bell/theme were flat quiet chips - unify all four to
+   the same quiet treatment so the icon row reads as one consistent
+   group instead of three utility icons plus one CTA button. */
+.topbar .top-actions .profile-quick-button{
+  background:var(--surface)!important;border:1px solid var(--border)!important;
+  color:var(--muted)!important;box-shadow:none!important;
+}
+.topbar .top-actions .profile-quick-button:hover{color:var(--text)!important}
+
+/* ===== Home pass 6: declutter notifications =============================
+   Each entry repeated the same fact three times - course-mark chip,
+   colored type badge, and a title that just restated both ("SM" +
+   "Cancelled" + "SM class cancelled"). Dropped the redundant title in
+   the JS template; this promotes the date/time line to be the primary
+   text and tightens spacing now that there's one less line per item.
+   Also makes the unread indicator dot actually visible - it was 4px. */
+#notificationList .notification-item-kicker{margin-bottom:4px!important}
+#notificationList .notification-item p{
+  margin:0!important;color:var(--text)!important;font-size:12.5px!important;font-weight:600!important;line-height:1.4!important;
+}
+#notificationList .notification-item.unread::before{width:7px!important;height:7px!important;top:19px!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--course) 20%,transparent)!important}
+#notificationList .notification-item{padding-block:13px!important}
