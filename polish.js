@@ -47,79 +47,6 @@
     let banner=agenda?.querySelector(":scope > .academic-date-banner");
     if(holiday&&agenda){if(!banner){banner=document.createElement("div");banner.className="academic-date-banner";agenda.prepend(banner)}if(banner.dataset.holiday!==holiday){banner.dataset.holiday=holiday;banner.innerHTML=`<span>HOLIDAY</span><strong>${holiday}</strong>`}}else banner?.remove();
   };
-  const isoForOffset = offset => {
-    const now = new Date();
-    const india = new Date(now.toLocaleString("en-US", {timeZone:"Asia/Kolkata"}));
-    india.setDate(india.getDate() + offset);
-    return `${india.getFullYear()}-${String(india.getMonth()+1).padStart(2,"0")}-${String(india.getDate()).padStart(2,"0")}`;
-  };
-  const parseClassCard = card => {
-    const id = card.dataset.classId || "";
-    let date = id.split("|")[0] || "";
-    let code = card.querySelector(".agenda-code-chip")?.textContent.trim() || "";
-    let title = card.querySelector(".agenda-course-line h3")?.textContent.trim() || "";
-    let time = card.querySelector(".agenda-time-block time")?.textContent.trim() || "";
-    let meta = [...card.querySelectorAll(".agenda-meta-row span")].map(x=>x.textContent.trim()).filter(Boolean).join(" · ");
-    if(card.id==="focusPanel"){
-      date=card.dataset.focusDate||isoForOffset(0);
-      code=document.getElementById("focusCode")?.textContent.trim()||"";
-      title=document.getElementById("focusTitle")?.textContent.trim()||"";
-      time=document.getElementById("focusRange")?.textContent.trim()||"";
-      meta=[document.getElementById("focusVenue")?.textContent.trim(),document.getElementById("focusFaculty")?.textContent.trim()].filter(Boolean).join(" / ");
-    }
-    if (card.classList.contains("vertical-class")) {
-      code = card.querySelector(".timeline-code-chip")?.textContent.trim() || "";
-      title = card.querySelector(".vertical-content strong")?.childNodes[0]?.textContent?.trim() || card.querySelector(".vertical-content strong")?.textContent.trim() || "";
-      const timeBox = card.querySelector(".vertical-time");
-      const startText=timeBox?.childNodes[0]?.textContent?.trim()||"";
-      const endText=timeBox?.querySelector("small")?.textContent?.trim()||"";
-      time = [startText,endText].filter(Boolean).join("–");
-      meta = card.querySelector(".vertical-content p")?.textContent.trim() || "";
-      date = document.getElementById("timelineDateTitle")?.textContent.trim()==="Tomorrow" ? isoForOffset(1) : isoForOffset(0);
-    }
-    if (card.classList.contains("schedule-item")) {
-      const raw = card.querySelector(".schedule-info strong")?.textContent.trim() || "";
-      const pieces = raw.split("·").map(x=>x.trim());
-      code = pieces.shift() || "";
-      title = pieces.join(" · ");
-      time = card.querySelector(".schedule-time")?.textContent.replace(/\s+/g," ").trim() || "";
-      meta = card.querySelector(".schedule-info p")?.textContent.trim() || "";
-      date = isoForOffset(0);
-    }
-    let calendar=card.querySelector(".open-calendar")?.href || "";
-    if(!calendar&&date&&code){
-      const times=time.match(/\d{1,2}:\d{2}\s*(?:am|pm)/gi)||[];
-      const compact=value=>{const match=value?.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);if(!match)return"";let hour=Number(match[1]);if(match[3].toLowerCase()==="pm"&&hour<12)hour+=12;if(match[3].toLowerCase()==="am"&&hour===12)hour=0;return`${String(hour).padStart(2,"0")}${match[2]}00`};
-      if(times.length>1){const day=date.replaceAll("-","");calendar=`https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=Asia%2FKolkata&text=${encodeURIComponent(`${code} · ${title}`)}&dates=${day}T${compact(times[0])}/${day}T${compact(times[1])}&location=${encodeURIComponent(meta.split("·")[0]?.trim()||"")}`}
-    }
-    return {code:code.split("-")[0],fullCode:code,title,time,meta,date,calendar};
-  };
-  let activeClass = null;
-  const openClassSheet = card => {
-    activeClass = parseClassCard(card);
-    document.getElementById("sheetClassCode").textContent = activeClass.fullCode || activeClass.code || "CLASS";
-    document.getElementById("sheetClassTitle").textContent = activeClass.title || "Class details";
-    document.getElementById("sheetClassMeta").textContent = [activeClass.time,activeClass.meta].filter(Boolean).join(" · ");
-    const calendar = document.getElementById("sheetAddCalendar");
-    calendar.hidden = !activeClass.calendar;
-    if (activeClass.calendar) calendar.href = activeClass.calendar;
-    document.getElementById("classActionDialog").showModal();
-  };
-  const openLinkedDialog = type => {
-    if (!activeClass) return;
-    document.getElementById("classActionDialog").close();
-    const dialog = document.getElementById(type==="task" ? "taskDialog" : "noteDialog");
-    const course = document.getElementById(type==="task" ? "taskCourse" : "noteCourse");
-    if (course) course.value = activeClass.code;
-    if (type==="task") {
-      document.getElementById("taskTitle").value = "";
-      document.getElementById("taskDate").value = activeClass.date || "";
-    } else {
-      document.getElementById("noteTitle").value = activeClass.title ? `${activeClass.fullCode || activeClass.code} note` : "";
-      document.getElementById("noteBody").value = "";
-    }
-    dialog.showModal();
-  };
   const start = () => {
     document.title = clean(document.title);
     repair(document.body);
@@ -131,14 +58,6 @@
       updateStateClasses();
       decorateCalendar();
     })).observe(document.body, {subtree:true, childList:true, characterData:true});
-    document.addEventListener("click", event => {
-      const card = event.target.closest(".vertical-class,.agenda-class-card,.schedule-item,#focusPanel:not(.is-empty)");
-      if (card && !event.target.closest("button,a,input")) openClassSheet(card);
-    });
-    document.getElementById("sheetAddTask")?.addEventListener("click",()=>openLinkedDialog("task"));
-    document.getElementById("sheetAddNote")?.addEventListener("click",()=>openLinkedDialog("note"));
-    document.querySelector(".sheet-close")?.addEventListener("click",()=>document.getElementById("classActionDialog").close());
-    document.getElementById("classActionDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
     document.getElementById("onboardingDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);

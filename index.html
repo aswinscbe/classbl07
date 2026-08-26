@@ -21,7 +21,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260826-calendarpass2">
+  <link rel="stylesheet" href="styles.css?v=20260827-premiumpass1">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -81,13 +81,13 @@
                 <span class="hero-status" id="focusStatusTag"><i id="focusPulse"></i><span class="hero-empty-icon" id="focusEmptyIcon" hidden></span><span id="focusKicker">CHECKING</span></span>
                 <div class="hero-status-right">
                   <span class="hero-day-count" id="heroDayCount" hidden></span>
-                  <button type="button" class="icon-button hero-add-task" id="heroAddTask" hidden aria-label="Add task for this class" title="Add task for this class"><span data-icon="plus"></span></button>
                 </div>
               </div>
               <div class="hero-course-line">
                 <span class="hero-code" id="focusCode">—</span>
                 <h2 id="focusTitle">Loading your schedule</h2>
               </div>
+              <div class="hero-countdown-big" id="heroCountdownBig" hidden></div>
               <div class="hero-time" id="focusRange">—:— – —:—</div>
               <div class="hero-progress" id="heroProgress" hidden><span id="heroProgressFill"></span></div>
               <div class="hero-meta-grid">
@@ -130,13 +130,14 @@
                 <span class="count-chip" id="progressSummary">0 / 0</span>
               </div>
               <div class="timeline-day-switch" id="timelineDaySwitch">
-                <button class="timeline-day-button active" data-timeline-day="today">
+                <button class="timeline-day-button active" data-timeline-offset="0">
                   <span>Today</span><small id="todaySwitchDate"></small>
                 </button>
-                <button class="timeline-day-button" data-timeline-day="tomorrow">
+                <button class="timeline-day-button" data-timeline-offset="1">
                   <span>Tomorrow</span><small id="tomorrowSwitchDate"></small>
                 </button>
               </div>
+              <p class="timeline-swipe-hint">Swipe to browse the week</p>
               <div id="todayProgressRail"></div>
             </section>
           </div>
@@ -297,15 +298,17 @@
         <div class="page-heading"><div><p class="overline">TERM III</p><h1>Exams</h1><p class="subtitle">End-term schedule and prep.</p></div></div>
 
         <article class="exam-hero" id="examHero" hidden>
-          <span class="exam-hero-tag" id="examHeroTag">NEXT EXAM</span>
-          <div class="exam-hero-course">
-            <span class="exam-hero-code" id="examHeroCode">—</span>
-            <h2 id="examHeroTitle">—</h2>
+          <div class="exam-hero-main">
+            <span class="exam-hero-tag" id="examHeroTag">NEXT EXAM</span>
+            <div class="exam-hero-course">
+              <span class="exam-hero-code" id="examHeroCode">—</span>
+              <h2 id="examHeroTitle">—</h2>
+            </div>
+            <p class="exam-hero-meta" id="examHeroMeta">—</p>
           </div>
-          <p class="exam-hero-meta" id="examHeroMeta">—</p>
-          <div class="exam-hero-row">
-            <div><span>In</span><b id="examHeroDays">—</b></div>
-            <button type="button" class="secondary-button small" id="examHeroPrep">+ Prep task</button>
+          <div class="exam-hero-side">
+            <b id="examHeroDays">—</b>
+            <button type="button" class="icon-button exam-hero-prep" id="examHeroPrep" aria-label="Add prep task" title="Add prep task"><span data-icon="plus"></span></button>
           </div>
         </article>
 
@@ -322,6 +325,13 @@
               <span id="stubSection">Section A</span>
             </div>
           </article>
+          <article class="panel term-ring-card">
+            <p class="rail-section-label">Term III</p>
+            <div class="term-ring-row">
+              <span class="term-ring"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="ring-track" cx="32" cy="32" r="26"></circle><circle class="ring-fill" id="termRingFill" cx="32" cy="32" r="26"></circle></svg><b id="termRingDays">—</b></span>
+              <div class="term-ring-meta"><strong id="termRingLabel">— days left</strong><span id="termRingSub">—% of term complete</span></div>
+            </div>
+          </article>
           <article class="panel sessions-panel">
             <p class="rail-section-label">Sessions delivered</p>
             <div id="sessionRings" class="session-rings"></div>
@@ -332,6 +342,7 @@
               <label><span>Section</span><select id="profileSection"><option value="A">Section A</option><option value="B">Section B</option></select></label>
               <div class="selected-electives-card"><span>Electives</span><div id="selectedElectiveChips" class="selected-elective-chips"></div><button class="secondary-button" type="button" id="chooseElectivesInline">Choose electives</button></div>
               <label><span>Appearance</span><select id="profileTheme"><option value="system">Follow device</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
+              <div class="accent-picker-field"><span>Accent color</span><div class="accent-swatches" id="accentSwatches"></div></div>
               <button class="primary-button" type="submit">Save profile</button>
             </form>
           </article>
@@ -421,7 +432,7 @@
           <h2 id="sheetClassTitle">Class details</h2>
           <p id="sheetClassMeta"></p>
         </div>
-        <button type="button" class="icon-button sheet-close" aria-label="Close class details"><span data-icon="close"></span></button>
+        <button type="button" class="icon-button sheet-close" id="closeClassAction" aria-label="Close class details"><span data-icon="close"></span></button>
       </header>
       <div class="class-action-grid">
         <button type="button" class="class-action primary-action" id="sheetAddTask"><span data-icon="check"></span><b>Add task</b><small>Plan something for this class</small></button>
@@ -496,9 +507,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260826-calendarpass2"></script>
-  <script src="exam-data.js?v=20260826-calendarpass2"></script>
-  <script src="app.js?v=20260826-calendarpass2"></script>
-  <script src="polish.js?v=20260826-calendarpass2"></script>
+  <script src="campus-data.js?v=20260827-premiumpass1"></script>
+  <script src="exam-data.js?v=20260827-premiumpass1"></script>
+  <script src="app.js?v=20260827-premiumpass1"></script>
+  <script src="polish.js?v=20260827-premiumpass1"></script>
 </body>
 </html>
