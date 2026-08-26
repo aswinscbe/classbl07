@@ -1754,8 +1754,8 @@ html[data-theme="light"] #focusPanel.hero-premium{
    .overline/.page-heading h1/.panel-heading h2 had ~10+ scattered,
    conflicting declarations left over from the old 5-stylesheet era
    (different sizes, colors, weights depending on which file's rule won).
-   One canonical rule per element, using the new --fs-*/--elevation-*
-   scale, so every page reads with the same typographic voice. The
+   One canonical rule per element, using the new --fs- and --elevation-
+   scale tokens, so every page reads with the same typographic voice. The
    double-class .overline.overline trick matches the (0,2,0) specificity
    of the highest scattered overrides (e.g. .home-heading .overline) so
    this wins regardless of source order; a couple of narrowly-scoped
@@ -1763,8 +1763,8 @@ html[data-theme="light"] #focusPanel.hero-premium{
    their own higher-specificity rule on top, which is correct - those are
    deliberate exceptions, not part of the base type system. */
 .overline.overline{
-  margin:0 0 6px;font-size:var(--fs-xs);font-weight:780;letter-spacing:.09em;
-  text-transform:uppercase;color:color-mix(in srgb,var(--primary) 72%,var(--text));
+  margin:0 0 6px!important;font-size:var(--fs-xs)!important;font-weight:780!important;letter-spacing:.09em!important;
+  text-transform:uppercase!important;color:color-mix(in srgb,var(--primary) 72%,var(--text))!important;
 }
 .page-heading h1,.home-heading h1{
   font-size:var(--fs-2xl)!important;line-height:1.16!important;letter-spacing:-.03em!important;
@@ -1786,13 +1786,13 @@ html[data-theme="light"] #focusPanel.hero-premium{
 .agenda-class-card.cancelled.cancelled,
 .vertical-class.cancelled.cancelled,
 .schedule-item.cancelled.cancelled{
-  opacity:1;
+  opacity:1!important;
   background:
     repeating-linear-gradient(135deg,
       color-mix(in srgb,var(--danger) 7%,transparent) 0 8px,
       transparent 8px 16px),
-    color-mix(in srgb,var(--danger) 5%,var(--surface-2));
-  border-color:color-mix(in srgb,var(--danger) 32%,var(--border));
+    color-mix(in srgb,var(--danger) 5%,var(--surface-2))!important;
+  border-color:color-mix(in srgb,var(--danger) 32%,var(--border))!important;
 }
 /* Consistent depth hierarchy using the foundation elevation scale:
    static panels rest at elevation-1, the sticky week navigator floats
@@ -1813,3 +1813,23 @@ html[data-theme="light"] #focusPanel.hero-premium{
 }
 #focusPanel.hero-premium #heroAddTask svg{width:14px!important;height:14px!important}
 #focusPanel.hero-premium #heroAddTask:hover{background:color-mix(in srgb, var(--text) 14%, transparent)!important}
+
+/* ===== Home pass 2: Next Exam countdown as visual centerpiece ============
+   #nextExamCountdown had zero dedicated styling - just default <strong>
+   text ("Today"/"Tomorrow"/"N days"). Split into a big number + small
+   label, colored by urgency (calm green far out, amber mid-range, red
+   inside 3 days) so the exam date's emotional weight actually reads at
+   a glance instead of being flat text identical to every other label
+   on the page. */
+#nextExamCountdownBlock{display:flex!important;flex-direction:column!important;align-items:flex-end!important;line-height:1!important;gap:3px!important}
+#nextExamCountdownNumber{font-family:var(--font-display)!important;font-weight:800!important;font-size:clamp(26px,7vw,32px)!important;letter-spacing:-.02em!important;color:var(--text)}
+#nextExamCountdownLabel{font-size:9px!important;font-weight:750!important;letter-spacing:.07em!important;text-transform:uppercase!important;color:var(--muted)!important}
+#nextExamCard[data-urgency="high"] #nextExamCountdownNumber{color:var(--danger)!important}
+#nextExamCard[data-urgency="mid"] #nextExamCountdownNumber{color:var(--amber)!important}
+#nextExamCard[data-urgency="calm"] #nextExamCountdownNumber{color:var(--emerald)!important}
+#nextExamCard[data-urgency="high"]{border-color:color-mix(in srgb,var(--danger) 38%,var(--border))!important}
+#nextExamCard[data-urgency="mid"]{border-color:color-mix(in srgb,var(--amber) 32%,var(--border))!important}
+
+/* Consistent elevation across Home's stacked cards, matching the
+   foundation scale used everywhere else. */
+.today-progress-card,.next-exam-card,.quick-task-panel{box-shadow:var(--elevation-1)!important}

@@ -261,7 +261,10 @@ function renderNextExam(){
   $("#nextExamCode").textContent=next.code;
   $("#nextExamTitle").textContent=next.course;
   $("#nextExamMeta").textContent=`${fmtDate(next.dateIso,{weekday:"short",day:"numeric",month:"short"})} · ${next.slot} · Time TBA`;
-  $("#nextExamCountdown").textContent=days===0?"Today":days===1?"Tomorrow":`${days} days`;
+  const urgency=days<=3?"high":days<=7?"mid":"calm";
+  card.dataset.urgency=urgency;
+  $("#nextExamCountdownNumber").textContent=days===0?"Today":days===1?"Tomorrow":String(days);
+  $("#nextExamCountdownLabel").textContent=days<=1?"":"days left";
 }
 function examListCard(exam){
   const days=examDayDistance(exam.dateIso),status=days<0?"Completed":days===0?"Today":days===1?"Tomorrow":`${days} days`;
