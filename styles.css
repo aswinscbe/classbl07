@@ -1773,3 +1773,28 @@ html[data-theme="light"] #focusPanel.hero-premium{
   font-size:var(--fs-xl)!important;line-height:1.2!important;letter-spacing:-.02em!important;
   font-weight:700!important;font-family:var(--font-display)!important;
 }
+
+/* ===== Planner pass: cancelled-class texture + panel elevation ==========
+   Cancelled classes previously relied on strikethrough text alone to
+   read as different - easy to miss at a glance in a scrolled list. Adds
+   a subtle diagonal-stripe texture on top of the existing danger tint.
+   The doubled .cancelled.cancelled class raises specificity just enough
+   to beat the half-dozen scattered opacity/background values already
+   declared for this state across the old stylesheets, without touching
+   their layout-only rules (min-height/padding stay as-is). */
+.agenda-class-card.cancelled.cancelled,
+.vertical-class.cancelled.cancelled,
+.schedule-item.cancelled.cancelled{
+  opacity:1;
+  background:
+    repeating-linear-gradient(135deg,
+      color-mix(in srgb,var(--danger) 7%,transparent) 0 8px,
+      transparent 8px 16px),
+    color-mix(in srgb,var(--danger) 5%,var(--surface-2));
+  border-color:color-mix(in srgb,var(--danger) 32%,var(--border));
+}
+/* Consistent depth hierarchy using the foundation elevation scale:
+   static panels rest at elevation-1, the sticky week navigator floats
+   above scrolled content at elevation-2. */
+.calendar-panel,.agenda-panel{box-shadow:var(--elevation-1)!important}
+.planner-week-navigator{box-shadow:var(--elevation-2)!important}
