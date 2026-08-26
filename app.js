@@ -119,7 +119,7 @@ function relativeSyncText(){
 function compareSnapshots(oldList,newList){
   if(!oldList||!oldList.length)return[];
   const oldMap=new Map(oldList.map(c=>[classIdentity(c),c])),out=[];
-  newList.forEach(c=>{const old=oldMap.get(classIdentity(c));if(!old&&c.status!=="Cancelled"&&dateTime(c,"endTime")>new Date())out.push({id:crypto.randomUUID(),classId:classIdentity(c),type:"added",code:c.code,title:`${c.code} class added`,text:`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)} · ${venueOf(c)}`,course:canonical(c.code),createdAt:Date.now(),read:false});else if(old&&old.status!=="Cancelled"&&c.status==="Cancelled")out.push({id:crypto.randomUUID(),classId:classIdentity(c),type:"cancelled",code:c.code,title:`${c.code} class cancelled`,text:`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)}`,course:canonical(c.code),createdAt:Date.now(),read:false})});
+  newList.forEach(c=>{const old=oldMap.get(classIdentity(c));if(!old&&c.status!=="Cancelled"&&dateTime(c,"endTime")>new Date())out.push({id:crypto.randomUUID(),classId:classIdentity(c),type:"added",code:c.code,title:`${c.code} class added`,text:`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)} · ${venueOf(c)}`,course:canonical(c.code),createdAt:Date.now(),read:false});else if(old&&old.status!=="Cancelled"&&c.status==="Cancelled"&&dateTime(c,"endTime")>new Date())out.push({id:crypto.randomUUID(),classId:classIdentity(c),type:"cancelled",code:c.code,title:`${c.code} class cancelled`,text:`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)}`,course:canonical(c.code),createdAt:Date.now(),read:false})});
   return out.slice(0,12)
 }
 let _syncInFlight=false,_lastSyncAt=0;
@@ -295,6 +295,8 @@ function renderHome(){
     }
     pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
     pills.push(heroPill(`${icon("faculty")}${esc(shown.faculty)}`));
+    const heroSessionN=subjectSessionOrdinal(shown);
+    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${SESSION_TARGET}`));
     if(nextInDay&&!peeking)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`));
     $("#heroPills").innerHTML=pills.join("");
     const dayLabel=shown.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(shown.dateIso,{day:"numeric",month:"short"});
@@ -979,7 +981,8 @@ function openClassSheet(c){
   activeSheetClassId=classIdentity(c);
   $("#sheetClassCode").textContent=canonical(c.code)||"CLASS";
   $("#sheetClassTitle").textContent=c.course||"Class details";
-  $("#sheetClassMeta").textContent=[fmtRange(c.startTime,c.endTime),venueOf(c),c.faculty].filter(Boolean).join(" · ");
+  const sheetSessionN=subjectSessionOrdinal(c);
+  $("#sheetClassMeta").textContent=[fmtRange(c.startTime,c.endTime),venueOf(c),c.faculty,sheetSessionN?`Session ${sheetSessionN}/${SESSION_TARGET}`:""].filter(Boolean).join(" · ");
   const calendarLink=$("#sheetAddCalendar");
   if(calendarLink){
     if(c.status!=="Cancelled"){calendarLink.hidden=false;calendarLink.href=googleUrl(c)}
@@ -1405,7 +1408,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-navherosched1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-fixes1",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
