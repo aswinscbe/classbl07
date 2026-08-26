@@ -1,64 +1,64 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#130f15">
-  <meta name="description" content="BL07 Flow — classes, exams and campus essentials in one clear view">
+  <meta name="theme-color" content="#150f16">
+  <meta name="description" content="BL07 Term 3 Planner — mobile-first academic companion">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://script.google.com">
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="brand-mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20260825-premium10">
-  <title>BL07 Flow · Know what’s next</title>
+  <script>
+    (function(){
+      try{
+        var raw=localStorage.getItem("classbl07-nova-profile-v1");
+        var pref=raw?(JSON.parse(raw).theme||"system"):"system";
+        var dark=window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var t=pref==="system"?(dark?"dark":"light"):pref;
+        document.documentElement.dataset.theme=t;
+      }catch(e){document.documentElement.dataset.theme="dark"}
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css?v=20260826-codexmerge1">
+  <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <button class="brand" data-go="home" aria-label="Open BL07 Flow home">
-        <span class="brand-copy brand-copy-mini" aria-hidden="true"><b>IIMK</b><b>BL</b></span>
-        <span class="brand-mark brand-mark-premium" aria-hidden="true">
-          <svg viewBox="0 0 64 64">
-            <defs>
-              <linearGradient id="brandFrameGradient" x1="6" y1="3" x2="58" y2="61" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#a5673f"></stop>
-                <stop offset=".5" stop-color="#6b3a6f"></stop>
-                <stop offset="1" stop-color="#241129"></stop>
-              </linearGradient>
-              <linearGradient id="brandDigitGradient" x1="17" y1="14" x2="49" y2="51" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#fffdf9"></stop>
-                <stop offset=".65" stop-color="#f7e8d8"></stop>
-                <stop offset="1" stop-color="#e8b478"></stop>
-              </linearGradient>
-              <filter id="brandGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2.2" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
-            </defs>
-            <rect class="brand-frame" x="2" y="2" width="60" height="60" rx="18"></rect>
-            <rect class="brand-highlight" x="3" y="3" width="58" height="58" rx="17"></rect>
-            <text class="brand-digits" x="32" y="44" text-anchor="middle" filter="url(#brandGlow)">07</text>
-          </svg>
-        </span>
+      <button class="brand" data-go="home" aria-label="Open Home">
+        <span class="brand-mark">IIMK</span>
+        <span class="brand-copy"><strong>BL07</strong><small>TERM 3 PLANNER</small></span>
       </button>
 
       <nav class="desktop-nav" aria-label="Primary">
         <button class="desktop-nav-item active" data-page-target="home"><span data-icon="home"></span>Home</button>
-        <button class="desktop-nav-item" data-page-target="planner"><span data-icon="calendar"></span>Planner</button>
+        <button class="desktop-nav-item" data-page-target="calendar"><span data-icon="calendar"></span>Calendar</button>
+        <button class="desktop-nav-item" data-page-target="exams"><span data-icon="exams"></span>Exams</button>
         <button class="desktop-nav-item" data-page-target="campus"><span data-icon="campus"></span>Campus</button>
         <button class="desktop-nav-item" data-page-target="profile"><span data-icon="profile"></span>Profile</button>
       </nav>
 
       <div class="top-actions">
         <span class="sync-pill" id="syncPill"><i></i><span>Connecting</span></span>
-        <button class="icon-button refresh-button" id="refreshButton" aria-label="Refresh schedule" title="Refresh schedule"><span data-icon="refresh"></span></button>
+        <button class="icon-button top-more-button" id="topMoreButton" aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span data-icon="more"></span></button>
+        <div class="top-more-menu" id="topMoreMenu">
+          <button class="icon-button refresh-button" id="refreshButton" aria-label="Refresh schedule" title="Refresh schedule"><span data-icon="refresh"></span></button>
+          <button class="icon-button" id="ledgerButton" aria-label="Open tasks and notes" title="Tasks & Notes"><span data-icon="note"></span></button>
+        </div>
         <button class="icon-button notification-button" id="notificationButton" aria-label="Open notifications">
           <span data-icon="bell"></span><b id="notificationBadge" hidden>0</b>
         </button>
         <button class="icon-button" id="themeToggle" aria-label="Toggle theme"><span data-icon="theme"></span></button>
-        <button class="icon-button profile-quick-button" data-page-target="profile" aria-label="Open profile" title="Profile"><span data-icon="profile"></span></button>
       </div>
     </header>
+
+    <div class="offline-banner" id="offlineBanner" hidden>
+      <span class="offline-dot"></span>
+      <span>You're offline — showing your last saved schedule.</span>
+    </div>
 
     <main class="page-wrap">
       <section class="page active" id="homePage" data-page="home">
@@ -66,276 +66,280 @@
           <div>
             <p class="overline" id="todayLabel">TODAY</p>
             <h1 id="greeting">Good evening.</h1>
+            <p class="home-sync-text" id="homeSyncText">Checking the latest schedule…</p>
+          </div>
+          <div class="date-orbit" aria-hidden="true">
+            <span id="dateOrbitDay">06</span>
+            <small id="dateOrbitMonth">AUG</small>
           </div>
         </div>
 
-        <section class="silent-update-strip" id="silentUpdateStrip" hidden>
-          <div class="silent-update-icon"><span data-icon="spark"></span></div>
-          <div><strong id="silentUpdateTitle">Schedule updated</strong><p id="silentUpdateText">New changes are available.</p></div>
-          <button class="text-button" id="openUpdatesFromHome">View</button>
-        </section>
-
-        <section class="hero-card hero-premium" id="focusPanel" aria-live="polite">
-          <div class="hero-top">
-            <span class="focus-live-capsule" id="focusLiveCapsule">NOW</span>
-            <span class="hero-day-load" id="focusDayLoad">Today</span>
-          </div>
-          <div class="hero-main">
-            <div class="hero-copy">
-              <div class="focus-course-line" id="focusCourseAction" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Open class details">
-                <div class="focus-code" id="focusCode">—</div>
-                <h2 id="focusTitle">Loading your schedule</h2>
-                <span class="focus-course-open" data-icon="chevron-right" aria-hidden="true"></span>
-              </div>
-              <div class="focus-time-hero" id="focusTime">—</div>
-              <div class="hero-brief" id="heroBrief" role="button" tabindex="0" aria-label="Open this class in Planner">
-                <svg class="hero-ring" id="heroRing" viewBox="0 0 40 40" hidden aria-hidden="true">
-                  <circle class="hero-ring-track" cx="20" cy="20" r="17"></circle>
-                  <circle class="hero-ring-fill" id="heroRingFill" cx="20" cy="20" r="17" transform="rotate(-90 20 20)"></circle>
-                  <text class="hero-ring-text" id="heroRingText" x="20" y="24" text-anchor="middle">0%</text>
-                </svg>
-                <p id="heroSentence">Checking your schedule…</p>
-              </div>
-            </div>
-          </div>
-          <div class="hero-day-glance" id="heroDayGlance" aria-label="Classes for the day" hidden></div>
-        </section>
-
-        <section class="week-density" id="weekDensity" aria-labelledby="weekDensityTitle">
-          <div class="week-density-heading">
-            <strong id="weekDensityTitle">This Week Load</strong>
-            <span id="weekDensitySummary">—</span>
-          </div>
-          <p class="section-context-line" id="weekDensityInsight">Reading this week’s rhythm…</p>
-          <div class="week-density-days" id="weekDensityDays"></div>
-        </section>
-
-        <section class="today-progress-card panel">
-          <div class="panel-heading timeline-heading">
-            <div>
-              <p class="overline">CLASS TIMELINE</p>
-              <h2 id="timelineDateTitle">Today</h2>
-              <p class="timeline-full-date" id="timelineFullDate"></p>
-            </div>
-            <span class="count-chip" id="progressSummary">0 / 0</span>
-          </div>
-          <div class="timeline-load-summary" id="timelineLoadSummary" aria-live="polite"></div>
-          <p class="section-context-line" id="timelineContextLine"></p>
-          <div class="timeline-day-switch" id="timelineDaySwitch">
-            <button class="timeline-day-button active" data-timeline-day="today">
-              <span>Today</span><small id="todaySwitchDate"></small>
-            </button>
-            <button class="timeline-day-button" data-timeline-day="tomorrow">
-              <span>Tomorrow</span><small id="tomorrowSwitchDate"></small>
-            </button>
-          </div>
-          <div id="todayProgressRail"></div>
-        </section>
-
-        <section class="next-exam-card panel" id="nextExamCard" hidden>
-          <span class="next-exam-icon" data-icon="books"></span>
-          <div class="next-exam-copy">
-            <p class="overline">NEXT EXAM</p>
-            <div class="next-exam-course-line"><span class="exam-code-chip" id="nextExamCode">—</span><h2 id="nextExamTitle">—</h2></div>
-            <p id="nextExamMeta">—</p>
-          </div>
-          <div class="next-exam-side">
-            <div class="next-exam-countdown" id="nextExamCountdownBlock"><strong id="nextExamCountdownNumber">—</strong><span id="nextExamCountdownLabel">days</span></div>
-            <button type="button" class="text-button" data-open-exams>View schedule</button>
-          </div>
-        </section>
-
-        <section class="panel quick-task-panel">
-          <div class="panel-heading">
-            <div><p class="overline">QUICK CAPTURE</p><h2>Add a task</h2></div>
-          </div>
-          <form id="quickTaskForm" class="quick-form">
-            <input id="quickTaskTitle" type="text" placeholder="What needs to be done?" required maxlength="120">
-            <select id="quickTaskCourse"><option value="">General</option></select>
-            <input id="quickTaskDate" type="date">
-            <button type="submit" class="primary-button"><span data-icon="plus"></span>Add</button>
-          </form>
-          <div id="homeTasks" class="task-list"></div>
-        </section>
-      </section>
-
-      <section class="page" id="plannerPage" data-page="planner">
-        <div class="page-heading section-heading">
-          <div><p class="overline">PLANNER</p><h1>Planner</h1><p class="section-subtitle">Classes, exams, tasks and notes.</p></div>
-        </div>
-        <div class="subtabs" id="plannerTabs">
-          <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span><span class="planner-tab-label">Calendar</span></button>
-          <button class="subtab" data-planner-tab="exams"><span data-icon="books"></span><span class="planner-tab-label">Exams</span><b class="planner-tab-badge" id="plannerExamBadge" hidden>0</b></button>
-          <button class="subtab" data-planner-tab="tasks"><span data-icon="check"></span><span class="planner-tab-label">Tasks</span><b class="planner-tab-badge" id="plannerTaskBadge" hidden>0</b></button>
-          <button class="subtab" data-planner-tab="notes"><span data-icon="note"></span><span class="planner-tab-label">Notes</span><b class="planner-tab-badge" id="plannerNoteBadge" hidden>0</b></button>
-        </div>
-
-        <section class="planner-view active" data-planner-view="calendar">
-          <article class="planner-week-navigator" id="plannerWeekNavigator" aria-label="Selected week">
-            <div class="planner-week-head">
-              <button class="icon-button" id="prevWeek" aria-label="Previous week"><span data-icon="chevron-left"></span></button>
-              <strong id="plannerWeekRange">—</strong>
-              <div class="planner-week-actions">
-                <button class="week-today-button" id="weekTodayButton" type="button">Today</button>
-                <button class="calendar-view-button" id="toggleMonthView" aria-label="Open month view" aria-expanded="false"><span data-icon="calendar"></span><span>Month</span></button>
-                <button class="icon-button" id="nextWeek" aria-label="Next week"><span data-icon="chevron-right"></span></button>
-              </div>
-            </div>
-            <div class="planner-week-days" id="plannerWeekDays"></div>
-          </article>
-          <div class="calendar-layout">
-            <article class="panel calendar-panel">
-              <button class="month-back-button" id="closeMonthView" type="button"><span data-icon="chevron-left"></span><span>Week schedule</span></button>
-              <div class="calendar-head">
-                <button class="icon-button" id="prevMonth" aria-label="Previous month"><span data-icon="chevron-left"></span></button>
-                <div><p class="overline">MONTH</p><h2 id="calendarTitle">August 2026</h2></div>
-                <button class="icon-button" id="nextMonth" aria-label="Next month"><span data-icon="chevron-right"></span></button>
-              </div>
-              <button class="today-button" id="todayButton"><span data-icon="target"></span>Jump to today</button>
-              <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
-              <div class="calendar-grid" id="calendarGrid"></div>
-              <div class="calendar-legend" id="calendarLegend"></div>
-            </article>
-
-            <article class="panel agenda-panel">
-              <div class="panel-heading agenda-heading">
-                <div><p class="overline">SELECTED DAY</p><h2 id="agendaDate">Choose a date</h2><p class="agenda-load-summary" id="agendaLoadSummary"></p><p class="section-context-line agenda-context-line" id="agendaContextLine"></p></div>
-                <div class="agenda-day-controls">
-                  <button class="text-button agenda-back-today" id="agendaBackToday" type="button" hidden>Today</button>
-                  <button class="icon-button agenda-day-arrow" id="agendaPrevDay" aria-label="Previous day"><span data-icon="chevron-left"></span></button>
-                  <span class="count-chip" id="agendaCount">0</span>
-                  <button class="icon-button agenda-day-arrow" id="agendaNextDay" aria-label="Next day"><span data-icon="chevron-right"></span></button>
+        <div class="home-layout">
+          <div class="home-main">
+            <section class="hero-card" id="focusPanel" aria-live="polite">
+              <div class="hero-status-row">
+                <span class="hero-status" id="focusStatusTag"><i id="focusPulse"></i><span class="hero-empty-icon" id="focusEmptyIcon" hidden></span><span id="focusKicker">CHECKING</span></span>
+                <div class="hero-status-right">
+                  <span class="hero-day-count" id="heroDayCount" hidden></span>
+                  <button type="button" class="icon-button hero-add-task" id="heroAddTask" hidden aria-label="Add task for this class" title="Add task for this class"><span data-icon="plus"></span></button>
                 </div>
               </div>
-              <div class="agenda-utility-bar" aria-label="Schedule controls">
-                <button class="agenda-utility-action" id="jumpNextClass" type="button"><span data-icon="target"></span><span>Jump to next class</span></button>
-                <button class="agenda-filter-chip" id="onlyUpcomingClasses" type="button" aria-pressed="false" title="Show only future, non-cancelled classes"><span data-icon="filter"></span><span class="agenda-filter-label">Upcoming</span><b aria-hidden="true">×</b></button>
-                <button class="agenda-utility-action" id="toggleCompletedClasses" type="button"><span data-icon="check"></span><span>Show completed</span></button>
+              <div class="hero-course-line">
+                <span class="hero-code" id="focusCode">—</span>
+                <h2 id="focusTitle">Loading your schedule</h2>
               </div>
-              <div id="dayAgenda" class="schedule-list"></div>
-              <div class="subject-next-lookup">
-                <label for="nextSubjectSelect"><span>NEXT SUBJECT</span><select id="nextSubjectSelect"><option value="">Choose a subject</option></select></label>
-                <button id="nextSubjectResult" class="subject-next-result" type="button" hidden>
-                  <span id="nextSubjectResultLabel">Next class</span>
-                  <strong id="nextSubjectResultValue">—</strong>
-                  <small id="nextSubjectResultMeta">—</small>
+              <div class="hero-time" id="focusRange">—:— – —:—</div>
+              <div class="hero-progress" id="heroProgress" hidden><span id="heroProgressFill"></span></div>
+              <div class="hero-meta-grid">
+                <span><i data-icon="pin"></i><b id="focusVenue">—</b></span>
+                <span><i data-icon="faculty"></i><b id="focusFaculty">—</b></span>
+              </div>
+              <p class="hero-line" id="heroLine" hidden></p>
+              <p class="hero-summary" id="heroSummary"></p>
+              <div class="hero-day-glance" id="heroDayGlance" hidden></div>
+            </section>
+
+            <form class="quick-capture" id="quickCaptureForm">
+              <span data-icon="plus" class="quick-capture-icon"></span>
+              <input type="text" id="quickCaptureInput" placeholder="Add a task for today…" maxlength="120" autocomplete="off">
+              <button type="submit" class="quick-capture-submit" aria-label="Add task"><span data-icon="chevron-right"></span></button>
+            </form>
+
+            <button type="button" class="exam-card" id="examCard" hidden>
+              <span class="exam-card-tag" id="examCardTag">NEXT EXAM</span>
+              <h3 id="examCardTitle">—</h3>
+              <p id="examCardMeta">—</p>
+            </button>
+
+            <section class="silent-update-strip" id="silentUpdateStrip" hidden>
+              <div class="silent-update-icon"><span data-icon="spark"></span></div>
+              <div><strong id="silentUpdateTitle">Schedule updated</strong><p id="silentUpdateText">New changes are available.</p></div>
+              <button class="text-button" id="openUpdatesFromHome">View</button>
+            </section>
+
+            <p class="rail-section-label">This week's classes</p>
+            <div class="week-heatmap" id="weekHeatmap"></div>
+
+            <section class="today-progress-card panel">
+              <div class="panel-heading timeline-heading">
+                <div>
+                  <p class="overline">CLASS TIMELINE</p>
+                  <h2 id="timelineDateTitle">Today</h2>
+                  <p class="timeline-full-date" id="timelineFullDate"></p>
+                </div>
+                <span class="count-chip" id="progressSummary">0 / 0</span>
+              </div>
+              <div class="timeline-day-switch" id="timelineDaySwitch">
+                <button class="timeline-day-button active" data-timeline-day="today">
+                  <span>Today</span><small id="todaySwitchDate"></small>
+                </button>
+                <button class="timeline-day-button" data-timeline-day="tomorrow">
+                  <span>Tomorrow</span><small id="tomorrowSwitchDate"></small>
                 </button>
               </div>
-            </article>
+              <div id="todayProgressRail"></div>
+            </section>
           </div>
-        </section>
 
-        <section class="planner-view" data-planner-view="exams">
-          <article class="panel exam-overview-panel">
-            <div class="panel-heading exam-heading">
-              <div><p class="overline">TERM III</p><h2>End-term exams</h2></div>
-              <span class="count-chip" id="examCount">0</span>
-            </div>
-            <p class="section-context-line" id="examContextLine"></p>
-            <div class="exam-advisory"><span data-icon="calendar"></span><p>Exact start times and venues have not been announced. Report 10 minutes before the confirmed time and carry your institute ID.</p></div>
-            <div class="exam-schedule" id="examSchedule"></div>
-          </article>
-        </section>
+          <aside class="home-rail">
+            <button type="button" class="term-progress-card" id="termProgressCard" aria-label="View term overview by week">
+              <div class="term-progress-head"><div><p class="overline">TERM III</p><h2>Progress</h2></div><span class="count-chip" id="termProgressPct">0%</span></div>
+              <div class="term-progress-bar" id="termProgressBarTrack">
+                <span id="termProgressBar"></span>
+                <i class="term-month-tick" id="termTickSep" style="left:0"></i>
+                <i class="term-month-tick" id="termTickOct" style="left:0"></i>
+              </div>
+              <div class="term-month-labels"><span>AUG</span><span>SEP</span><span>OCT</span></div>
+              <p class="term-progress-line"><strong id="termDone">0</strong> done · <strong id="termLeft">0</strong> left · <strong id="termWeeksLeft">0</strong> weeks to go</p>
+            </button>
 
-        <section class="planner-view" data-planner-view="tasks">
-          <article class="panel profile-preferences-panel">
-            <div class="panel-heading">
-              <div><p class="overline">TASKS</p><h2>Tasks</h2></div>
-              <button class="primary-button small" id="openTaskForm"><span data-icon="plus"></span>New task</button>
-            </div>
-            <div class="filter-row" id="taskFilters">
-              <button class="filter active" data-task-filter="open">Open</button>
-              <button class="filter" data-task-filter="today">Today</button>
-              <button class="filter" data-task-filter="upcoming">Upcoming</button>
-              <button class="filter" data-task-filter="completed">Completed</button>
-            </div>
-            <div id="taskList" class="task-list"></div>
-          </article>
-        </section>
-
-        <section class="planner-view" data-planner-view="notes">
-          <article class="panel profile-settings-panel">
-            <div class="panel-heading">
-              <div><p class="overline">NOTES</p><h2>Notes</h2></div>
-              <button class="primary-button small" id="openNoteForm"><span data-icon="plus"></span>New note</button>
-            </div>
-            <input class="search-input" id="noteSearch" type="search" placeholder="Search notes">
-            <div id="noteList" class="note-grid"></div>
-          </article>
-        </section>
+            <p class="rail-section-label">This week</p>
+            <p class="week-trend" id="weekTrend" hidden></p>
+            <section class="stat-strip" aria-label="Week progress">
+              <button type="button" class="stat-cell" data-stat-action="classes"><b id="weekClasses">0</b><span>Classes left</span></button>
+              <button type="button" class="stat-cell" data-stat-action="hours">
+                <span class="stat-ring"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-track" cx="20" cy="20" r="16"></circle><circle class="ring-fill" id="hoursRingFill" cx="20" cy="20" r="16"></circle></svg></span>
+                <b id="weekHours">0h</b><span>Hours left</span>
+              </button>
+              <button type="button" class="stat-cell stat-cell-cancelled" data-stat-action="cancelled"><b id="weekCancelled">0</b><span>Cancelled</span></button>
+              <button type="button" class="stat-cell stat-cell-added" data-stat-action="added"><b id="weekAdded">0</b><span>Added</span></button>
+            </section>
+          </aside>
+        </div>
       </section>
 
+      <section class="page" id="calendarPage" data-page="calendar">
+        <div class="page-heading"><div><p class="overline">CALENDAR</p><h1>Calendar</h1><p class="subtitle">Browse any day of the term.</p></div></div>
+        <div class="calendar-layout">
+          <article class="rail-panel panel">
+            <div class="rail-head">
+              <button class="icon-button" id="railPrevWeek" aria-label="Previous week"><span data-icon="chevron-left"></span></button>
+              <span class="rail-week-label" id="railWeekLabel">Week</span>
+              <button class="icon-button" id="railNextWeek" aria-label="Next week"><span data-icon="chevron-right"></span></button>
+              <button class="icon-button rail-month-toggle" id="openMonthView" aria-label="Open month view"><span data-icon="calendar"></span></button>
+            </div>
+            <div class="date-rail" id="dateRail"></div>
+          </article>
+
+          <article class="agenda-panel panel">
+            <div class="panel-heading agenda-heading">
+              <div><p class="overline">SELECTED DAY</p><h2 id="agendaDate">Choose a date</h2></div>
+              <div class="agenda-day-controls">
+                <button class="icon-button agenda-day-arrow" id="agendaPrevDay" aria-label="Previous day"><span data-icon="chevron-left"></span></button>
+                <span class="count-chip" id="agendaCount">0</span>
+                <button class="icon-button agenda-day-arrow" id="agendaNextDay" aria-label="Next day"><span data-icon="chevron-right"></span></button>
+              </div>
+            </div>
+            <div class="filter-chips agenda-utility-row" id="agendaUtilityRow">
+              <button type="button" class="filter-chip" id="jumpToNextClassButton">Jump to next class</button>
+              <button type="button" class="filter-chip" id="toggleCompletedButton">Show completed</button>
+            </div>
+            <div id="dayAgenda" class="schedule-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <dialog id="monthViewDialog" class="class-action-dialog month-view-dialog">
+        <section class="class-action-sheet">
+          <div class="sheet-handle" aria-hidden="true"></div>
+          <header class="class-action-head">
+            <div>
+              <span class="sheet-code">MONTH VIEW</span>
+              <h2 id="calendarTitle">August 2026</h2>
+            </div>
+            <button type="button" class="icon-button sheet-close" id="closeMonthView" aria-label="Close month view"><span data-icon="close"></span></button>
+          </header>
+          <div class="calendar-head">
+            <button class="icon-button" id="prevMonth" aria-label="Previous month"><span data-icon="chevron-left"></span></button>
+            <button class="today-button" id="todayButton"><span data-icon="target"></span>Jump to today</button>
+            <button class="icon-button" id="nextMonth" aria-label="Next month"><span data-icon="chevron-right"></span></button>
+          </div>
+          <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span class="weekend">Sat</span><span class="weekend">Sun</span></div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <div class="calendar-legend" id="calendarLegend"></div>
+        </section>
+      </dialog>
+
       <section class="page" id="campusPage" data-page="campus">
-        <div class="page-heading section-heading">
-          <div><p class="overline">CAMPUS</p><h1>Campus</h1><p class="section-subtitle">Bus timings and today’s mess menu.</p></div>
+        <div class="page-heading">
+          <div><p class="overline">CAMPUS</p><h1>Campus</h1><p class="subtitle">Bus timings and today's mess menu.</p></div>
         </div>
         <div class="subtabs">
           <button class="subtab active" data-campus-tab="bus"><span data-icon="bus"></span>Bus</button>
           <button class="subtab" data-campus-tab="mess"><span data-icon="meal"></span>Mess</button>
         </div>
 
-        <section class="campus-view active" data-campus-view="bus"><article class="panel route-planner"><div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2><p class="section-context-line" id="busContextLine">Choose two stops to see the next direct service.</p></div></div><div class="route-select-grid"><label><span>From</span><select id="busFrom"></select></label><button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button><label><span>To</span><select id="busTo"></select></label></div><div class="quick-route-row" id="quickRoutes"></div></article><div class="campus-grid"><article class="next-bus-card route-card"><div class="next-bus-head"><p class="overline light" id="nextBusEyebrow">NEXT DEPARTURE</p><span class="next-bus-day" id="nextBusDay" hidden>Tomorrow</span></div><div class="next-bus-time-row"><time class="next-bus-time" id="nextBusTime">—</time><div class="next-bus-countdown"><span id="nextBusCountdownLabel">Leaves in</span><strong id="nextBusCountdown">—</strong><small id="nextBusCountdownHint" hidden>—</small></div></div><h2 id="nextBusRoute">Choose a route</h2><p id="nextBusMeta">Direct services only</p><div class="route-visual" id="nextBusVisual"></div><p class="bus-arrival-note" id="busArrivalNote" hidden>Intermediate-stop arrival times vary. Times shown are origin departures.</p></article><article class="panel"><div class="panel-heading"><div><p class="overline">UPCOMING</p><h2>Next origin departures</h2></div></div><div id="upcomingBuses" class="bus-list"></div></article></div><article class="panel"><div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small-toggle" id="toggleFullBus">Show all</button></div><div id="fullBusList" class="bus-table collapsed"></div></article></section><section class="campus-view" data-campus-view="mess"><article class="panel mess-shell"><div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2><p class="section-context-line" id="messContextLine"></p></div><span class="serving-state" id="messServingState">Selected menu</span></div><div class="day-pills" id="messDayPills"></div><div class="meal-tabs" id="mealTabs"><button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button><button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button><button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button></div><p class="menu-note">Menu is tentative and may change with market availability.</p><div id="messMenu" class="meal-showcase"></div></article></section></section><section class="page" id="profilePage" data-page="profile">
-        <div class="page-heading section-heading profile-page-heading"><div><p class="overline">ACCOUNT</p><h1>Profile</h1><p class="section-subtitle">Your timetable, electives and preferences.</p></div><span class="profile-sync-summary" id="profileSyncStatus">Schedule not synced</span></div>
-        <div class="profile-layout">
-          <div class="profile-column profile-column-primary">
-          <article class="profile-hero">
-            <div class="avatar" id="profileAvatar">ST</div>
-            <div><h2 id="profileDisplayName">Student</h2><p id="profileSummary">PGPBL / Section A</p></div>
+        <section class="campus-view active" data-campus-view="bus">
+          <article class="panel route-planner">
+            <div class="panel-heading"><div><p class="overline">PLAN A ROUTE</p><h2>Where are you going?</h2></div></div>
+            <div class="route-select-grid">
+              <label><span>From</span><select id="busFrom"></select></label>
+              <button class="swap-route-button" id="swapBusRoute" aria-label="Reverse journey"><span data-icon="swap"></span><span class="swap-label">Reverse journey</span></button>
+              <label><span>To</span><select id="busTo"></select></label>
+            </div>
+            <div class="filter-chips" id="busFilterChips"></div>
           </article>
-          <article class="panel profile-account-panel">
+
+          <article class="next-bus-card">
+            <p class="overline light">NEXT DEPARTURE</p>
+            <div class="next-bus-head">
+              <div class="next-bus-time" id="nextBusTime">—</div>
+              <div class="gate-tags" id="nextBusGateTags"></div>
+            </div>
+            <h2 id="nextBusRoute">Choose a route</h2>
+            <p id="nextBusMeta">Direct services only</p>
+            <div class="route-visual" id="nextBusVisual"></div>
+            <div class="countdown-box">
+              <div class="countdown-ring" id="countdownRing">
+                <svg viewBox="0 0 44 44" aria-hidden="true">
+                  <circle class="ring-track" cx="22" cy="22" r="18"></circle>
+                  <circle class="ring-fill" id="countdownRingFill" cx="22" cy="22" r="18"></circle>
+                </svg>
+              </div>
+              <div class="countdown-copy"><span>Leaves in</span><strong id="nextBusCountdown">—</strong></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading"><div><p class="overline">TIMETABLE</p><h2>All services on this route</h2></div></div>
+            <div class="board-list" id="busBoard"></div>
+          </article>
+        </section>
+
+        <section class="campus-view" data-campus-view="mess">
+          <article class="panel mess-shell">
+            <div class="panel-heading"><div><p class="overline">MESS MENU</p><h2 id="messDayTitle">Today</h2></div></div>
+            <div class="mess-columns">
+              <div class="mess-rail">
+                <div class="day-pills" id="messDayPills"></div>
+                <div class="meal-tabs" id="mealTabs">
+                  <button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button>
+                  <button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button>
+                  <button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button>
+                </div>
+                <p class="menu-note">Menu is tentative and may change with market availability.</p>
+              </div>
+              <div id="messMenu" class="meal-showcase"></div>
+            </div>
+          </article>
+        </section>
+      </section>
+
+      <section class="page" id="examsPage" data-page="exams">
+        <div class="page-heading"><div><p class="overline">TERM III</p><h1>Exams</h1><p class="subtitle">End-term schedule and prep.</p></div></div>
+
+        <article class="exam-hero" id="examHero" hidden>
+          <span class="exam-hero-tag" id="examHeroTag">NEXT EXAM</span>
+          <div class="exam-hero-course">
+            <span class="exam-hero-code" id="examHeroCode">—</span>
+            <h2 id="examHeroTitle">—</h2>
+          </div>
+          <p class="exam-hero-meta" id="examHeroMeta">—</p>
+          <div class="exam-hero-row">
+            <div><span>In</span><b id="examHeroDays">—</b></div>
+            <button type="button" class="secondary-button small" id="examHeroPrep">+ Prep task</button>
+          </div>
+        </article>
+
+        <div id="examsList" class="exams-list"></div>
+      </section>
+
+      <section class="page" id="profilePage" data-page="profile">
+        <div class="page-heading"><div><p class="overline">PROFILE</p><h1>Profile</h1><p class="subtitle">Your section, electives and settings.</p></div></div>
+        <div class="profile-layout">
+          <article class="avatar-card">
+            <div class="avatar-disc" id="profileAvatarDisc"></div>
+            <div class="avatar-info">
+              <div id="stubName">Student</div>
+              <span id="stubSection">Section A</span>
+            </div>
+          </article>
+          <article class="panel sessions-panel">
+            <p class="rail-section-label">Sessions delivered</p>
+            <div id="sessionRings" class="session-rings"></div>
+          </article>
+          <article class="panel">
             <form id="profileForm" class="profile-form">
-              <p class="profile-group-label">ACCOUNT DETAILS</p>
               <label><span>Name</span><input id="profileName" type="text" required></label>
               <label><span>Section</span><select id="profileSection"><option value="A">Section A</option><option value="B">Section B</option></select></label>
-              <div class="selected-electives-card"><span>Electives</span><div id="selectedElectiveChips" class="selected-elective-chips"></div><button class="secondary-button" type="button" id="chooseElectivesInline">Edit electives</button></div>
-              <p class="profile-group-label profile-appearance-label">APPEARANCE</p>
+              <div class="selected-electives-card"><span>Electives</span><div id="selectedElectiveChips" class="selected-elective-chips"></div><button class="secondary-button" type="button" id="chooseElectivesInline">Choose electives</button></div>
               <label><span>Appearance</span><select id="profileTheme"><option value="system">Follow device</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
               <button class="primary-button" type="submit">Save profile</button>
             </form>
           </article>
-          </div>
-          <div class="profile-column profile-column-secondary">
-          <article class="panel course-progress-panel">
-            <div class="panel-heading course-progress-heading"><div><p class="overline">COURSE PROGRESS</p><h2>Sessions delivered</h2><p>Each subject has 24 sessions. Cancelled classes are excluded.</p></div><div class="course-progress-summary" aria-label="Overall course progress"><strong id="profileTotalCompleted">0</strong><span>completed</span><small id="profileTotalRemaining">0 remaining</small></div></div>
-            <div class="course-progress-grid" id="courseProgressGrid"></div>
-          </article>
-          <article class="panel profile-connections-panel">
-            <p class="profile-group-label">CONNECTIONS</p>
+          <article class="panel">
             <div class="settings-row"><div><strong>Google Tasks</strong><p>Sync tasks to your Google account.</p><div id="googleTasksStatus"></div></div><span id="googleTasksConnected" hidden><button class="secondary-button" id="disconnectGoogleTasks">Disconnect</button></span><span id="googleTasksDisconnected"><button class="primary-button google-tasks-button" id="connectGoogleTasks">Connect</button></span></div>
             <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
-            <div class="settings-row"><div><strong>Open calendar</strong><p>Open Google Calendar in a new tab.</p></div><a class="secondary-button link-button" href="https://calendar.google.com" target="_blank" rel="noopener">Open</a></div>
-            <p class="profile-group-label profile-data-label">DATA &amp; APP</p>
-            <div class="settings-row"><div><strong>App version</strong><p>3.1.0 · BL07 Flow</p></div></div>
             <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>
           </article>
-          <article class="panel profile-features-panel">
-            <div class="panel-heading profile-features-heading"><div><p class="overline">APP GUIDE</p><h2>Everything in one place</h2><p>Classes, exams and campus essentials—organised around your day.</p></div><button class="icon-button profile-guide-toggle" id="toggleProfileGuide" type="button" aria-expanded="true" aria-controls="profileGuideContent" aria-label="Collapse app guide"><span data-icon="chevron-right"></span></button></div>
-            <div class="profile-guide-content" id="profileGuideContent"><div class="profile-feature-grid">
-              <div class="profile-feature"><span data-icon="clock"></span><div><strong>Live class timeline</strong><p>See what is happening now and what comes next.</p></div></div>
-              <div class="profile-feature"><span data-icon="calendar"></span><div><strong>Weekly workload</strong><p>Compare class load from Monday through Sunday.</p></div></div>
-              <div class="profile-feature"><span data-icon="books"></span><div><strong>Planner and exams</strong><p>Browse classes, exam dates and preparation actions.</p></div></div>
-              <div class="profile-feature"><span data-icon="check"></span><div><strong>Tasks and notes</strong><p>Capture coursework and keep it linked to a subject.</p></div></div>
-              <div class="profile-feature"><span data-icon="target"></span><div><strong>Next class by subject</strong><p>Find the next DBST, SM or elective session instantly.</p></div></div>
-              <div class="profile-feature"><span data-icon="bus"></span><div><strong>Campus bus</strong><p>Check the next departure and matching services.</p></div></div>
-              <div class="profile-feature"><span data-icon="meal"></span><div><strong>Mess menu</strong><p>View meals by day and serving period.</p></div></div>
-              <div class="profile-feature"><span data-icon="bell"></span><div><strong>Schedule updates</strong><p>Keep only relevant, active class changes visible.</p></div></div>
-              <div class="profile-feature"><span data-icon="refresh"></span><div><strong>Offline access</strong><p>Continue using the last saved schedule offline.</p></div></div>
-            </div>
-            <div class="profile-quick-actions" aria-label="Open app features">
-              <button class="secondary-button" type="button" data-page-target="planner"><span data-icon="calendar"></span>Open Planner</button>
-              <button class="secondary-button" type="button" data-open-exams><span data-icon="books"></span>View exams</button>
-              <button class="secondary-button" type="button" data-page-target="campus"><span data-icon="campus"></span>Check campus</button>
-            </div>
-            </div>
-          </article>
-          </div>
         </div>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Primary navigation">
       <button class="nav-item active" data-page-target="home"><span data-icon="home"></span><b>Home</b></button>
-      <button class="nav-item" data-page-target="planner"><span data-icon="calendar"></span><b>Planner</b></button>
+      <button class="nav-item" data-page-target="calendar"><span data-icon="calendar"></span><b>Calendar</b></button>
+      <button class="nav-item" data-page-target="exams"><span data-icon="exams"></span><b>Exams</b></button>
       <button class="nav-item" data-page-target="campus"><span data-icon="campus"></span><b>Campus</b></button>
       <button class="nav-item" data-page-target="profile"><span data-icon="profile"></span><b>Profile</b></button>
     </nav>
@@ -345,27 +349,35 @@
     <div class="notification-backdrop" id="notificationBackdrop"></div>
     <div class="notification-panel">
       <div class="notification-head">
-        <div><p class="overline">UPDATES</p><h2>Notifications</h2><p class="notification-head-copy" id="notificationHeadCopy">Only active schedule changes</p></div>
-        <div class="notification-head-actions">
-          <button class="notification-action" id="markNotificationsRead">Mark read</button>
-          <button class="icon-button" id="closeNotifications" aria-label="Close notifications"><span data-icon="close"></span></button>
-        </div>
-      </div>
-      <div class="notification-filters" id="notificationFilters" aria-label="Filter notifications">
-        <button class="active" type="button" data-notification-filter="all">All</button>
-        <button type="button" data-notification-filter="added">Added</button>
-        <button type="button" data-notification-filter="changes">Changes</button>
+        <div><p class="overline">UPDATES</p><h2>Notifications</h2></div>
+        <button class="icon-button" id="closeNotifications"><span data-icon="close"></span></button>
       </div>
       <div id="notificationList" class="notification-list"></div>
+      <div class="notification-actions">
+        <button class="secondary-button" id="markNotificationsRead">Mark all as read</button>
+        <button class="danger-button" id="clearNotifications">Clear all</button>
+      </div>
     </div>
   </aside>
 
-  <div class="app-state-banner" id="appStateBanner" role="status" aria-live="polite" hidden>
-    <span id="appStateText">You are offline. Showing the last saved schedule.</span>
-    <button type="button" id="appStateAction" hidden>Refresh</button>
-  </div>
+  <dialog id="ledgerDialog" class="ledger-dialog">
+    <div class="dialog-card ledger-dialog-card">
+      <div class="dialog-head"><div><p class="overline">TASKS &amp; NOTES</p><h2>Tasks &amp; Notes</h2></div><button type="button" class="icon-button dialog-close" aria-label="Close"><span data-icon="close"></span></button></div>
+      <div class="ledger-add-buttons">
+        <button class="secondary-button small" id="openTaskForm"><span data-icon="plus"></span>Task</button>
+        <button class="secondary-button small" id="openNoteForm"><span data-icon="plus"></span>Note</button>
+      </div>
+      <input class="search-input" id="ledgerSearch" type="search" placeholder="Search tasks &amp; notes">
+      <div class="filter-row" id="ledgerFilters">
+        <button class="filter active" data-ledger-filter="all">All</button>
+        <button class="filter" data-ledger-filter="tasks">Tasks</button>
+        <button class="filter" data-ledger-filter="notes">Notes</button>
+      </div>
+      <div id="ledgerList" class="ledger-list"></div>
+    </div>
+  </dialog>
 
-  <dialog id="shortcutDialog"><div class="dialog-card shortcut-card"><div class="dialog-head"><div><p class="overline">KEYBOARD</p><h2>Shortcuts</h2></div><button class="icon-button" id="closeShortcutDialog"><span data-icon="close"></span></button></div><div class="shortcut-grid"><span><kbd>H</kbd><b>Home</b></span><span><kbd>P</kbd><b>Planner</b></span><span><kbd>C</kbd><b>Campus</b></span><span><kbd>R</kbd><b>Refresh</b></span><span><kbd>N</kbd><b>Notifications</b></span><span><kbd>?</kbd><b>Shortcut help</b></span></div></div></dialog>
+  <dialog id="shortcutDialog"><div class="dialog-card shortcut-card"><div class="dialog-head"><div><p class="overline">KEYBOARD</p><h2>Shortcuts</h2></div><button class="icon-button" id="closeShortcutDialog"><span data-icon="close"></span></button></div><div class="shortcut-grid"><span><kbd>H</kbd><b>Home</b></span><span><kbd>C</kbd><b>Campus</b></span><span><kbd>P</kbd><b>Calendar</b></span><span><kbd>R</kbd><b>Refresh</b></span><span><kbd>N</kbd><b>Notifications</b></span><span><kbd>?</kbd><b>Shortcut help</b></span></div></div></dialog>
 
   <dialog id="taskDialog">
     <form method="dialog" id="taskForm" class="dialog-card">
@@ -375,6 +387,21 @@
       <input id="taskDate" type="date">
       <div class="dialog-actions"><button type="button" class="secondary-button dialog-cancel">Cancel</button><button type="button" class="primary-button" id="saveTaskButton">Save</button></div>
     </form>
+  </dialog>
+
+  <dialog id="termHeatmapDialog" class="class-action-dialog term-heatmap-dialog">
+    <section class="class-action-sheet">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <header class="class-action-head">
+        <div>
+          <span class="sheet-code">TERM III</span>
+          <h2>Week by week</h2>
+          <p>Tap a week to jump to it on the calendar.</p>
+        </div>
+        <button type="button" class="icon-button sheet-close" id="closeTermHeatmap" aria-label="Close term overview"><span data-icon="close"></span></button>
+      </header>
+      <div class="term-heatmap-grid" id="termHeatmapGrid"></div>
+    </section>
   </dialog>
 
   <dialog id="classActionDialog" class="class-action-dialog">
@@ -393,11 +420,6 @@
         <button type="button" class="class-action" id="sheetAddNote"><span data-icon="note"></span><b>Add note</b><small>Capture an important point</small></button>
         <a class="class-action" id="sheetAddCalendar" target="_blank" rel="noopener"><span data-icon="calendar"></span><b>Add to Calendar</b><small>Save the class to Google Calendar</small></a>
       </div>
-      <button type="button" class="sheet-next-class" id="sheetNextClass" hidden>
-        <span>Next class for this subject</span>
-        <strong id="sheetNextClassValue">—</strong>
-        <small id="sheetNextClassMeta">—</small>
-      </button>
     </section>
   </dialog>
 
@@ -413,7 +435,7 @@
 
 
   <dialog id="onboardingDialog" class="onboarding-dialog">
-    <form id="onboardingForm" class="dialog-card onboarding-card" novalidate>
+    <form id="onboardingForm" class="dialog-card onboarding-card">
       <div class="onboarding-progress" aria-hidden="true">
         <span class="active" data-onboarding-progress="1"></span>
         <span data-onboarding-progress="2"></span>
@@ -448,29 +470,27 @@
         <h2>Choose your electives</h2>
         <p class="onboarding-copy">Only selected electives will appear in your personal timetable.</p>
 
-        <div class="elective-selection-toolbar">
-          <span id="electiveSelectionCount" aria-live="polite">0 selected</span>
-          <div>
+        <div class="elective-bulk-row">
+          <span id="electiveSelectionCount" class="elective-selection-count">0 selected</span>
+          <span class="elective-bulk-actions">
             <button type="button" class="text-button" id="selectAllElectives">Select all</button>
             <button type="button" class="text-button" id="clearAllElectives">Clear all</button>
-          </div>
+          </span>
         </div>
-
         <div id="onboardingElectives" class="onboarding-elective-list"></div>
+        <div id="electiveClashWarnings" class="elective-clash-warnings"></div>
 
         <div class="dialog-actions onboarding-actions">
           <button type="button" class="secondary-button" id="onboardingBack">Back</button>
-          <button type="submit" class="primary-button" id="finishOnboarding">Finish setup</button>
+          <button type="submit" class="primary-button">Finish setup</button>
         </div>
       </section>
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260825-premium10"></script>
-  <script src="exam-data.js?v=20260825-premium10"></script>
-  <script src="app.js?v=20260825-premium10"></script>
-  <script src="polish.js?v=20260825-premium10"></script>
+  <script src="campus-data.js?v=20260826-codexmerge1"></script>
+  <script src="exam-data.js?v=20260826-codexmerge1"></script>
+  <script src="app.js?v=20260826-codexmerge1"></script>
+  <script src="polish.js?v=20260826-codexmerge1"></script>
 </body>
 </html>
-
-

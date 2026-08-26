@@ -3,7 +3,7 @@
   const replacements = new Map([
     ["Â·", "·"], ["â€”", "—"], ["â€“", "–"], ["â€¦", "…"],
     ["â€™", "’"], ["Ã—", "×"], ["â†’", "→"], ["â€˜", "‘"],
-    ["â€œ", "“"], ["â€", "”"]
+    ["â€œ", "“"], ["â€", "”"]
   ]);
   const clean = value => {
     let output = String(value || "");
@@ -31,31 +31,8 @@
     });
   };
   const updateStateClasses = () => {
-    const panel = document.getElementById("focusPanel");
-    const code = document.getElementById("focusCode");
-    if (panel && code) panel.classList.toggle("is-empty", code.textContent.trim() === "CLEAR");
-  };
-  const updateHomeDate = () => {
-    const label=document.getElementById("todayLabel")?.textContent.trim();
-    const day=document.getElementById("dateOrbitDay"),month=document.getElementById("dateOrbitMonth");
-    if(!label||!day||!month)return;
-    const match=label.match(/^([A-Z]+),?\s+(\d+)\s+([A-Z]+)/i);
-    if(match){const dayName=match[1].slice(0,3).toLowerCase().replace(/^./,value=>value.toUpperCase());const monthName=match[3].slice(0,3).toLowerCase().replace(/^./,value=>value.toUpperCase());if(day.textContent!==dayName)day.textContent=dayName;if(month.textContent!==`${match[2]} ${monthName}`)month.textContent=`${match[2]} ${monthName}`}
-  };
-  const arrangeHome = () => {
-    const home=document.getElementById("homePage");if(!home)return;
-    let body=document.getElementById("homeDashboardBody");
-    if(!body){body=document.createElement("div");body.id="homeDashboardBody";body.className="home-dashboard-body";home.appendChild(body)}
-    let main=document.getElementById("homeMainRail");
-    if(!main){main=document.createElement("div");main.id="homeMainRail";main.className="home-main-rail";body.appendChild(main)}
-    let rail=document.getElementById("homeSideRail");
-    if(!rail){rail=document.createElement("aside");rail.id="homeSideRail";rail.className="home-side-rail";body.appendChild(rail)}
-    const focus=document.getElementById("focusPanel"),exam=document.getElementById("nextExamCard"),updates=document.getElementById("silentUpdateStrip"),density=document.getElementById("weekDensity"),timeline=home.querySelector(".today-progress-card"),homeGrid=home.querySelector(".home-grid");
-    [updates,focus,density,timeline,exam,homeGrid].forEach(node=>{if(node&&node.parentElement!==main)main.appendChild(node)});
-    if(rail.parentElement!==body)body.appendChild(rail);
-    const quick=home.querySelector(".quick-task-panel");
-    if(quick&&quick.parentElement!==rail)rail.appendChild(quick);
-    if(quick)quick.style.order="1";
+    // renderHome() already sets/removes .is-empty on #focusPanel directly; this hook is
+    // kept as a safe no-op so the MutationObserver wiring below still has something to call.
   };
   const decorateCalendar = () => {
     document.querySelectorAll("#calendarGrid .calendar-day").forEach((day, index) => {
@@ -69,31 +46,6 @@
     const selected=document.querySelector("#calendarGrid .calendar-day.selected"),holiday=window.BL07_HOLIDAYS?.[selected?.dataset.date],agenda=document.getElementById("dayAgenda");
     let banner=agenda?.querySelector(":scope > .academic-date-banner");
     if(holiday&&agenda){if(!banner){banner=document.createElement("div");banner.className="academic-date-banner";agenda.prepend(banner)}if(banner.dataset.holiday!==holiday){banner.dataset.holiday=holiday;banner.innerHTML=`<span>HOLIDAY</span><strong>${holiday}</strong>`}}else banner?.remove();
-  };
-  const setupQuickCapture = () => {
-    const panel=document.querySelector(".quick-task-panel");
-    const heading=panel?.querySelector(".panel-heading");
-    const form=document.getElementById("quickTaskForm");
-    if(!panel||!heading||!form)return;
-    let toggle=document.getElementById("quickCaptureToggle");
-    if(!toggle){
-      toggle=document.createElement("button");
-      toggle.id="quickCaptureToggle";
-      toggle.type="button";
-      toggle.className="quick-capture-toggle";
-      toggle.setAttribute("aria-expanded","false");
-      toggle.innerHTML='<span class="quick-capture-plus">＋</span><span><b>Capture a task</b><small>Subject and due date are optional</small></span><i aria-hidden="true">›</i>';
-      heading.after(toggle);
-      toggle.addEventListener("click",()=>{
-        const open=panel.classList.toggle("is-open");
-        toggle.setAttribute("aria-expanded",String(open));
-        if(open)setTimeout(()=>document.getElementById("quickTaskTitle")?.focus(),120);
-      });
-      form.addEventListener("submit",()=>setTimeout(()=>{
-        panel.classList.remove("is-open");
-        toggle.setAttribute("aria-expanded","false");
-      },80));
-    }
   };
   const isoForOffset = offset => {
     const now = new Date();
@@ -112,7 +64,7 @@
       date=card.dataset.focusDate||isoForOffset(0);
       code=document.getElementById("focusCode")?.textContent.trim()||"";
       title=document.getElementById("focusTitle")?.textContent.trim()||"";
-      time=document.getElementById("focusTime")?.textContent.trim()||"";
+      time=document.getElementById("focusRange")?.textContent.trim()||"";
       meta=[document.getElementById("focusVenue")?.textContent.trim(),document.getElementById("focusFaculty")?.textContent.trim()].filter(Boolean).join(" / ");
     }
     if (card.classList.contains("vertical-class")) {
@@ -121,7 +73,7 @@
       const timeBox = card.querySelector(".vertical-time");
       const startText=timeBox?.childNodes[0]?.textContent?.trim()||"";
       const endText=timeBox?.querySelector("small")?.textContent?.trim()||"";
-      time = [startText,endText].filter(Boolean).join(" – ");
+      time = [startText,endText].filter(Boolean).join("–");
       meta = card.querySelector(".vertical-content p")?.textContent.trim() || "";
       date = document.getElementById("timelineDateTitle")?.textContent.trim()==="Tomorrow" ? isoForOffset(1) : isoForOffset(0);
     }
@@ -140,7 +92,7 @@
       const compact=value=>{const match=value?.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);if(!match)return"";let hour=Number(match[1]);if(match[3].toLowerCase()==="pm"&&hour<12)hour+=12;if(match[3].toLowerCase()==="am"&&hour===12)hour=0;return`${String(hour).padStart(2,"0")}${match[2]}00`};
       if(times.length>1){const day=date.replaceAll("-","");calendar=`https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=Asia%2FKolkata&text=${encodeURIComponent(`${code} · ${title}`)}&dates=${day}T${compact(times[0])}/${day}T${compact(times[1])}&location=${encodeURIComponent(meta.split("·")[0]?.trim()||"")}`}
     }
-    return {code:code.split("-")[0],fullCode:code,title,time,meta,date,calendar,identity:id};
+    return {code:code.split("-")[0],fullCode:code,title,time,meta,date,calendar};
   };
   let activeClass = null;
   const openClassSheet = card => {
@@ -151,15 +103,6 @@
     const calendar = document.getElementById("sheetAddCalendar");
     calendar.hidden = !activeClass.calendar;
     if (activeClass.calendar) calendar.href = activeClass.calendar;
-    const next=window.BL07NextSubject?.(activeClass.code,activeClass.identity||"");
-    const nextButton=document.getElementById("sheetNextClass");
-    if(nextButton){
-      nextButton.hidden=!activeClass.code;
-      nextButton.dataset.classId=next?.id||"";
-      nextButton.disabled=!next;
-      document.getElementById("sheetNextClassValue").textContent=next?next.date+" · "+next.time:`No future ${activeClass.code} class`;
-      document.getElementById("sheetNextClassMeta").textContent=next?next.venue+" · "+next.course:"Nothing else is scheduled yet";
-    }
     document.getElementById("classActionDialog").showModal();
   };
   const openLinkedDialog = type => {
@@ -177,60 +120,27 @@
     }
     dialog.showModal();
   };
-  const ensurePlannerFab = () => {
-    let fab = document.getElementById("plannerFab");
-    if (!fab) {
-      fab = document.createElement("button");
-      fab.id = "plannerFab";
-      fab.className = "planner-fab";
-      fab.type = "button";
-      document.body.appendChild(fab);
-      fab.addEventListener("click",()=>{
-        const view=document.querySelector("[data-planner-view].active")?.dataset.plannerView;
-        if(view==="notes"){document.getElementById("openNoteForm")?.click();return}
-        if(view==="tasks")document.getElementById("openTaskForm")?.click();
-      });
-    }
-    const plannerOpen = document.getElementById("plannerPage")?.classList.contains("active");
-    const view = document.querySelector("[data-planner-view].active")?.dataset.plannerView;
-    fab.hidden = !plannerOpen || !["tasks","notes"].includes(view);
-    if(fab.dataset.view!==view){fab.dataset.view=view||"";fab.innerHTML = view==="notes" ? "<span>＋</span> Note" : "<span>＋</span> Task"}
-  };
   const start = () => {
     document.title = clean(document.title);
     repair(document.body);
     updateStateClasses();
-    updateHomeDate();
-    arrangeHome();
     decorateCalendar();
-    setupQuickCapture();
-    ensurePlannerFab();
     new MutationObserver(records => records.forEach(record => {
       record.addedNodes.forEach(repair);
       if (record.type === "characterData") repair(record.target);
       updateStateClasses();
-      updateHomeDate();
-      arrangeHome();
       decorateCalendar();
-      setupQuickCapture();
-      ensurePlannerFab();
     })).observe(document.body, {subtree:true, childList:true, characterData:true});
     document.addEventListener("click", event => {
-      const calendarDay = event.target.closest(".calendar-day");
-      if (calendarDay && matchMedia("(max-width:780px)").matches) setTimeout(() => document.querySelector(".agenda-panel")?.scrollIntoView({behavior:"smooth", block:"start"}), 80);
-      const card = event.target.closest(".agenda-class-card,.schedule-item,.vertical-class,#focusPanel:not(.is-empty)");
+      const card = event.target.closest(".vertical-class,.agenda-class-card,.schedule-item,#focusPanel:not(.is-empty)");
       if (card && !event.target.closest("button,a,input")) openClassSheet(card);
-      setTimeout(ensurePlannerFab,0);
     });
     document.getElementById("sheetAddTask")?.addEventListener("click",()=>openLinkedDialog("task"));
     document.getElementById("sheetAddNote")?.addEventListener("click",()=>openLinkedDialog("note"));
-    document.getElementById("sheetNextClass")?.addEventListener("click",event=>{const id=event.currentTarget.dataset.classId;if(!id)return;document.getElementById("classActionDialog").close();window.BL07OpenPlannerClass?.(id)});
     document.querySelector(".sheet-close")?.addEventListener("click",()=>document.getElementById("classActionDialog").close());
     document.getElementById("classActionDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
     document.getElementById("onboardingDialog")?.addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.close()});
   };
-  window.applyHomeOrder=arrangeHome;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
 })();
-

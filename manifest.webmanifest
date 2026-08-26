@@ -1,18 +1,10 @@
 {
-  "name": "BL07 Flow \u00b7 IIM Kozhikode",
-  "short_name": "BL07 Flow",
+  "name": "BL07 \u00b7 IIM Kozhikode",
+  "short_name": "BL07",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#130f15",
-  "theme_color": "#130f15",
-  "description": "Classes, exams and campus essentials in one clear view",
-  "icons": [
-    {
-      "src": "brand-mark.svg?v=20260824-premium1",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "description": "Academic, transport and dining companion for PGPBL07",
+  "icons": []
 }
-

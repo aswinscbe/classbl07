@@ -42,39 +42,39 @@ window.CAMPUS_DATA = {
   ].map(([time,from,via,to,mainGate])=>({time,from,via,to,mainGate})),
   mess: {
     monday: {
-      breakfast:["Idli","Medu vada","Coconut chutney","Sambar","Boiled egg","Chocos","Boiled pulses","Banana","Bread, butter & jam","Tea / coffee / milk"],
+      breakfast:["Idli","Medu vada","Coconut chutney","Sambar","Boiled egg","Banana","Bread, butter & jam","Tea / coffee / milk"],
       lunch:["Veg salad","Wheat chapati","Dal fry","Carrot peas poriyal","Punjabi chole","Lemon rice","Plain rice","Rasam","Curd","Pappad","Gulab jamun","Golden gobi corn dry","Bengali fish curry"],
       dinner:["Combo menu","Kimchi salad","Wheat chapati / phulka","Fried rice","Masala dal","Buttermilk","Fryums","Pickle","Paneer Manchurian / Paneer Jalfrezi","Chicken Manchurian / Chicken Jalfrezi"]
     },
     tuesday: {
-      breakfast:["Missi paratha (trial)","Pongal","Spiced curd","Coconut chutney","Boiled egg","Cornflakes","Boiled pulses","Cut fruits / papaya","Bread, butter & jam","Tea / coffee / milk"],
-      lunch:["Veg salad","Wheat chapati","Palak dal","Kootu curry (yam)","Kadi pakoda","Baghara rice","Plain rice","Sambar","Jeera buttermilk","Pappad","Rajma masala","Egg pepper roast"],
-      dinner:["Veg salad","Wheat chapati / phulka","Veg Manchurian / snake gourd chana dal dry","Basundi pulao","Moong dal tadka","Jeera buttermilk","Fryums","Ice cream (50 ml)","Pickle","Paneer masala"]
+      breakfast:["Missi paratha","Pongal","Spiced curd","Coconut chutney","Boiled egg","Cut fruits / papaya","Bread, butter & jam","Tea / coffee / milk"],
+      lunch:["Veg salad","Wheat chapati","Palak dal","Kootu curry (yam)","Kadi pakoda","Baghara rice","Plain rice","Sambar","Jeera buttermilk","Pappad","Rajma masala"],
+      dinner:["Veg salad","Wheat chapati / phulka","Veg Manchurian / chana goli","Lobiya masala","Basundi pulao","Moong dal tadka","Jeera buttermilk","Fryums","Ice cream","Pickle","Paneer masala","Chicken masala"]
     },
     wednesday: {
-      breakfast:["Masala dosa","Veg poha","Sambar","Coriander chutney","Boiled egg","Chocos","Boiled pulses","Banana","Bread, butter & jam","Tea / coffee / milk"],
-      lunch:["Veg salad","Wheat chapati","Maa ki dal","Pumpkin lobiya dry","Veg Kolhapuri","Ghee rice / pulao","Plain rice","Rasam","Buttermilk","Pappad","Palada / carrot halwa","Gatte ki sabji","Fish curry (Nellore chepala pulusu)"],
-      dinner:["Veg toss salad","Kerala paratha / phulka","Lobiya masala","Lauki tomato","Soya biryani","Chana dal fry","Curd","Fryums","Pickle","Paneer masala","Chicken masala"]
+      breakfast:["Masala dosa","Veg poha","Sambar","Coriander chutney","Boiled egg","Banana","Bread, butter & jam","Tea / coffee / milk"],
+      lunch:["Veg salad","Wheat chapati","Maa ki dal","Pumpkin lobiya dry","Veg Kolhapuri","Ghee rice / pulao","Plain rice","Rasam","Buttermilk","Pappad","Palada / carrot halwa","Gatte ki sabji"],
+      dinner:["Veg toss salad","Kerala paratha / phulka","Lobiya masala","Mixed veg poriyal","Soya biryani","Chana dal fry","Curd","Fryums","Pickle","Paneer masala","Chicken Kolhapuri"]
     },
     thursday: {
-      breakfast:["Vada pav","Semiya upma","Mint chutney","Coconut chutney","Omelette","Cornflakes","Boiled pulses","Cut fruits / watermelon","Bread, butter & jam","Tea / coffee / milk"],
-      lunch:["Veg salad","Wheat chapati","Bengal gram dal fry","Soya capsicum","Rajma raseela","Tomato rice","Plain rice","Sambar","Buttermilk","Pappad","Peanut-green gram curry","Egg tikka masala"],
-      dinner:["Veg salad","Wheat chapati / phulka","Mutter masala","Mixed veg poriyal","Corn veg pulao","Tomato pappu","Buttermilk","Fryums","Moong dal halwa","Pickle","Shahi paneer","Chicken Kolhapuri"]
+      breakfast:["Vada pav","Semiya upma","Mint chutney","Coconut chutney","Omelette","Cut fruits / watermelon","Bread, butter & jam","Tea / coffee / milk"],
+      lunch:["Veg salad","Wheat chapati","Bengal gram dal fry","Soya capsicum greens","Rajma raseela","Tomato rice","Plain rice","Sambar","Buttermilk","Pappad","Peanut-green gram curry","Egg tikka masala"],
+      dinner:["Veg salad","Wheat chapati / phulka","Mutter masala","Mirchi ka salan","Corn veg pulao","Tomato pappu","Buttermilk","Fryums","Moong dal halwa","Pickle","Shahi paneer","Egg Kolhapuri"]
     },
     friday: {
-      breakfast:["Aloo paratha","Wheat upma","Curd","Coconut chutney","Boiled egg","Chocos","Boiled pulses","Cut fruits / papaya","Bread, butter & jam","Tea / coffee / milk"],
+      breakfast:["Aloo paratha","Wheat upma","Curd","Coconut chutney","Boiled egg","Cut fruits / papaya","Bread, butter & jam","Tea / coffee / milk"],
       lunch:["Veg salad","Chapati / phulka","Dal makhani","Green gram kootu dry","Aloo Amritsari","Tawa pulao","Plain rice","Rasam","Buttermilk","Pappad","Soya chunk curry","Kerala fish curry"],
-      dinner:["Combo menu","Veg onion salad","Mirchi ka salan","Hyderabadi paneer dum biryani","Hyderabadi chicken dum biryani","Onion cucumber raita","Semiya kheer","Pickle","Soya","Butter chicken"]
+      dinner:["Combo menu","Veg onion salad","Wheat chapati / phulka","Hyd paneer dum biryani","Hyd chicken dum biryani","Onion cucumber raita","Fryums","Semiya kheer","Pickle","Soya paneer butter masala","Butter chicken"]
     },
     saturday: {
-      breakfast:["Uttapam","Veg upma","Veg stew","Coconut chutney","Boiled egg","Cornflakes","Boiled pulses","Banana","Bread, butter & jam","Tea / coffee / milk"],
+      breakfast:["Uttapam","Veg upma","Veg stew","Coconut chutney","Boiled egg","Banana","Bread, butter & jam","Tea / coffee / milk"],
       lunch:["Veg salad","Chapati / phulka","Yellow dal","Kadai veg dry","Paneer makhan masala","Plain biryani / kushka","Plain rice","Sambar","Sweet lassi","Pappad"],
-      dinner:["Veg salad","Wheat chapati / phulka","Chole masala","Aloo karam dry","Mishti pulao","Dal makhani","Plain curd","Fryums","Fruit custard","Pickle","Soya","Egg Kolhapuri"]
+      dinner:["Veg salad","Wheat chapati","Chole masala","Aloo karam dry","Mishti pulao","Dal makhani","Plain curd","Fryums","Fruit custard","Pickle","Soya","Egg Kolhapuri"]
     },
     sunday: {
-      breakfast:["Pav / Misal pav (alternate week)","Ragi dosa","Bhaji","Coconut chutney","Boiled egg","Chocos","Boiled pulses","Cut fruits / watermelon","Bread, butter & jam","Tea / coffee / milk"],
+      breakfast:["Pav / Misal pav (alternate week)","Ragi dosa","Bhaji","Coconut chutney","Boiled egg","Cut fruits / watermelon","Bread, butter & jam","Tea / coffee / milk"],
       lunch:["Veg salad","Chapati / phulka","Arhar dal","Honey chilli potato","Kadala curry","Coconut pulao","Plain rice","Rasam","Jeera buttermilk","Pappad","Masala peanut fry","Egg bhurji"],
-      dinner:["Veg kosambari salad","Wheat chapati","White peas kuruma","Long beans thoran","Veg pulao","Dal panchmel","Buttermilk","Fryums","Badushahi","Pickle","Paneer butter masala","Butter chicken"]
+      dinner:["Veg kosambari salad","Wheat chapati","White peas kuruma","Long beans thoran","Veg pulao","Dal panchmel","Buttermilk","Badushahi","Pickle","Paneer butter masala","Butter chicken"]
     }
   }
 };
