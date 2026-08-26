@@ -1884,3 +1884,13 @@ html[data-theme="light"] #focusPanel.hero-premium{
 }
 #notificationList .notification-item.unread::before{width:7px!important;height:7px!important;top:19px!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--course) 20%,transparent)!important}
 #notificationList .notification-item{padding-block:13px!important}
+
+/* ===== Bottom nav fix: dynamic viewport height =========================
+   body/.app-shell used min-height:100vh, which on mobile browsers is
+   computed against the largest possible viewport (chrome hidden) - as
+   the address bar shows/hides during scroll, the page's actual content
+   height and the position:fixed bottom-nav's anchor point can drift out
+   of sync, making the nav appear to scroll with the page instead of
+   staying pinned. 100dvh tracks the real visible viewport continuously,
+   which is the standard fix for this class of bug. */
+body,.app-shell{min-height:100vh!important;min-height:100dvh!important}
