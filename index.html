@@ -21,7 +21,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260826-calendarpass1">
+  <link rel="stylesheet" href="styles.css?v=20260826-calendarpass2">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -183,7 +183,8 @@
           </article>
 
           <article class="agenda-panel panel">
-            <div class="panel-heading agenda-heading">
+            <div class="agenda-heading-sentinel" id="agendaHeadingSentinel" aria-hidden="true"></div>
+            <div class="panel-heading agenda-heading" id="agendaHeading">
               <div><p class="overline">SELECTED DAY</p><h2 id="agendaDate">Choose a date</h2></div>
               <div class="agenda-day-controls">
                 <button class="icon-button agenda-day-arrow" id="agendaPrevDay" aria-label="Previous day"><span data-icon="chevron-left"></span></button>
@@ -195,6 +196,7 @@
               <button type="button" class="filter-chip" id="jumpToNextClassButton">Jump to next class</button>
               <button type="button" class="filter-chip" id="toggleCompletedButton">Show completed</button>
             </div>
+            <div class="filter-chips agenda-course-row" id="agendaCourseRow"></div>
             <div id="dayAgenda" class="schedule-list"></div>
           </article>
         </div>
@@ -262,8 +264,13 @@
           </article>
 
           <article class="panel">
-            <div class="panel-heading"><div><p class="overline">TIMETABLE</p><h2>All services on this route</h2></div></div>
-            <div class="board-list" id="busBoard"></div>
+            <div class="panel-heading"><div><p class="overline">NEXT DEPARTURES</p><h2>Upcoming services</h2></div></div>
+            <div class="board-list" id="upcomingBuses"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small" type="button" id="toggleFullBus">Show all</button></div>
+            <div class="board-list collapsed" id="fullBusList"></div>
           </article>
         </section>
 
@@ -489,9 +496,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260826-calendarpass1"></script>
-  <script src="exam-data.js?v=20260826-calendarpass1"></script>
-  <script src="app.js?v=20260826-calendarpass1"></script>
-  <script src="polish.js?v=20260826-calendarpass1"></script>
+  <script src="campus-data.js?v=20260826-calendarpass2"></script>
+  <script src="exam-data.js?v=20260826-calendarpass2"></script>
+  <script src="app.js?v=20260826-calendarpass2"></script>
+  <script src="polish.js?v=20260826-calendarpass2"></script>
 </body>
 </html>
