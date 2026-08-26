@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="brand-mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20260825-premium5">
+  <link rel="stylesheet" href="styles.css?v=20260825-premium6">
   <title>BL07 Flow · Know what’s next</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -66,8 +66,6 @@
           <div>
             <p class="overline" id="todayLabel">TODAY</p>
             <h1 id="greeting">Good evening.</h1>
-            <p class="home-context-line" id="homeContextLine">Know what’s next.</p>
-            <p class="home-sync-text" id="homeSyncText">Checking the latest schedule…</p>
           </div>
         </div>
 
@@ -90,6 +88,7 @@
                 <strong id="focusCountdown">—</strong>
               </div>
             </div>
+            <button type="button" class="icon-button hero-add-task" id="heroAddTask" hidden aria-label="Add task for this class" title="Add task for this class"><span data-icon="plus"></span></button>
             <span class="hero-day-load" id="focusDayLoad">Today</span>
           </div>
           <div class="hero-main">
@@ -110,21 +109,12 @@
                 <span><i data-icon="pin"></i><b id="focusVenue">—</b></span>
                 <span id="focusFacultyRow"><i data-icon="faculty"></i><b id="focusFaculty">—</b></span>
               </div>
-              <button type="button" class="focus-position" id="focusPosition" aria-label="Open this class in Planner" hidden>
-                <span id="focusPositionLabel">NEXT</span>
-                <strong id="focusPositionValue">—</strong>
-              </button>
             </div>
-          </div>
-          <div class="focus-context" id="focusContext" hidden>
-            <span id="focusContextLabel">TODAY</span>
-            <strong id="focusContextValue">—</strong>
           </div>
           <div class="hero-insight-grid" id="heroInsightGrid">
             <div class="hero-insight" id="focusSessionInsight"><span id="focusSessionLabel">SESSION</span><strong id="focusSessionValue">—</strong></div>
             <div class="hero-insight" id="focusFinalInsight"><span id="focusFinalLabel">FINAL CLASS</span><strong id="focusFinalValue">—</strong></div>
           </div>
-          <div class="focus-segments" id="focusSegments" role="progressbar" aria-label="Current interval progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden></div>
           <div class="hero-day-glance" id="heroDayGlance" aria-label="Classes for the day" hidden></div>
         </section>
 
@@ -490,10 +480,10 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260825-premium5"></script>
-  <script src="exam-data.js?v=20260825-premium5"></script>
-  <script src="app.js?v=20260825-premium5"></script>
-  <script src="polish.js?v=20260825-premium5"></script>
+  <script src="campus-data.js?v=20260825-premium6"></script>
+  <script src="exam-data.js?v=20260825-premium6"></script>
+  <script src="app.js?v=20260825-premium6"></script>
+  <script src="polish.js?v=20260825-premium6"></script>
 </body>
 </html>
 

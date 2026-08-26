@@ -1640,10 +1640,11 @@ html[data-theme="light"] #focusPanel.hero-premium{
 }
 #focusPanel.hero-premium .hero-top{
   order:1!important;margin:0 0 14px!important;display:flex!important;align-items:flex-start!important;
-  justify-content:space-between!important;gap:12px!important;
+  justify-content:flex-start!important;gap:10px!important;
 }
 #focusPanel.hero-premium .focus-state-block{
   display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:9px!important;min-width:0!important;
+  flex:1 1 auto!important;
 }
 #focusPanel.hero-premium #focusLiveCapsule{
   min-width:0!important;height:auto!important;padding:5px 10px!important;border:0!important;
@@ -1798,3 +1799,17 @@ html[data-theme="light"] #focusPanel.hero-premium{
    above scrolled content at elevation-2. */
 .calendar-panel,.agenda-panel{box-shadow:var(--elevation-1)!important}
 .planner-week-navigator{box-shadow:var(--elevation-2)!important}
+
+/* ===== Home pass: hero quick-add-task button =============================
+   New functional addition - lets you add a task for the current/next
+   class directly from the hero, without scrolling to Quick Capture and
+   picking the subject manually. Styled as a small quiet chip matching
+   the status pill treatment already established for the hero. */
+#focusPanel.hero-premium #heroAddTask{
+  width:28px!important;height:28px!important;border-radius:999px!important;
+  background:color-mix(in srgb, var(--text) 8%, transparent)!important;border:0!important;
+  color:var(--text)!important;flex:none!important;backdrop-filter:none!important;
+  margin-left:auto!important;
+}
+#focusPanel.hero-premium #heroAddTask svg{width:14px!important;height:14px!important}
+#focusPanel.hero-premium #heroAddTask:hover{background:color-mix(in srgb, var(--text) 14%, transparent)!important}
