@@ -296,48 +296,46 @@ function renderHome(){
   const now=new Date(),today=isoToday(),dateParts=new Intl.DateTimeFormat("en-IN",{weekday:"short",day:"numeric",month:"short"}).formatToParts(now),datePart=type=>dateParts.find(part=>part.type===type)?.value||"";$("#todayLabel").textContent=`${datePart("weekday")} · ${datePart("day")} ${datePart("month")}`.toUpperCase();const h=now.getHours(),firstName=String(state.profile.name||"").trim().split(/\s+/)[0],dayGreeting=`Good ${h<12?"morning":h<17?"afternoon":"evening"}`;$("#greeting").textContent=firstName?`${dayGreeting} ${firstName}`:dayGreeting;
   const scheduled=state.classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
   const todays=scheduled.filter(c=>c.dateIso===today),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),todayNext=todays.find(c=>now<dateTime(c,"startTime")),previous=todays.filter(c=>now>=dateTime(c,"endTime")).at(-1),future=scheduled.find(c=>now<dateTime(c,"startTime")),todayComplete=Boolean(todays.length&&!current&&!todayNext),focus=current||todayNext||future||previous,loadDate=!todays.length||todayComplete?tomorrowIso():today,loadClasses=scheduled.filter(c=>c.dateIso===loadDate),loadIsToday=loadDate===today,loadIsTomorrow=loadDate===tomorrowIso(),loadLabel=loadIsToday?"Today":loadIsTomorrow?"Tomorrow":fmtDate(loadDate,{weekday:"long"}),loadValue=loadSummary(loadClasses,loadIsToday?"end":"start"),parts=istParts(now),nowMinutes=Number(parts.hour)*60+Number(parts.minute),isLunch=Boolean(!current&&todayNext&&nowMinutes>=13*60+30&&nowMinutes<Math.min(14*60+30,minutes(todayNext.startTime)));
-  const contextLine=$("#homeContextLine");
-  if(contextLine){
-    const nextCode=todayNext?canonical(todayNext.code):"",futureCode=future?canonical(future.code):"";
-    if(current)contextLine.textContent=`${canonical(current.code)} is underway. It ends at ${fmtTime(current.endTime)}.`;
-    else if(isLunch&&todayNext)contextLine.textContent=`Lunch break now. ${nextCode} begins at ${fmtTime(todayNext.startTime)}.`;
-    else if(todayNext&&previous)contextLine.textContent=`${compactDuration((dateTime(todayNext,"startTime")-now)/60000)} free before ${nextCode}.`;
-    else if(todayNext)contextLine.textContent=todays.length===1?`One class today: ${nextCode} at ${fmtTime(todayNext.startTime)}.`:`${todays.length} classes ahead, starting with ${nextCode} at ${fmtTime(todayNext.startTime)}.`;
-    else if(todayComplete)contextLine.textContent=future&&future.dateIso===tomorrowIso()?`Classes are done. Tomorrow begins with ${futureCode} at ${fmtTime(future.startTime)}.`:"Classes are done for today.";
-    else if(future&&future.dateIso===tomorrowIso())contextLine.textContent=`No classes today. ${futureCode} begins tomorrow at ${fmtTime(future.startTime)}.`;
-    else if(future)contextLine.textContent=`Your next class is ${futureCode} on ${fmtDate(future.dateIso,{weekday:"short",day:"numeric",month:"short"})}.`;
-    else contextLine.textContent="Your schedule is clear.";
-  }
-  const focusPanel=$("#focusPanel");
+  const focusPanel=$("#focusPanel"),heroRing=$("#heroRing"),heroRingFill=$("#heroRingFill"),heroRingText=$("#heroRingText"),heroSentence=$("#heroSentence");
+  const RING_CIRCUMFERENCE=2*Math.PI*17;
   if(focus){
-    const isNow=focus===current,isJustDone=todayComplete&&focus===previous,isToday=focus.dateIso===today,isTomorrow=focus.dateIso===tomorrowIso(),isFutureDay=!isToday,isFree=Boolean(!current&&todayNext&&previous&&!isLunch),isClearToday=Boolean(!todays.length&&future),isDayDone=Boolean(todayComplete&&future),dayClasses=scheduled.filter(c=>c.dateIso===focus.dateIso),dayIndex=dayClasses.indexOf(focus),finalClass=dayClasses.at(-1),isFinalLive=Boolean(isNow&&focus===finalClass),remaining=todays.filter(c=>dateTime(c,"endTime")>now).length,futureDate=fmtDate(focus.dateIso,{weekday:"short",day:"numeric",month:"short"});
+    const isNow=focus===current,isJustDone=todayComplete&&focus===previous,isToday=focus.dateIso===today,isTomorrow=focus.dateIso===tomorrowIso(),isFutureDay=!isToday,isFree=Boolean(!current&&todayNext&&previous&&!isLunch),isClearToday=Boolean(!todays.length&&future),isDayDone=Boolean(todayComplete&&future),dayClasses=scheduled.filter(c=>c.dateIso===focus.dateIso),dayIndex=dayClasses.indexOf(focus),finalClass=dayClasses.at(-1),isFinalLive=Boolean(isNow&&focus===finalClass);
     focusPanel.classList.remove("is-empty");focusPanel.classList.toggle("is-live",isNow);focusPanel.classList.toggle("is-final-live",isFinalLive);focusPanel.classList.toggle("is-just-done",isJustDone);focusPanel.classList.toggle("is-lunch",isLunch);focusPanel.classList.toggle("is-free",isFree);focusPanel.classList.toggle("is-clear",(isClearToday||isDayDone||isJustDone)&&!isFutureDay);focusPanel.classList.toggle("is-upcoming",!isNow&&!isFree&&!isLunch&&!isJustDone&&isToday);focusPanel.classList.toggle("is-future",isFutureDay);focusPanel.style.setProperty("--focus-course",colorFor(focus.code));focusPanel.dataset.focusDate=focus.dateIso;focusPanel.dataset.focusClassId=classIdentity(focus);$("#focusCourseAction").tabIndex=0;$("#focusCourseAction").removeAttribute("aria-disabled");
     $("#focusLiveCapsule").textContent=isFinalLive?"NOW · FINAL CLASS":isNow?"NOW":isJustDone?"DONE":isLunch||isFree?"NEXT":isFutureDay?(isTomorrow?"TOMORROW":"UPCOMING"):"NEXT";
-    $("#focusKicker").textContent=isFinalLive?"LAST CLASS TODAY":isNow?"HAPPENING NOW":isJustDone?"FINAL CLASS COMPLETE":isLunch||isFree?"UP NEXT":isFutureDay?(isTomorrow?"FIRST CLASS TOMORROW":"LOOKING AHEAD"):"UP NEXT";
-    $("#focusState").textContent=isFinalLive?"Final class in progress":isNow?"In progress":isJustDone?"Day complete":isLunch||isFree?"Next class":isFutureDay?(isTomorrow?`${dayClasses.length} ${dayClasses.length===1?"class":"classes"} tomorrow`:`Next class · ${futureDate}`):"Next class";
     $("#focusDayLoad").textContent=compactDayLoad(dayClasses);
-    $("#focusCode").textContent=canonical(focus.code);$("#focusTitle").textContent=isJustDone?"Classes complete":focus.course;$("#focusTime").textContent=isJustDone?`Ended ${fmtTime(focus.endTime)}`:`${fmtTime(focus.startTime)} – ${fmtTime(focus.endTime)}`;$("#focusVenue").textContent=isJustDone?`Final class · ${canonical(focus.code)} · ${venueOf(focus)}`:venueOf(focus);$("#focusFaculty").textContent=focus.faculty;$("#focusFacultyRow").hidden=isJustDone||!focus.faculty;
-    const venueChanged=state.notifications.some(n=>n.type==="venue"&&n.classId===classIdentity(focus)&&isNotificationActionable(n)),venueRow=$("#focusVenue")?.closest("span");venueRow?.classList.toggle("is-changed",venueChanged&&!isJustDone);
-    const target=isNow?dateTime(focus,"endTime"):dateTime(focus,"startTime"),diff=Math.max(0,Math.ceil((target-now)/60000));
-    const lunchLeft=Math.max(0,14*60+30-nowMinutes);$("#focusCountdownLabel").textContent=isNow?`Ends ${fmtTime(focus.endTime)}`:isFutureDay?"Starts":"Starts in";
-    $("#focusCountdown").textContent=isNow?`${compactDuration(diff)} left`:isFutureDay?fmtTime(focus.startTime):compactDuration(diff);
-    const countdownAction=$("#focusCountdownAction");countdownAction.hidden=isNow||isJustDone||isFutureDay;countdownAction.dataset.classId=classIdentity(focus);countdownAction.setAttribute("aria-label",isFree||isLunch?`Open next class ${canonical(focus.code)} in Planner`:`Open ${canonical(focus.code)} in Planner`);
-    const after=dayClasses[dayIndex+1]||null;
-    const sessionOrdinal=subjectSessionOrdinal(focus),sessionProgress=subjectSessionProgress(focus.code),sessionInsight=$("#focusSessionInsight"),finalInsight=$("#focusFinalInsight"),insightGrid=$("#heroInsightGrid"),sessionLabel=$("#focusSessionLabel"),finalLabel=$("#focusFinalLabel"),sessionValue=$("#focusSessionValue"),finalValue=$("#focusFinalValue");
-    insightGrid.hidden=false;sessionInsight.hidden=false;finalInsight.hidden=true;sessionInsight.removeAttribute("role");sessionInsight.removeAttribute("tabindex");delete sessionInsight.dataset.classId;finalInsight.removeAttribute("role");finalInsight.removeAttribute("tabindex");delete finalInsight.dataset.classId;
-    if(isJustDone){sessionLabel.textContent=future?"NEXT CLASS":"STATUS";sessionValue.textContent=future?`${fmtDate(future.dateIso,{weekday:"short",day:"numeric",month:"short"})} · ${canonical(future.code)} ${fmtTime(future.startTime)}`:"Schedule complete";if(future){sessionInsight.setAttribute("role","button");sessionInsight.tabIndex=0;sessionInsight.dataset.classId=classIdentity(future)}}
-    else if(isLunch||isFree){sessionLabel.textContent=isLunch?"LUNCH":"FREE TIME";sessionValue.textContent=isLunch?`Until ${fmtTime("14:30")}`:`${compactDuration(diff)} available`;finalInsight.hidden=false;finalLabel.textContent="SESSION";finalValue.textContent=sessionOrdinal?`${sessionOrdinal} of ${SESSION_TARGET}`:`${sessionProgress.completed} of ${SESSION_TARGET} completed`}
-    else{sessionLabel.textContent="SESSION";sessionValue.textContent=sessionOrdinal?`${sessionOrdinal} of ${SESSION_TARGET}`:`${sessionProgress.completed} of ${SESSION_TARGET} completed`;if(isNow){finalInsight.hidden=false;finalLabel.textContent=isFinalLive?"AFTER THIS":after?"UP NEXT":"AFTER THIS";finalValue.textContent=isFinalLive||!after?"Day complete":`${canonical(after.code)} · ${fmtTime(after.startTime)}`;if(after){finalInsight.setAttribute("role","button");finalInsight.tabIndex=0;finalInsight.dataset.classId=classIdentity(after)}}}
-    const liveProgress=$("#heroLiveProgress"),liveTrack=$(".hero-live-progress-track"),liveBar=$("#focusProgressBar");
-    liveProgress.hidden=!isNow;
+    $("#focusCode").textContent=canonical(focus.code);$("#focusTitle").textContent=isJustDone?"Classes complete":focus.course;$("#focusTime").textContent=isJustDone?`Ended ${fmtTime(focus.endTime)}`:`${fmtTime(focus.startTime)} – ${fmtTime(focus.endTime)}`;
+    const target=isNow?dateTime(focus,"endTime"):dateTime(focus,"startTime"),diff=Math.max(0,Math.ceil((target-now)/60000)),after=dayClasses[dayIndex+1]||null,sessionOrdinal=subjectSessionOrdinal(focus),facultyBit=focus.faculty?`, with ${focus.faculty}`:"";
+    let sentence;
     if(isNow){
-      const duration=Math.max(1,dateTime(focus,"endTime")-dateTime(focus,"startTime")),elapsed=Math.floor(Math.max(0,now-dateTime(focus,"startTime"))/60000)*60000,percent=Math.max(0,Math.min(100,Math.round(elapsed/duration*100))),remainingText=compactDuration(diff);
-      $("#focusProgressLabel").textContent=`Ends ${fmtTime(focus.endTime)}`;$("#focusProgressValue").textContent=`${remainingText} left`;
-      liveBar.style.width=`${percent}%`;liveTrack.setAttribute("aria-valuenow",String(percent));liveProgress.dataset.classId=classIdentity(focus);
-    }else{liveBar.style.width="0%";liveTrack.setAttribute("aria-valuenow","0")}
+      const nextBit=isFinalLive?"your last class today":after?`${canonical(after.code)} next at ${fmtTime(after.startTime)}`:"you're done for the day";
+      sentence=`In ${venueOf(focus)}${facultyBit} until ${fmtTime(focus.endTime)} — then ${nextBit}.`;
+    }else if(isJustDone){
+      sentence=future?`Next up: ${canonical(future.code)} ${future.dateIso===tomorrowIso()?"tomorrow":fmtDate(future.dateIso,{weekday:"short",day:"numeric",month:"short"})} at ${fmtTime(future.startTime)}.`:"Nothing else scheduled — enjoy the rest of your day.";
+    }else if(isLunch){
+      sentence=`Lunch until ${fmtTime("14:30")} — then ${canonical(focus.code)} at ${fmtTime(focus.startTime)}, ${venueOf(focus)}.`;
+    }else if(isFree){
+      sentence=`Free for ${compactDuration(diff)} — then ${canonical(focus.code)} at ${fmtTime(focus.startTime)}, ${venueOf(focus)}.`;
+    }else if(isFutureDay){
+      sentence=`${venueOf(focus)}${facultyBit} — ${isTomorrow?"tomorrow":fmtDate(focus.dateIso,{weekday:"long"})}.`;
+    }else{
+      sentence=`Starts in ${compactDuration(diff)} — ${venueOf(focus)}${facultyBit}. Session ${sessionOrdinal||1} of ${SESSION_TARGET}.`;
+    }
+    const venueChanged=state.notifications.some(n=>n.type==="venue"&&n.classId===classIdentity(focus)&&isNotificationActionable(n));
+    if(venueChanged&&!isJustDone)sentence+=" (venue changed)";
+    heroSentence.textContent=sentence;
+    if(isNow){
+      const duration=Math.max(1,dateTime(focus,"endTime")-dateTime(focus,"startTime")),elapsed=Math.max(0,now-dateTime(focus,"startTime")),percent=Math.max(0,Math.min(100,Math.round(elapsed/duration*100)));
+      heroRing.removeAttribute("hidden");heroRingFill.style.strokeDasharray=String(RING_CIRCUMFERENCE);heroRingFill.style.strokeDashoffset=String(RING_CIRCUMFERENCE*(1-percent/100));heroRingText.textContent=`${percent}%`;
+    }else{heroRing.setAttribute("hidden","")}
     renderHeroDayGlance(state.classes.filter(c=>c.dateIso===focus.dateIso),now,focus.dateIso);
   }
-  else{focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-final-live","is-just-done","is-lunch","is-free","is-clear","is-upcoming","is-future");focusPanel.style.removeProperty("--focus-course");$("#focusLiveCapsule").textContent="DONE";$("#focusKicker").textContent=todays.length?"DAY COMPLETE":"YOUR SCHEDULE";$("#focusState").textContent=todays.length?"Day complete":"Today is clear";$("#focusDayLoad").textContent=compactDayLoad(todays);$("#focusCode").textContent="CLEAR";$("#focusTitle").textContent=todays.length?"Classes complete":"No classes today";$("#focusTime").textContent=todays.length?"Done for today":"Your day is open";$("#focusVenue").textContent=todays.length?`Last class ended ${fmtTime(todays.at(-1).endTime)}`:"Open the Planner to look ahead";$("#focusVenue")?.closest("span")?.classList.remove("is-changed");$("#focusFaculty").textContent="";$("#focusFacultyRow").hidden=true;$("#focusCountdownLabel").textContent="STATUS";$("#focusCountdown").textContent="Clear";$("#focusCountdownAction").hidden=true;$("#heroLiveProgress").hidden=true;$("#heroInsightGrid").hidden=true;renderHeroDayGlance(state.classes.filter(c=>c.dateIso===today),now,today)}
+  else{
+    focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-final-live","is-just-done","is-lunch","is-free","is-clear","is-upcoming","is-future");focusPanel.style.removeProperty("--focus-course");
+    $("#focusLiveCapsule").textContent="DONE";$("#focusDayLoad").textContent=compactDayLoad(todays);$("#focusCode").textContent="CLEAR";$("#focusTitle").textContent=todays.length?"Classes complete":"No classes today";$("#focusTime").textContent=todays.length?"Done for today":"Your day is open";
+    heroSentence.textContent=todays.length?`Last class ended ${fmtTime(todays.at(-1).endTime)} — nothing else scheduled.`:"Open the Planner to look ahead.";
+    heroRing.setAttribute("hidden","");
+    renderHeroDayGlance(state.classes.filter(c=>c.dateIso===today),now,today);
+  }
   if(!focus){delete focusPanel.dataset.focusDate;delete focusPanel.dataset.focusClassId;$("#focusCourseAction").tabIndex=-1;$("#focusCourseAction").setAttribute("aria-disabled","true")}
   const timelineIso=state.timelineDay==="tomorrow"?tomorrowIso():today,timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   $("#timelineDateTitle").textContent=state.timelineDay==="today"?"Today":"Tomorrow";
@@ -1128,8 +1126,8 @@ function bind(){
   $("#tasksQuickButton")?.addEventListener("click",()=>{showPage("planner");setPlannerView("tasks")});
   $("#timelineDaySwitch").addEventListener("click",e=>{const b=e.target.closest("[data-timeline-day]");if(!b)return;setTimelineDay(b.dataset.timelineDay,"auto")});
   const openHeroPlannerTarget=element=>{const id=element?.dataset.classId||$("#focusPanel")?.dataset.focusClassId,c=state.classes.find(item=>classIdentity(item)===id);if(c)scrollToPlannerClass(c);else{const iso=$("#focusPanel")?.dataset.focusDate;if(iso)openPlannerDate(iso)}};
-  [$("#focusCountdownAction"),$("#heroLiveProgress")].forEach(element=>{element?.addEventListener("click",event=>{event.stopPropagation();openHeroPlannerTarget(event.currentTarget)});element?.addEventListener("keydown",event=>{if(!["Enter"," "].includes(event.key))return;event.preventDefault();event.currentTarget.click()})});
-  $("#focusFinalInsight")?.addEventListener("click",event=>{if(event.currentTarget.getAttribute("role")!=="button")return;event.stopPropagation();openHeroPlannerTarget(event.currentTarget)});$("#focusFinalInsight")?.addEventListener("keydown",event=>{if(event.currentTarget.getAttribute("role")!=="button"||!["Enter"," "].includes(event.key))return;event.preventDefault();event.currentTarget.click()});
+  $("#heroBrief")?.addEventListener("click",event=>{event.stopPropagation();openHeroPlannerTarget(event.currentTarget)});
+  $("#heroBrief")?.addEventListener("keydown",event=>{if(!["Enter"," "].includes(event.key))return;event.preventDefault();event.currentTarget.click()});
   $("#focusCourseAction")?.addEventListener("keydown",event=>{if(!["Enter"," "].includes(event.key))return;event.preventDefault();event.currentTarget.click()});
   const openFreeTask=button=>{editingTaskId=null;$("#taskTitle").value="";$("#taskCourse").value=button.dataset.freeCourse||"";$("#taskDate").value=button.dataset.freeDate||"";$("#taskDialog h2").textContent="Add task";$("#saveTaskButton").textContent="Save";clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal()};
   $("#todayProgressRail").addEventListener("click",e=>{const button=e.target.closest(".free-window-action");if(button){e.stopPropagation();openFreeTask(button)}});

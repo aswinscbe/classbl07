@@ -1894,3 +1894,23 @@ html[data-theme="light"] #focusPanel.hero-premium{
    staying pinned. 100dvh tracks the real visible viewport continuously,
    which is the standard fix for this class of bug. */
 body,.app-shell{min-height:100vh!important;min-height:100dvh!important}
+
+/* ===== Home rebuild: narrated hero (info-conveyance pass) ===============
+   Collapses what used to be six separate labeled fields (status kicker,
+   countdown chip, venue icon-row, faculty icon-row, session-count box,
+   final-class box) into one flowing sentence, plus a radial ring for the
+   live-class progress instead of a text countdown - conveying duration/
+   status at a glance instead of asking you to read and do time math. */
+#focusPanel.hero-premium .hero-top{justify-content:space-between!important}
+#focusPanel.hero-premium .hero-brief{
+  order:3!important;display:flex!important;align-items:center!important;gap:12px!important;margin-top:14px!important;
+  cursor:pointer;
+}
+#focusPanel.hero-premium .hero-ring{width:52px!important;height:52px!important;flex:none!important}
+#focusPanel.hero-premium .hero-ring-track{fill:none;stroke:color-mix(in srgb,var(--text) 14%,transparent);stroke-width:3}
+#focusPanel.hero-premium .hero-ring-fill{fill:none;stroke:var(--emerald);stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .5s ease}
+#focusPanel.hero-premium .hero-ring-text{fill:var(--text);font-family:var(--font-display);font-size:9px;font-weight:800}
+#focusPanel.hero-premium #heroSentence{
+  margin:0!important;font-size:14.5px!important;font-weight:560!important;line-height:1.42!important;
+  color:var(--muted)!important;
+}
