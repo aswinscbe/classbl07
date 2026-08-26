@@ -740,6 +740,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .rail-panel,.agenda-panel{margin-top:0}
 .rail-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .rail-week-label{flex:1;text-align:center;font-family:var(--font-display);font-size:13.5px;font-weight:650;color:var(--ink-muted)}
+.rail-jump-today{color:var(--accent)}
 .rail-month-toggle{margin-left:2px}
 .date-rail{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
 .rail-day{
@@ -750,10 +751,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .rail-day b{font-family:var(--font-display);font-size:15px;font-weight:650;color:var(--ink)}
 .rail-day .cnt{font-family:var(--font-display);font-size:10.5px;font-weight:700;color:var(--accent-2)}
 .rail-day .cnt.empty{color:var(--ink-faint);font-weight:600}
-.rail-day.sel .cnt{color:#fff}
 .rail-day.today{border-color:var(--accent)}
-.rail-day.sel{background:var(--grad)}
-.rail-day.sel .dow,.rail-day.sel b{color:#fff}
+.rail-day.sel{background:color-mix(in srgb, var(--accent) 14%, var(--bg-panel));border-color:color-mix(in srgb, var(--accent) 45%, transparent)}
+.rail-day.sel .dow{color:var(--accent)}
+.rail-day.sel b{color:var(--ink)}
+.rail-day.sel .cnt{color:var(--accent)}
 .calendar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .calendar-head h2{font-size:16.5px}
 .today-button{
@@ -777,18 +779,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-day.outside{opacity:.32}
 .calendar-day.today{border-color:var(--accent)}
 .calendar-day.today .calendar-day-number{color:var(--accent);font-weight:800}
-.calendar-day.selected{background:var(--accent);color:#fff}
-.calendar-day.selected .calendar-day-number{color:#fff}
+.calendar-day.selected{background:color-mix(in srgb, var(--accent) 16%, var(--bg-panel));border-color:color-mix(in srgb, var(--accent) 45%, transparent)}
+.calendar-day.selected .calendar-day-number{color:var(--accent);font-weight:800}
 .calendar-dashes{
   position:absolute;bottom:9px;left:50%;transform:translateX(-50%);
   display:flex;gap:2px;align-items:flex-end;height:4px;
 }
 .calendar-dashes i{width:3px;height:4px;border-radius:2px;background:var(--course,var(--accent));display:block}
 .calendar-dashes i.cancelled{background:var(--danger)}
-.calendar-day.selected .calendar-dashes i{background:#fff}
 .calendar-day.holiday .calendar-day-number{color:var(--danger)}
 .calendar-day.has-exam::after{content:"";position:absolute;top:6px;left:7px;width:5px;height:5px;border-radius:50%;background:var(--accent-2)}
-.calendar-day.selected.has-exam::after{background:#fff}
 .rail-day.has-exam{box-shadow:inset 0 0 0 1px var(--accent-2)}
 .calendar-holiday-mark{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--amber);overflow:hidden;font-size:0;line-height:0;color:transparent}
 .calendar-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -905,6 +905,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   text-decoration-thickness:2px;text-underline-offset:1px;
 }
 .agenda-class-card.cancelled .agenda-meta-row{color:color-mix(in srgb, var(--danger) 55%, var(--ink-muted))}
+.agenda-class-card.completed{padding:10px 4px 10px 14px;opacity:.6}
+.agenda-class-card.completed .agenda-card-body{margin-top:4px}
+.agenda-class-card.completed .agenda-meta,.agenda-class-card.completed .agenda-card-footer{display:none}
+.agenda-class-card.completed .agenda-course-line h3{font-size:13.5px}
 .agenda-empty{padding:22px 8px;text-align:center;color:var(--ink-muted);font-size:14px;font-weight:600}
 .academic-date-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:10px;border-radius:var(--radius-sm);background:var(--amber-soft);border:1px solid var(--border)}
 .academic-date-banner span{font-size:11px;font-weight:800;color:var(--amber);letter-spacing:.05em;text-transform:uppercase}

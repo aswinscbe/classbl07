@@ -439,6 +439,7 @@ function agendaCardHtml(c){
   const status=agendaStatus(c), tag=agendaTag(c), cls=[
     "agenda-class-card",
     status==="Live"?"current":"",
+    status==="Completed"?"completed":"",
     c.status==="Cancelled"?"cancelled":""
   ].filter(Boolean).join(" ");
   return `<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
@@ -455,8 +456,7 @@ function agendaCardHtml(c){
         <h3>${esc(c.course)}</h3>
       </div>
       <div class="agenda-meta">
-        <div class="agenda-meta-row">${icon("pin")}<span>${esc(venueOf(c))}</span></div>
-        <div class="agenda-meta-row">${icon("faculty")}<span>${esc(c.faculty)}</span></div>
+        <div class="agenda-meta-row">${icon("pin")}<span>${esc(venueOf(c))} · ${esc(c.faculty)}</span></div>
       </div>
     </div>
     <div class="agenda-card-footer">
@@ -1225,6 +1225,7 @@ function bind(){
   $("#openMonthView")?.addEventListener("click",()=>{const d=new Date(`${state.selectedDate}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();$("#monthViewDialog").showModal()});
   $("#railPrevWeek")?.addEventListener("click",()=>shiftRailWeek(-1));
   $("#railNextWeek")?.addEventListener("click",()=>shiftRailWeek(1));
+  $("#railJumpToday")?.addEventListener("click",()=>{const n=new Date();state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date(n.getFullYear(),n.getMonth(),1);renderCalendar()});
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
   $("#termProgressCard")?.addEventListener("click",()=>{renderTermHeatmap();$("#termHeatmapDialog").showModal()});
   $("#termHeatmapGrid")?.addEventListener("click",e=>{
