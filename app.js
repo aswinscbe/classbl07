@@ -169,10 +169,39 @@ function renderExamCard(){
   card.hidden=false;
   const firstSlot=Object.keys(exam.slots)[0],entry=exam.slots[firstSlot];
   const daysLeft=examDaysLeft(exam.date);
-  $("#examCardTag").textContent=daysLeft===0?"EXAM TODAY":daysLeft===1?"EXAM TOMORROW":`NEXT EXAM · IN ${daysLeft} DAYS`;
+  card.style.setProperty("--course",colorFor(entry.code));
+  $("#examCardCode").textContent=entry.code;
   $("#examCardTitle").textContent=entry.subject;
-  $("#examCardMeta").textContent=`${fmtDate(exam.date,{weekday:"short",day:"numeric",month:"short"})} · ${EXAM_SLOT_LABELS[firstSlot]}${Object.keys(exam.slots).length>1?` +${Object.keys(exam.slots).length-1} more`:""}`;
+  $("#examCardDays").textContent=daysLeft===0?"Today":daysLeft===1?"Tomorrow":`${daysLeft}d`;
+  card.title=`${fmtDate(exam.date,{weekday:"long",day:"numeric",month:"long"})} · ${EXAM_SLOT_LABELS[firstSlot]}${Object.keys(exam.slots).length>1?` +${Object.keys(exam.slots).length-1} more`:""}`;
   card.onclick=()=>openPlannerTab("exams");
+}
+function renderWeekDigest(){
+  const el=$("#weekDigest");if(!el)return;
+  const monday=new Date(`${mondayIso(isoToday())}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
+  const mondayIsoStr=mondayIso(isoToday()),nextMondayIsoStr=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(nextMonday);
+  const weekClasses=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;
+  const weekTasks=state.tasks.filter(t=>!t.completed&&t.date&&t.date>=mondayIsoStr&&t.date<nextMondayIsoStr).length;
+  const weekExams=(window.EXAM_DATA||[]).filter(e=>e.date>=mondayIsoStr&&e.date<nextMondayIsoStr).length;
+  const parts=[`${weekClasses} ${weekClasses===1?"class":"classes"}`];
+  if(weekTasks)parts.push(`${weekTasks} ${weekTasks===1?"task":"tasks"} due`);
+  if(weekExams)parts.push(`${weekExams} ${weekExams===1?"exam":"exams"}`);
+  el.hidden=false;
+  el.textContent=parts.join(" · ")+" this week";
+}
+function renderTermOverviewStrip(){
+  const el=$("#termOverviewStrip");if(!el)return;
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30"),now=new Date();
+  const weeks=[];
+  let cur=new Date(termStart);cur.setHours(0,0,0,0);cur.setDate(cur.getDate()-((cur.getDay()+6)%7));
+  while(cur<termEnd){
+    const wStart=new Date(cur),wEnd=new Date(cur);wEnd.setDate(wEnd.getDate()+7);
+    const wStartIso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(wStart),wEndIso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(wEnd);
+    const hasExam=(window.EXAM_DATA||[]).some(e=>e.date>=wStartIso&&e.date<wEndIso);
+    weeks.push({isCurrent:now>=wStart&&now<wEnd,isPast:wEnd<=now,hasExam});
+    cur=wEnd;
+  }
+  el.innerHTML=weeks.map(w=>`<i class="${w.isCurrent?"is-current":""} ${w.isPast?"is-past":""} ${w.hasExam?"has-exam":""}"></i>`).join("");
 }
 function renderExamsPage(){
   const list=$("#examsList"),hero=$("#examHero");
@@ -374,6 +403,7 @@ function renderHome(){
   const termPct=termAll.length?Math.round(termDone/termAll.length*100):0,termWeeksLeft=Math.max(0,Math.ceil((termEnd-now)/(7*24*3600000)));
   $("#termProgressPct").textContent=`${termPct}%`;$("#termProgressBar").style.width=`${termPct}%`;
   $("#termDone").textContent=termDone;$("#termLeft").textContent=termLeft;$("#termWeeksLeft").textContent=termWeeksLeft;
+  renderTermOverviewStrip();renderWeekDigest();
   const termTotalMs=termEnd-termStart,sep1=new Date("2026-09-01T00:00:00+05:30"),oct1=new Date("2026-10-01T00:00:00+05:30");
   const sepTick=$("#termTickSep"),octTick=$("#termTickOct");
   if(sepTick)sepTick.style.left=`${Math.max(0,Math.min(100,((sep1-termStart)/termTotalMs)*100))}%`;
@@ -1408,7 +1438,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-fixes1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-homerev1",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
