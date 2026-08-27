@@ -1,11 +1,11 @@
 (() => {
 "use strict";
 const API="https://script.google.com/macros/s/AKfycbxQWG7cS3quE0C8BBtRVx8PExapIvuqAB5-KLGzQMnOoDNKBMcblxMpztO77jME6EwShQ/exec";
-const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2"};
+const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2",badgesSeen:"classbl07-nova-badges-seen-v1",busRoute:"classbl07-nova-bus-route-v1",leavingSoon:"classbl07-nova-leaving-soon-v1"};
 const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69",IS:"#5aa06a"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:"C&D Housing",busTo:"PGP Auditorium",timelineOffset:0,heroPeek:0,lastUpdated:null,calendarHighlight:null};
+const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,heroPeek:0,lastUpdated:null,calendarHighlight:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
@@ -426,6 +426,7 @@ function renderHome(){
   $("#termProgressPct").textContent=`${termPct}%`;$("#termProgressBar").style.width=`${termPct}%`;
   $("#termDone").textContent=termDone;$("#termLeft").textContent=termLeft;$("#termWeeksLeft").textContent=termWeeksLeft;
   renderTermOverviewStrip();renderWeekDigest();renderHomeLegend();
+  renderHomeStreakBadge();checkAchievementUnlocks();
   const termTotalMs=termEnd-termStart,sep1=new Date("2026-09-01T00:00:00+05:30"),oct1=new Date("2026-10-01T00:00:00+05:30");
   const sepTick=$("#termTickSep"),octTick=$("#termTickOct");
   if(sepTick)sepTick.style.left=`${Math.max(0,Math.min(100,((sep1-termStart)/termTotalMs)*100))}%`;
@@ -494,6 +495,7 @@ function agendaTag(c){
   return{cls:"",text:"UPCOMING"};
 }
 function renderTermHeatmap(){
+  renderTermDayGrid("#termHeatmapDayGrid");
   const grid=$("#termHeatmapGrid");if(!grid)return;
   const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
   const weeks=[];
@@ -579,6 +581,45 @@ function renderDateRail(){
   $$(".rail-day",el).forEach(b=>b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar()}));
   const label=$("#railWeekLabel");
   if(label)label.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
+  renderFreeBlocks(days);
+}
+function renderFreeBlocks(days){
+  const panel=$("#freeBlocksPanel"),list=$("#freeBlocksList");if(!panel||!list)return;
+  const gaps=[];
+  days.forEach(iso=>{
+    const dayClasses=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    for(let i=0;i<dayClasses.length-1;i++){
+      const gap=minutes(dayClasses[i+1].startTime)-minutes(dayClasses[i].endTime);
+      if(gap>=90)gaps.push({iso,start:dayClasses[i].endTime,end:dayClasses[i+1].startTime,mins:gap});
+    }
+  });
+  gaps.sort((a,b)=>b.mins-a.mins);
+  const top=gaps.slice(0,4);
+  if(!top.length){panel.hidden=true;return}
+  panel.hidden=false;
+  list.innerHTML=top.map(g=>`<div class="free-block-row"><span class="fb-day">${esc(fmtDate(g.iso,{weekday:"long"}))}</span><span class="fb-time">${esc(fmtTime(g.start))} – ${esc(fmtTime(g.end))}</span><span class="fb-dur">${esc(compactDuration(g.mins))} free</span></div>`).join("");
+}
+function icsPad(n){return String(n).padStart(2,"0")}
+function icsEscape(s){return String(s).replace(/[\\,;]/g,m=>"\\"+m).replace(/\n/g,"\\n")}
+function icsUtcStamp(){const d=new Date();return`${d.getUTCFullYear()}${icsPad(d.getUTCMonth()+1)}${icsPad(d.getUTCDate())}T${icsPad(d.getUTCHours())}${icsPad(d.getUTCMinutes())}${icsPad(d.getUTCSeconds())}Z`}
+function buildTermIcs(){
+  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//BL07 Term 3 Planner//EN","CALSCALE:GREGORIAN"];
+  const stamp=icsUtcStamp();
+  state.classes.filter(c=>c.status!=="Cancelled").forEach(c=>{
+    const uid=`${classIdentity(c)}@bl07`.replace(/[^a-zA-Z0-9@._-]/g,"-");
+    lines.push("BEGIN:VEVENT",`UID:${uid}`,`DTSTAMP:${stamp}`,
+      `DTSTART;TZID=Asia/Kolkata:${c.dateIso.replace(/-/g,"")}T${c.startTime.replace(":","")}00`,
+      `DTEND;TZID=Asia/Kolkata:${c.dateIso.replace(/-/g,"")}T${c.endTime.replace(":","")}00`,
+      `SUMMARY:${icsEscape(`${canonical(c.code)} · ${c.course}`)}`,
+      `LOCATION:${icsEscape(venueOf(c))}`,"END:VEVENT");
+  });
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+function exportTermIcs(){
+  const blob=new Blob([buildTermIcs()],{type:"text/calendar;charset=utf-8"});
+  downloadBlob(blob,"bl07-term3-schedule.ics");
+  showToast("Term schedule downloaded (.ics)");
 }
 /* Status-aware desktop calendar preview. This declaration intentionally
    replaces the compact legacy renderer above without touching calendar flow. */
@@ -850,7 +891,9 @@ function renderCampus(){
   renderBusControls();
   renderBuses();
   renderMess();
+  renderMessWeekGrid();
 }
+function saveBusRoute(){save(KEYS.busRoute,{from:state.busFrom,to:state.busTo})}
 
 function renderBusControls(){
   const options=BUS_STOPS.map(stop=>
@@ -867,12 +910,21 @@ function renderBusControls(){
     $$(".filter-chip",chips).forEach(button=>
       button.addEventListener("click",()=>{
         state.busFrom=button.dataset.from;state.busTo=button.dataset.to;
-        renderBusControls();renderBuses();
+        saveBusRoute();renderBusControls();renderBuses();
       })
     );
   }
 }
 
+let _leavingSoonTimer=null;
+function updateLeavingSoonButton(){const el=$("#leavingSoonToggle");if(!el)return;el.classList.toggle("active",load(KEYS.leavingSoon,false))}
+function scheduleLeavingSoonAlert(departTime){
+  clearTimeout(_leavingSoonTimer);
+  if(!load(KEYS.leavingSoon,false)||typeof Notification==="undefined"||Notification.permission!=="granted"||!departTime)return;
+  const fireAt=new Date(departTime.getTime()-10*60000),delay=fireAt-new Date();
+  if(delay<=0||delay>2*3600000)return;
+  _leavingSoonTimer=setTimeout(()=>{new Notification("Leaving soon",{body:`Bus to ${busStopLabel(state.busTo)} departs in 10 minutes.`})},delay);
+}
 function renderBuses(){
   const upcomingList=$("#upcomingBuses"),fullList=$("#fullBusList");
   if(!upcomingList||!fullList)return;
@@ -881,6 +933,7 @@ function renderBuses(){
 
   const heroRoute=$("#nextBusRoute");
   if(heroRoute)heroRoute.textContent=`${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;
+  updateLeavingSoonButton();
 
   if(!services.length){
     $("#nextBusTime").textContent="—";$("#nextBusMeta").textContent="No direct service on this route";
@@ -890,6 +943,7 @@ function renderBuses(){
     const ring=$("#countdownRing");if(ring){ring.style.setProperty("--pct",0);ring.classList.remove("urgent")}
     const empty='<div class="empty-state"><span class="empty-state-icon">'+icon("bus")+'</span><p>No service on this route</p><small>Try another origin or destination.</small></div>';
     upcomingList.innerHTML=empty;fullList.innerHTML=empty;
+    clearTimeout(_leavingSoonTimer);
     return;
   }
 
@@ -922,6 +976,7 @@ function renderBuses(){
   fullList.innerHTML=withTimes.map(({b})=>busRow(b,nextKey,now)).join("");
   const toggle=$("#toggleFullBus");
   if(toggle)toggle.textContent=fullList.classList.contains("collapsed")?"Show all":"Collapse";
+  scheduleLeavingSoonAlert(next.d);
 }
 
 function busRow(bus,nextKey,now=new Date()){
@@ -953,6 +1008,19 @@ function mealCardHtml(meal,label){
     ${badges?`<div class="food-badges">${badges}</div>`:""}
     <div class="food-section"><div class="food-items">${meal.items.map(i=>`<div class="food-item">${esc(i)}</div>`).join("")}</div></div>
   </article>`;
+}
+function mealSummary(meal){
+  if(!meal)return"—";
+  const items=Array.isArray(meal)?meal:meal.items||[];
+  return items.slice(0,2).join(", ")||"—";
+}
+function renderMessWeekGrid(){
+  const el=$("#messWeekGrid");if(!el)return;
+  const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  el.innerHTML=ds.map(d=>{
+    const menu=window.CAMPUS_DATA.mess[d];
+    return`<div class="mess-week-row ${d===state.messDay?"is-today":""}"><span class="mwg-day">${d.slice(0,3).toUpperCase()}</span><span class="mwg-cell"><b>B</b>${esc(mealSummary(menu.breakfast))}</span><span class="mwg-cell"><b>L</b>${esc(mealSummary(menu.lunch))}</span><span class="mwg-cell"><b>D</b>${esc(mealSummary(menu.dinner))}</span></div>`;
+  }).join("");
 }
 function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const menu=window.CAMPUS_DATA.mess[state.messDay],meal=menu[state.meal];$("#messMenu").innerHTML=meal?mealCardHtml(meal,state.meal[0].toUpperCase()+state.meal.slice(1)):"";const nowHour=Number(istParts().hour),currentMeal=nowHour<11?"breakfast":nowHour<16?"lunch":"dinner";$$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal)})}
 /* Deterministic CSS-only barcode heights, seeded off the student's name so it doesn't
@@ -1010,8 +1078,8 @@ function renderSessionRings(){
     </div>`;
   }).join("");
 }
-function renderProfileTermDayGrid(){
-  const grid=$("#termDayGrid");if(!grid)return;
+function renderTermDayGrid(selector){
+  const grid=$(selector);if(!grid)return;
   const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
   const start=new Date(termStart);start.setHours(0,0,0,0);start.setDate(start.getDate()-((start.getDay()+6)%7));
   const todayIso=isoToday();
@@ -1026,6 +1094,7 @@ function renderProfileTermDayGrid(){
   }
   grid.innerHTML=html;
 }
+function renderProfileTermDayGrid(){renderTermDayGrid("#termDayGrid")}
 function renderWorkloadChart(){
   const el=$("#workloadChart");if(!el)return;
   const totals={};
@@ -1060,8 +1129,7 @@ function renderStreak(){
   const streak=computeStreakDays(),lit=streak>=3;
   el.innerHTML=`<span class="streak-flame ${lit?"is-lit":""}">${icon("flame")}</span><div class="streak-copy"><strong>${streak} ${streak===1?"day":"days"}</strong><span>${streak?"No cancellations, back to back":"Starts today"}</span></div>`;
 }
-function renderAchievements(){
-  const el=$("#achievementsRow");if(!el)return;
+function computeAchievements(){
   const now=new Date();
   const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
   const pct=termEnd>termStart?Math.round(Math.max(0,Math.min(1,(now-termStart)/(termEnd-termStart)))*100):0;
@@ -1069,15 +1137,41 @@ function renderAchievements(){
   const weekClasses=state.classes.filter(c=>dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday);
   const weekCancelled=weekClasses.some(c=>c.status==="Cancelled");
   const streak=computeStreakDays();
-  const badges=[
-    {label:"Term Started",icon:"spark",unlocked:state.classes.length>0},
-    {label:"Halfway There",icon:"target",unlocked:pct>=50},
-    {label:"Perfect Week",icon:"check",unlocked:weekClasses.length>0&&!weekCancelled},
-    {label:"Busy Bee",icon:"books",unlocked:weekClasses.filter(c=>c.status!=="Cancelled").length>=15},
-    {label:"Streak Keeper",icon:"flame",unlocked:streak>=3}
+  return[
+    {key:"started",label:"Term Started",icon:"spark",unlocked:state.classes.length>0},
+    {key:"halfway",label:"Halfway There",icon:"target",unlocked:pct>=50},
+    {key:"perfect-week",label:"Perfect Week",icon:"check",unlocked:weekClasses.length>0&&!weekCancelled},
+    {key:"busy-bee",label:"Busy Bee",icon:"books",unlocked:weekClasses.filter(c=>c.status!=="Cancelled").length>=15},
+    {key:"streak",label:"Streak Keeper",icon:"flame",unlocked:streak>=3}
   ];
-  el.innerHTML=badges.map(b=>`<span class="achievement-badge ${b.unlocked?"unlocked":""}"><span class="badge-icon">${icon(b.icon)}</span>${esc(b.label)}</span>`).join("");
 }
+function renderAchievements(){
+  const el=$("#achievementsRow");if(!el)return;
+  el.innerHTML=computeAchievements().map(b=>`<span class="achievement-badge ${b.unlocked?"unlocked":""}"><span class="badge-icon">${icon(b.icon)}</span>${esc(b.label)}</span>`).join("");
+}
+function renderHomeStreakBadge(){
+  const el=$("#homeStreakBadge");if(!el)return;
+  const streak=computeStreakDays();
+  if(!streak){el.hidden=true;return}
+  el.hidden=false;
+  el.innerHTML=`${icon("flame")}${streak} ${streak===1?"day":"days"}`;
+}
+let _nudgeShowing=false;
+function checkAchievementUnlocks(){
+  const el=$("#achievementNudge");if(!el)return;
+  if(_nudgeShowing)return;
+  const seen=new Set(load(KEYS.badgesSeen,[]));
+  const badges=computeAchievements();
+  const newlyUnlocked=badges.find(b=>b.unlocked&&!seen.has(b.key));
+  badges.forEach(b=>{if(b.unlocked)seen.add(b.key)});
+  save(KEYS.badgesSeen,[...seen]);
+  if(newlyUnlocked){
+    _nudgeShowing=true;
+    el.hidden=false;
+    el.innerHTML=`<span class="badge-icon">${icon(newlyUnlocked.icon)}</span><span><b>${esc(newlyUnlocked.label)}</b> unlocked — check your Insights.</span>`;
+  }
+}
+function dismissAchievementNudge(){_nudgeShowing=false;const el=$("#achievementNudge");if(el)el.hidden=true}
 function renderProfileInsight(){
   const el=$("#profileInsight");if(!el)return;
   const active=state.classes.filter(c=>c.status!=="Cancelled");
@@ -1611,6 +1705,9 @@ function bind(){
   window.addEventListener("offline",()=>updateOfflineBanner(false));
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerTab(b.dataset.plannerTab)));
+  $$(".subtab[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-profile-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".profile-view").forEach(v=>v.classList.toggle("active",v.dataset.profileView===b.dataset.profileTab))}));
+  $("#homeStreakBadge")?.addEventListener("click",()=>{showPage("profile");$('.subtab[data-profile-tab="insights"]')?.click()});
+  $("#achievementNudge")?.addEventListener("click",()=>{dismissAchievementNudge();showPage("profile");$('.subtab[data-profile-tab="insights"]')?.click()});
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
   $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
@@ -1659,6 +1756,7 @@ function bind(){
   $("#shareWrapped")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await shareWrappedImage();b.disabled=false});
   $("#downloadWrapped")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await downloadWrappedImage();b.disabled=false;showToast("Image downloaded")});
   $("#exportWeekImage")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await downloadWeekImage();b.disabled=false;showToast("This week's schedule downloaded")});
+  $("#exportTermIcs")?.addEventListener("click",()=>exportTermIcs());
   $("#termProgressCard")?.addEventListener("click",()=>{renderTermHeatmap();$("#termHeatmapDialog").showModal()});
   $("#termHeatmapGrid")?.addEventListener("click",e=>{
     const row=e.target.closest(".term-heatmap-row");if(!row)return;
@@ -1687,7 +1785,7 @@ function bind(){
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value,homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
-$("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const list=$("#fullBusList"),collapsed=list.classList.toggle("collapsed");$("#toggleFullBus").textContent=collapsed?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
+$("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const list=$("#fullBusList"),collapsed=list.classList.toggle("collapsed");$("#toggleFullBus").textContent=collapsed?"Show all":"Collapse"});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week at a glance"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
 }
@@ -1713,7 +1811,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-profilev2",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova3",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
