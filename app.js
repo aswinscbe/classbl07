@@ -512,23 +512,36 @@ function renderTermHeatmap(){
    Timeline and the Planner day agenda so the two surfaces stay in sync. Card height reflects
    actual duration; gaps of 45+ minutes between classes collapse to a compact "free" spacer
    (capped so a long gap doesn't force a marathon scroll) instead of full empty space. */
+function initialsOf(name){
+  const parts=String(name||"").trim().split(/\s+/).filter(Boolean);
+  if(!parts.length)return"?";
+  return(parts[0][0]+(parts[1]?parts[1][0]:"")).toUpperCase();
+}
 function dayCardListHtml(classes,dayIso){
   const chronological=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  const now=new Date();
   let html='<div class="day-cardlist">',prevEnd=null;
   chronological.forEach(c=>{
     if(prevEnd!=null){
       const gap=minutes(c.startTime)-prevEnd;
-      if(gap>=45){const capped=Math.max(36,Math.min(80,Math.round(gap*0.5)));html+=`<div class="day-cardlist-gap" style="min-height:${capped}px"><span>${esc(compactDuration(gap))} free</span></div>`}
+      if(gap>=45){const capped=Math.max(36,Math.min(80,Math.round(gap*0.5)));html+=`<div class="day-cardlist-gap" style="min-height:${capped}px"><span class="dc-gap-label">${icon("clock")}${esc(compactDuration(gap))} free</span></div>`}
     }
     const status=agendaStatus(c),tag=agendaTag(c),dur=minutes(c.endTime)-minutes(c.startTime),blockPx=Math.max(64,Math.min(180,Math.round(dur*1.2))),sessionN=subjectSessionOrdinal(c);
     const cls=["day-cardlist-item",status==="Live"?"current":"",status==="Completed"?"completed":"",c.status==="Cancelled"?"cancelled":""].filter(Boolean).join(" ");
+    const progress=status==="Live"?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
+    const chips=[
+      `<span class="dc-chip">${icon("pin")}${esc(venueOf(c))}</span>`,
+      c.faculty?`<span class="dc-chip"><span class="dc-avatar">${esc(initialsOf(c.faculty))}</span>${esc(c.faculty)}</span>`:"",
+      sessionN?`<span class="dc-chip">Session ${sessionN}/${SESSION_TARGET}</span>`:"",
+      `<span class="dc-chip">${icon("clock")}${esc(compactDuration(dur))}</span>`
+    ].filter(Boolean).join("");
     html+=`<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)};min-height:${blockPx}px">
-      <div class="day-cardlist-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small></div>
+      <div class="day-cardlist-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small><span class="tag ${tag.cls}">${esc(tag.text)}</span></div>
       <div class="day-cardlist-body">
         <div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong>${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}</div>
-        <p>${esc(venueOf(c))} · ${esc(c.faculty)}${sessionN?` · Session ${sessionN}/${SESSION_TARGET}`:""}</p>
+        ${progress!==null?`<div class="day-cardlist-progress"><span style="width:${progress}%"></span></div>`:""}
+        <div class="day-cardlist-chips">${chips}</div>
       </div>
-      <span class="tag ${tag.cls}">${esc(tag.text)}</span>
     </article>`;
     prevEnd=minutes(c.endTime);
   });
@@ -1475,7 +1488,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-herofix1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-schedule1",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
