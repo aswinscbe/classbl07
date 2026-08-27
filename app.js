@@ -287,7 +287,7 @@ function tagCountdown(totalMins){
 function renderHome(){
   renderExamCard();
   $("#focusPanel")?.classList.toggle("is-loading",!!state.scheduleLoading);
-  $$(".stat-cell").forEach(t=>t.classList.toggle("is-loading",!!state.scheduleLoading));
+  $("#termWeekLine")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $("#weekHeatmap")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $("#termOverviewStrip")?.closest(".term-overview-card")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $("#todayProgressRail")?.classList.toggle("is-loading",!!state.scheduleLoading);
@@ -344,7 +344,6 @@ function renderHome(){
       else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     }
     pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
-    pills.push(heroPill(`${icon("faculty")}${esc(shown.faculty)}`));
     const heroSessionN=subjectSessionOrdinal(shown);
     if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${SESSION_TARGET}`));
     if(nextInDay&&!peeking)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`));
@@ -376,7 +375,7 @@ function renderHome(){
       const segs=activeToday.map(c=>{
         const left=((minutes(c.startTime)-dayStart)/span)*100,width=((minutes(c.endTime)-minutes(c.startTime))/span)*100;
         const st=now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming";
-        return`<span class="hero-strip-seg ${st}" style="--course:${colorFor(c.code)};left:${left}%;width:${width}%" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}"></span>`;
+        return`<span class="hero-strip-seg ${st}" style="--course:${colorFor(c.code)};left:calc(${left}% + 1px);width:calc(${width}% - 2px)" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}"></span>`;
       }).join("");
       const nowMin=Number(istParts().hour)*60+Number(istParts().minute);
       const nowMarker=(nowMin>=dayStart&&nowMin<=dayEnd)?`<span class="hero-strip-now" style="left:${((nowMin-dayStart)/span)*100}%"></span>`:"";
@@ -400,11 +399,8 @@ function renderHome(){
   const monday=new Date(`${mondayIso(today)}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
   const week=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")>now&&dateTime(c,"startTime")<nextMonday);
   const thisWeekAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday);
-  const totalWeekMins=thisWeekAll.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-dateTime(c,"startTime"))/60000),0);
-  const mins=week.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-Math.max(now,dateTime(c,"startTime")))/60000),0),cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;
-  $("#weekClasses").textContent=week.length;$("#weekHours").textContent=`${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;$("#weekCancelled").textContent=cancels;
-  const hoursPct=totalWeekMins?Math.round((mins/totalWeekMins)*100):0;
-  $(".stat-ring")?.style.setProperty("--pct",hoursPct);
+  const cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;
+  $("#weekClasses").textContent=week.length;$("#weekCancelled").textContent=cancels;
   /* Trend — this week's total classes vs last week's, so the numbers mean something rather than sitting alone. */
   const lastMonday=new Date(monday);lastMonday.setDate(monday.getDate()-7);
   const lastWeekAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=lastMonday&&dateTime(c,"startTime")<monday);
@@ -598,28 +594,6 @@ function renderFreeBlocks(days){
   if(!top.length){panel.hidden=true;return}
   panel.hidden=false;
   list.innerHTML=top.map(g=>`<div class="free-block-row"><span class="fb-day">${esc(fmtDate(g.iso,{weekday:"long"}))}</span><span class="fb-time">${esc(fmtTime(g.start))} – ${esc(fmtTime(g.end))}</span><span class="fb-dur">${esc(compactDuration(g.mins))} free</span></div>`).join("");
-}
-function icsPad(n){return String(n).padStart(2,"0")}
-function icsEscape(s){return String(s).replace(/[\\,;]/g,m=>"\\"+m).replace(/\n/g,"\\n")}
-function icsUtcStamp(){const d=new Date();return`${d.getUTCFullYear()}${icsPad(d.getUTCMonth()+1)}${icsPad(d.getUTCDate())}T${icsPad(d.getUTCHours())}${icsPad(d.getUTCMinutes())}${icsPad(d.getUTCSeconds())}Z`}
-function buildTermIcs(){
-  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//BL07 Term 3 Planner//EN","CALSCALE:GREGORIAN"];
-  const stamp=icsUtcStamp();
-  state.classes.filter(c=>c.status!=="Cancelled").forEach(c=>{
-    const uid=`${classIdentity(c)}@bl07`.replace(/[^a-zA-Z0-9@._-]/g,"-");
-    lines.push("BEGIN:VEVENT",`UID:${uid}`,`DTSTAMP:${stamp}`,
-      `DTSTART;TZID=Asia/Kolkata:${c.dateIso.replace(/-/g,"")}T${c.startTime.replace(":","")}00`,
-      `DTEND;TZID=Asia/Kolkata:${c.dateIso.replace(/-/g,"")}T${c.endTime.replace(":","")}00`,
-      `SUMMARY:${icsEscape(`${canonical(c.code)} · ${c.course}`)}`,
-      `LOCATION:${icsEscape(venueOf(c))}`,"END:VEVENT");
-  });
-  lines.push("END:VCALENDAR");
-  return lines.join("\r\n");
-}
-function exportTermIcs(){
-  const blob=new Blob([buildTermIcs()],{type:"text/calendar;charset=utf-8"});
-  downloadBlob(blob,"bl07-term3-schedule.ics");
-  showToast("Term schedule downloaded (.ics)");
 }
 /* Status-aware desktop calendar preview. This declaration intentionally
    replaces the compact legacy renderer above without touching calendar flow. */
@@ -1281,48 +1255,6 @@ async function shareWrappedImage(){
   if(navigator.share){try{await navigator.share({title:"BL07 Term Wrapped",text});return}catch(e){if(e&&e.name==="AbortError")return}}
   try{await navigator.clipboard.writeText(text);showToast("Summary copied to clipboard")}catch(e){showToast("Couldn't share right now")}
 }
-function computeWeekExportDays(){
-  const monday=mondayIso(isoToday()),days=[];
-  for(let i=0;i<7;i++){
-    const d=new Date(`${monday}T12:00:00+05:30`);d.setDate(d.getDate()+i);
-    const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(d);
-    const classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-    days.push({iso,label:fmtDate(iso,{weekday:"short",day:"numeric",month:"short"}),classes});
-  }
-  return days;
-}
-async function downloadWeekImage(){
-  const days=computeWeekExportDays();
-  const width=1080,pad=56,rowH=76,dayHeadH=54,headH=170,footH=70;
-  let totalRows=0;days.forEach(d=>totalRows+=d.classes.length);
-  const height=headH+days.length*dayHeadH+totalRows*rowH+footH;
-  const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
-  const ctx=canvas.getContext("2d");
-  ctx.fillStyle="#150f16";ctx.fillRect(0,0,width,height);
-  ctx.fillStyle="rgba(255,255,255,.6)";ctx.font="700 22px 'Public Sans',sans-serif";ctx.fillText("BL07 · TERM III",pad,66);
-  ctx.fillStyle="#fff";ctx.font="800 42px 'Lexend',sans-serif";
-  ctx.fillText(`Week of ${fmtDate(days[0].iso,{day:"numeric",month:"short"})} – ${fmtDate(days[6].iso,{day:"numeric",month:"short"})}`,pad,124);
-  let y=headH;
-  days.forEach(day=>{
-    ctx.fillStyle="rgba(255,255,255,.85)";ctx.font="700 22px 'Public Sans',sans-serif";
-    ctx.fillText(`${day.label}${day.classes.length?"":"  ·  Free day"}`,pad,y+30);
-    y+=dayHeadH;
-    if(!day.classes.length)return;
-    day.classes.forEach(c=>{
-      const barColor=colorFor(c.code);
-      ctx.fillStyle=barColor;roundRectPath(ctx,pad,y+8,5,rowH-24,3);ctx.fill();
-      ctx.fillStyle="rgba(255,255,255,.55)";ctx.font="600 16px 'Public Sans',sans-serif";
-      ctx.fillText(`${fmtTime(c.startTime)} – ${fmtTime(c.endTime)}`,pad+22,y+22);
-      ctx.fillStyle="#fff";ctx.font="700 22px 'Lexend',sans-serif";
-      ctx.fillText(`${canonical(c.code)} · ${c.course}`,pad+22,y+50);
-      y+=rowH;
-    });
-  });
-  ctx.fillStyle="rgba(255,255,255,.45)";ctx.font="600 16px 'Public Sans',sans-serif";
-  ctx.fillText("Generated from BL07 Term 3 Planner",pad,height-30);
-  const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));
-  downloadBlob(blob,`bl07-week-${days[0].iso}.png`);
-}
 /* Gate-change / status tag for a notification, matching the bus gate-board and timeline
    tag language depending on what kind of schedule change it is. Presentation only — the
    underlying diff/notification detection in compareSnapshots() is untouched. */
@@ -1750,13 +1682,12 @@ function bind(){
   $("#railPrevWeek")?.addEventListener("click",()=>shiftRailWeek(-1));
   $("#railNextWeek")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#railJumpToday")?.addEventListener("click",()=>{const n=new Date();state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date(n.getFullYear(),n.getMonth(),1);renderCalendar()});
+  bindSwipeGesture($("#dateRail"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"",threshold:46});
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
   $("#openTermWrapped")?.addEventListener("click",()=>{renderTermWrapped();$("#termWrappedDialog").showModal()});
   $("#closeTermWrapped")?.addEventListener("click",()=>closeDialog($("#termWrappedDialog")));
   $("#shareWrapped")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await shareWrappedImage();b.disabled=false});
   $("#downloadWrapped")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await downloadWrappedImage();b.disabled=false;showToast("Image downloaded")});
-  $("#exportWeekImage")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await downloadWeekImage();b.disabled=false;showToast("This week's schedule downloaded")});
-  $("#exportTermIcs")?.addEventListener("click",()=>exportTermIcs());
   $("#termProgressCard")?.addEventListener("click",()=>{renderTermHeatmap();$("#termHeatmapDialog").showModal()});
   $("#termHeatmapGrid")?.addEventListener("click",e=>{
     const row=e.target.closest(".term-heatmap-row");if(!row)return;
@@ -1766,14 +1697,10 @@ function bind(){
     closeDialog($("#termHeatmapDialog"));
     openPlannerTab("calendar");
   });
-  $(".stat-strip")?.addEventListener("click",e=>{
-    const tile=e.target.closest("[data-stat-action]");if(!tile)return;
-    const action=tile.dataset.statAction;
-    if(action==="cancelled"){
-      const now=new Date();
-      const nextCancelled=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
-      if(nextCancelled){state.selectedDate=nextCancelled.dateIso;state.calendarMonth=new Date(nextCancelled.dateIso+"T00:00:00");state.calendarMonth.setDate(1)}
-    }
+  $("#termWeekLine")?.addEventListener("click",()=>{
+    const now=new Date();
+    const nextCancelled=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
+    if(nextCancelled){state.selectedDate=nextCancelled.dateIso;state.calendarMonth=new Date(nextCancelled.dateIso+"T00:00:00");state.calendarMonth.setDate(1)}
     openPlannerTab("calendar");
   });
   const taskDialog=$("#taskDialog"),noteDialog=$("#noteDialog");
@@ -1811,7 +1738,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova3",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova4",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
