@@ -277,6 +277,8 @@ function renderHome(){
   $("#focusPanel")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $$(".stat-cell").forEach(t=>t.classList.toggle("is-loading",!!state.scheduleLoading));
   $("#weekHeatmap")?.classList.toggle("is-loading",!!state.scheduleLoading);
+  $("#termOverviewStrip")?.closest(".term-overview-card")?.classList.toggle("is-loading",!!state.scheduleLoading);
+  $("#todayProgressRail")?.classList.toggle("is-loading",!!state.scheduleLoading);
   const now=new Date(),today=isoToday();$("#todayLabel").textContent=fmtDate(today,{weekday:"long",day:"numeric",month:"long"}).toUpperCase();$("#dateOrbitDay").textContent=today.slice(8);$("#dateOrbitMonth").textContent=fmtDate(today,{month:"short"}).toUpperCase();const h=Number(istParts().hour),firstName=String(state.profile.name||"").trim().split(/\s+/)[0],dayGreeting=`Good ${h<12?"morning":h<17?"afternoon":"evening"}`;$("#greeting").textContent=firstName?`${dayGreeting}, ${firstName}.`:`${dayGreeting}.`;
   const scheduled=state.classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
   const todays=scheduled.filter(c=>c.dateIso===today),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),todayNext=todays.find(c=>now<dateTime(c,"startTime")),future=scheduled.find(c=>now<dateTime(c,"startTime")),focus=current||todayNext||future;
@@ -1463,7 +1465,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-polish1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-polish2",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
