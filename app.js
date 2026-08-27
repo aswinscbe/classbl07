@@ -70,7 +70,11 @@ gtasks:'<path d="m5 12 4 4L19 6"/><path d="M3 12h2M19 12h2"/>',
 mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>',
 exams:'<path d="M7 3h10a1 1 0 0 1 1 1v16l-6-3-6 3V4a1 1 0 0 1 1-1Z"/><path d="M9 8h6M9 12h4"/>',
 close:'<path d="m6 6 12 12M18 6 6 18"/>',swap:'<path d="M7 7h11l-3-3M17 17H6l3 3"/>',sunrise:'<path d="M4 18h16M6 14a6 6 0 0 1 12 0M12 3v4"/>',moon:'<path d="M20 15.5A8 8 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',
-more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
+more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+flame:'<path d="M12 2c1 3-2 4-2 7a3 3 0 0 0 6 0c0-1-.5-2-1-2 2 1 3 3 3 5a6 6 0 0 1-12 0c0-4 2-5 3-7 .5-1 1-2 3-3Z"/>',
+trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5a3 3 0 0 0 3 4M16 5h3a3 3 0 0 1-3 4"/><path d="M12 13v3M9 20h6M10 16.5h4v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2Z"/>',
+share:'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.3 10.7 7.4-4.4M8.3 13.3l7.4 4.4"/>',
+download:'<path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 19h16"/>'
 };return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
 function renderIcons(){$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
 function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#1c1712":"#efe7d8";applyAccent()}
@@ -354,6 +358,7 @@ function renderHome(){
     $("#heroRing").hidden=true;$("#heroPeekHint").hidden=true;
     $("#focusPulse").style.display="none";
     $("#focusKicker").textContent=todays.length?"ALL DONE TODAY":"ALL CLEAR";
+    if(todays.length&&!state._confettiFiredToday){state._confettiFiredToday=true;fireConfetti()}
     $("#focusCode").hidden=true;
     const emptyIcon=$("#focusEmptyIcon");if(emptyIcon){emptyIcon.hidden=false;emptyIcon.innerHTML=icon(todays.length?"check":"moon")}
     $("#focusTitle").textContent=todays.length?"You're all done for today":"No classes today";
@@ -967,6 +972,11 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";$("#prof
   renderSessionRings();
   renderAccentSwatches();
   renderTermRing();
+  renderProfileTermDayGrid();
+  renderWorkloadChart();
+  renderStreak();
+  renderAchievements();
+  renderProfileInsight();
 }
 function renderTermRing(){
   const fill=$("#termRingFill");if(!fill)return;
@@ -999,6 +1009,225 @@ function renderSessionRings(){
       <div class="session-ring-meta"><strong>${esc(code)}</strong><span>${done}/${sessions.length} sessions</span></div>
     </div>`;
   }).join("");
+}
+function renderProfileTermDayGrid(){
+  const grid=$("#termDayGrid");if(!grid)return;
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
+  const start=new Date(termStart);start.setHours(0,0,0,0);start.setDate(start.getDate()-((start.getDay()+6)%7));
+  const todayIso=isoToday();
+  const perDay={};
+  state.classes.forEach(c=>{if(c.status==="Cancelled")return;perDay[c.dateIso]=(perDay[c.dateIso]||0)+1});
+  let html="",cur=new Date(start);
+  while(cur<=termEnd){
+    const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(cur);
+    const count=perDay[iso]||0,level=count===0?0:count<=2?1:count<=4?2:3;
+    html+=`<i class="lvl${level}${iso===todayIso?" is-today":""}${examOn(iso)?" has-exam":""}" title="${esc(fmtDate(iso,{day:"numeric",month:"short"}))} · ${count} ${count===1?"class":"classes"}"></i>`;
+    cur.setDate(cur.getDate()+1);
+  }
+  grid.innerHTML=html;
+}
+function renderWorkloadChart(){
+  const el=$("#workloadChart");if(!el)return;
+  const totals={};
+  state.classes.forEach(c=>{if(c.status==="Cancelled")return;const code=canonical(c.code);totals[code]=(totals[code]||0)+Math.max(0,minutes(c.endTime)-minutes(c.startTime))});
+  const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  if(!rows.length){el.innerHTML='<p class="empty-inline">No courses scheduled yet.</p>';return}
+  const max=rows[0][1];
+  el.innerHTML=rows.map(([code,mins])=>{
+    const hours=(mins/60).toFixed(1).replace(/\.0$/,"");
+    return`<div class="workload-row" style="--course:${colorFor(code)}"><span class="wl-code">${esc(code)}</span><span class="wl-track"><span style="width:${Math.round((mins/max)*100)}%"></span></span><span class="wl-hours">${hours}h</span></div>`;
+  }).join("");
+}
+function computeStreakDays(){
+  const now=new Date();
+  let streak=0,cur=new Date(`${isoToday()}T00:00:00+05:30`);
+  const todayClasses=state.classes.filter(c=>c.dateIso===isoToday());
+  const todayDone=todayClasses.length&&todayClasses.every(c=>dateTime(c,"endTime")<=now);
+  if(todayClasses.length&&!todayDone)cur.setDate(cur.getDate()-1);
+  for(let i=0;i<60;i++){
+    const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(cur);
+    const dayClasses=state.classes.filter(c=>c.dateIso===iso);
+    if(dayClasses.length){
+      if(dayClasses.some(c=>c.status==="Cancelled"))break;
+      streak++;
+    }
+    cur.setDate(cur.getDate()-1);
+  }
+  return streak;
+}
+function renderStreak(){
+  const el=$("#streakDisplay");if(!el)return;
+  const streak=computeStreakDays(),lit=streak>=3;
+  el.innerHTML=`<span class="streak-flame ${lit?"is-lit":""}">${icon("flame")}</span><div class="streak-copy"><strong>${streak} ${streak===1?"day":"days"}</strong><span>${streak?"No cancellations, back to back":"Starts today"}</span></div>`;
+}
+function renderAchievements(){
+  const el=$("#achievementsRow");if(!el)return;
+  const now=new Date();
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
+  const pct=termEnd>termStart?Math.round(Math.max(0,Math.min(1,(now-termStart)/(termEnd-termStart)))*100):0;
+  const monday=new Date(`${mondayIso(isoToday())}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
+  const weekClasses=state.classes.filter(c=>dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday);
+  const weekCancelled=weekClasses.some(c=>c.status==="Cancelled");
+  const streak=computeStreakDays();
+  const badges=[
+    {label:"Term Started",icon:"spark",unlocked:state.classes.length>0},
+    {label:"Halfway There",icon:"target",unlocked:pct>=50},
+    {label:"Perfect Week",icon:"check",unlocked:weekClasses.length>0&&!weekCancelled},
+    {label:"Busy Bee",icon:"books",unlocked:weekClasses.filter(c=>c.status!=="Cancelled").length>=15},
+    {label:"Streak Keeper",icon:"flame",unlocked:streak>=3}
+  ];
+  el.innerHTML=badges.map(b=>`<span class="achievement-badge ${b.unlocked?"unlocked":""}"><span class="badge-icon">${icon(b.icon)}</span>${esc(b.label)}</span>`).join("");
+}
+function renderProfileInsight(){
+  const el=$("#profileInsight");if(!el)return;
+  const active=state.classes.filter(c=>c.status!=="Cancelled");
+  if(!active.length){el.hidden=true;return}
+  const counts=[0,0,0,0,0,0,0];
+  active.forEach(c=>{counts[new Date(`${c.dateIso}T12:00:00+05:30`).getDay()]++});
+  const names=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  let maxI=0;for(let i=1;i<7;i++)if(counts[i]>counts[maxI])maxI=i;
+  if(!counts[maxI]){el.hidden=true;return}
+  const addedCount=state.notifications.filter(n=>n.type==="added").length;
+  const parts=[`${names[maxI]}s are your busiest day this term (${counts[maxI]} classes).`];
+  if(addedCount)parts.push(`${addedCount} ${addedCount===1?"class has":"classes have"} been added recently.`);
+  el.hidden=false;
+  el.textContent=parts.join(" ");
+}
+function fireConfetti(){
+  const colors=Object.values(COURSE_COLORS);
+  const root=document.createElement("div");
+  root.className="confetti-burst";
+  for(let i=0;i<28;i++){
+    const p=document.createElement("i");
+    p.style.setProperty("--x",`${Math.random()*100}%`);
+    p.style.setProperty("--delay",`${(Math.random()*0.3).toFixed(2)}s`);
+    p.style.setProperty("--rot",`${Math.round(Math.random()*360)}deg`);
+    p.style.setProperty("--bg",colors[Math.floor(Math.random()*colors.length)]);
+    p.style.setProperty("--drift",`${Math.round((Math.random()*2-1)*80)}px`);
+    root.appendChild(p);
+  }
+  document.body.appendChild(root);
+  setTimeout(()=>root.remove(),2200);
+}
+function computeWrappedStats(){
+  const now=new Date();
+  const completed=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")<=now);
+  const totalMins=completed.reduce((s,c)=>s+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0);
+  const byCourse={};
+  completed.forEach(c=>{const code=canonical(c.code);byCourse[code]=(byCourse[code]||0)+1});
+  const topCourse=Object.entries(byCourse).sort((a,b)=>b[1]-a[1])[0];
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
+  const pct=termEnd>termStart?Math.round(Math.max(0,Math.min(1,(now-termStart)/(termEnd-termStart)))*100):0;
+  return{classesDone:completed.length,hours:Math.round(totalMins/60),topCourse:topCourse?topCourse[0]:"—",streak:computeStreakDays(),pct};
+}
+function renderTermWrapped(){
+  const card=$("#wrappedCard");if(!card)return;
+  const s=computeWrappedStats();
+  card.innerHTML=`
+    <div><p class="wrapped-eyebrow">BL07 · TERM III</p><h3 class="wrapped-title">${esc(state.profile.name?`${state.profile.name}'s`:"Your")} term, ${s.pct}% in</h3></div>
+    <div class="wrapped-stats">
+      <div><b>${s.classesDone}</b><span>Classes attended</span></div>
+      <div><b>${s.hours}h</b><span>Hours in class</span></div>
+      <div><b>${esc(s.topCourse)}</b><span>Most-attended course</span></div>
+      <div><b>${s.streak}</b><span>Day streak</span></div>
+    </div>
+    <p class="wrapped-footer">Generated ${esc(fmtDate(isoToday(),{day:"numeric",month:"long",year:"numeric"}))}</p>`;
+}
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+}
+function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight){
+  const words=String(text).split(" ");let line="",lines=[];
+  words.forEach(w=>{const test=line?`${line} ${w}`:w;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=w}else line=test});
+  if(line)lines.push(line);
+  lines.forEach((l,i)=>ctx.fillText(l,x,y+i*lineHeight));
+  return lines.length;
+}
+function downloadBlob(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+function drawWrappedCanvas(){
+  const s=computeWrappedStats();
+  const canvas=document.createElement("canvas");canvas.width=1080;canvas.height=1080;
+  const ctx=canvas.getContext("2d");
+  const styles=getComputedStyle(document.documentElement);
+  const accent=styles.getPropertyValue("--accent").trim()||"#9c5aa3",accent2=styles.getPropertyValue("--accent-2").trim()||"#c98a4f";
+  const grad=ctx.createLinearGradient(0,0,1080,1080);grad.addColorStop(0,"#1c1220");grad.addColorStop(.55,accent);grad.addColorStop(1,accent2);
+  ctx.fillStyle=grad;roundRectPath(ctx,0,0,1080,1080,36);ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.8)";ctx.font="700 26px 'Public Sans',sans-serif";ctx.fillText("BL07 · TERM III",64,110);
+  ctx.fillStyle="#fff";ctx.font="800 54px 'Lexend',sans-serif";
+  wrapCanvasText(ctx,`${state.profile.name?`${state.profile.name}'s`:"Your"} term, ${s.pct}% in`,64,190,950,62);
+  const stats=[[String(s.classesDone),"Classes attended"],[`${s.hours}h`,"Hours in class"],[s.topCourse,"Most-attended course"],[String(s.streak),"Day streak"]];
+  const colW=480,rowH=150,startY=470;
+  stats.forEach((st,i)=>{
+    const col=i%2,row=Math.floor(i/2),x=64+col*colW,y=startY+row*rowH;
+    ctx.fillStyle="#fff";ctx.font="800 48px 'Lexend',sans-serif";ctx.fillText(st[0],x,y);
+    ctx.fillStyle="rgba(255,255,255,.75)";ctx.font="600 19px 'Public Sans',sans-serif";ctx.fillText(st[1],x,y+32);
+  });
+  ctx.fillStyle="rgba(255,255,255,.6)";ctx.font="600 17px 'Public Sans',sans-serif";
+  ctx.fillText(`Generated ${fmtDate(isoToday(),{day:"numeric",month:"long",year:"numeric"})}`,64,1000);
+  return canvas;
+}
+async function downloadWrappedImage(){
+  const canvas=drawWrappedCanvas();
+  const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));
+  downloadBlob(blob,"bl07-term-wrapped.png");
+}
+async function shareWrappedImage(){
+  const s=computeWrappedStats();
+  const text=`My BL07 Term III so far: ${s.classesDone} classes attended, ${s.hours}h in class, ${s.streak}-day streak, ${s.pct}% through the term.`;
+  try{
+    const canvas=drawWrappedCanvas();
+    const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));
+    const file=new File([blob],"bl07-term-wrapped.png",{type:"image/png"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"BL07 Term Wrapped",text});return}
+  }catch(e){if(e&&e.name==="AbortError")return}
+  if(navigator.share){try{await navigator.share({title:"BL07 Term Wrapped",text});return}catch(e){if(e&&e.name==="AbortError")return}}
+  try{await navigator.clipboard.writeText(text);showToast("Summary copied to clipboard")}catch(e){showToast("Couldn't share right now")}
+}
+function computeWeekExportDays(){
+  const monday=mondayIso(isoToday()),days=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(`${monday}T12:00:00+05:30`);d.setDate(d.getDate()+i);
+    const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(d);
+    const classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    days.push({iso,label:fmtDate(iso,{weekday:"short",day:"numeric",month:"short"}),classes});
+  }
+  return days;
+}
+async function downloadWeekImage(){
+  const days=computeWeekExportDays();
+  const width=1080,pad=56,rowH=76,dayHeadH=54,headH=170,footH=70;
+  let totalRows=0;days.forEach(d=>totalRows+=d.classes.length);
+  const height=headH+days.length*dayHeadH+totalRows*rowH+footH;
+  const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext("2d");
+  ctx.fillStyle="#150f16";ctx.fillRect(0,0,width,height);
+  ctx.fillStyle="rgba(255,255,255,.6)";ctx.font="700 22px 'Public Sans',sans-serif";ctx.fillText("BL07 · TERM III",pad,66);
+  ctx.fillStyle="#fff";ctx.font="800 42px 'Lexend',sans-serif";
+  ctx.fillText(`Week of ${fmtDate(days[0].iso,{day:"numeric",month:"short"})} – ${fmtDate(days[6].iso,{day:"numeric",month:"short"})}`,pad,124);
+  let y=headH;
+  days.forEach(day=>{
+    ctx.fillStyle="rgba(255,255,255,.85)";ctx.font="700 22px 'Public Sans',sans-serif";
+    ctx.fillText(`${day.label}${day.classes.length?"":"  ·  Free day"}`,pad,y+30);
+    y+=dayHeadH;
+    if(!day.classes.length)return;
+    day.classes.forEach(c=>{
+      const barColor=colorFor(c.code);
+      ctx.fillStyle=barColor;roundRectPath(ctx,pad,y+8,5,rowH-24,3);ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,.55)";ctx.font="600 16px 'Public Sans',sans-serif";
+      ctx.fillText(`${fmtTime(c.startTime)} – ${fmtTime(c.endTime)}`,pad+22,y+22);
+      ctx.fillStyle="#fff";ctx.font="700 22px 'Lexend',sans-serif";
+      ctx.fillText(`${canonical(c.code)} · ${c.course}`,pad+22,y+50);
+      y+=rowH;
+    });
+  });
+  ctx.fillStyle="rgba(255,255,255,.45)";ctx.font="600 16px 'Public Sans',sans-serif";
+  ctx.fillText("Generated from BL07 Term 3 Planner",pad,height-30);
+  const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));
+  downloadBlob(blob,`bl07-week-${days[0].iso}.png`);
 }
 /* Gate-change / status tag for a notification, matching the bus gate-board and timeline
    tag language depending on what kind of schedule change it is. Presentation only — the
@@ -1425,6 +1654,11 @@ function bind(){
   $("#railNextWeek")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#railJumpToday")?.addEventListener("click",()=>{const n=new Date();state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date(n.getFullYear(),n.getMonth(),1);renderCalendar()});
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
+  $("#openTermWrapped")?.addEventListener("click",()=>{renderTermWrapped();$("#termWrappedDialog").showModal()});
+  $("#closeTermWrapped")?.addEventListener("click",()=>closeDialog($("#termWrappedDialog")));
+  $("#shareWrapped")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await shareWrappedImage();b.disabled=false});
+  $("#downloadWrapped")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await downloadWrappedImage();b.disabled=false;showToast("Image downloaded")});
+  $("#exportWeekImage")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await downloadWeekImage();b.disabled=false;showToast("This week's schedule downloaded")});
   $("#termProgressCard")?.addEventListener("click",()=>{renderTermHeatmap();$("#termHeatmapDialog").showModal()});
   $("#termHeatmapGrid")?.addEventListener("click",e=>{
     const row=e.target.closest(".term-heatmap-row");if(!row)return;
@@ -1479,7 +1713,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-desktop1",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-profilev2",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
