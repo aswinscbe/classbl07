@@ -906,6 +906,7 @@ function renderBuses(){
     $("#nextBusVisual").innerHTML="";
     const gateTags=$("#nextBusGateTags");if(gateTags)gateTags.innerHTML="";
     const ring=$("#countdownRing");if(ring){ring.style.setProperty("--pct",0);ring.classList.remove("urgent")}
+    $(".next-bus-card")?.classList.remove("is-urgent");
     const empty='<div class="empty-state"><span class="empty-state-icon">'+icon("bus")+'</span><p>No service on this route</p><small>Try another origin or destination.</small></div>';
     upcomingList.innerHTML=empty;fullList.innerHTML=empty;
     clearTimeout(_leavingSoonTimer);
@@ -941,6 +942,7 @@ function renderBuses(){
   const ringWindow=60,pct=Math.max(0,Math.min(100,Math.round((remaining/ringWindow)*100)));
   const ring=$("#countdownRing");
   if(ring){ring.style.setProperty("--pct",nextDay?100:pct);ring.classList.toggle("urgent",!nextDay&&remaining<=5)}
+  $(".next-bus-card")?.classList.toggle("is-urgent",!nextDay&&remaining<=5);
 
   const stops=routeStops(next.b);
   const fromIndex=stops.indexOf(state.busFrom),toIndex=stops.indexOf(state.busTo);
@@ -959,7 +961,7 @@ function renderBuses(){
 function busRow(bus,nextKey,now=new Date()){
   const isNext=nextKey===`${bus.time}|${bus.from}|${bus.to}`;
   const last=isLastBus(bus),mainGate=isMainGateService(bus),elapsed=!isNext&&busDate(bus)<now;
-  return`<article class="board-row ${isNext?"next":""} ${elapsed?"elapsed":""}">
+  return`<article class="board-row ${mainGate?"is-maingate":"is-shuttle"} ${isNext?"next":""} ${elapsed?"elapsed":""}">
     <span class="t">${esc(fmtTime(bus.time))}</span>
     <div class="r">
       <strong>${esc(busStopLabel(bus.from))} → ${esc(busStopLabel(bus.to))}</strong>
@@ -1189,7 +1191,10 @@ function computeWrappedStats(){
   const topCourse=Object.entries(byCourse).sort((a,b)=>b[1]-a[1])[0];
   const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
   const pct=termEnd>termStart?Math.round(Math.max(0,Math.min(1,(now-termStart)/(termEnd-termStart)))*100):0;
-  return{classesDone:completed.length,hours:Math.round(totalMins/60),topCourse:topCourse?topCourse[0]:"—",streak:computeStreakDays(),pct};
+  const badgesUnlocked=computeAchievements().filter(b=>b.unlocked).length;
+  const savedRoute=load(KEYS.busRoute,null);
+  const goToRoute=savedRoute?`${busStopLabel(savedRoute.from)} → ${busStopLabel(savedRoute.to)}`:null;
+  return{classesDone:completed.length,hours:Math.round(totalMins/60),topCourse:topCourse?topCourse[0]:"—",streak:computeStreakDays(),pct,badgesUnlocked,goToRoute};
 }
 function renderTermWrapped(){
   const card=$("#wrappedCard");if(!card)return;
@@ -1201,6 +1206,8 @@ function renderTermWrapped(){
       <div><b>${s.hours}h</b><span>Hours in class</span></div>
       <div><b>${esc(s.topCourse)}</b><span>Most-attended course</span></div>
       <div><b>${s.streak}</b><span>Day streak</span></div>
+      <div><b>${s.badgesUnlocked}/5</b><span>Badges unlocked</span></div>
+      ${s.goToRoute?`<div><b class="wrapped-route">${esc(s.goToRoute)}</b><span>Go-to bus route</span></div>`:""}
     </div>
     <p class="wrapped-footer">Generated ${esc(fmtDate(isoToday(),{day:"numeric",month:"long",year:"numeric"}))}</p>`;
 }
@@ -1230,11 +1237,17 @@ function drawWrappedCanvas(){
   ctx.fillStyle="rgba(255,255,255,.8)";ctx.font="700 26px 'Public Sans',sans-serif";ctx.fillText("BL07 · TERM III",64,110);
   ctx.fillStyle="#fff";ctx.font="800 54px 'Lexend',sans-serif";
   wrapCanvasText(ctx,`${state.profile.name?`${state.profile.name}'s`:"Your"} term, ${s.pct}% in`,64,190,950,62);
-  const stats=[[String(s.classesDone),"Classes attended"],[`${s.hours}h`,"Hours in class"],[s.topCourse,"Most-attended course"],[String(s.streak),"Day streak"]];
+  const stats=[[String(s.classesDone),"Classes attended"],[`${s.hours}h`,"Hours in class"],[s.topCourse,"Most-attended course"],[String(s.streak),"Day streak"],[`${s.badgesUnlocked}/5`,"Badges unlocked"]];
+  if(s.goToRoute)stats.push([s.goToRoute,"Go-to bus route"]);
   const colW=480,rowH=150,startY=470;
   stats.forEach((st,i)=>{
     const col=i%2,row=Math.floor(i/2),x=64+col*colW,y=startY+row*rowH;
-    ctx.fillStyle="#fff";ctx.font="800 48px 'Lexend',sans-serif";ctx.fillText(st[0],x,y);
+    if(st[0].length>10){
+      ctx.fillStyle="#fff";ctx.font="800 27px 'Lexend',sans-serif";
+      wrapCanvasText(ctx,st[0],x,y-12,colW-40,32);
+    }else{
+      ctx.fillStyle="#fff";ctx.font="800 48px 'Lexend',sans-serif";ctx.fillText(st[0],x,y);
+    }
     ctx.fillStyle="rgba(255,255,255,.75)";ctx.font="600 19px 'Public Sans',sans-serif";ctx.fillText(st[1],x,y+32);
   });
   ctx.fillStyle="rgba(255,255,255,.6)";ctx.font="600 17px 'Public Sans',sans-serif";
@@ -1735,7 +1748,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova7",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova8",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
