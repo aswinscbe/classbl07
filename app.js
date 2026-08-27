@@ -917,11 +917,23 @@ function renderBuses(){
   const nextDay=!next;
   if(!next)next=services.map(b=>({b,d:busDate(b,true)})).sort((a,b)=>a.d-b.d)[0];
   const nextKey=`${next.b.time}|${next.b.from}|${next.b.to}`;
+  const sameOrigin=withTimes.filter(item=>item.b.from===next.b.from);
+  const sameOriginPassed=sameOrigin.filter(item=>item.d<=now);
+  const previous=sameOriginPassed.length?sameOriginPassed[sameOriginPassed.length-1]:null;
 
   $("#nextBusTime").textContent=fmtTime(next.b.time);
   $("#nextBusMeta").textContent=isMainGateService(next.b)?"Main Gate service":"Campus shuttle";
   const gateTags=$("#nextBusGateTags");
   if(gateTags)gateTags.innerHTML=`${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(next.b.from))}">ORIGIN TIME</span>`:""}`;
+  const originNote=$("#nextBusOriginNote");
+  if(originNote){
+    if(next.b.from!==state.busFrom){
+      originNote.hidden=false;
+      originNote.innerHTML=previous
+        ?`<b>${esc(busStopLabel(next.b.from))}</b> departures — <span class="passed">${esc(fmtTime(previous.b.time))} passed</span> · <span class="upcoming">${esc(fmtTime(next.b.time))} next</span>`
+        :`First <b>${esc(busStopLabel(next.b.from))}</b> departure today: <span class="upcoming">${esc(fmtTime(next.b.time))}</span>`;
+    }else originNote.hidden=true;
+  }
 
   const remaining=Math.max(0,Math.ceil((next.d-now)/60000));
   $("#nextBusCountdown").previousElementSibling.textContent=nextDay?"Leaves tomorrow in":"Leaves in";
@@ -1723,7 +1735,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova5",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova6",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);

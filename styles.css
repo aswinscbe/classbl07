@@ -651,6 +651,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .next-bus-time{font-family:var(--font-display);font-size:clamp(28px,7vw,36px);font-weight:800;letter-spacing:-.01em;color:var(--on-grad)}
 .next-bus-card h2{font-size:18px;font-weight:750;margin-top:8px;color:var(--on-grad)}
 .next-bus-card p#nextBusMeta{margin:3px 0 0;font-size:13.5px;color:var(--on-grad-muted);font-weight:550}
+.next-bus-origin-note{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.1);font-size:12.5px;color:var(--on-grad-muted);font-weight:550}
+.next-bus-origin-note b{color:var(--on-grad);font-weight:800}
+.next-bus-origin-note .passed{opacity:.7}
+.next-bus-origin-note .upcoming{color:var(--on-grad);font-weight:700}
 .route-visual{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .route-stop{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:650;color:var(--on-grad-muted)}
 .route-stop i{width:6px;height:6px;border-radius:50%;background:var(--accent-2)}
