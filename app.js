@@ -398,7 +398,6 @@ function renderHome(){
   const totalWeekMins=thisWeekAll.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-dateTime(c,"startTime"))/60000),0);
   const mins=week.reduce((s,c)=>s+Math.max(0,(dateTime(c,"endTime")-Math.max(now,dateTime(c,"startTime")))/60000),0),cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;
   $("#weekClasses").textContent=week.length;$("#weekHours").textContent=`${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;$("#weekCancelled").textContent=cancels;
-  $("#weekAdded").textContent=state.notifications.filter(n=>n.type==="added").length;
   const hoursPct=totalWeekMins?Math.round((mins/totalWeekMins)*100):0;
   $(".stat-ring")?.style.setProperty("--pct",hoursPct);
   /* Trend — this week's total classes vs last week's, so the numbers mean something rather than sitting alone. */
@@ -1438,7 +1437,6 @@ function bind(){
   $(".stat-strip")?.addEventListener("click",e=>{
     const tile=e.target.closest("[data-stat-action]");if(!tile)return;
     const action=tile.dataset.statAction;
-    if(action==="added"){openNotifications();return}
     if(action==="cancelled"){
       const now=new Date();
       const nextCancelled=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
@@ -1481,7 +1479,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-schedule3",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-homereorder2",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);

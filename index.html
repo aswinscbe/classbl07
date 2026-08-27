@@ -21,7 +21,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260827-schedule3">
+  <link rel="stylesheet" href="styles.css?v=20260827-homereorder2">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -110,6 +110,27 @@
               <b class="exam-strip-days" id="examCardDays">—</b>
             </button>
 
+            <section class="today-progress-card panel">
+              <div class="panel-heading timeline-heading">
+                <div>
+                  <p class="overline">CLASS TIMELINE</p>
+                  <h2 id="timelineDateTitle">Today</h2>
+                  <p class="timeline-full-date" id="timelineFullDate"></p>
+                </div>
+                <span class="count-chip" id="progressSummary">0 / 0</span>
+              </div>
+              <div class="timeline-day-switch" id="timelineDaySwitch">
+                <button class="timeline-day-button active" data-timeline-offset="0">
+                  <span>Today</span><small id="todaySwitchDate"></small>
+                </button>
+                <button class="timeline-day-button" data-timeline-offset="1">
+                  <span>Tomorrow</span><small id="tomorrowSwitchDate"></small>
+                </button>
+              </div>
+              <p class="timeline-swipe-hint">Swipe to browse the week</p>
+              <div id="todayProgressRail"></div>
+            </section>
+
             <p class="rail-section-label">This week's classes</p>
             <p class="week-digest" id="weekDigest" hidden></p>
             <div class="week-heatmap" id="weekHeatmap"></div>
@@ -137,28 +158,6 @@
                 <b id="weekHours">0h</b><span>Hours left</span>
               </button>
               <button type="button" class="stat-cell stat-cell-cancelled" data-stat-action="cancelled"><b id="weekCancelled">0</b><span>Cancelled</span></button>
-              <button type="button" class="stat-cell stat-cell-added" data-stat-action="added"><b id="weekAdded">0</b><span>Added</span></button>
-            </section>
-
-            <section class="today-progress-card panel">
-              <div class="panel-heading timeline-heading">
-                <div>
-                  <p class="overline">CLASS TIMELINE</p>
-                  <h2 id="timelineDateTitle">Today</h2>
-                  <p class="timeline-full-date" id="timelineFullDate"></p>
-                </div>
-                <span class="count-chip" id="progressSummary">0 / 0</span>
-              </div>
-              <div class="timeline-day-switch" id="timelineDaySwitch">
-                <button class="timeline-day-button active" data-timeline-offset="0">
-                  <span>Today</span><small id="todaySwitchDate"></small>
-                </button>
-                <button class="timeline-day-button" data-timeline-offset="1">
-                  <span>Tomorrow</span><small id="tomorrowSwitchDate"></small>
-                </button>
-              </div>
-              <p class="timeline-swipe-hint">Swipe to browse the week</p>
-              <div id="todayProgressRail"></div>
             </section>
 
             <form class="quick-capture" id="quickCaptureForm">
@@ -512,9 +511,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260827-schedule3"></script>
-  <script src="exam-data.js?v=20260827-schedule3"></script>
-  <script src="app.js?v=20260827-schedule3"></script>
-  <script src="polish.js?v=20260827-schedule3"></script>
+  <script src="campus-data.js?v=20260827-homereorder2"></script>
+  <script src="exam-data.js?v=20260827-homereorder2"></script>
+  <script src="app.js?v=20260827-homereorder2"></script>
+  <script src="polish.js?v=20260827-homereorder2"></script>
 </body>
 </html>
