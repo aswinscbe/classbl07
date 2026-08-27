@@ -715,11 +715,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:0 1px 2px rgba(0,0,0,.08);
 }
 .day-pill.active{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 2px 6px color-mix(in srgb, var(--accent) 40%, transparent)}
-.meal-tabs{display:flex;gap:8px}
+.meal-tabs{display:flex;gap:6px}
 .meal-tab{
-  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
-  background:var(--bg-panel);border:1px solid var(--border);border-radius:11px;padding:11px 8px;font-size:12.5px;font-weight:750;color:var(--ink-muted);
+  flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;
+  background:var(--bg-panel);border:1px solid var(--border);border-radius:11px;padding:11px 4px;font-size:12px;font-weight:750;color:var(--ink-muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
+.meal-tab svg{flex:none}
 .meal-tab svg{width:15px;height:15px}
 .meal-tab.active{background:var(--live);color:#fff;border-color:transparent}
 .meal-tab.is-now{border-color:var(--accent);color:var(--accent);position:relative}
