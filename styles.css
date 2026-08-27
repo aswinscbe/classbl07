@@ -600,8 +600,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wk-dot-col.is-today small{color:var(--accent)}
 .wk-dot-col.is-today .sq{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent)}
 
+.home-col-main,.home-col-side{display:flex;flex-direction:column}
 @media (min-width:900px){
-  .home-layout{max-width:560px;margin-left:auto;margin-right:auto}
+  .home-layout{max-width:900px;margin-left:auto;margin-right:auto}
+  .home-main{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+  .home-col-side{position:sticky;top:88px}
   .hero-time{font-size:40px}
 }
 
@@ -756,6 +759,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 
 @media (min-width:900px){
   .mess-columns{display:grid;grid-template-columns:230px 1fr;gap:24px;align-items:start}
+  #campusPage>.page-heading,#campusPage>.subtabs,#campusPage>.campus-view{max-width:900px;margin-left:auto;margin-right:auto}
+  .bus-columns{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  .bus-col-plan,.bus-col-board{display:flex;flex-direction:column}
 }
 
 /* ============ Profile ============ */
@@ -989,7 +995,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .task-item .delete-button{background:none;border:0;color:var(--ink-faint);font-size:19px;line-height:1;padding:0 4px}
 
 @media (min-width:900px){
-  .calendar-layout{max-width:640px}
+  #calendarPage>.page-heading,#calendarPage>.subtabs{max-width:760px;margin-left:auto;margin-right:auto}
+  .calendar-layout{max-width:760px;margin-left:auto;margin-right:auto}
 }
 
 /* ============ Notifications drawer ============ */
