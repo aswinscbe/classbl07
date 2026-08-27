@@ -357,7 +357,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-code{display:inline-flex;align-items:center;line-height:1;font-size:12px;font-weight:800;padding:5px 9px;border-radius:7px;background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent))}
 .hero-card h2#focusTitle{font-size:21px;font-weight:780;line-height:1.2;margin:0;color:var(--on-grad);letter-spacing:-.01em}
 .hero-time-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
-.hero-time{font-family:var(--font-display);font-size:clamp(32px,7.5vw,38px);font-weight:800;letter-spacing:-.01em;line-height:1;color:var(--on-grad);transition:font-size .2s ease,opacity .2s ease}
+.hero-time{font-family:var(--font-display);font-size:clamp(32px,7.5vw,38px);font-weight:800;letter-spacing:-.01em;line-height:1;color:var(--on-grad);white-space:nowrap;min-width:0}
 .hero-ring{position:relative;width:36px;height:36px;flex:none}
 .hero-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .hero-ring circle{fill:none;stroke-width:3.5}

@@ -268,6 +268,14 @@ function renderDateStrip(){
 }
 function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
 function heroPill(html,tone=""){return`<span class="hero-pill ${tone}">${html}</span>`}
+function fitHeroTime(){
+  const el=$("#focusRange");if(!el)return;
+  el.style.fontSize="";
+  const row=el.closest(".hero-time-row");if(!row)return;
+  let size=parseFloat(getComputedStyle(el).fontSize),tries=0;
+  const avail=()=>row.clientWidth-Array.from(row.children).reduce((w,c)=>c!==el&&!c.hidden?w+c.getBoundingClientRect().width+12:w,0);
+  while(size>18&&el.scrollWidth>avail()&&tries<30){size-=1;el.style.fontSize=`${size}px`;tries++}
+}
 function tagCountdown(totalMins){
   const m=Math.max(0,Math.round(totalMins));
   return m>=60?`${Math.floor(m/60)}H${m%60?String(m%60).padStart(2,"0")+"M":""}`:`${m}M`;
@@ -370,6 +378,7 @@ function renderHome(){
       stripEl.innerHTML=`<div class="hero-strip-track">${segs}${nowMarker}</div>`;
     }
   }
+  fitHeroTime();
   const timelineOffset=state.timelineOffset||0,timelineIso=isoForDayOffset(timelineOffset),timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   $("#timelineDateTitle").textContent=timelineOffset===0?"Today":timelineOffset===1?"Tomorrow":fmtDate(timelineIso,{weekday:"long"});
   $("#timelineFullDate").textContent=fmtDate(timelineIso,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
@@ -1441,7 +1450,8 @@ function bind(){
   $("#noteSearch")?.addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value,homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const list=$("#fullBusList"),collapsed=list.classList.toggle("collapsed");$("#toggleFullBus").textContent=collapsed?"Show all":"Collapse"});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
-  matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()})
+  matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
+  let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
 }
 async function init(){
   const hour=Number(istParts().hour);
@@ -1465,7 +1475,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-polish2",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-herofix1",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
