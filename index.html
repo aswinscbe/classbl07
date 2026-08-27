@@ -21,7 +21,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260827-nova4">
+  <link rel="stylesheet" href="styles.css?v=20260827-nova5">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -157,9 +157,6 @@
               <p class="term-progress-line"><strong id="termDone">0</strong> done · <strong id="termLeft">0</strong> left · <strong id="termWeeksLeft">0</strong> weeks to go</p>
               <div class="term-overview-strip" id="termOverviewStrip" aria-hidden="true"></div>
             </section>
-
-            <p class="week-trend" id="weekTrend" hidden></p>
-            <button type="button" class="term-week-line" id="termWeekLine"><strong id="weekClasses">0</strong> classes left this week · <strong id="weekCancelled">0</strong> cancelled</button>
           </div>
         </div>
 
@@ -192,7 +189,7 @@
             </article>
 
             <article class="panel free-blocks-panel" id="freeBlocksPanel" hidden>
-              <div class="panel-heading"><div><p class="overline">FREE TIME</p><h2>Biggest gaps this week</h2></div></div>
+              <div class="panel-heading"><div><p class="overline">FREE TIME</p><h2 id="freeBlocksTitle">Today</h2></div></div>
               <div class="free-blocks-list" id="freeBlocksList"></div>
             </article>
 
@@ -586,9 +583,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260827-nova4"></script>
-  <script src="exam-data.js?v=20260827-nova4"></script>
-  <script src="app.js?v=20260827-nova4"></script>
-  <script src="polish.js?v=20260827-nova4"></script>
+  <script src="campus-data.js?v=20260827-nova5"></script>
+  <script src="exam-data.js?v=20260827-nova5"></script>
+  <script src="app.js?v=20260827-nova5"></script>
+  <script src="polish.js?v=20260827-nova5"></script>
 </body>
 </html>

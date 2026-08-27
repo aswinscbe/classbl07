@@ -535,19 +535,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:linear-gradient(90deg, var(--bg-panel) 22%, var(--bg-elevated) 50%, var(--bg-panel) 78%);
   background-size:250% 100%;animation:shimmer-sweep 1.3s ease-in-out infinite;
 }
-.term-week-line{
-  display:block;width:100%;text-align:left;background:var(--bg-elevated);border:1px solid var(--border);
-  border-radius:var(--radius-md);box-shadow:var(--shadow-md);padding:11px 14px;font:inherit;color:var(--ink-muted);font-size:12.5px;font-weight:600;
-}
-.term-week-line strong{font-weight:800;color:var(--ink)}
-.term-week-line:active{background:var(--bg-panel)}
-
 .rail-section-label{margin:16px 0 8px;font-size:11.5px;font-weight:750;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
 .rail-section-label:first-child{margin-top:0}
 .week-digest{margin:-4px 0 10px;font-size:12.5px;font-weight:600;color:var(--ink-muted)}
-.week-trend{margin:10px 0 -2px;font-size:12px;font-weight:650;color:var(--ink-muted)}
-.week-trend.trend-down{color:var(--live)}
-.week-trend.trend-up{color:var(--amber)}
 
 .term-overview-card{
   display:block;width:100%;margin-top:14px;background:var(--grad);color:var(--on-grad);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius-md);padding:13px 16px;
@@ -1276,13 +1266,14 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:7px;
 }
 
 /* ============ Free-block finder (Planner) ============ */
-.free-blocks-panel{margin-top:14px}
-.free-blocks-list{display:flex;flex-direction:column;gap:2px}
-.free-block-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--border);font-size:13px}
-.free-block-row:last-child{border-bottom:0}
-.fb-day{font-weight:750;flex:none;min-width:76px}
-.fb-time{color:var(--ink-muted);flex:1;text-align:center;font-weight:600}
-.fb-dur{font-weight:800;color:var(--accent);flex:none}
+.free-blocks-panel{margin-top:10px;padding:10px 14px}
+.free-blocks-panel .panel-heading{margin-bottom:4px}
+.free-blocks-panel .panel-heading h2{font-size:13.5px}
+.free-blocks-panel .overline{margin-bottom:2px;font-size:10px}
+.free-blocks-list{display:flex;flex-direction:column;gap:0}
+.free-block-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 2px;font-size:12px}
+.fb-time{color:var(--ink-muted);font-weight:600}
+.fb-dur{font-weight:800;color:var(--accent);flex:none;font-size:11.5px}
 
 /* ============ Home streak badge + achievement nudge ============ */
 .home-section-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 8px}

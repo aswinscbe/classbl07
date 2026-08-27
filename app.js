@@ -287,7 +287,6 @@ function tagCountdown(totalMins){
 function renderHome(){
   renderExamCard();
   $("#focusPanel")?.classList.toggle("is-loading",!!state.scheduleLoading);
-  $("#termWeekLine")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $("#weekHeatmap")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $("#termOverviewStrip")?.closest(".term-overview-card")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $("#todayProgressRail")?.classList.toggle("is-loading",!!state.scheduleLoading);
@@ -302,12 +301,14 @@ function renderHome(){
     if(cancelledToday.length){cancelFlag.hidden=false;$("#heroCancelText").textContent=cancelledToday.length===1?`${canonical(cancelledToday[0].code)} cancelled today`:`${cancelledToday.length} classes cancelled today`}
     else cancelFlag.hidden=true;
   }
+  let shownDayIso=today;
   if(focus){
     const naturalIndex=focus.dateIso===today?todays.indexOf(focus):-1;
     const maxPeek=naturalIndex>=0?todays.length-1-naturalIndex:0;
     state.heroPeek=Math.max(0,Math.min(state.heroPeek||0,maxPeek));
     const peeking=naturalIndex>=0&&state.heroPeek>0;
     const shown=peeking?todays[naturalIndex+state.heroPeek]:focus;
+    shownDayIso=shown.dateIso;
     const isNow=shown===current&&!peeking,isToday=shown.dateIso===today,isTomorrow=shown.dateIso===tomorrowIso();
     focusPanel.classList.remove("is-empty");
     focusPanel.classList.toggle("is-live",isNow);
@@ -367,18 +368,18 @@ function renderHome(){
   }
   const stripEl=$("#heroDayStrip");
   if(stripEl){
-    const activeToday=todaysAll.filter(c=>c.status!=="Cancelled");
-    if(!activeToday.length)stripEl.hidden=true;
+    const stripClasses=state.classes.filter(c=>c.dateIso===shownDayIso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    if(!stripClasses.length)stripEl.hidden=true;
     else{
       stripEl.hidden=false;
-      const dayStart=minutes(activeToday[0].startTime),dayEnd=Math.max(...activeToday.map(c=>minutes(c.endTime))),span=Math.max(1,dayEnd-dayStart);
-      const segs=activeToday.map(c=>{
+      const dayStart=minutes(stripClasses[0].startTime),dayEnd=Math.max(...stripClasses.map(c=>minutes(c.endTime))),span=Math.max(1,dayEnd-dayStart);
+      const segs=stripClasses.map(c=>{
         const left=((minutes(c.startTime)-dayStart)/span)*100,width=((minutes(c.endTime)-minutes(c.startTime))/span)*100;
         const st=now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming";
         return`<span class="hero-strip-seg ${st}" style="--course:${colorFor(c.code)};left:calc(${left}% + 1px);width:calc(${width}% - 2px)" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}"></span>`;
       }).join("");
       const nowMin=Number(istParts().hour)*60+Number(istParts().minute);
-      const nowMarker=(nowMin>=dayStart&&nowMin<=dayEnd)?`<span class="hero-strip-now" style="left:${((nowMin-dayStart)/span)*100}%"></span>`:"";
+      const nowMarker=(shownDayIso===today&&nowMin>=dayStart&&nowMin<=dayEnd)?`<span class="hero-strip-now" style="left:${((nowMin-dayStart)/span)*100}%"></span>`:"";
       stripEl.innerHTML=`<div class="hero-strip-track">${segs}${nowMarker}</div>`;
     }
   }
@@ -397,23 +398,6 @@ function renderHome(){
   const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0;
   $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
   const monday=new Date(`${mondayIso(today)}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
-  const week=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")>now&&dateTime(c,"startTime")<nextMonday);
-  const thisWeekAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday);
-  const cancels=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;
-  $("#weekClasses").textContent=week.length;$("#weekCancelled").textContent=cancels;
-  /* Trend — this week's total classes vs last week's, so the numbers mean something rather than sitting alone. */
-  const lastMonday=new Date(monday);lastMonday.setDate(monday.getDate()-7);
-  const lastWeekAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=lastMonday&&dateTime(c,"startTime")<monday);
-  const trendEl=$("#weekTrend");
-  if(trendEl){
-    if(!thisWeekAll.length&&!lastWeekAll.length){trendEl.hidden=true}
-    else{
-      const diff=thisWeekAll.length-lastWeekAll.length;
-      trendEl.hidden=false;
-      trendEl.textContent=diff===0?"Same as last week":diff>0?`${diff} more class${diff>1?"es":""} than last week`:`${-diff} fewer class${-diff>1?"es":""} than last week`;
-      trendEl.classList.toggle("trend-down",diff<0);trendEl.classList.toggle("trend-up",diff>0);
-    }
-  }
   /* Term-wide progress — classes completed/remaining and weeks left across the full term window. */
   const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
   const termAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=termStart&&dateTime(c,"startTime")<=termEnd);
@@ -577,23 +561,30 @@ function renderDateRail(){
   $$(".rail-day",el).forEach(b=>b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar()}));
   const label=$("#railWeekLabel");
   if(label)label.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
-  renderFreeBlocks(days);
+  renderFreeBlocks();
 }
-function renderFreeBlocks(days){
+/* Free time for the selected day only. The recurring 1:30-2:30pm lunch break is not
+   flagged as a "gap" since it's expected downtime — unless a class was cancelled during
+   it, in which case it's genuinely free and worth surfacing regardless of size. */
+function renderFreeBlocks(){
   const panel=$("#freeBlocksPanel"),list=$("#freeBlocksList");if(!panel||!list)return;
+  const iso=state.selectedDate,LUNCH_START=13*60+30,LUNCH_END=14*60+30;
+  const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  const scheduled=dayAll.filter(c=>c.status!=="Cancelled"),cancelled=dayAll.filter(c=>c.status==="Cancelled");
+  const titleEl=$("#freeBlocksTitle");
+  if(titleEl)titleEl.textContent=iso===isoToday()?"Today":iso===tomorrowIso()?"Tomorrow":fmtDate(iso,{weekday:"long"});
   const gaps=[];
-  days.forEach(iso=>{
-    const dayClasses=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-    for(let i=0;i<dayClasses.length-1;i++){
-      const gap=minutes(dayClasses[i+1].startTime)-minutes(dayClasses[i].endTime);
-      if(gap>=90)gaps.push({iso,start:dayClasses[i].endTime,end:dayClasses[i+1].startTime,mins:gap});
-    }
-  });
-  gaps.sort((a,b)=>b.mins-a.mins);
-  const top=gaps.slice(0,4);
-  if(!top.length){panel.hidden=true;return}
+  for(let i=0;i<scheduled.length-1;i++){
+    const gStart=minutes(scheduled[i].endTime),gEnd=minutes(scheduled[i+1].startTime),mins=gEnd-gStart;
+    if(mins<=0)continue;
+    const causedByCancellation=cancelled.some(c=>minutes(c.startTime)<gEnd&&minutes(c.endTime)>gStart);
+    const isLunch=!causedByCancellation&&gStart<=LUNCH_START+15&&gEnd>=LUNCH_END-15;
+    if(isLunch)continue;
+    if(mins>=(causedByCancellation?30:60))gaps.push({start:scheduled[i].endTime,end:scheduled[i+1].startTime,mins,causedByCancellation});
+  }
+  if(!gaps.length){panel.hidden=true;return}
   panel.hidden=false;
-  list.innerHTML=top.map(g=>`<div class="free-block-row"><span class="fb-day">${esc(fmtDate(g.iso,{weekday:"long"}))}</span><span class="fb-time">${esc(fmtTime(g.start))} – ${esc(fmtTime(g.end))}</span><span class="fb-dur">${esc(compactDuration(g.mins))} free</span></div>`).join("");
+  list.innerHTML=gaps.map(g=>`<div class="free-block-row"><span class="fb-time">${esc(fmtTime(g.start))} – ${esc(fmtTime(g.end))}</span><span class="fb-dur">${esc(compactDuration(g.mins))}${g.causedByCancellation?" · class cancelled":" free"}</span></div>`).join("");
 }
 /* Status-aware desktop calendar preview. This declaration intentionally
    replaces the compact legacy renderer above without touching calendar flow. */
@@ -1697,12 +1688,6 @@ function bind(){
     closeDialog($("#termHeatmapDialog"));
     openPlannerTab("calendar");
   });
-  $("#termWeekLine")?.addEventListener("click",()=>{
-    const now=new Date();
-    const nextCancelled=state.classes.filter(c=>c.status==="Cancelled"&&dateTime(c,"startTime")>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
-    if(nextCancelled){state.selectedDate=nextCancelled.dateIso;state.calendarMonth=new Date(nextCancelled.dateIso+"T00:00:00");state.calendarMonth.setDate(1)}
-    openPlannerTab("calendar");
-  });
   const taskDialog=$("#taskDialog"),noteDialog=$("#noteDialog");
   bindDismissibleDialog(taskDialog);bindDismissibleDialog(noteDialog);
   $("#openTaskForm").addEventListener("click",()=>{editingTaskId=null;$("#taskTitle").value="";$("#taskCourse").value="";$("#taskDate").value="";$("#taskDialog h2").textContent="Add task";$("#saveTaskButton").textContent="Save";clearDialogValidation(taskDialog);taskDialog.showModal()});
@@ -1711,7 +1696,7 @@ function bind(){
   $("#openNoteForm").addEventListener("click",()=>{clearDialogValidation(noteDialog);noteDialog.showModal()});
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
-  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value,homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
+  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value,homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const list=$("#fullBusList"),collapsed=list.classList.toggle("collapsed");$("#toggleFullBus").textContent=collapsed?"Show all":"Collapse"});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week at a glance"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
@@ -1738,7 +1723,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova4",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova5",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
