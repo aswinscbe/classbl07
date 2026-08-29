@@ -8,6 +8,7 @@ window.BL07_HOLIDAYS=HOLIDAYS;
 const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,plannerViewMode:"week",peekSection:null,peekAll:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function haptic(ms=12){try{navigator.vibrate?.(ms)}catch(e){}}
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
 const colorFor=c=>COURSE_COLORS[canonical(c)]||"#7b8aa2";
 const venueOf=c=>c.venue||c.room||"Venue TBA";
@@ -53,6 +54,7 @@ profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4-6 8-6s6.5 2 8 6"/>
 bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
 eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
 theme:'<path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/>',
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
 clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
 pin:'<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
 faculty:'<circle cx="12" cy="8" r="3"/><path d="M5 21c1-4 3.3-6 7-6s6 2 7 6"/>',
@@ -78,7 +80,16 @@ share:'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle c
 download:'<path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 19h16"/>'
 };return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
 function renderIcons(){$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
-function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#1c1712":"#efe7d8";applyAccent()}
+function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#1c1712":"#efe7d8";applyAccent();renderThemeToggleIcon(t)}
+function renderThemeToggleIcon(theme){
+  const span=$("#themeToggle span[data-icon]");if(!span)return;
+  const wantIcon=theme==="dark"?"theme":"sun";
+  if(span.dataset.icon===wantIcon)return;
+  span.dataset.icon=wantIcon;
+  span.classList.add("icon-morph");
+  span.innerHTML=icon(wantIcon);
+  setTimeout(()=>span.classList.remove("icon-morph"),320);
+}
 const ACCENT_PRESETS={
   plum:{name:"Plum Copper",dark:{accent:"#9c5aa3",accent2:"#c98a4f"},light:{accent:"#7b3f82",accent2:"#a5673f"},grad:"linear-gradient(135deg,#241129 0%,#582a5e 55%,#a5673f 100%)",glow:"#582a5e"},
   teal:{name:"Ocean Teal",dark:{accent:"#4fa3b0",accent2:"#4fb08a"},light:{accent:"#2f7a8c",accent2:"#2f8c68"},grad:"linear-gradient(135deg,#0e2530 0%,#155066 55%,#2f8c68 100%)",glow:"#155066"},
@@ -285,6 +296,7 @@ function renderExamsPage(){
       const firstSlot=Object.keys(next.slots)[0],entry=next.slots[firstSlot];
       const daysLeft=examDaysLeft(next.date);
       hero.style.setProperty("--course",colorFor(entry.code));
+      hero.classList.toggle("is-imminent",daysLeft<=3);
       $("#examHeroTag").textContent=daysLeft===0?"EXAM TODAY":daysLeft===1?"EXAM TOMORROW":"NEXT EXAM";
       $("#examHeroCode").textContent=entry.code;
       $("#examHeroTitle").textContent=entry.subject;
@@ -483,14 +495,24 @@ function renderHome(){
   $$(".timeline-holiday-banner").forEach(n=>n.remove());
   if(holiday){const banner=document.createElement("div");banner.className="timeline-holiday-banner";banner.innerHTML=`<span>HOLIDAY</span><strong>${esc(holiday)}</strong>`;$("#todayProgressRail").before(banner)}
   const completed=timelineIso===today?timelineClasses.filter(c=>c.status!=="Cancelled"&&now>=dateTime(c,"endTime")).length:0;
-  $("#progressSummary").textContent=timelineIso===today?`${completed} / ${timelineClasses.filter(c=>c.status!=="Cancelled").length}`:`${timelineClasses.filter(c=>c.status!=="Cancelled").length} classes`;
+  const activeTimelineClasses=timelineClasses.filter(c=>c.status!=="Cancelled");
+  const totalMins=activeTimelineClasses.reduce((sum,c)=>sum+(minutes(c.endTime)-minutes(c.startTime)),0);
+  const hoursLabel=totalMins?` · ${totalMins>=60?`${Math.floor(totalMins/60)}h${totalMins%60?` ${totalMins%60}m`:""}`:`${totalMins}m`}`:"";
+  $("#progressSummary").textContent=(timelineIso===today?`${completed} / ${activeTimelineClasses.length}`:`${activeTimelineClasses.length} classes`)+hoursLabel;
   const monday=new Date(`${mondayIso(today)}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
   /* Term-wide progress — classes completed/remaining and weeks left across the full term window. */
   const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
   const termAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=termStart&&dateTime(c,"startTime")<=termEnd);
   const termDone=termAll.filter(c=>dateTime(c,"endTime")<now).length,termLeft=Math.max(0,termAll.length-termDone);
   const termPct=termAll.length?Math.round(termDone/termAll.length*100):0,termWeeksLeft=Math.max(0,Math.ceil((termEnd-now)/(7*24*3600000)));
-  $("#termProgressPct").textContent=`${termPct}%`;$("#termProgressBar").style.width=`${termPct}%`;
+  $("#termProgressPct").textContent=`${termPct}%`;
+  const termBar=$("#termProgressBar");
+  if(termBar){
+    if(!state._termBarAnimated){
+      state._termBarAnimated=true;termBar.style.width="0%";
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{termBar.style.width=`${termPct}%`}));
+    }else termBar.style.width=`${termPct}%`;
+  }
   $("#termDone").textContent=termDone;$("#termLeft").textContent=termLeft;$("#termWeeksLeft").textContent=termWeeksLeft;
   renderTermOverviewStrip();renderWeekDigest();renderHomeLegend();
   renderHomeStreakBadge();checkAchievementUnlocks();
@@ -683,7 +705,7 @@ function renderWeekScan(days){
       </div>`;
     }).join("");
     const isToday=iso===today;
-    return`<button type="button" class="wsc-day ${isToday?"is-today":""}" data-date="${iso}">
+    return`<button type="button" class="wsc-day ${isToday?"is-today":""}" data-date="${iso}" style="--density:${Math.min(6,dayClasses.length)}">
       <div class="wsc-day-head"><span>${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wsc-today-badge">TODAY</b>':""}</span><small>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</small></div>
       ${rows||'<p class="wsc-empty">Free day</p>'}
     </button>`;
@@ -697,6 +719,7 @@ function renderWeekScan(days){
 function setPlannerViewMode(mode){
   state.plannerViewMode=mode;
   $$(".pv-toggle-btn").forEach(b=>b.classList.toggle("active",b.dataset.pvMode===mode));
+  $("#plannerDayWeekToggle")?.setAttribute("data-active",mode);
   $("#plannerDayGroup")?.classList.toggle("hidden-view",mode!=="day");
   const weekPanel=$("#weekScanPanel");if(weekPanel)weekPanel.hidden=mode!=="week";
 }
@@ -760,7 +783,12 @@ function openTaskEditor(t){
   $("#taskDialog").showModal();
 }
 function bindTaskRows(root){$$(".task-item",root).forEach(r=>{
-  $("input",r)?.addEventListener("change",e=>{const t=state.tasks.find(x=>x.id===r.dataset.task);if(t){t.completed=e.target.checked;save(KEYS.tasks,state.tasks);syncTaskToGoogle(t);renderTasks();renderHomeTasks();renderCalendar();renderLedger()}});
+  $("input",r)?.addEventListener("change",e=>{
+    const t=state.tasks.find(x=>x.id===r.dataset.task);if(!t)return;
+    const commit=()=>{t.completed=e.target.checked;save(KEYS.tasks,state.tasks);syncTaskToGoogle(t);renderTasks();renderHomeTasks();renderCalendar();renderLedger()};
+    if(e.target.checked&&!t.completed){r.classList.add("task-completing");setTimeout(commit,280)}
+    else commit();
+  });
   $(".delete-button",r)?.addEventListener("click",()=>{const t=state.tasks.find(x=>x.id===r.dataset.task);if(t)deleteGoogleTask(t);state.tasks=state.tasks.filter(x=>x.id!==r.dataset.task);save(KEYS.tasks,state.tasks);renderTasks();renderHomeTasks();renderCalendar();renderLedger()});
   $(".task-item>div",r)?.addEventListener("click",()=>openTaskEditor(state.tasks.find(x=>x.id===r.dataset.task)));
 })}
@@ -877,7 +905,9 @@ function bindPullToRefresh(){
     if(dy<=0||window.scrollY>0){pull=0;setPull(0);indicator.classList.remove("ready");return}
     pull=Math.min(90,dy*0.5);
     setPull(pull);
-    indicator.classList.toggle("ready",pull>=READY);
+    const wasReadyBefore=indicator.classList.contains("ready"),nowReady=pull>=READY;
+    if(nowReady&&!wasReadyBefore)haptic(14);
+    indicator.classList.toggle("ready",nowReady);
   },{passive:true});
   page.addEventListener("touchend",async()=>{
     if(!dragging)return;
@@ -885,7 +915,7 @@ function bindPullToRefresh(){
     const wasReady=pull>=READY;
     setPull(0);
     indicator.classList.remove("ready");
-    if(wasReady){indicator.classList.add("loading");await syncSchedule(true);indicator.classList.remove("loading")}
+    if(wasReady){haptic(20);indicator.classList.add("loading");await syncSchedule(true);indicator.classList.remove("loading")}
     pull=0;
   });
 }
@@ -1303,7 +1333,9 @@ function checkAchievementUnlocks(){
   if(newlyUnlocked){
     _nudgeShowing=true;
     el.hidden=false;
+    el.classList.add("shimmer-once");
     el.innerHTML=`<span class="badge-icon">${icon(newlyUnlocked.icon)}</span><span><b>${esc(newlyUnlocked.label)}</b> unlocked — check your Insights.</span>`;
+    haptic([16,40,16]);
   }
 }
 function dismissAchievementNudge(){_nudgeShowing=false;const el=$("#achievementNudge");if(el)el.hidden=true}
@@ -1445,7 +1477,10 @@ function notificationItemHtml(n){
   return`<article class="notification-item ${n.read?"":"unread"}" style="--course:${colorFor(n.course)}"><span class="notification-chip">${esc(canonical(n.course||"").slice(0,4)||"•")}</span><div class="notification-body"><div class="notification-row"><strong>${esc(n.title)}</strong>${notificationTagHtml(n)}</div><p>${esc(n.text)}</p><time>${new Intl.RelativeTimeFormat("en",{numeric:"auto"}).format(-Math.max(1,Math.round((Date.now()-n.createdAt)/3600000)),"hour")}</time></div></article>`;
 }
 function renderNotifications(){
-  const unread=state.notifications.filter(n=>!n.read).length;$("#notificationBadge").hidden=!unread;$("#notificationBadge").textContent=unread;
+  const unread=state.notifications.filter(n=>!n.read).length,badge=$("#notificationBadge");
+  const prevUnread=Number(badge.textContent||0);
+  if(unread>prevUnread){badge.classList.remove("pop");void badge.offsetWidth;badge.classList.add("pop")}
+  badge.hidden=!unread;badge.textContent=unread;
   if(!state.notifications.length){$("#notificationList").innerHTML='<div class="empty-state"><span class="empty-state-icon">'+icon("bell")+'</span><p>No schedule updates</p><small>We’ll let you know when something changes.</small></div>';return}
   let html="",lastDay=null;
   state.notifications.forEach(n=>{
@@ -1766,9 +1801,15 @@ function bind(){
   bindOutsideDismiss($("#noteDialog"));
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
+  document.addEventListener("click",e=>{
+    const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.rail-day,.wsc-day,.day-pill,.meal-tab,.subtab,.accent-swatch,.timeline-day-button,.pv-toggle-btn,.section-slider-opt");
+    if(!t||t.disabled)return;
+    haptic(t.matches(".primary-button,.danger-button,.google-tasks-button")?18:10);
+  },{capture:true});
+  document.addEventListener("change",e=>{if(e.target.matches('input[type="checkbox"]'))haptic(16)});
   $("#sectionPeekSlider")?.addEventListener("click",e=>{const b=e.target.closest("[data-peek]");if(!b)return;setSectionView(b.dataset.peek)});
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
-  $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches()});
+  $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$(`.accent-swatch[data-accent="${b.dataset.accent}"]`);if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
   $("#topMoreButton")?.addEventListener("click",e=>{e.stopPropagation();const menu=$("#topMoreMenu"),open=menu.classList.toggle("open");$("#topMoreButton").setAttribute("aria-expanded",String(open))});
   document.addEventListener("click",e=>{const menu=$("#topMoreMenu");if(menu&&menu.classList.contains("open")&&!e.target.closest("#topMoreMenu,#topMoreButton")){menu.classList.remove("open");$("#topMoreButton").setAttribute("aria-expanded","false")}});
   $("#topMoreMenu")?.addEventListener("click",e=>{if(e.target.closest("button")){$("#topMoreMenu").classList.remove("open");$("#topMoreButton")?.setAttribute("aria-expanded","false")}});
@@ -1906,7 +1947,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova25",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260830-nova26",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
