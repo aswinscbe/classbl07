@@ -1,10 +1,15 @@
 {
-  "name": "BL07 \u00b7 IIM Kozhikode",
+  "name": "BL07 · IIM Kozhikode",
   "short_name": "BL07",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#07111f",
-  "theme_color": "#07111f",
+  "background_color": "#241129",
+  "theme_color": "#241129",
   "description": "Academic, transport and dining companion for PGPBL07",
-  "icons": []
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }
