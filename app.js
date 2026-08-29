@@ -196,7 +196,23 @@ function scheduleIdleSync(){
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
-function showPage(n){if(n==="home"){state.timelineOffset=0}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.plannerViewMode="week"}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar"){setPlannerViewMode("week");renderCalendar();renderExamsPage()}}
+function playHeroEntrance(){
+  const el=$("#focusPanel");if(!el)return;
+  el.classList.remove("hero-enter");
+  void el.offsetWidth;
+  el.classList.add("hero-enter");
+}
+function positionNavIndicator(){
+  const nav=$(".desktop-nav"),active=$(".desktop-nav-item.active",nav);
+  let ind=$("#desktopNavIndicator");
+  if(!nav||!active)return;
+  if(!ind){ind=document.createElement("span");ind.id="desktopNavIndicator";ind.className="desktop-nav-indicator";nav.prepend(ind)}
+  const navRect=nav.getBoundingClientRect(),btnRect=active.getBoundingClientRect();
+  ind.style.width=`${btnRect.width}px`;
+  ind.style.transform=`translateX(${btnRect.left-navRect.left}px)`;
+  requestAnimationFrame(()=>ind.classList.add("ready"));
+}
+function showPage(n){if(n==="home"){state.timelineOffset=0}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.plannerViewMode="week"}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){setPlannerViewMode("week");renderCalendar();renderExamsPage()}positionNavIndicator()}
 function setPlannerTab(tab){
   $$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===tab));
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
@@ -642,7 +658,9 @@ function renderDateRail(){
 function renderWeekScan(days){
   const list=$("#weekScanList");if(!list)return;
   const today=isoToday();
-  list.innerHTML=days.map(iso=>{
+  const upcoming=days.filter(iso=>iso>=today);
+  const visibleDays=upcoming.length?upcoming:days;
+  list.innerHTML=visibleDays.map(iso=>{
     const dayClasses=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
     const rows=dayClasses.map(c=>{
       const cancelled=c.status==="Cancelled";
@@ -652,8 +670,9 @@ function renderWeekScan(days){
         <span class="wsc-room">${esc(venueOf(c))}</span>
       </div>`;
     }).join("");
-    return`<button type="button" class="wsc-day ${iso===today?"is-today":""}" data-date="${iso}">
-      <div class="wsc-day-head"><span>${esc(fmtDate(iso,{weekday:"long"}))}</span><small>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</small></div>
+    const isToday=iso===today;
+    return`<button type="button" class="wsc-day ${isToday?"is-today":""}" data-date="${iso}">
+      <div class="wsc-day-head"><span>${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wsc-today-badge">TODAY</b>':""}</span><small>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</small></div>
       ${rows||'<p class="wsc-empty">Free day</p>'}
     </button>`;
   }).join("");
@@ -1865,13 +1884,16 @@ async function init(){
   if(savedToken){_googleAccessToken=savedToken.access_token;initGoogleTokenClient().catch(()=>{});pullGoogleTasks().then(async()=>{await migrateGoogleTaskNotes();for(const task of state.tasks.filter(t=>!t.googleTaskId))await syncTaskToGoogle(task)}).catch(()=>{})}
   renderAll();
   applyShortcutParams();
+  positionNavIndicator();
+  playHeroEntrance();
+  window.addEventListener("resize",positionNavIndicator);
   renderGoogleTasksStatus();
   maybeOpenOnboarding();
   syncSchedule(false).then(()=>maybeOpenOnboarding());
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova13",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova14",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
