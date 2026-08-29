@@ -359,6 +359,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-status i{width:6px;height:6px;border-radius:50%;background:var(--live)}
 .hero-card.is-live .hero-status{color:var(--live)}
 .hero-card.is-live.is-urgent .hero-status{color:var(--amber)}
+.hero-card.is-future:not(.is-live) .hero-status{color:var(--amber);background:color-mix(in srgb, var(--amber) 18%, var(--hero-chip-bg));font-weight:850}
+.hero-day-count.is-future-day{color:var(--amber);font-weight:800}
 .hero-card.is-live .hero-status i{animation:pulse 1.1s infinite}
 .hero-card:not(.is-live) .hero-status i{display:none}
 .hero-empty-icon{display:inline-flex;width:14px;height:14px}
@@ -389,6 +391,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-pill.accent{background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent));font-weight:750}
 .hero-card.is-empty{color:var(--on-grad)}
 .hero-day-strip{margin-top:16px;padding-top:14px;border-top:1px solid var(--on-grad-line)}
+.hero-strip-label{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--amber)}
 .hero-strip-track{position:relative;height:6px;border-radius:99px;background:color-mix(in srgb, var(--on-grad-line) 55%, transparent)}
 .hero-strip-seg{position:absolute;top:0;height:100%;border-radius:99px;background:var(--course,var(--on-grad));opacity:.4}
 .hero-strip-seg.current{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb, var(--course,var(--on-grad)) 30%, transparent)}

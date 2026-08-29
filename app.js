@@ -395,7 +395,7 @@ function renderHome(){
     focusPanel.classList.toggle("has-focus",true);
     $("#focusPulse").style.display=isNow?"":"none";
     $("#focusEmptyIcon").hidden=true;
-    $("#focusKicker").textContent=isNow?"IN PROGRESS":onBreak?"ON A BREAK":isToday?"UPCOMING":isTomorrow?"TOMORROW":`UPCOMING · ${fmtDate(shown.dateIso,{day:"numeric",month:"short"})}`;
+    $("#focusKicker").textContent=isNow?"IN PROGRESS":onBreak?"ON A BREAK":isToday?"UPCOMING":isTomorrow?"NEXT UP · TOMORROW":`NEXT UP · ${fmtDate(shown.dateIso,{weekday:"short",day:"numeric",month:"short"}).toUpperCase()}`;
     $("#focusCode").hidden=false;$("#focusCode").textContent=canonical(shown.code);$("#focusTitle").textContent=shown.course;
     $("#focusRange").textContent=fmtRange(shown.startTime,shown.endTime);
     const dayList=scheduled.filter(c=>c.dateIso===shown.dateIso),posIndex=dayList.indexOf(shown),nextInDay=dayList[posIndex+1];
@@ -415,8 +415,9 @@ function renderHome(){
     if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${SESSION_TARGET}`));
     if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`));
     $("#heroPills").innerHTML=pills.join("");
-    const dayLabel=shown.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(shown.dateIso,{day:"numeric",month:"short"});
+    const dayLabel=shown.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(shown.dateIso,{weekday:"long",day:"numeric",month:"short"});
     const dayCountEl=$("#heroDayCount");dayCountEl.hidden=!dayList.length;dayCountEl.textContent=`${dayList.length} ${dayList.length===1?"class":"classes"} ${dayLabel.toLowerCase()}`;
+    dayCountEl.classList.toggle("is-future-day",shown.dateIso!==today);
   }
   else{
     focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-upcoming","is-future","is-break","has-focus");focusPanel.style.removeProperty("--focus-course");delete focusPanel.dataset.focusDate;delete focusPanel.dataset.focusClassId;
@@ -445,7 +446,8 @@ function renderHome(){
       }).join("");
       const nowMin=Number(istParts().hour)*60+Number(istParts().minute);
       const nowMarker=(shownDayIso===today&&nowMin>=dayStart&&nowMin<=dayEnd)?`<span class="hero-strip-now" style="left:${((nowMin-dayStart)/span)*100}%"></span>`:"";
-      stripEl.innerHTML=`<div class="hero-strip-track">${segs}${nowMarker}</div>`;
+      const stripLabel=shownDayIso!==today?`<p class="hero-strip-label">${esc(fmtDate(shownDayIso,{weekday:"long",day:"numeric",month:"short"}))}</p>`:"";
+      stripEl.innerHTML=`${stripLabel}<div class="hero-strip-track">${segs}${nowMarker}</div>`;
     }
   }
   /* Today at a glance — every one of today's classes as a compact row, right in the hero
@@ -1900,7 +1902,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova18",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova19",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
