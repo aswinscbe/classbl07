@@ -131,7 +131,6 @@ async function setSectionView(target){
   try{
     if(!state.peekAll||state.peekSection!==target)state.peekAll=await fetchSectionClasses(target);
     state.peekSection=target;state.classes=filteredClasses();renderAll();
-    showToast(`Viewing Section ${target}'s classes — read only`);
   }catch(e){
     showToast("Couldn't load the other section right now");
     renderSectionPeekSlider();
@@ -1901,7 +1900,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova16",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova17",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
