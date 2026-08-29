@@ -5,7 +5,7 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
 const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69",IS:"#5aa06a"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,plannerViewMode:"day",peekSection:null,peekAll:null};
+const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,plannerViewMode:"week",peekSection:null,peekAll:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
@@ -115,21 +115,21 @@ async function fetchSectionClasses(section){
   const d=await r.json();if(!d.success)throw new Error(d.error||"API failed");
   return d.classes||[];
 }
-async function toggleSectionPeek(){
-  const mySection=state.profile.section||"A",other=mySection==="A"?"B":"A",btn=$("#sectionPeekToggle");
-  if(state.peekSection){
+async function setSectionView(target){
+  const mySection=state.profile.section||"A",slider=$("#sectionPeekSlider");
+  if(target===mySection){
     state.peekSection=null;state.classes=filteredClasses();renderAll();
     return;
   }
-  if(btn){btn.disabled=true;btn.classList.add("is-loading")}
+  if(slider)slider.classList.add("is-loading");
   try{
-    if(!state.peekAll)state.peekAll=await fetchSectionClasses(other);
-    state.peekSection=other;state.classes=filteredClasses();renderAll();
-    showToast(`Viewing Section ${other}'s classes — tap again to return to your own`);
+    if(!state.peekAll||state.peekSection!==target)state.peekAll=await fetchSectionClasses(target);
+    state.peekSection=target;state.classes=filteredClasses();renderAll();
+    showToast(`Viewing Section ${target}'s classes — read only`);
   }catch(e){
     showToast("Couldn't load the other section right now");
   }finally{
-    if(btn){btn.disabled=false;btn.classList.remove("is-loading")}
+    if(slider)slider.classList.remove("is-loading");
   }
 }
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
@@ -196,7 +196,7 @@ function scheduleIdleSync(){
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
-function showPage(n){if(n==="home"){state.timelineOffset=0}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.plannerViewMode="day"}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar"){setPlannerViewMode("day");renderCalendar();renderExamsPage()}}
+function showPage(n){if(n==="home"){state.timelineOffset=0}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.plannerViewMode="week"}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar"){setPlannerViewMode("week");renderCalendar();renderExamsPage()}}
 function setPlannerTab(tab){
   $$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===tab));
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
@@ -307,14 +307,25 @@ function renderDateStrip(){
   el.innerHTML=html;
   $$(".date-pill",el).forEach(b=>b.addEventListener("click",()=>openCalendarPage(b.dataset.date)));
 }
-function renderSectionPeekButton(){
-  const btn=$("#sectionPeekToggle");if(!btn)return;
-  const mySection=state.profile.section||"A";
-  btn.classList.toggle("is-peeking",!!state.peekSection);
-  btn.innerHTML=`${icon(state.peekSection?"eye":"profile")}<span>Section ${esc(state.peekSection||mySection)}</span>`;
-  btn.title=state.peekSection?`Viewing Section ${state.peekSection} — tap to return to your own`:`Tap to peek at Section ${mySection==="A"?"B":"A"}`;
+function openCampusTab(tab){
+  $$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x.dataset.campusTab===tab));
+  $$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===tab));
 }
-function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderSectionPeekButton();renderIcons()}
+function applyShortcutParams(){
+  const params=new URLSearchParams(location.search),target=params.get("shortcut");
+  if(!target)return;
+  if(target==="today")showPage("home");
+  else if(target==="bus"){showPage("campus");openCampusTab("bus")}
+  else if(target==="mess"){showPage("campus");openCampusTab("mess")}
+  history.replaceState(null,"",location.pathname);
+}
+function renderSectionPeekSlider(){
+  const slider=$("#sectionPeekSlider");if(!slider)return;
+  const active=state.peekSection||state.profile.section||"A";
+  slider.dataset.active=active;
+  $$(".section-slider-opt",slider).forEach(b=>b.classList.toggle("active",b.dataset.peek===active));
+}
+function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderSectionPeekSlider();renderIcons()}
 function heroPill(html,tone=""){return`<span class="hero-pill ${tone}">${html}</span>`}
 function fitHeroTime(){
   const el=$("#focusRange");if(!el)return;
@@ -1723,7 +1734,7 @@ function bind(){
   bindOutsideDismiss($("#noteDialog"));
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
-  $("#sectionPeekToggle")?.addEventListener("click",toggleSectionPeek);
+  $("#sectionPeekSlider")?.addEventListener("click",e=>{const b=e.target.closest("[data-peek]");if(!b)return;setSectionView(b.dataset.peek)});
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
   $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches()});
   $("#topMoreButton")?.addEventListener("click",e=>{e.stopPropagation();const menu=$("#topMoreMenu"),open=menu.classList.toggle("open");$("#topMoreButton").setAttribute("aria-expanded",String(open))});
@@ -1760,7 +1771,7 @@ function bind(){
   });
   window.addEventListener("online",()=>{scheduleIdleSync();updateOfflineBanner(true)});
   window.addEventListener("offline",()=>updateOfflineBanner(false));
-  $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-campus-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".campus-view").forEach(v=>v.classList.toggle("active",v.dataset.campusView===b.dataset.campusTab))}));
+  $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>openCampusTab(b.dataset.campusTab)));
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerTab(b.dataset.plannerTab)));
   $$(".subtab[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-profile-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".profile-view").forEach(v=>v.classList.toggle("active",v.dataset.profileView===b.dataset.profileTab))}));
   $("#homeStreakBadge")?.addEventListener("click",()=>{showPage("profile");$('.subtab[data-profile-tab="insights"]')?.click()});
@@ -1853,13 +1864,14 @@ async function init(){
   const savedToken=getSavedGoogleToken();
   if(savedToken){_googleAccessToken=savedToken.access_token;initGoogleTokenClient().catch(()=>{});pullGoogleTasks().then(async()=>{await migrateGoogleTaskNotes();for(const task of state.tasks.filter(t=>!t.googleTaskId))await syncTaskToGoogle(task)}).catch(()=>{})}
   renderAll();
+  applyShortcutParams();
   renderGoogleTasksStatus();
   maybeOpenOnboarding();
   syncSchedule(false).then(()=>maybeOpenOnboarding());
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova12",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova13",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);

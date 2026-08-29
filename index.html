@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260827-nova12">
+  <link rel="stylesheet" href="styles.css?v=20260829-nova13">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -44,7 +44,6 @@
       </nav>
 
       <div class="top-actions">
-        <button type="button" class="section-peek-toggle" id="sectionPeekToggle" aria-label="Peek at the other section's schedule"><span>Section A</span></button>
         <span class="sync-pill" id="syncPill"><i></i><span>Connecting</span></span>
         <button class="icon-button top-more-button" id="topMoreButton" aria-label="More actions" aria-haspopup="true" aria-expanded="false"><span data-icon="more"></span></button>
         <div class="top-more-menu" id="topMoreMenu">
@@ -193,8 +192,8 @@
             </article>
 
             <div class="planner-view-toggle" id="plannerDayWeekToggle">
-              <button type="button" class="pv-toggle-btn active" data-pv-mode="day">Day</button>
-              <button type="button" class="pv-toggle-btn" data-pv-mode="week">Week</button>
+              <button type="button" class="pv-toggle-btn" data-pv-mode="day">Day</button>
+              <button type="button" class="pv-toggle-btn active" data-pv-mode="week">Week</button>
             </div>
 
             <div id="plannerDayGroup">
@@ -383,6 +382,17 @@
                 <div class="accent-picker-field"><span>Accent color</span><div class="accent-swatches" id="accentSwatches"></div><div class="accent-preview" id="accentPreview"><span class="accent-preview-tag">PREVIEW</span><strong>Hero card</strong></div></div>
                 <button class="primary-button" type="submit">Save profile</button>
               </form>
+            </article>
+
+            <article class="panel">
+              <div class="settings-row-stack">
+                <div><strong>Section view</strong><p>Peek at the other section's Core classes — read-only, doesn't change your saved section.</p></div>
+                <div class="section-slider" id="sectionPeekSlider" data-active="A">
+                  <span class="section-slider-thumb" aria-hidden="true"></span>
+                  <button type="button" class="section-slider-opt active" data-peek="A">Section A</button>
+                  <button type="button" class="section-slider-opt" data-peek="B">Section B</button>
+                </div>
+              </div>
             </article>
 
             <article class="panel settings-footer">
@@ -600,9 +610,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260827-nova12"></script>
-  <script src="exam-data.js?v=20260827-nova12"></script>
-  <script src="app.js?v=20260827-nova12"></script>
-  <script src="polish.js?v=20260827-nova12"></script>
+  <script src="campus-data.js?v=20260829-nova13"></script>
+  <script src="exam-data.js?v=20260829-nova13"></script>
+  <script src="app.js?v=20260829-nova13"></script>
+  <script src="polish.js?v=20260829-nova13"></script>
 </body>
 </html>
