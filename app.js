@@ -866,6 +866,7 @@ function bindPullToRefresh(){
   renderIcons();
   let startY=0,dragging=false,pull=0;
   const READY=56;
+  const setPull=px=>{indicator.style.setProperty("--pull",`${px}px`);indicator.style.setProperty("--pull-ratio",`${Math.min(1,px/40)}`)};
   page.addEventListener("touchstart",e=>{
     if(window.scrollY>0||e.target.closest("button,a,input,select,textarea"))return;
     startY=e.touches[0].clientY;dragging=true;pull=0;
@@ -873,16 +874,16 @@ function bindPullToRefresh(){
   page.addEventListener("touchmove",e=>{
     if(!dragging)return;
     const dy=e.touches[0].clientY-startY;
-    if(dy<=0||window.scrollY>0){pull=0;indicator.style.setProperty("--pull","0px");indicator.classList.remove("ready");return}
+    if(dy<=0||window.scrollY>0){pull=0;setPull(0);indicator.classList.remove("ready");return}
     pull=Math.min(90,dy*0.5);
-    indicator.style.setProperty("--pull",`${pull}px`);
+    setPull(pull);
     indicator.classList.toggle("ready",pull>=READY);
   },{passive:true});
   page.addEventListener("touchend",async()=>{
     if(!dragging)return;
     dragging=false;
     const wasReady=pull>=READY;
-    indicator.style.setProperty("--pull","0px");
+    setPull(0);
     indicator.classList.remove("ready");
     if(wasReady){indicator.classList.add("loading");await syncSchedule(true);indicator.classList.remove("loading")}
     pull=0;
@@ -1905,7 +1906,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova23",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova24",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
