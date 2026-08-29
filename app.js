@@ -123,7 +123,7 @@ async function setSectionView(target){
   }
   const targetBtn=slider?$(`.section-slider-opt[data-peek="${target}"]`,slider):null;
   if(slider){
-    slider.classList.add("is-loading");
+    slider.classList.add("is-peek-loading");
     slider.dataset.active=target;
     $$(".section-slider-opt",slider).forEach(b=>b.classList.toggle("active",b.dataset.peek===target));
   }
@@ -135,7 +135,7 @@ async function setSectionView(target){
     showToast("Couldn't load the other section right now");
     renderSectionPeekSlider();
   }finally{
-    if(slider)slider.classList.remove("is-loading");
+    if(slider)slider.classList.remove("is-peek-loading");
     if(targetBtn)targetBtn.classList.remove("is-fetching");
   }
 }
@@ -1900,7 +1900,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova17",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova18",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
