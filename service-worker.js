@@ -1,7 +1,7 @@
 const CACHE="classbl07-review-20260809-1";
-const CACHE_VERSION="20260827-nova9";
+const CACHE_VERSION="20260827-nova10";
 const ACTIVE_CACHE=`${CACHE}-${CACHE_VERSION}`;
-const SHELL=["./index.html","./styles.css?v=20260827-nova9","./app.js?v=20260827-nova9","./polish.js?v=20260827-nova9","./campus-data.js?v=20260827-nova9","./exam-data.js?v=20260827-nova9","./manifest.webmanifest"];
+const SHELL=["./index.html","./styles.css?v=20260827-nova10","./app.js?v=20260827-nova10","./polish.js?v=20260827-nova10","./campus-data.js?v=20260827-nova10","./exam-data.js?v=20260827-nova10","./manifest.webmanifest"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(ACTIVE_CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==ACTIVE_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{

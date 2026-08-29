@@ -5,7 +5,7 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
 const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69",IS:"#5aa06a"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:1,lastUpdated:null,calendarHighlight:null,plannerViewMode:"day"};
+const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,plannerViewMode:"day",peekSection:null,peekAll:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
@@ -51,6 +51,7 @@ calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v
 campus:'<path d="M4 20h16M6 20V9l6-4 6 4v11M9 20v-5h6v5"/>',
 profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4-6 8-6s6.5 2 8 6"/>',
 bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
 theme:'<path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/>',
 clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
 pin:'<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
@@ -95,7 +96,42 @@ function applyAccent(){
   root.setProperty("--grad",preset.grad);
   root.setProperty("--grad-glow",`color-mix(in srgb, ${preset.glow} ${theme==="light"?22:40}%, transparent)`);
 }
-function filteredClasses(){const selected=new Set((state.profile.electives||[]).map(canonical));return state.all.filter(c=>c.type==="General"?true:c.type==="Core"?(state.profile.section==="A"?c.section==="A":c.section==="B"):selected.has(canonical(c.baseCode||c.code)))}
+/* Section peek — a read-only view swap for Core classes only (electives aren't
+   section-locked, so they always come from the viewer's own data regardless).
+   When peekSection is set, Core classes are sourced from the separately-fetched
+   peekAll instead of the normal state.all, everything else is untouched. Every
+   existing filteredClasses() call site picks this up automatically. */
+function filteredClasses(){
+  const selected=new Set((state.profile.electives||[]).map(canonical));
+  const activeSection=state.peekSection||state.profile.section;
+  const coreSource=state.peekSection?(state.peekAll||[]):state.all;
+  const core=coreSource.filter(c=>c.type==="Core"&&(activeSection==="A"?c.section==="A":c.section==="B"));
+  const rest=state.all.filter(c=>c.type==="General"||(c.type!=="Core"&&selected.has(canonical(c.baseCode||c.code))));
+  return[...core,...rest].sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
+}
+async function fetchSectionClasses(section){
+  const u=new URL(API);u.searchParams.set("section",section);u.searchParams.set("electives","");u.searchParams.set("includeCancelled","true");
+  const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`HTTP ${r.status}`);
+  const d=await r.json();if(!d.success)throw new Error(d.error||"API failed");
+  return d.classes||[];
+}
+async function toggleSectionPeek(){
+  const mySection=state.profile.section||"A",other=mySection==="A"?"B":"A",btn=$("#sectionPeekToggle");
+  if(state.peekSection){
+    state.peekSection=null;state.classes=filteredClasses();renderAll();
+    return;
+  }
+  if(btn){btn.disabled=true;btn.classList.add("is-loading")}
+  try{
+    if(!state.peekAll)state.peekAll=await fetchSectionClasses(other);
+    state.peekSection=other;state.classes=filteredClasses();renderAll();
+    showToast(`Viewing Section ${other}'s classes — tap again to return to your own`);
+  }catch(e){
+    showToast("Couldn't load the other section right now");
+  }finally{
+    if(btn){btn.disabled=false;btn.classList.remove("is-loading")}
+  }
+}
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
 function classKey(c){return`${classIdentity(c)}|${c.endTime||""}|${venueOf(c)}`}
 function classIdentity(c){return`${c.dateIso}|${c.startTime}|${canonical(c.code)}`}
@@ -151,6 +187,7 @@ async function syncSchedule(force=false){
     _syncInFlight=false;
     if(refreshBtn){refreshBtn.dataset.state="";refreshBtn.setAttribute("aria-busy","false")}
   }
+  if(force&&state.peekSection){try{state.peekAll=await fetchSectionClasses(state.peekSection);state.classes=filteredClasses()}catch(e){}}
   state.scheduleLoading=false;
   renderAll();
 }
@@ -159,7 +196,7 @@ function scheduleIdleSync(){
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
-function showPage(n){if(n==="home"){state.timelineOffset=1}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar"){renderCalendar();renderExamsPage()}}
+function showPage(n){if(n==="home"){state.timelineOffset=0}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.plannerViewMode="day"}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar"){setPlannerViewMode("day");renderCalendar();renderExamsPage()}}
 function setPlannerTab(tab){
   $$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===tab));
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
@@ -270,7 +307,14 @@ function renderDateStrip(){
   el.innerHTML=html;
   $$(".date-pill",el).forEach(b=>b.addEventListener("click",()=>openCalendarPage(b.dataset.date)));
 }
-function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
+function renderSectionPeekButton(){
+  const btn=$("#sectionPeekToggle");if(!btn)return;
+  const mySection=state.profile.section||"A";
+  btn.classList.toggle("is-peeking",!!state.peekSection);
+  btn.innerHTML=`${icon(state.peekSection?"eye":"profile")}<span>Section ${esc(state.peekSection||mySection)}</span>`;
+  btn.title=state.peekSection?`Viewing Section ${state.peekSection} — tap to return to your own`:`Tap to peek at Section ${mySection==="A"?"B":"A"}`;
+}
+function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderSectionPeekButton();renderIcons()}
 function heroPill(html,tone=""){return`<span class="hero-pill ${tone}">${html}</span>`}
 function fitHeroTime(){
   const el=$("#focusRange");if(!el)return;
@@ -391,7 +435,10 @@ function renderHome(){
   const timelineOffset=state.timelineOffset||0,timelineIso=isoForDayOffset(timelineOffset),timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   $("#timelineDateTitle").textContent=timelineOffset===0?"Today":timelineOffset===1?"Tomorrow":fmtDate(timelineIso,{weekday:"long"});
   $("#timelineFullDate").textContent=fmtDate(timelineIso,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  $("#todayProgressRail").innerHTML=timelineClasses.length?dayCardListHtml(timelineClasses,timelineIso):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
+  $("#todaySwitchDate").textContent=fmtDate(today,{day:"numeric",month:"short"});
+  $("#tomorrowSwitchDate").textContent=fmtDate(tomorrowIso(),{day:"numeric",month:"short"});
+  $$(".timeline-day-button").forEach(b=>b.classList.toggle("active",Number(b.dataset.timelineOffset)===timelineOffset));
+  $("#todayProgressRail").innerHTML=timelineClasses.length?dayCardListHtml(timelineClasses,timelineIso,{showNext:true}):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
   const holidayBanner=$("#todayProgressRail")?.previousElementSibling;
   const holiday=HOLIDAYS[timelineIso];
   $$(".timeline-holiday-banner").forEach(n=>n.remove());
@@ -499,7 +546,11 @@ function renderTermHeatmap(){
    Timeline and the Planner day agenda so the two surfaces stay in sync. Card height reflects
    actual duration; gaps of 45+ minutes between classes collapse to a compact "free" spacer
    (capped so a long gap doesn't force a marathon scroll) instead of full empty space. */
-function dayCardListHtml(classes,dayIso){
+function nextOccurrenceOf(c){
+  const future=state.classes.filter(x=>x.status!=="Cancelled"&&canonical(x.code)===canonical(c.code)&&dateTime(x,"startTime")>dateTime(c,"endTime")).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
+  return future[0]||null;
+}
+function dayCardListHtml(classes,dayIso,opts={}){
   const chronological=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   const now=new Date();
   let html='<div class="day-cardlist">',prevEnd=null;
@@ -515,12 +566,21 @@ function dayCardListHtml(classes,dayIso){
       `<span class="dc-chip">${icon("pin")}${esc(venueOf(c))}</span>`,
       `<span class="dc-chip">${icon("clock")}${esc(compactDuration(dur))}</span>`
     ].join("");
+    let nextLine="";
+    if(opts.showNext&&c.status!=="Cancelled"){
+      const nxt=nextOccurrenceOf(c);
+      if(nxt){
+        const label=nxt.dateIso===dayIso?"later today":nxt.dateIso===tomorrowIso()?"tomorrow":fmtDate(nxt.dateIso,{weekday:"short",day:"numeric",month:"short"});
+        nextLine=`<p class="dc-next-occurrence">Next ${esc(canonical(c.code))} — ${esc(label)}, ${esc(fmtTime(nxt.startTime))}</p>`;
+      }
+    }
     html+=`<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)};min-height:${blockPx}px">
       <div class="day-cardlist-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small><span class="tag ${tag.cls}">${esc(tag.text)}</span></div>
       <div class="day-cardlist-body">
         <div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong>${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}${sessionN?`<span class="dc-session-badge">${sessionN}/${SESSION_TARGET}</span>`:""}</div>
         ${progress!==null?`<div class="day-cardlist-progress"><span style="width:${progress}%"></span></div>`:""}
         <div class="day-cardlist-chips">${chips}</div>
+        ${nextLine}
       </div>
     </article>`;
     prevEnd=minutes(c.endTime);
@@ -1663,12 +1723,14 @@ function bind(){
   bindOutsideDismiss($("#noteDialog"));
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
+  $("#sectionPeekToggle")?.addEventListener("click",toggleSectionPeek);
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
   $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches()});
   $("#topMoreButton")?.addEventListener("click",e=>{e.stopPropagation();const menu=$("#topMoreMenu"),open=menu.classList.toggle("open");$("#topMoreButton").setAttribute("aria-expanded",String(open))});
   document.addEventListener("click",e=>{const menu=$("#topMoreMenu");if(menu&&menu.classList.contains("open")&&!e.target.closest("#topMoreMenu,#topMoreButton")){menu.classList.remove("open");$("#topMoreButton").setAttribute("aria-expanded","false")}});
   $("#topMoreMenu")?.addEventListener("click",e=>{if(e.target.closest("button")){$("#topMoreMenu").classList.remove("open");$("#topMoreButton")?.setAttribute("aria-expanded","false")}});
   $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
+  $("#timelineDaySwitch")?.addEventListener("click",e=>{const b=e.target.closest("[data-timeline-offset]");if(!b)return;setTimelineOffset(Number(b.dataset.timelineOffset),"auto")});
   bindSwipeGesture($(".today-progress-card"),direction=>{
     const delta=direction==="left"?1:-1;
     setTimelineOffset((state.timelineOffset||0)+delta,delta>0?"forward":"backward");
@@ -1769,7 +1831,7 @@ function bind(){
   $("#openNoteForm").addEventListener("click",()=>{clearDialogValidation(noteDialog);noteDialog.showModal()});
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
-  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value,homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
+  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value,homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);state.peekSection=null;state.peekAll=null;applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const list=$("#fullBusList"),collapsed=list.classList.toggle("collapsed");$("#toggleFullBus").textContent=collapsed?"Show all":"Collapse"});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week at a glance"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>$("#shortcutDialog").close());document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
@@ -1793,11 +1855,11 @@ async function init(){
   renderAll();
   renderGoogleTasksStatus();
   maybeOpenOnboarding();
-  syncSchedule(false);
+  syncSchedule(false).then(()=>maybeOpenOnboarding());
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova9",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova10",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
