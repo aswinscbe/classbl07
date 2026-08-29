@@ -337,11 +337,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .hero-card.is-live.is-urgent{background:color-mix(in srgb, var(--amber) 12%, var(--bg-elevated));border-color:color-mix(in srgb, var(--amber) 50%, var(--border))}
 .hero-card.is-break{border-color:color-mix(in srgb, var(--amber) 45%, var(--border))}
-.hero-card.is-peeking{border-color:color-mix(in srgb, var(--focus-course,var(--accent)) 40%, var(--border));border-style:dashed}
 .hero-status-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .hero-status-right{display:flex;align-items:center;gap:8px}
-.hero-day-count,.hero-peek-hint{font-size:12px;font-weight:700;color:var(--on-grad-muted);white-space:nowrap}
-.hero-peek-hint{padding:3px 8px;border-radius:99px;background:var(--hero-chip-bg)}
+.hero-day-count{font-size:12px;font-weight:700;color:var(--on-grad-muted);white-space:nowrap}
 .hero-status{
   display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;letter-spacing:.03em;
   padding:5px 10px;border-radius:99px;background:var(--hero-chip-bg);color:var(--on-grad);
@@ -372,7 +370,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
 .hero-pill{
   display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:99px;
-  background:var(--hero-chip-bg);color:var(--on-grad-muted);font-size:12.5px;font-weight:650;line-height:1;
+  background:color-mix(in srgb, var(--focus-course,var(--accent)) 12%, var(--hero-chip-bg));
+  color:var(--on-grad-muted);font-size:12.5px;font-weight:650;line-height:1;
 }
 .hero-pill svg{width:13px;height:13px;flex:none}
 .hero-pill.accent{background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent));font-weight:750}
@@ -386,6 +385,17 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   position:absolute;top:-5px;width:8px;height:8px;border-radius:50%;transform:translateX(-4px);
   background:var(--on-grad);border:2px solid var(--grad);box-shadow:0 1px 3px rgba(0,0,0,.4);
 }
+.hero-today-list{margin-top:14px;padding-top:14px;border-top:1px solid var(--on-grad-line);display:flex;flex-direction:column;gap:2px}
+.hero-today-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:9px;font-size:12.5px}
+.hero-today-row .htr-time{flex:none;min-width:96px;color:var(--on-grad-muted);font-weight:600;font-variant-numeric:tabular-nums}
+.hero-today-row .htr-code{flex:none;padding:2px 8px;border-radius:99px;font-weight:800;font-size:11px;background:color-mix(in srgb, var(--course,var(--on-grad)) 22%, transparent);color:var(--course,var(--on-grad))}
+.hero-today-row .htr-room{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--on-grad-muted);text-align:right;font-weight:550}
+.hero-today-row.done{opacity:.5}
+.hero-today-row.current{background:color-mix(in srgb, var(--course,var(--on-grad)) 16%, transparent)}
+.hero-today-row.current .htr-time{color:var(--on-grad);font-weight:800}
+.hero-today-row.cancelled{opacity:.6}
+.hero-today-row.cancelled .htr-time,.hero-today-row.cancelled .htr-room{text-decoration:line-through}
+.hero-today-row.cancelled .htr-code{background:color-mix(in srgb, var(--danger) 25%, transparent);color:var(--danger)}
 
 .exam-hero{
   margin-top:14px;padding:14px 16px;border-radius:var(--radius-lg);
@@ -456,16 +466,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .today-progress-card{margin-top:14px}
 .timeline-heading{align-items:flex-start}
 .timeline-full-date{margin:2px 0 0;font-size:12.5px;color:var(--ink-muted);font-weight:500}
-.timeline-day-switch{display:flex;gap:6px;margin-bottom:14px;background:var(--bg-panel);padding:4px;border-radius:12px}
-.timeline-day-button{
-  flex:1;background:none;border:0;padding:9px 8px;border-radius:9px;color:var(--ink-muted);
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-}
-.timeline-day-button span{font-size:13.5px;font-weight:750}
-.timeline-day-button small{font-size:11.5px;font-weight:600;opacity:.8}
-.timeline-day-button.active{background:color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));color:var(--accent);border:1px solid color-mix(in srgb, var(--accent) 35%, transparent)}
-.timeline-day-button.active small{color:var(--accent);opacity:.85}
-.timeline-swipe-hint{margin:-6px 0 12px;font-size:11px;font-weight:600;color:var(--ink-faint);text-align:center}
+.timeline-swipe-hint{margin:2px 0 12px;font-size:11px;font-weight:600;color:var(--ink-faint);text-align:center}
 
 /* ===== Day schedule — shared proportional card list for Home's Class Timeline + Planner's day agenda ===== */
 .timeline-course-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -660,7 +661,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .next-bus-origin-note .upcoming{color:var(--on-grad);font-weight:700}
 .route-visual{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .route-stop{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:650;color:var(--on-grad-muted)}
-.route-stop i{width:6px;height:6px;border-radius:50%;background:var(--accent-2)}
+.route-stop i{width:6px;height:6px;border-radius:50%;background:var(--accent-2);animation:route-en-route 2.4s ease-in-out calc(var(--i,0) * .3s) infinite}
+@keyframes route-en-route{0%,60%,100%{opacity:.55;transform:scale(1)}20%{opacity:1;transform:scale(1.5)}}
+@media(prefers-reduced-motion: reduce){.route-stop i{animation:none}}
 .next-bus-card.is-urgent .route-stop:last-child i{background:var(--amber);animation:empty-icon-breathe 1.4s ease-in-out infinite}
 .next-bus-card.is-urgent .leaving-soon-toggle{border-color:var(--amber)}
 @media(prefers-reduced-motion: reduce){.next-bus-card.is-urgent .route-stop:last-child i{animation:none}}
@@ -914,6 +917,30 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .rail-week-label{flex:1;text-align:center;font-family:var(--font-display);font-size:13.5px;font-weight:650;color:var(--ink-muted)}
 .rail-jump-today{color:var(--accent)}
 .rail-month-toggle{margin-left:2px}
+
+.planner-view-toggle{display:flex;gap:6px;background:var(--bg-panel);padding:4px;border-radius:12px}
+.pv-toggle-btn{flex:1;background:none;border:0;padding:9px 8px;border-radius:9px;font-size:13.5px;font-weight:750;color:var(--ink-muted)}
+.pv-toggle-btn.active{background:color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));color:var(--accent);border:1px solid color-mix(in srgb, var(--accent) 35%, transparent)}
+#plannerDayGroup{display:flex;flex-direction:column;gap:14px}
+#plannerDayGroup.hidden-view{display:none}
+
+.week-scan-list{display:flex;flex-direction:column;gap:10px}
+.wsc-day{
+  display:block;width:100%;text-align:left;background:var(--bg-panel);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:12px 14px;font:inherit;color:inherit;
+}
+.wsc-day.is-today{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 6%, var(--bg-panel))}
+.wsc-day-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.wsc-day-head span{font-size:14px;font-weight:750}
+.wsc-day.is-today .wsc-day-head span{color:var(--accent)}
+.wsc-day-head small{font-size:12px;font-weight:600;color:var(--ink-muted)}
+.wsc-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px}
+.wsc-row .wsc-time{flex:none;min-width:92px;color:var(--ink-muted);font-weight:600;font-variant-numeric:tabular-nums}
+.wsc-row .wsc-code{flex:none;padding:2px 8px;border-radius:99px;font-weight:800;font-size:11px;background:color-mix(in srgb, var(--course,var(--accent)) 16%, transparent);color:var(--course,var(--accent))}
+.wsc-row .wsc-room{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-muted);text-align:right;font-weight:550}
+.wsc-row.cancelled{opacity:.55}
+.wsc-row.cancelled .wsc-time,.wsc-row.cancelled .wsc-room{text-decoration:line-through}
+.wsc-empty{margin:2px 0 0;font-size:12.5px;color:var(--ink-faint);font-weight:500}
 .date-rail{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
 .rail-day{
   flex:1;min-width:42px;display:flex;flex-direction:column;align-items:center;gap:6px;

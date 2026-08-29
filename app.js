@@ -5,7 +5,7 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
 const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69",IS:"#5aa06a"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,heroPeek:0,lastUpdated:null,calendarHighlight:null};
+const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:1,lastUpdated:null,calendarHighlight:null,plannerViewMode:"day"};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
@@ -159,7 +159,7 @@ function scheduleIdleSync(){
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
-function showPage(n){if(n==="home"){state.timelineOffset=0;state.heroPeek=0}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar"){renderCalendar();renderExamsPage()}}
+function showPage(n){if(n==="home"){state.timelineOffset=1}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home")renderHome();if(n==="campus")renderCampus();if(n==="calendar"){renderCalendar();renderExamsPage()}}
 function setPlannerTab(tab){
   $$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===tab));
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
@@ -303,31 +303,21 @@ function renderHome(){
   }
   let shownDayIso=today;
   if(focus){
-    const naturalIndex=focus.dateIso===today?todays.indexOf(focus):-1;
-    const maxPeek=naturalIndex>=0?todays.length-1-naturalIndex:0;
-    state.heroPeek=Math.max(0,Math.min(state.heroPeek||0,maxPeek));
-    const peeking=naturalIndex>=0&&state.heroPeek>0;
-    const shown=peeking?todays[naturalIndex+state.heroPeek]:focus;
+    const shown=focus;
     shownDayIso=shown.dateIso;
-    const isNow=shown===current&&!peeking,isToday=shown.dateIso===today,isTomorrow=shown.dateIso===tomorrowIso();
+    const isNow=shown===current,isToday=shown.dateIso===today,isTomorrow=shown.dateIso===tomorrowIso();
     focusPanel.classList.remove("is-empty");
     focusPanel.classList.toggle("is-live",isNow);
     focusPanel.classList.toggle("is-upcoming",!isNow&&isToday);
     focusPanel.classList.toggle("is-future",!isToday);
-    focusPanel.classList.toggle("is-break",onBreak&&!peeking);
-    focusPanel.classList.toggle("is-peeking",peeking);
+    focusPanel.classList.toggle("is-break",onBreak);
     focusPanel.classList.toggle("is-urgent",isNow&&(dateTime(shown,"endTime")-now)/60000<=10);
     focusPanel.style.setProperty("--focus-course",colorFor(shown.code));
     focusPanel.dataset.focusDate=shown.dateIso;focusPanel.dataset.focusCourse=canonical(shown.code);focusPanel.dataset.focusClassId=classIdentity(shown);
     focusPanel.classList.toggle("has-focus",true);
     $("#focusPulse").style.display=isNow?"":"none";
     $("#focusEmptyIcon").hidden=true;
-    const peekHint=$("#heroPeekHint");
-    if(peeking){peekHint.hidden=false;peekHint.textContent=`${naturalIndex+state.heroPeek+1} of ${todays.length}`}
-    else peekHint.hidden=true;
-    $("#focusKicker").textContent=peeking
-      ?(now>=dateTime(shown,"endTime")?"DONE":isNow?"IN PROGRESS":"UPCOMING")
-      :(isNow?"IN PROGRESS":onBreak?"ON A BREAK":isToday?"UPCOMING":isTomorrow?"TOMORROW":`UPCOMING · ${fmtDate(shown.dateIso,{day:"numeric",month:"short"})}`);
+    $("#focusKicker").textContent=isNow?"IN PROGRESS":onBreak?"ON A BREAK":isToday?"UPCOMING":isTomorrow?"TOMORROW":`UPCOMING · ${fmtDate(shown.dateIso,{day:"numeric",month:"short"})}`;
     $("#focusCode").hidden=false;$("#focusCode").textContent=canonical(shown.code);$("#focusTitle").textContent=shown.course;
     $("#focusRange").textContent=fmtRange(shown.startTime,shown.endTime);
     const dayList=scheduled.filter(c=>c.dateIso===shown.dateIso),posIndex=dayList.indexOf(shown),nextInDay=dayList[posIndex+1];
@@ -339,23 +329,20 @@ function renderHome(){
       $("#heroRingFill").style.strokeDashoffset=`${circ*(1-pct/100)}`;
     }else ring.hidden=true;
     const pills=[];
-    if(!peeking){
-      if(isNow){const mins=Math.max(0,Math.round((dateTime(shown,"endTime")-now)/60000));pills.push(heroPill(`Ends in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
-      else if(onBreak){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`Starts in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
-      else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
-    }
+    if(isNow){const mins=Math.max(0,Math.round((dateTime(shown,"endTime")-now)/60000));pills.push(heroPill(`Ends in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
+    else if(onBreak){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`Starts in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
+    else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
     const heroSessionN=subjectSessionOrdinal(shown);
     if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${SESSION_TARGET}`));
-    if(nextInDay&&!peeking)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`));
+    if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`));
     $("#heroPills").innerHTML=pills.join("");
     const dayLabel=shown.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(shown.dateIso,{day:"numeric",month:"short"});
-    const dayCountEl=$("#heroDayCount");dayCountEl.hidden=!dayList.length||peeking;dayCountEl.textContent=`${dayList.length} ${dayList.length===1?"class":"classes"} ${dayLabel.toLowerCase()}`;
+    const dayCountEl=$("#heroDayCount");dayCountEl.hidden=!dayList.length;dayCountEl.textContent=`${dayList.length} ${dayList.length===1?"class":"classes"} ${dayLabel.toLowerCase()}`;
   }
   else{
-    state.heroPeek=0;
-    focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-upcoming","is-future","is-break","has-focus","is-peeking");focusPanel.style.removeProperty("--focus-course");delete focusPanel.dataset.focusDate;delete focusPanel.dataset.focusClassId;
-    $("#heroRing").hidden=true;$("#heroPeekHint").hidden=true;
+    focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-upcoming","is-future","is-break","has-focus");focusPanel.style.removeProperty("--focus-course");delete focusPanel.dataset.focusDate;delete focusPanel.dataset.focusClassId;
+    $("#heroRing").hidden=true;
     $("#focusPulse").style.display="none";
     $("#focusKicker").textContent=todays.length?"ALL DONE TODAY":"ALL CLEAR";
     if(todays.length&&!state._confettiFiredToday){state._confettiFiredToday=true;fireConfetti()}
@@ -383,13 +370,27 @@ function renderHome(){
       stripEl.innerHTML=`<div class="hero-strip-track">${segs}${nowMarker}</div>`;
     }
   }
+  /* Today at a glance — every one of today's classes as a compact row, right in the hero
+     card, so checking the day doesn't require tapping through classes one at a time. */
+  const todayListEl=$("#heroTodayList");
+  if(todayListEl){
+    if(!todaysAll.length)todayListEl.hidden=true;
+    else{
+      todayListEl.hidden=false;
+      todayListEl.innerHTML=todaysAll.map(c=>{
+        const st=c.status==="Cancelled"?"cancelled":now>=dateTime(c,"endTime")?"done":(now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime"))?"current":"upcoming";
+        return`<div class="hero-today-row ${st}" style="--course:${colorFor(c.code)}">
+          <span class="htr-time">${esc(fmtRange(c.startTime,c.endTime))}</span>
+          <span class="htr-code">${esc(canonical(c.code))}</span>
+          <span class="htr-room">${esc(venueOf(c))}</span>
+        </div>`;
+      }).join("");
+    }
+  }
   fitHeroTime();
   const timelineOffset=state.timelineOffset||0,timelineIso=isoForDayOffset(timelineOffset),timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   $("#timelineDateTitle").textContent=timelineOffset===0?"Today":timelineOffset===1?"Tomorrow":fmtDate(timelineIso,{weekday:"long"});
   $("#timelineFullDate").textContent=fmtDate(timelineIso,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  $("#todaySwitchDate").textContent=fmtDate(today,{day:"numeric",month:"short"});
-  $("#tomorrowSwitchDate").textContent=fmtDate(tomorrowIso(),{day:"numeric",month:"short"});
-  $$(".timeline-day-button").forEach(b=>b.classList.toggle("active",Number(b.dataset.timelineOffset)===timelineOffset));
   $("#todayProgressRail").innerHTML=timelineClasses.length?dayCardListHtml(timelineClasses,timelineIso):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
   const holidayBanner=$("#todayProgressRail")?.previousElementSibling;
   const holiday=HOLIDAYS[timelineIso];
@@ -562,6 +563,40 @@ function renderDateRail(){
   const label=$("#railWeekLabel");
   if(label)label.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
   renderFreeBlocks();
+  renderWeekScan(days);
+}
+/* Read-only week scan — every day in the current rail week, each class as a compact row,
+   so scanning the week ahead doesn't mean tapping through 7 days one at a time. Tapping a
+   day jumps into the normal Day view for actions. */
+function renderWeekScan(days){
+  const list=$("#weekScanList");if(!list)return;
+  const today=isoToday();
+  list.innerHTML=days.map(iso=>{
+    const dayClasses=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    const rows=dayClasses.map(c=>{
+      const cancelled=c.status==="Cancelled";
+      return`<div class="wsc-row ${cancelled?"cancelled":""}" style="--course:${colorFor(c.code)}">
+        <span class="wsc-time">${esc(fmtRange(c.startTime,c.endTime))}</span>
+        <span class="wsc-code">${esc(canonical(c.code))}</span>
+        <span class="wsc-room">${esc(venueOf(c))}</span>
+      </div>`;
+    }).join("");
+    return`<button type="button" class="wsc-day ${iso===today?"is-today":""}" data-date="${iso}">
+      <div class="wsc-day-head"><span>${esc(fmtDate(iso,{weekday:"long"}))}</span><small>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</small></div>
+      ${rows||'<p class="wsc-empty">Free day</p>'}
+    </button>`;
+  }).join("");
+  $$(".wsc-day",list).forEach(b=>b.addEventListener("click",()=>{
+    state.selectedDate=b.dataset.date;
+    setPlannerViewMode("day");
+    renderCalendar();
+  }));
+}
+function setPlannerViewMode(mode){
+  state.plannerViewMode=mode;
+  $$(".pv-toggle-btn").forEach(b=>b.classList.toggle("active",b.dataset.pvMode===mode));
+  $("#plannerDayGroup")?.classList.toggle("hidden-view",mode!=="day");
+  const weekPanel=$("#weekScanPanel");if(weekPanel)weekPanel.hidden=mode!=="week";
 }
 /* Free time for the selected day only. The recurring 1:30-2:30pm lunch break is not
    flagged as a "gap" since it's expected downtime — unless a class was cancelled during
@@ -696,7 +731,8 @@ function busStopLabel(stop){
   return stop;
 }
 
-/* Timeline swipe + day switch — offset is days from today, clamped to a week ahead */
+/* Timeline swipe — offset is days from today, clamped to a week ahead. Defaults to
+   tomorrow (1) since today's schedule already lives in the hero card. */
 function setTimelineOffset(offset,direction){
   offset=Math.max(0,Math.min(6,offset));
   if(state.timelineOffset===offset)return;
@@ -918,9 +954,22 @@ function renderBuses(){
   const nextDay=!next;
   if(!next)next=services.map(b=>({b,d:busDate(b,true)})).sort((a,b)=>a.d-b.d)[0];
   const nextKey=`${next.b.time}|${next.b.from}|${next.b.to}`;
-  const sameOrigin=withTimes.filter(item=>item.b.from===next.b.from);
-  const sameOriginPassed=sameOrigin.filter(item=>item.d<=now);
-  const previous=sameOriginPassed.length?sameOriginPassed[sameOriginPassed.length-1]:null;
+
+  /* Previous departure from the rider's actual boarding stop, any destination — not just
+     buses matching the selected route. A stop like Phase V is never a literal origin in the
+     timetable (we only know origin departure times), so for stops we have no real timing for,
+     fall back to the same-origin-as-next-bus approximation used for the ORIGIN TIME tag. */
+  const literalOrigins=new Set(window.CAMPUS_DATA.bus.map(b=>b.from));
+  let previous=null;
+  if(literalOrigins.has(state.busFrom)){
+    const fromHere=window.CAMPUS_DATA.bus.filter(b=>b.from===state.busFrom).map(b=>({b,d:busDate(b)})).sort((a,b)=>a.d-b.d);
+    const passed=fromHere.filter(item=>item.d<=now);
+    previous=passed.length?passed[passed.length-1]:null;
+  }else{
+    const sameOrigin=withTimes.filter(item=>item.b.from===next.b.from);
+    const sameOriginPassed=sameOrigin.filter(item=>item.d<=now);
+    previous=sameOriginPassed.length?sameOriginPassed[sameOriginPassed.length-1]:null;
+  }
 
   $("#nextBusTime").textContent=fmtTime(next.b.time);
   $("#nextBusMeta").textContent=isMainGateService(next.b)?"Main Gate service":"Campus shuttle";
@@ -928,11 +977,15 @@ function renderBuses(){
   if(gateTags)gateTags.innerHTML=`${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(next.b.from))}">ORIGIN TIME</span>`:""}`;
   const originNote=$("#nextBusOriginNote");
   if(originNote){
-    if(next.b.from!==state.busFrom){
+    if(previous){
       originNote.hidden=false;
-      originNote.innerHTML=previous
-        ?`<b>${esc(busStopLabel(next.b.from))}</b> departures — <span class="passed">${esc(fmtTime(previous.b.time))} passed</span> · <span class="upcoming">${esc(fmtTime(next.b.time))} next</span>`
-        :`First <b>${esc(busStopLabel(next.b.from))}</b> departure today: <span class="upcoming">${esc(fmtTime(next.b.time))}</span>`;
+      const sameRoute=previous.b.to===next.b.to;
+      originNote.innerHTML=sameRoute
+        ?`<b>${esc(busStopLabel(previous.b.from))}</b> departures — <span class="passed">${esc(fmtTime(previous.b.time))} passed</span> · <span class="upcoming">${esc(fmtTime(next.b.time))} next</span>`
+        :`<span class="passed">Previous ${esc(busStopLabel(previous.b.from))} → ${esc(busStopLabel(previous.b.to))} · ${esc(fmtTime(previous.b.time))}</span>`;
+    }else if(next.b.from!==state.busFrom){
+      originNote.hidden=false;
+      originNote.innerHTML=`First <b>${esc(busStopLabel(next.b.from))}</b> departure today: <span class="upcoming">${esc(fmtTime(next.b.time))}</span>`;
     }else originNote.hidden=true;
   }
 
@@ -946,8 +999,8 @@ function renderBuses(){
 
   const stops=routeStops(next.b);
   const fromIndex=stops.indexOf(state.busFrom),toIndex=stops.indexOf(state.busTo);
-  $("#nextBusVisual").innerHTML=stops.slice(fromIndex,toIndex+1).map(stop=>
-    `<div class="route-stop"><i></i><span>${esc(busStopLabel(stop))}</span></div>`
+  $("#nextBusVisual").innerHTML=stops.slice(fromIndex,toIndex+1).map((stop,i)=>
+    `<div class="route-stop"><i style="--i:${i}"></i><span>${esc(busStopLabel(stop))}</span></div>`
   ).join("");
 
   const upcoming=withTimes.filter(item=>item.d>now).slice(0,5);
@@ -1616,12 +1669,6 @@ function bind(){
   document.addEventListener("click",e=>{const menu=$("#topMoreMenu");if(menu&&menu.classList.contains("open")&&!e.target.closest("#topMoreMenu,#topMoreButton")){menu.classList.remove("open");$("#topMoreButton").setAttribute("aria-expanded","false")}});
   $("#topMoreMenu")?.addEventListener("click",e=>{if(e.target.closest("button")){$("#topMoreMenu").classList.remove("open");$("#topMoreButton")?.setAttribute("aria-expanded","false")}});
   $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
-  $("#timelineDaySwitch").addEventListener("click",e=>{const b=e.target.closest("[data-timeline-offset]");if(!b)return;setTimelineOffset(Number(b.dataset.timelineOffset),"auto")});
-  bindSwipeGesture($("#focusPanel"),direction=>{
-    if(!$("#focusPanel").classList.contains("has-focus"))return;
-    state.heroPeek=Math.max(0,(state.heroPeek||0)+(direction==="left"?1:-1));
-    renderHome();
-  },{ignore:"button,a",threshold:40});
   bindSwipeGesture($(".today-progress-card"),direction=>{
     const delta=direction==="left"?1:-1;
     setTimelineOffset((state.timelineOffset||0)+delta,delta>0?"forward":"backward");
@@ -1699,6 +1746,7 @@ function bind(){
   $("#railNextWeek")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#railJumpToday")?.addEventListener("click",()=>{const n=new Date();state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date(n.getFullYear(),n.getMonth(),1);renderCalendar()});
   bindSwipeGesture($("#dateRail"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"",threshold:46});
+  $("#plannerDayWeekToggle")?.addEventListener("click",e=>{const b=e.target.closest("[data-pv-mode]");if(!b)return;setPlannerViewMode(b.dataset.pvMode)});
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
   $("#openTermWrapped")?.addEventListener("click",()=>{renderTermWrapped();$("#termWrappedDialog").showModal()});
   $("#closeTermWrapped")?.addEventListener("click",()=>closeDialog($("#termWrappedDialog")));
@@ -1733,6 +1781,7 @@ async function init(){
   applyTheme();
   renderIcons();
   bind();
+  setPlannerViewMode(state.plannerViewMode);
   bindPullToRefresh();
   updateOfflineBanner();
   const c=load(KEYS.cache,null);
@@ -1748,7 +1797,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova8",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260827-nova9",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
