@@ -457,7 +457,9 @@ function renderHome(){
     if(!todaysAll.length)todayListEl.hidden=true;
     else{
       todayListEl.hidden=false;
-      todayListEl.innerHTML=todaysAll.map(c=>{
+      const needsTodayLabel=shownDayIso!==today;
+      const todayLabel=needsTodayLabel?`<p class="hero-strip-label hero-today-list-label">${esc(fmtDate(today,{weekday:"long",day:"numeric",month:"short"}))} (today)</p>`:"";
+      todayListEl.innerHTML=todayLabel+todaysAll.map(c=>{
         const st=c.status==="Cancelled"?"cancelled":now>=dateTime(c,"endTime")?"done":(now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime"))?"current":"upcoming";
         return`<div class="hero-today-row ${st}" style="--course:${colorFor(c.code)}">
           <span class="htr-time">${esc(fmtRange(c.startTime,c.endTime))}</span>
@@ -1902,7 +1904,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova19",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260829-nova20",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);

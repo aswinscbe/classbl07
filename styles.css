@@ -392,6 +392,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card.is-empty{color:var(--on-grad)}
 .hero-day-strip{margin-top:16px;padding-top:14px;border-top:1px solid var(--on-grad-line)}
 .hero-strip-label{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--amber)}
+.hero-today-list-label{color:var(--on-grad-muted)}
 .hero-strip-track{position:relative;height:6px;border-radius:99px;background:color-mix(in srgb, var(--on-grad-line) 55%, transparent)}
 .hero-strip-seg{position:absolute;top:0;height:100%;border-radius:99px;background:var(--course,var(--on-grad));opacity:.4}
 .hero-strip-seg.current{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb, var(--course,var(--on-grad)) 30%, transparent)}
