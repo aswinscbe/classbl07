@@ -1,7 +1,7 @@
 const CACHE="classbl07-review-20260809-1";
-const CACHE_VERSION="20260829-nova21";
+const CACHE_VERSION="20260829-nova22";
 const ACTIVE_CACHE=`${CACHE}-${CACHE_VERSION}`;
-const SHELL=["./index.html","./styles.css?v=20260829-nova21","./app.js?v=20260829-nova21","./polish.js?v=20260829-nova21","./campus-data.js?v=20260829-nova21","./exam-data.js?v=20260829-nova21","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./icons/apple-touch-icon.png","./icons/favicon-32.png","./icons/favicon-16.png"];
+const SHELL=["./index.html","./styles.css?v=20260829-nova22","./app.js?v=20260829-nova22","./polish.js?v=20260829-nova22","./campus-data.js?v=20260829-nova22","./exam-data.js?v=20260829-nova22","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./icons/apple-touch-icon.png","./icons/favicon-32.png","./icons/favicon-16.png"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(ACTIVE_CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==ACTIVE_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{

@@ -730,7 +730,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .board-row .t{font-size:15px;font-weight:800;min-width:58px;color:var(--accent)}
 .board-row .r{flex:1;min-width:0}
 .board-row .r strong{display:block;font-size:14px;font-weight:700}
-.board-row .r span{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-muted);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-row .r span{margin-top:2px;font-size:12.5px;color:var(--ink-muted);font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .board-row-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
 .tag{
   display:inline-block;padding:2px 7px;border-radius:6px;
