@@ -403,7 +403,11 @@ function renderHome(){
     focusPanel.classList.toggle("is-break",onBreak);
     focusPanel.classList.toggle("is-urgent",isNow&&(dateTime(shown,"endTime")-now)/60000<=10);
     focusPanel.style.setProperty("--focus-course",colorFor(shown.code));
-    focusPanel.dataset.focusDate=shown.dateIso;focusPanel.dataset.focusCourse=canonical(shown.code);focusPanel.dataset.focusClassId=classIdentity(shown);
+    focusPanel.dataset.focusDate=shown.dateIso;focusPanel.dataset.focusCourse=canonical(shown.code);
+    const focusStateKey=`${classIdentity(shown)}|${isNow?"live":onBreak?"break":"upcoming"}`;
+    if(focusPanel.dataset.focusStateKey&&focusPanel.dataset.focusStateKey!==focusStateKey)playHeroEntrance();
+    focusPanel.dataset.focusStateKey=focusStateKey;
+    focusPanel.dataset.focusClassId=classIdentity(shown);
     focusPanel.classList.toggle("has-focus",true);
     $("#focusPulse").style.display=isNow?"":"none";
     $("#focusEmptyIcon").hidden=true;
@@ -691,17 +695,23 @@ function renderDateRail(){
    day jumps into the normal Day view for actions. */
 function renderWeekScan(days){
   const list=$("#weekScanList");if(!list)return;
-  const today=isoToday();
+  const today=isoToday(),now=new Date();
   const upcoming=days.filter(iso=>iso>=today);
   const visibleDays=upcoming.length?upcoming:days;
   list.innerHTML=visibleDays.map(iso=>{
     const dayClasses=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    const isTodayRow=iso===today;
+    const nextUpId=isTodayRow?classIdentity(dayClasses.find(c=>c.status!=="Cancelled"&&now<dateTime(c,"startTime"))||{}):null;
     const rows=dayClasses.map(c=>{
       const cancelled=c.status==="Cancelled";
-      return`<div class="wsc-row ${cancelled?"cancelled":""}" style="--course:${colorFor(c.code)}">
+      const isLive=isTodayRow&&!cancelled&&now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime");
+      const isNext=isTodayRow&&!cancelled&&classIdentity(c)===nextUpId;
+      const badge=isLive?'<b class="wsc-badge live">LIVE</b>':isNext?'<b class="wsc-badge upcoming">UPCOMING</b>':"";
+      return`<div class="wsc-row ${cancelled?"cancelled":""} ${isLive?"is-live":""}" style="--course:${colorFor(c.code)}">
         <span class="wsc-time">${esc(fmtRange(c.startTime,c.endTime))}</span>
         <span class="wsc-code">${esc(canonical(c.code))}</span>
         <span class="wsc-room">${esc(venueOf(c))}</span>
+        ${badge}
       </div>`;
     }).join("");
     const isToday=iso===today;
@@ -1947,7 +1957,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260830-nova26",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260901-nova27",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
