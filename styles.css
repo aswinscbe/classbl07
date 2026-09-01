@@ -350,15 +350,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   --hero-bar-fill:var(--accent);
   padding:20px;border-radius:var(--radius-xl);
   background:color-mix(in srgb, var(--accent) 7%, var(--bg-elevated));color:var(--ink);
-  box-shadow:var(--shadow-md);
+  box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent);
   border:1px solid var(--border);
   position:relative;overflow:hidden;
-  transition:background .4s ease, border-color .4s ease;
+  transition:background .4s ease, border-color .4s ease, box-shadow .4s ease;
 }
 .hero-card::before{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(circle at 100% -10%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 55%),
-    radial-gradient(circle at -10% 110%, color-mix(in srgb, var(--accent-2) 10%, transparent) 0%, transparent 50%);
+    radial-gradient(circle at -10% 110%, color-mix(in srgb, var(--accent-2) 10%, transparent) 0%, transparent 50%),
+    radial-gradient(circle at 78% 42%, color-mix(in srgb, var(--focus-course,var(--accent)) 9%, transparent) 0%, transparent 40%);
 }
 .hero-card>*{position:relative;z-index:1}
 .hero-card.is-live{
@@ -393,7 +394,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .hero-cancel-flag svg{width:14px;height:14px;flex:none}
 .hero-course-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;margin-top:14px}
-.hero-code{display:inline-flex;align-items:center;line-height:1;font-size:12px;font-weight:800;padding:5px 9px;border-radius:7px;background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent))}
+.hero-code{display:inline-flex;align-items:center;line-height:1;font-size:12px;font-weight:800;padding:5px 9px;border-radius:7px;background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent));box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent)}
 .hero-card h2#focusTitle{font-size:21px;font-weight:780;line-height:1.2;margin:0;color:var(--on-grad);letter-spacing:-.01em}
 .hero-time-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
 .hero-time{font-family:var(--font-display);font-size:clamp(32px,7.5vw,38px);font-weight:800;letter-spacing:-.01em;line-height:1;color:var(--on-grad);white-space:nowrap;min-width:0}
@@ -401,16 +402,17 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .hero-ring circle{fill:none;stroke-width:3.5}
 .hero-ring .ring-track{stroke:var(--on-grad-line)}
-.hero-ring .ring-fill{stroke:var(--live);stroke-linecap:round;transition:stroke-dashoffset 30s linear}
+.hero-ring .ring-fill{stroke:var(--live);stroke-linecap:round;transition:stroke-dashoffset 30s linear;filter:drop-shadow(0 0 3px color-mix(in srgb, var(--live) 55%, transparent))}
 .hero-card.is-urgent .hero-ring .ring-fill{stroke:var(--amber)}
 .hero-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
 .hero-pill{
   display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:99px;
   background:color-mix(in srgb, var(--focus-course,var(--accent)) 12%, var(--hero-chip-bg));
+  box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
   color:var(--on-grad-muted);font-size:12.5px;font-weight:650;line-height:1;
 }
 .hero-pill svg{width:13px;height:13px;flex:none}
-.hero-pill.accent{background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent));font-weight:750}
+.hero-pill.accent{background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent));font-weight:750;box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent), 0 0 0 1px color-mix(in srgb, var(--focus-course,var(--accent)) 22%, transparent)}
 .hero-card.is-empty{color:var(--on-grad)}
 .hero-day-strip{margin-top:16px;padding-top:14px;border-top:1px solid var(--on-grad-line)}
 .hero-strip-label{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--amber)}
@@ -1081,6 +1083,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   border-bottom:1px solid transparent;
 }
 .agenda-heading.is-stuck{border-bottom-color:var(--border);box-shadow:var(--shadow-md)}
+#agendaDate{font-family:var(--font-display);font-size:21px;font-weight:800;letter-spacing:-.01em}
+.agenda-day-meta{margin:2px 0 0;font-size:12px;font-weight:600;color:var(--ink-muted)}
 .agenda-day-controls{display:flex;align-items:center;gap:7px}
 .agenda-day-arrow{width:34px;height:34px;border-radius:9px}
 .agenda-day-arrow svg{width:15px;height:15px}
