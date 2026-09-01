@@ -714,8 +714,16 @@ function renderWeekScan(days){
       </div>`;
     }).join("");
     const isToday=iso===today;
+    const activeDayClasses=dayClasses.filter(c=>c.status!=="Cancelled");
+    const WIN_START=7*60,WIN_END=21*60,WIN_SPAN=WIN_END-WIN_START;
+    const miniBar=activeDayClasses.length?`<div class="wsc-minibar">${activeDayClasses.map(c=>{
+      const s=Math.max(WIN_START,minutes(c.startTime)),e=Math.min(WIN_END,minutes(c.endTime));
+      const left=((s-WIN_START)/WIN_SPAN)*100,width=Math.max(1.8,((e-s)/WIN_SPAN)*100);
+      return`<span class="wsc-bar-seg" style="--course:${colorFor(c.code)};left:${left}%;width:${width}%"></span>`;
+    }).join("")}</div>`:"";
     return`<button type="button" class="wsc-day ${isToday?"is-today":""}" data-date="${iso}" style="--density:${Math.min(6,dayClasses.length)}">
       <div class="wsc-day-head"><span>${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wsc-today-badge">TODAY</b>':""}</span><small>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</small></div>
+      ${miniBar}
       ${rows||'<p class="wsc-empty">Free day</p>'}
     </button>`;
   }).join("");
@@ -1790,7 +1798,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova34",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova35",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
