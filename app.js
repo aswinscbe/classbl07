@@ -91,7 +91,7 @@ function renderThemeToggleIcon(theme){
   setTimeout(()=>span.classList.remove("icon-morph"),320);
 }
 const ACCENT_PRESETS={
-  plum:{name:"Plum Copper",dark:{accent:"#9c5aa3",accent2:"#c98a4f"},light:{accent:"#7b3f82",accent2:"#a5673f"},grad:"linear-gradient(135deg,#241129 0%,#582a5e 55%,#a5673f 100%)",glow:"#582a5e"},
+  plum:{name:"Royal Indigo",dark:{accent:"#7c6cff",accent2:"#6553ed"},light:{accent:"#6854e8",accent2:"#5743d4"},grad:"linear-gradient(135deg,#1b1440 0%,#342477 55%,#6553ed 100%)",glow:"#342477"},
   teal:{name:"Ocean Teal",dark:{accent:"#4fa3b0",accent2:"#4fb08a"},light:{accent:"#2f7a8c",accent2:"#2f8c68"},grad:"linear-gradient(135deg,#0e2530 0%,#155066 55%,#2f8c68 100%)",glow:"#155066"},
   crimson:{name:"Crimson Ember",dark:{accent:"#c15a6e",accent2:"#d98a4f"},light:{accent:"#a83f52",accent2:"#a5673f"},grad:"linear-gradient(135deg,#2a1114 0%,#5e2a35 55%,#a5673f 100%)",glow:"#5e2a35"},
   indigo:{name:"Indigo Slate",dark:{accent:"#6a7bc9",accent2:"#4fb0a0"},light:{accent:"#4a5aa8",accent2:"#2f8c7e"},grad:"linear-gradient(135deg,#151a35 0%,#2a3566 55%,#2f8c7e 100%)",glow:"#2a3566"},
@@ -1790,7 +1790,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova33",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova34",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
