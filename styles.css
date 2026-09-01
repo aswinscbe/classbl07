@@ -998,10 +998,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wsc-day-head span{font-family:var(--font-display);font-size:17px;font-weight:800;display:flex;align-items:center;gap:7px;letter-spacing:-.01em}
 .wsc-day.is-today .wsc-day-head span{color:var(--accent);font-size:18.5px}
 .wsc-today-badge{font-size:10px;font-weight:800;letter-spacing:.04em;color:#fff;background:var(--accent);border-radius:99px;padding:2.5px 8px}
+.wsc-day-head-right{display:flex;align-items:center;gap:8px;flex:none}
 .wsc-day-head small{font-size:12.5px;font-weight:650;color:var(--ink-muted)}
-.wsc-minibar{position:relative;height:6px;border-radius:99px;background:var(--bg-panel);margin-bottom:10px;overflow:hidden}
-.wsc-day.is-today .wsc-minibar{background:color-mix(in srgb, var(--accent) 10%, var(--bg-panel))}
-.wsc-bar-seg{position:absolute;top:0;height:100%;border-radius:99px;background:var(--course,var(--accent));opacity:.9}
+.wsc-count{font-size:11px;font-weight:750;color:var(--ink-muted);background:var(--bg-panel);border-radius:99px;padding:3px 9px}
+.wsc-day.is-today .wsc-count{color:var(--accent);background:color-mix(in srgb, var(--accent) 14%, var(--bg-panel))}
 .wsc-row{
   display:flex;flex-wrap:wrap;align-items:center;gap:5px 9px;padding:7px 8px;font-size:13.5px;border-radius:7px;
   border-left:3px solid color-mix(in srgb, var(--course,var(--accent)) 65%, transparent);
