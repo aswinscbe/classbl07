@@ -1214,7 +1214,6 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";$("#prof
   renderSessionRings();
   renderAccentSwatches();
   renderTermRing();
-  renderProfileTermDayGrid();
   renderWorkloadChart();
   renderProfileInsight();
 }
@@ -1266,7 +1265,6 @@ function renderTermDayGrid(selector){
   }
   grid.innerHTML=html;
 }
-function renderProfileTermDayGrid(){renderTermDayGrid("#termDayGrid")}
 function renderWorkloadChart(){
   const el=$("#workloadChart");if(!el)return;
   const totals={};
@@ -1792,7 +1790,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova30",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova31",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
