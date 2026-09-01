@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260901-nova29">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova30">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -102,18 +102,13 @@
               <div class="hero-today-list" id="heroTodayList" hidden></div>
             </section>
 
-            <div class="achievement-nudge" id="achievementNudge" hidden></div>
-
             <section class="silent-update-strip" id="silentUpdateStrip" hidden>
               <div class="silent-update-icon"><span data-icon="spark"></span></div>
               <div><strong id="silentUpdateTitle">Schedule updated</strong><p id="silentUpdateText">New changes are available.</p></div>
               <button class="text-button" id="openUpdatesFromHome">View</button>
             </section>
 
-            <div class="home-section-row">
-              <p class="rail-section-label">This week's classes</p>
-              <button type="button" class="home-streak-badge" id="homeStreakBadge" hidden></button>
-            </div>
+            <p class="rail-section-label">This week's classes</p>
             <p class="week-digest" id="weekDigest" hidden></p>
             <div class="week-heatmap" id="weekHeatmap"></div>
             <div class="home-legend" id="homeLegend"></div>
@@ -421,20 +416,7 @@
                 <p class="rail-section-label">Workload by course</p>
                 <div class="workload-chart" id="workloadChart"></div>
               </article>
-              <article class="panel streak-panel">
-                <p class="rail-section-label">Streak</p>
-                <div class="streak-display" id="streakDisplay"></div>
-              </article>
             </div>
-
-            <article class="panel achievements-panel">
-              <p class="rail-section-label">Achievements</p>
-              <div class="achievements-row" id="achievementsRow"></div>
-            </article>
-
-            <article class="panel">
-              <div class="settings-row"><div><strong>Term Wrapped</strong><p>Your term in review — a shareable recap.</p></div><button type="button" class="secondary-button" id="openTermWrapped">View</button></div>
-            </article>
           </section>
         </div>
       </section>
@@ -506,24 +488,6 @@
       <div class="term-day-grid" id="termHeatmapDayGrid" aria-hidden="true"></div>
       <div class="term-day-grid-legend"><span>Less</span><i class="lvl0"></i><i class="lvl1"></i><i class="lvl2"></i><i class="lvl3"></i><span>More</span></div>
       <div class="term-heatmap-grid" id="termHeatmapGrid"></div>
-    </section>
-  </dialog>
-
-  <dialog id="termWrappedDialog" class="class-action-dialog">
-    <section class="class-action-sheet wrapped-sheet">
-      <div class="sheet-handle" aria-hidden="true"></div>
-      <header class="class-action-head">
-        <div>
-          <span class="sheet-code">TERM WRAPPED</span>
-          <h2>Your Term III, so far</h2>
-        </div>
-        <button type="button" class="icon-button sheet-close" id="closeTermWrapped" aria-label="Close"><span data-icon="close"></span></button>
-      </header>
-      <div class="wrapped-card" id="wrappedCard"></div>
-      <div class="wrapped-actions">
-        <button type="button" class="secondary-button" id="shareWrapped"><span data-icon="share"></span>Share</button>
-        <button type="button" class="primary-button" id="downloadWrapped"><span data-icon="download"></span>Download image</button>
-      </div>
     </section>
   </dialog>
 
@@ -611,9 +575,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260901-nova29"></script>
-  <script src="exam-data.js?v=20260901-nova29"></script>
-  <script src="app.js?v=20260901-nova29"></script>
-  <script src="polish.js?v=20260901-nova29"></script>
+  <script src="campus-data.js?v=20260902-nova30"></script>
+  <script src="exam-data.js?v=20260902-nova30"></script>
+  <script src="app.js?v=20260902-nova30"></script>
+  <script src="polish.js?v=20260902-nova30"></script>
 </body>
 </html>

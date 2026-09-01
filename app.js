@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 const API="https://script.google.com/macros/s/AKfycbxQWG7cS3quE0C8BBtRVx8PExapIvuqAB5-KLGzQMnOoDNKBMcblxMpztO77jME6EwShQ/exec";
-const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2",badgesSeen:"classbl07-nova-badges-seen-v1",busRoute:"classbl07-nova-bus-route-v1",leavingSoon:"classbl07-nova-leaving-soon-v1"};
+const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2",busRoute:"classbl07-nova-bus-route-v1",leavingSoon:"classbl07-nova-leaving-soon-v1"};
 const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69",IS:"#5aa06a"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
@@ -519,7 +519,6 @@ function renderHome(){
   }
   $("#termDone").textContent=termDone;$("#termLeft").textContent=termLeft;$("#termWeeksLeft").textContent=termWeeksLeft;
   renderTermOverviewStrip();renderWeekDigest();renderHomeLegend();
-  renderHomeStreakBadge();checkAchievementUnlocks();
   const termTotalMs=termEnd-termStart,sep1=new Date("2026-09-01T00:00:00+05:30"),oct1=new Date("2026-10-01T00:00:00+05:30");
   const sepTick=$("#termTickSep"),octTick=$("#termTickOct");
   if(sepTick)sepTick.style.left=`${Math.max(0,Math.min(100,((sep1-termStart)/termTotalMs)*100))}%`;
@@ -1217,8 +1216,6 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";$("#prof
   renderTermRing();
   renderProfileTermDayGrid();
   renderWorkloadChart();
-  renderStreak();
-  renderAchievements();
   renderProfileInsight();
 }
 function renderTermRing(){
@@ -1282,73 +1279,6 @@ function renderWorkloadChart(){
     return`<div class="workload-row" style="--course:${colorFor(code)}"><span class="wl-code">${esc(code)}</span><span class="wl-track"><span style="width:${Math.round((mins/max)*100)}%"></span></span><span class="wl-hours">${hours}h</span></div>`;
   }).join("");
 }
-function computeStreakDays(){
-  const now=new Date();
-  let streak=0,cur=new Date(`${isoToday()}T00:00:00+05:30`);
-  const todayClasses=state.classes.filter(c=>c.dateIso===isoToday());
-  const todayDone=todayClasses.length&&todayClasses.every(c=>dateTime(c,"endTime")<=now);
-  if(todayClasses.length&&!todayDone)cur.setDate(cur.getDate()-1);
-  for(let i=0;i<60;i++){
-    const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(cur);
-    const dayClasses=state.classes.filter(c=>c.dateIso===iso);
-    if(dayClasses.length){
-      if(dayClasses.some(c=>c.status==="Cancelled"))break;
-      streak++;
-    }
-    cur.setDate(cur.getDate()-1);
-  }
-  return streak;
-}
-function renderStreak(){
-  const el=$("#streakDisplay");if(!el)return;
-  const streak=computeStreakDays(),lit=streak>=3;
-  el.innerHTML=`<span class="streak-flame ${lit?"is-lit":""}">${icon("flame")}</span><div class="streak-copy"><strong>${streak} ${streak===1?"day":"days"}</strong><span>${streak?"No cancellations, back to back":"Starts today"}</span></div>`;
-}
-function computeAchievements(){
-  const now=new Date();
-  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
-  const pct=termEnd>termStart?Math.round(Math.max(0,Math.min(1,(now-termStart)/(termEnd-termStart)))*100):0;
-  const monday=new Date(`${mondayIso(isoToday())}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
-  const weekClasses=state.classes.filter(c=>dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday);
-  const weekCancelled=weekClasses.some(c=>c.status==="Cancelled");
-  const streak=computeStreakDays();
-  return[
-    {key:"started",label:"Term Started",icon:"spark",unlocked:state.classes.length>0},
-    {key:"halfway",label:"Halfway There",icon:"target",unlocked:pct>=50},
-    {key:"perfect-week",label:"Perfect Week",icon:"check",unlocked:weekClasses.length>0&&!weekCancelled},
-    {key:"busy-bee",label:"Busy Bee",icon:"books",unlocked:weekClasses.filter(c=>c.status!=="Cancelled").length>=15},
-    {key:"streak",label:"Streak Keeper",icon:"flame",unlocked:streak>=3}
-  ];
-}
-function renderAchievements(){
-  const el=$("#achievementsRow");if(!el)return;
-  el.innerHTML=computeAchievements().map(b=>`<span class="achievement-badge ${b.unlocked?"unlocked":""}"><span class="badge-icon">${icon(b.icon)}</span>${esc(b.label)}</span>`).join("");
-}
-function renderHomeStreakBadge(){
-  const el=$("#homeStreakBadge");if(!el)return;
-  const streak=computeStreakDays();
-  if(!streak){el.hidden=true;return}
-  el.hidden=false;
-  el.innerHTML=`${icon("flame")}${streak} ${streak===1?"day":"days"}`;
-}
-let _nudgeShowing=false;
-function checkAchievementUnlocks(){
-  const el=$("#achievementNudge");if(!el)return;
-  if(_nudgeShowing)return;
-  const seen=new Set(load(KEYS.badgesSeen,[]));
-  const badges=computeAchievements();
-  const newlyUnlocked=badges.find(b=>b.unlocked&&!seen.has(b.key));
-  badges.forEach(b=>{if(b.unlocked)seen.add(b.key)});
-  save(KEYS.badgesSeen,[...seen]);
-  if(newlyUnlocked){
-    _nudgeShowing=true;
-    el.hidden=false;
-    el.classList.add("shimmer-once");
-    el.innerHTML=`<span class="badge-icon">${icon(newlyUnlocked.icon)}</span><span><b>${esc(newlyUnlocked.label)}</b> unlocked — check your Insights.</span>`;
-    haptic([16,40,16]);
-  }
-}
-function dismissAchievementNudge(){_nudgeShowing=false;const el=$("#achievementNudge");if(el)el.hidden=true}
 function renderProfileInsight(){
   const el=$("#profileInsight");if(!el)return;
   const active=state.classes.filter(c=>c.status!=="Cancelled");
@@ -1379,95 +1309,6 @@ function fireConfetti(){
   }
   document.body.appendChild(root);
   setTimeout(()=>root.remove(),2200);
-}
-function computeWrappedStats(){
-  const now=new Date();
-  const completed=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")<=now);
-  const totalMins=completed.reduce((s,c)=>s+Math.max(0,minutes(c.endTime)-minutes(c.startTime)),0);
-  const byCourse={};
-  completed.forEach(c=>{const code=canonical(c.code);byCourse[code]=(byCourse[code]||0)+1});
-  const topCourse=Object.entries(byCourse).sort((a,b)=>b[1]-a[1])[0];
-  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
-  const pct=termEnd>termStart?Math.round(Math.max(0,Math.min(1,(now-termStart)/(termEnd-termStart)))*100):0;
-  const badgesUnlocked=computeAchievements().filter(b=>b.unlocked).length;
-  const savedRoute=load(KEYS.busRoute,null);
-  const goToRoute=savedRoute?`${busStopLabel(savedRoute.from)} → ${busStopLabel(savedRoute.to)}`:null;
-  return{classesDone:completed.length,hours:Math.round(totalMins/60),topCourse:topCourse?topCourse[0]:"—",streak:computeStreakDays(),pct,badgesUnlocked,goToRoute};
-}
-function renderTermWrapped(){
-  const card=$("#wrappedCard");if(!card)return;
-  const s=computeWrappedStats();
-  card.innerHTML=`
-    <div><p class="wrapped-eyebrow">BL07 · TERM III</p><h3 class="wrapped-title">${esc(state.profile.name?`${state.profile.name}'s`:"Your")} term, ${s.pct}% in</h3></div>
-    <div class="wrapped-stats">
-      <div><b>${s.classesDone}</b><span>Classes attended</span></div>
-      <div><b>${s.hours}h</b><span>Hours in class</span></div>
-      <div><b>${esc(s.topCourse)}</b><span>Most-attended course</span></div>
-      <div><b>${s.streak}</b><span>Day streak</span></div>
-      <div><b>${s.badgesUnlocked}/5</b><span>Badges unlocked</span></div>
-      ${s.goToRoute?`<div><b class="wrapped-route">${esc(s.goToRoute)}</b><span>Go-to bus route</span></div>`:""}
-    </div>
-    <p class="wrapped-footer">Generated ${esc(fmtDate(isoToday(),{day:"numeric",month:"long",year:"numeric"}))}</p>`;
-}
-function roundRectPath(ctx,x,y,w,h,r){
-  ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
-}
-function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight){
-  const words=String(text).split(" ");let line="",lines=[];
-  words.forEach(w=>{const test=line?`${line} ${w}`:w;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=w}else line=test});
-  if(line)lines.push(line);
-  lines.forEach((l,i)=>ctx.fillText(l,x,y+i*lineHeight));
-  return lines.length;
-}
-function downloadBlob(blob,filename){
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),4000);
-}
-function drawWrappedCanvas(){
-  const s=computeWrappedStats();
-  const canvas=document.createElement("canvas");canvas.width=1080;canvas.height=1080;
-  const ctx=canvas.getContext("2d");
-  const styles=getComputedStyle(document.documentElement);
-  const accent=styles.getPropertyValue("--accent").trim()||"#9c5aa3",accent2=styles.getPropertyValue("--accent-2").trim()||"#c98a4f";
-  const grad=ctx.createLinearGradient(0,0,1080,1080);grad.addColorStop(0,"#1c1220");grad.addColorStop(.55,accent);grad.addColorStop(1,accent2);
-  ctx.fillStyle=grad;roundRectPath(ctx,0,0,1080,1080,36);ctx.fill();
-  ctx.fillStyle="rgba(255,255,255,.8)";ctx.font="700 26px 'Public Sans',sans-serif";ctx.fillText("BL07 · TERM III",64,110);
-  ctx.fillStyle="#fff";ctx.font="800 54px 'Lexend',sans-serif";
-  wrapCanvasText(ctx,`${state.profile.name?`${state.profile.name}'s`:"Your"} term, ${s.pct}% in`,64,190,950,62);
-  const stats=[[String(s.classesDone),"Classes attended"],[`${s.hours}h`,"Hours in class"],[s.topCourse,"Most-attended course"],[String(s.streak),"Day streak"],[`${s.badgesUnlocked}/5`,"Badges unlocked"]];
-  if(s.goToRoute)stats.push([s.goToRoute,"Go-to bus route"]);
-  const colW=480,rowH=150,startY=470;
-  stats.forEach((st,i)=>{
-    const col=i%2,row=Math.floor(i/2),x=64+col*colW,y=startY+row*rowH;
-    if(st[0].length>10){
-      ctx.fillStyle="#fff";ctx.font="800 27px 'Lexend',sans-serif";
-      wrapCanvasText(ctx,st[0],x,y-12,colW-40,32);
-    }else{
-      ctx.fillStyle="#fff";ctx.font="800 48px 'Lexend',sans-serif";ctx.fillText(st[0],x,y);
-    }
-    ctx.fillStyle="rgba(255,255,255,.75)";ctx.font="600 19px 'Public Sans',sans-serif";ctx.fillText(st[1],x,y+32);
-  });
-  ctx.fillStyle="rgba(255,255,255,.6)";ctx.font="600 17px 'Public Sans',sans-serif";
-  ctx.fillText(`Generated ${fmtDate(isoToday(),{day:"numeric",month:"long",year:"numeric"})}`,64,1000);
-  return canvas;
-}
-async function downloadWrappedImage(){
-  const canvas=drawWrappedCanvas();
-  const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));
-  downloadBlob(blob,"bl07-term-wrapped.png");
-}
-async function shareWrappedImage(){
-  const s=computeWrappedStats();
-  const text=`My BL07 Term III so far: ${s.classesDone} classes attended, ${s.hours}h in class, ${s.streak}-day streak, ${s.pct}% through the term.`;
-  try{
-    const canvas=drawWrappedCanvas();
-    const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));
-    const file=new File([blob],"bl07-term-wrapped.png",{type:"image/png"});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"BL07 Term Wrapped",text});return}
-  }catch(e){if(e&&e.name==="AbortError")return}
-  if(navigator.share){try{await navigator.share({title:"BL07 Term Wrapped",text});return}catch(e){if(e&&e.name==="AbortError")return}}
-  try{await navigator.clipboard.writeText(text);showToast("Summary copied to clipboard")}catch(e){showToast("Couldn't share right now")}
 }
 /* Gate-change / status tag for a notification, matching the bus gate-board and timeline
    tag language depending on what kind of schedule change it is. Presentation only — the
@@ -1857,8 +1698,6 @@ function bind(){
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>openCampusTab(b.dataset.campusTab)));
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerTab(b.dataset.plannerTab)));
   $$(".subtab[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-profile-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".profile-view").forEach(v=>v.classList.toggle("active",v.dataset.profileView===b.dataset.profileTab))}));
-  $("#homeStreakBadge")?.addEventListener("click",()=>{showPage("profile");$('.subtab[data-profile-tab="insights"]')?.click()});
-  $("#achievementNudge")?.addEventListener("click",()=>{dismissAchievementNudge();showPage("profile");$('.subtab[data-profile-tab="insights"]')?.click()});
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});
   $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
   $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
@@ -1904,10 +1743,6 @@ function bind(){
   bindSwipeGesture($("#dateRail"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"",threshold:46});
   $("#plannerDayWeekToggle")?.addEventListener("click",e=>{const b=e.target.closest("[data-pv-mode]");if(!b)return;setPlannerViewMode(b.dataset.pvMode)});
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
-  $("#openTermWrapped")?.addEventListener("click",()=>{renderTermWrapped();$("#termWrappedDialog").showModal()});
-  $("#closeTermWrapped")?.addEventListener("click",()=>closeDialog($("#termWrappedDialog")));
-  $("#shareWrapped")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await shareWrappedImage();b.disabled=false});
-  $("#downloadWrapped")?.addEventListener("click",async e=>{const b=e.currentTarget;b.disabled=true;await downloadWrappedImage();b.disabled=false;showToast("Image downloaded")});
   $("#termProgressCard")?.addEventListener("click",()=>{renderTermHeatmap();$("#termHeatmapDialog").showModal()});
   $("#termHeatmapGrid")?.addEventListener("click",e=>{
     const row=e.target.closest(".term-heatmap-row");if(!row)return;
@@ -1957,7 +1792,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260901-nova29",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova30",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);

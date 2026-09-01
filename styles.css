@@ -890,24 +890,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .workload-row .wl-track{flex:1;height:7px;border-radius:99px;background:var(--bg-panel);overflow:hidden}
 .workload-row .wl-track span{display:block;height:100%;border-radius:inherit;background:var(--course,var(--accent))}
 .workload-row .wl-hours{flex:none;font-weight:700;color:var(--ink-muted);min-width:34px;text-align:right}
-.streak-display{display:flex;align-items:center;gap:12px;margin-top:2px}
-.streak-flame{width:44px;height:44px;flex:none;border-radius:14px;display:grid;place-items:center;background:var(--amber-soft);color:var(--amber)}
-.streak-flame svg{width:24px;height:24px}
-.streak-flame.is-lit{background:linear-gradient(135deg,var(--amber),var(--danger));color:#fff}
-.streak-copy strong{display:block;font-size:20px;font-weight:800}
-.streak-copy span{font-size:12px;color:var(--ink-muted);font-weight:600}
-
-.achievements-panel{margin-top:0}
-.achievements-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:2px}
-.achievement-badge{
-  display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;border-radius:99px;
-  background:var(--bg-panel);border:1px solid var(--border);font-size:12px;font-weight:700;color:var(--ink-faint);
-}
-.achievement-badge .badge-icon{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--bg-elevated);flex:none}
-.achievement-badge .badge-icon svg{width:14px;height:14px}
-.achievement-badge.unlocked{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
-.achievement-badge.unlocked .badge-icon{background:var(--accent);color:#fff}
-
 .accent-preview{
   margin-top:4px;padding:12px 14px;border-radius:var(--radius-md);
   background:var(--grad);color:var(--on-grad);display:flex;align-items:center;justify-content:space-between;
@@ -916,23 +898,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .accent-preview-tag{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--on-grad-muted)}
 .accent-preview strong{font-size:14px;font-weight:750;color:var(--on-grad)}
 
-.wrapped-sheet{max-width:420px}
-.wrapped-card{
-  margin-top:14px;padding:22px;border-radius:var(--radius-xl);aspect-ratio:1/1;
-  background:var(--grad);color:var(--on-grad);display:flex;flex-direction:column;justify-content:space-between;
-  box-shadow:var(--shadow-lg);position:relative;overflow:hidden;
-}
-.wrapped-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 100% 0%, rgba(255,255,255,.14) 0%, transparent 55%);pointer-events:none}
-.wrapped-card>*{position:relative}
-.wrapped-eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--on-grad-muted);text-transform:uppercase}
-.wrapped-title{font-size:22px;font-weight:800;margin:4px 0 0;line-height:1.2}
-.wrapped-stats{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.wrapped-stats b{display:block;font-size:26px;font-weight:800}
-.wrapped-stats span{font-size:11px;font-weight:650;color:var(--on-grad-muted)}
-.wrapped-stats b.wrapped-route{font-size:15px;line-height:1.3}
-.wrapped-footer{font-size:11px;font-weight:650;color:var(--on-grad-muted)}
-.wrapped-actions{display:flex;gap:10px;margin-top:14px}
-.wrapped-actions button{flex:1}
 
 .profile-form{display:flex;flex-direction:column;gap:14px}
 .profile-form label{display:flex;flex-direction:column;gap:6px}
@@ -1428,33 +1393,8 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:7px;
 .fb-time{color:var(--ink-muted);font-weight:600}
 .fb-dur{font-weight:800;color:var(--accent);flex:none;font-size:11.5px}
 
-/* ============ Home streak badge + achievement nudge ============ */
-.home-section-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 8px}
-.home-section-row .rail-section-label{margin:0}
-.home-streak-badge{
-  display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 6px;border-radius:99px;
-  background:var(--amber-soft);color:var(--amber);border:0;font-size:11.5px;font-weight:800;
-}
-.home-streak-badge svg{width:13px;height:13px;animation:flame-flicker 2s ease-in-out infinite}
-@keyframes flame-flicker{0%,100%{opacity:1;transform:scale(1)}25%{opacity:.85;transform:scale(.96) rotate(-2deg)}50%{opacity:1;transform:scale(1.05)}75%{opacity:.9;transform:scale(.98) rotate(2deg)}}
-@media(prefers-reduced-motion: reduce){.home-streak-badge svg{animation:none}}
-.achievement-nudge{
-  display:flex;align-items:center;gap:10px;margin-top:12px;padding:12px 14px;border-radius:var(--radius-md);
-  background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:650;
-  animation:fade-in .25s ease;cursor:pointer;border:0;width:100%;text-align:left;font-family:inherit;
-  position:relative;overflow:hidden;
-  transition:transform .15s ease,box-shadow .15s ease;
-}
 .wsc-day,.exam-strip,.term-progress-head{transition:transform .15s ease,box-shadow .15s ease}
 @media (hover:hover){
-  .wsc-day:hover,.exam-strip:hover,.term-progress-head:hover,.achievement-nudge:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+  .wsc-day:hover,.exam-strip:hover,.term-progress-head:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 }
-.wsc-day:active,.exam-strip:active,.term-progress-head:active,.achievement-nudge:active{transform:scale(.98)}
-.achievement-nudge.shimmer-once::after{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--accent) 35%, transparent) 48%, transparent 66%);
-  background-size:250% 100%;animation:shimmer-sweep 1.1s ease-out 1;
-}
-.achievement-nudge .badge-icon{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;flex:none}
-.achievement-nudge .badge-icon svg{width:16px;height:16px}
-.achievement-nudge b{font-weight:800}
+.wsc-day:active,.exam-strip:active,.term-progress-head:active{transform:scale(.98)}
