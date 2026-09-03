@@ -697,7 +697,7 @@ function renderWeekScan(days){
   const today=isoToday(),now=new Date();
   const upcoming=days.filter(iso=>iso>=today);
   const visibleDays=upcoming.length?upcoming:days;
-  list.innerHTML=visibleDays.map(iso=>{
+  list.innerHTML=visibleDays.map((iso,dayIdx)=>{
     const dayClasses=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
     const isTodayRow=iso===today;
     const nextUpId=isTodayRow?classIdentity(dayClasses.find(c=>c.status!=="Cancelled"&&now<dateTime(c,"startTime"))||{}):null;
@@ -705,18 +705,20 @@ function renderWeekScan(days){
       const cancelled=c.status==="Cancelled";
       const isLive=isTodayRow&&!cancelled&&now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime");
       const isNext=isTodayRow&&!cancelled&&classIdentity(c)===nextUpId;
-      const badge=isLive?'<b class="wsc-badge live">LIVE</b>':isNext?'<b class="wsc-badge upcoming">UPCOMING</b>':"";
+      const badge=isLive?'<b class="wsc-badge live"><i></i>LIVE</b>':isNext?'<b class="wsc-badge upcoming">UPCOMING</b>':"";
       return`<div class="wsc-row ${cancelled?"cancelled":""} ${isLive?"is-live":""}" style="--course:${colorFor(c.code)}">
-        <span class="wsc-time">${esc(fmtRange(c.startTime,c.endTime))}</span>
-        <span class="wsc-code">${esc(canonical(c.code))}</span>
-        <span class="wsc-room">${esc(venueOf(c))}</span>
-        ${badge}
+        <div class="wsc-row-top">
+          <span class="wsc-time">${esc(fmtRange(c.startTime,c.endTime))}</span>
+          <span class="wsc-code">${esc(canonical(c.code))}</span>
+          ${badge}
+        </div>
+        <div class="wsc-row-room">${icon("pin")}<span>${esc(venueOf(c))}</span></div>
       </div>`;
     }).join("");
     const isToday=iso===today;
     const activeDayClasses=dayClasses.filter(c=>c.status!=="Cancelled");
     const countText=activeDayClasses.length?(isToday?`${activeDayClasses.filter(c=>now>=dateTime(c,"endTime")).length}/${activeDayClasses.length}`:`${activeDayClasses.length} ${activeDayClasses.length===1?"class":"classes"}`):"";
-    return`<button type="button" class="wsc-day ${isToday?"is-today":""}" data-date="${iso}" style="--density:${Math.min(6,dayClasses.length)}">
+    return`<button type="button" class="wsc-day ${isToday?"is-today":""}" data-date="${iso}" style="--density:${Math.min(6,dayClasses.length)};--i:${dayIdx}">
       <div class="wsc-day-head"><span>${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wsc-today-badge">TODAY</b>':""}</span><div class="wsc-day-head-right">${countText?`<b class="wsc-count">${esc(countText)}</b>`:""}<small>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</small></div></div>
       ${rows||'<p class="wsc-empty">Free day</p>'}
     </button>`;
@@ -1792,7 +1794,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova38",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova39",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
