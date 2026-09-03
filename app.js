@@ -91,7 +91,7 @@ function renderThemeToggleIcon(theme){
   setTimeout(()=>span.classList.remove("icon-morph"),320);
 }
 const ACCENT_PRESETS={
-  plum:{name:"Royal Indigo",dark:{accent:"#7c6cff",accent2:"#6553ed"},light:{accent:"#6854e8",accent2:"#5743d4"},grad:"linear-gradient(135deg,#1b1440 0%,#342477 55%,#6553ed 100%)",glow:"#342477"},
+  plum:{name:"Slate Blue",dark:{accent:"#5b7fd6",accent2:"#4a68b8"},light:{accent:"#4a68b8",accent2:"#3d55a0"},grad:"linear-gradient(135deg,#12172a 0%,#1f2b52 55%,#4a68b8 100%)",glow:"#1f2b52"},
   teal:{name:"Ocean Teal",dark:{accent:"#4fa3b0",accent2:"#4fb08a"},light:{accent:"#2f7a8c",accent2:"#2f8c68"},grad:"linear-gradient(135deg,#0e2530 0%,#155066 55%,#2f8c68 100%)",glow:"#155066"},
   crimson:{name:"Crimson Ember",dark:{accent:"#c15a6e",accent2:"#d98a4f"},light:{accent:"#a83f52",accent2:"#a5673f"},grad:"linear-gradient(135deg,#2a1114 0%,#5e2a35 55%,#a5673f 100%)",glow:"#5e2a35"},
   indigo:{name:"Indigo Slate",dark:{accent:"#6a7bc9",accent2:"#4fb0a0"},light:{accent:"#4a5aa8",accent2:"#2f8c7e"},grad:"linear-gradient(135deg,#151a35 0%,#2a3566 55%,#2f8c7e 100%)",glow:"#2a3566"},
@@ -718,7 +718,8 @@ function renderWeekScan(days){
     const isToday=iso===today;
     const activeDayClasses=dayClasses.filter(c=>c.status!=="Cancelled");
     const countText=activeDayClasses.length?(isToday?`${activeDayClasses.filter(c=>now>=dateTime(c,"endTime")).length}/${activeDayClasses.length}`:`${activeDayClasses.length} ${activeDayClasses.length===1?"class":"classes"}`):"";
-    return`<button type="button" class="wsc-day ${isToday?"is-today":""}" data-date="${iso}" style="--density:${Math.min(6,dayClasses.length)};--i:${dayIdx}">
+    const dayTint=activeDayClasses.length?colorFor(activeDayClasses[0].code):"transparent";
+    return`<button type="button" class="wsc-day ${isToday?"is-today":""} ${!activeDayClasses.length?"is-free":""}" data-date="${iso}" style="--density:${Math.min(6,dayClasses.length)};--i:${dayIdx};--wsc-tint:${dayTint}">
       <div class="wsc-day-head"><span>${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wsc-today-badge">TODAY</b>':""}</span><div class="wsc-day-head-right">${countText?`<b class="wsc-count">${esc(countText)}</b>`:""}<small>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</small></div></div>
       ${rows||'<p class="wsc-empty">Free day</p>'}
     </button>`;
@@ -1794,7 +1795,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova39",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova40",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);

@@ -6,32 +6,32 @@
 
 :root{
   /* dark (default until profile/system says otherwise) */
-  --bg:#150f16;
-  --bg-elevated:#1e1720;
-  --bg-panel:#1a141c;
-  --bg-raised:#241b27;
-  --ink:#f3ecf2;
-  --ink-muted:#a996a8;
-  --ink-faint:#7d6c7d;
-  --accent:#7c6cff;
-  --accent-2:#6553ed;
-  --accent-soft:rgba(124,108,255,.18);
-  --live:#6fa383;
-  --live-soft:rgba(111,163,131,.16);
-  --amber:#d0a24a;
-  --amber-soft:rgba(208,162,74,.16);
-  --danger:#c25b6e;
-  --danger-soft:rgba(194,91,110,.18);
-  --border:#2e2530;
-  --border-strong:#3d3140;
+  --bg:#12151a;
+  --bg-elevated:#1a1e25;
+  --bg-panel:#161920;
+  --bg-raised:#20242c;
+  --ink:#eef1f5;
+  --ink-muted:#9aa3b0;
+  --ink-faint:#6b7280;
+  --accent:#5b7fd6;
+  --accent-2:#4a68b8;
+  --accent-soft:rgba(91,127,214,.16);
+  --live:#5c9c82;
+  --live-soft:rgba(92,156,130,.15);
+  --amber:#c99a4a;
+  --amber-soft:rgba(201,154,74,.15);
+  --danger:#c1615f;
+  --danger-soft:rgba(193,97,95,.16);
+  --border:#262b33;
+  --border-strong:#333a44;
   --shadow-lg:0 22px 48px -24px rgba(0,0,0,.6);
   --shadow-md:0 12px 26px -16px rgba(0,0,0,.5);
   --shadow-sm:0 6px 14px -10px rgba(0,0,0,.45);
-  --grad:linear-gradient(135deg,#1b1440 0%,#342477 55%,#6553ed 100%);
-  --grad-glow:rgba(52,36,119,.4);
-  --on-grad:#f6ecf7;
-  --on-grad-muted:#d3b6d8;
-  --on-grad-line:rgba(255,255,255,.14);
+  --grad:linear-gradient(135deg,#12172a 0%,#1f2b52 55%,#4a68b8 100%);
+  --grad-glow:rgba(30,42,80,.35);
+  --on-grad:#eef1f5;
+  --on-grad-muted:#b7c0cc;
+  --on-grad-line:rgba(255,255,255,.12);
   --radius-xl:20px;
   --radius-lg:16px;
   --radius-md:14px;
@@ -44,52 +44,52 @@
   color-scheme:dark;
 }
 :root[data-theme="light"]{
-  --bg:#f4eef4;
+  --bg:#f3f5f8;
   --bg-elevated:#ffffff;
-  --bg-panel:#f7f0f7;
+  --bg-panel:#f6f8fa;
   --bg-raised:#ffffff;
-  --ink:#241a26;
-  --ink-muted:#7c6b7e;
-  --ink-faint:#9c8d9e;
-  --accent:#6854e8;
-  --accent-2:#5743d4;
-  --accent-soft:rgba(104,84,232,.12);
+  --ink:#1c2128;
+  --ink-muted:#6b7280;
+  --ink-faint:#98a1ab;
+  --accent:#4a68b8;
+  --accent-2:#3d55a0;
+  --accent-soft:rgba(74,104,184,.12);
   --live:#3f7d5c;
   --live-soft:rgba(63,125,92,.12);
   --amber:#a97a2e;
   --amber-soft:rgba(169,122,46,.14);
-  --danger:#a83f52;
-  --danger-soft:rgba(168,63,82,.12);
-  --border:#e3d4e3;
-  --border-strong:#cfb8cf;
-  --shadow-lg:0 22px 48px -28px rgba(60,20,60,.22);
-  --shadow-md:0 10px 22px -16px rgba(60,20,60,.18);
-  --shadow-sm:0 5px 12px -9px rgba(60,20,60,.16);
+  --danger:#b34a4a;
+  --danger-soft:rgba(179,74,74,.12);
+  --border:#dde2e8;
+  --border-strong:#c7ced8;
+  --shadow-lg:0 22px 48px -28px rgba(20,30,50,.2);
+  --shadow-md:0 10px 22px -16px rgba(20,30,50,.16);
+  --shadow-sm:0 5px 12px -9px rgba(20,30,50,.14);
   color-scheme:light;
 }
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]):not([data-theme="light"]){
-    --bg:#f4eef4;
+    --bg:#f3f5f8;
     --bg-elevated:#ffffff;
-    --bg-panel:#f7f0f7;
+    --bg-panel:#f6f8fa;
     --bg-raised:#ffffff;
-    --ink:#241a26;
-    --ink-muted:#7c6b7e;
-    --ink-faint:#9c8d9e;
-    --accent:#6854e8;
-    --accent-2:#5743d4;
-    --accent-soft:rgba(104,84,232,.12);
+    --ink:#1c2128;
+    --ink-muted:#6b7280;
+    --ink-faint:#98a1ab;
+    --accent:#4a68b8;
+    --accent-2:#3d55a0;
+    --accent-soft:rgba(74,104,184,.12);
     --live:#3f7d5c;
     --live-soft:rgba(63,125,92,.12);
     --amber:#a97a2e;
     --amber-soft:rgba(169,122,46,.14);
-    --danger:#a83f52;
-    --danger-soft:rgba(168,63,82,.12);
-    --border:#e3d4e3;
-    --border-strong:#cfb8cf;
-    --shadow-lg:0 22px 48px -28px rgba(60,20,60,.22);
-    --shadow-md:0 10px 22px -16px rgba(60,20,60,.18);
-    --shadow-sm:0 5px 12px -9px rgba(60,20,60,.16);
+    --danger:#b34a4a;
+    --danger-soft:rgba(179,74,74,.12);
+    --border:#dde2e8;
+    --border-strong:#c7ced8;
+    --shadow-lg:0 22px 48px -28px rgba(20,30,50,.2);
+    --shadow-md:0 10px 22px -16px rgba(20,30,50,.16);
+    --shadow-sm:0 5px 12px -9px rgba(20,30,50,.14);
     color-scheme:light;
   }
 }
@@ -251,11 +251,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .icon-button-lg{width:46px;height:46px;border-radius:13px}
 .icon-button-lg svg{width:22px;height:22px}
 .notification-button{transition:box-shadow .3s ease}
-.notification-button:has(b:not([hidden])){box-shadow:0 0 0 1px var(--border), 0 0 14px -4px color-mix(in srgb, var(--danger) 50%, transparent)}
+.notification-button:has(b:not([hidden])){box-shadow:0 0 0 1px var(--border), 0 0 10px -4px color-mix(in srgb, var(--danger) 30%, transparent)}
 .notification-button b{
   position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:99px;
   background:var(--danger);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;
-  border:2px solid var(--bg-elevated);box-shadow:0 0 0 1px color-mix(in srgb, var(--danger) 45%, transparent), 0 0 6px color-mix(in srgb, var(--danger) 55%, transparent);
+  border:2px solid var(--bg-elevated);box-shadow:0 0 0 1px color-mix(in srgb, var(--danger) 45%, transparent), 0 0 4px color-mix(in srgb, var(--danger) 32%, transparent);
 }
 .notification-button b.pop{animation:badge-pop .45s cubic-bezier(.34,1.56,.64,1)}
 @keyframes badge-pop{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
@@ -314,13 +314,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .primary-button{
   background:var(--accent);color:#fff;border:0;border-radius:12px;
   padding:12px 18px;font-size:15px;font-weight:750;
-  box-shadow:0 4px 16px -4px color-mix(in srgb, var(--accent) 55%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  box-shadow:0 3px 12px -4px color-mix(in srgb, var(--accent) 32%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
   transition:transform .12s ease, box-shadow .2s ease;
 }
 @media (hover:hover){
-  .primary-button:hover{box-shadow:0 6px 22px -4px color-mix(in srgb, var(--accent) 65%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent)}
+  .primary-button:hover{box-shadow:0 4px 16px -4px color-mix(in srgb, var(--accent) 40%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent)}
 }
-.primary-button:active{transform:scale(.98);box-shadow:0 2px 8px -2px color-mix(in srgb, var(--accent) 45%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent)}
+.primary-button:active{transform:scale(.98);box-shadow:0 2px 6px -2px color-mix(in srgb, var(--accent) 26%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent)}
 .primary-button.full-width{width:100%}
 .secondary-button{
   background:var(--bg-panel);color:var(--ink);border:1px solid var(--border);border-radius:12px;
@@ -360,7 +360,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:var(--shadow-md),
     inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
     inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent),
-    0 0 46px -10px color-mix(in srgb, var(--focus-course,var(--accent)) 45%, transparent),
+    0 0 32px -12px color-mix(in srgb, var(--focus-course,var(--accent)) 26%, transparent),
     0 0 0 1px color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);
   border:1px solid var(--border);
   position:relative;overflow:hidden;
@@ -384,12 +384,12 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .hero-card.is-live.is-urgent{background:color-mix(in srgb, var(--amber) 12%, var(--bg-elevated));border-color:color-mix(in srgb, var(--amber) 50%, var(--border));animation:hero-live-glow-urgent 1.4s ease-in-out infinite}
 @keyframes hero-live-glow{
-  0%,100%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 46px -10px color-mix(in srgb, var(--focus-course,var(--live)) 45%, transparent), 0 0 0 1px color-mix(in srgb, var(--focus-course,var(--live)) 16%, transparent)}
-  50%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 62px -6px color-mix(in srgb, var(--focus-course,var(--live)) 62%, transparent), 0 0 0 1px color-mix(in srgb, var(--focus-course,var(--live)) 32%, transparent)}
+  0%,100%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 32px -12px color-mix(in srgb, var(--focus-course,var(--live)) 26%, transparent), 0 0 0 1px color-mix(in srgb, var(--focus-course,var(--live)) 16%, transparent)}
+  50%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 42px -8px color-mix(in srgb, var(--focus-course,var(--live)) 36%, transparent), 0 0 0 1px color-mix(in srgb, var(--focus-course,var(--live)) 32%, transparent)}
 }
 @keyframes hero-live-glow-urgent{
-  0%,100%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 46px -10px color-mix(in srgb, var(--amber) 50%, transparent), 0 0 0 1px color-mix(in srgb, var(--amber) 20%, transparent)}
-  50%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 62px -6px color-mix(in srgb, var(--amber) 68%, transparent), 0 0 0 1px color-mix(in srgb, var(--amber) 38%, transparent)}
+  0%,100%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 32px -12px color-mix(in srgb, var(--amber) 30%, transparent), 0 0 0 1px color-mix(in srgb, var(--amber) 20%, transparent)}
+  50%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 42px -8px color-mix(in srgb, var(--amber) 40%, transparent), 0 0 0 1px color-mix(in srgb, var(--amber) 38%, transparent)}
 }
 @media(prefers-reduced-motion: reduce){.hero-card.is-live,.hero-card.is-live.is-urgent{animation:none}}
 .hero-card.is-break{border-color:color-mix(in srgb, var(--amber) 45%, var(--border))}
@@ -484,8 +484,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .exam-hero>*{position:relative;z-index:1}
 .exam-hero.is-imminent{animation:exam-glow 2.2s ease-in-out infinite}
 @keyframes exam-glow{
-  0%,100%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 40px -10px color-mix(in srgb, var(--course,var(--danger)) 42%, transparent), 0 0 0 1px color-mix(in srgb, var(--course,var(--danger)) 15%, transparent)}
-  50%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 58px -6px color-mix(in srgb, var(--course,var(--danger)) 60%, transparent), 0 0 0 1px color-mix(in srgb, var(--course,var(--danger)) 32%, transparent)}
+  0%,100%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 28px -12px color-mix(in srgb, var(--course,var(--danger)) 24%, transparent), 0 0 0 1px color-mix(in srgb, var(--course,var(--danger)) 15%, transparent)}
+  50%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 38px -8px color-mix(in srgb, var(--course,var(--danger)) 34%, transparent), 0 0 0 1px color-mix(in srgb, var(--course,var(--danger)) 32%, transparent)}
 }
 @media(prefers-reduced-motion: reduce){.exam-hero.is-imminent{animation:none}}
 .exam-hero-main{min-width:0;flex:1}
@@ -744,7 +744,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:var(--shadow-lg),
     inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
     inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent),
-    0 0 46px -10px color-mix(in srgb, var(--accent) 42%, transparent),
+    0 0 32px -12px color-mix(in srgb, var(--accent) 24%, transparent),
     0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent);
   border:1px solid var(--border);position:relative;overflow:hidden;
 }
@@ -906,7 +906,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:var(--shadow-lg),
     inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
     inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent),
-    0 0 46px -10px color-mix(in srgb, var(--accent) 42%, transparent),
+    0 0 32px -12px color-mix(in srgb, var(--accent) 24%, transparent),
     0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent);
   border:1px solid var(--border);position:relative;overflow:hidden;
 }
@@ -1040,18 +1040,24 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wsc-day{
   display:block;width:100%;text-align:left;border:1px solid var(--border);
   background:color-mix(in srgb, var(--accent) calc(var(--density, 0) * 3%), var(--bg-panel));
-  border-radius:var(--radius-md);padding:12px 14px;font:inherit;color:inherit;
-  transition:background .3s ease;position:relative;overflow:hidden;
+  border-radius:var(--radius-md);padding:15px 14px 12px;font:inherit;color:inherit;
+  transition:background .3s ease,border-color .3s ease;position:relative;overflow:hidden;
   animation:wsc-day-in .45s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i, 0) * 55ms);
 }
 @keyframes wsc-day-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion: reduce){.wsc-day{animation:none}}
+.wsc-day:not(.is-today)::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:3px;
+  background:color-mix(in srgb, var(--wsc-tint, transparent) 75%, transparent);
+}
+.wsc-day.is-free:not(.is-today){border-style:dashed;background:transparent}
+.wsc-day.is-free:not(.is-today) .wsc-day-head span{color:var(--ink-faint);font-weight:700}
 .wsc-day.is-today{
   border-color:transparent;
   background:color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
   box-shadow:var(--shadow-md),
     inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent),
-    0 0 34px -10px color-mix(in srgb, var(--accent) 48%, transparent),
+    0 0 24px -12px color-mix(in srgb, var(--accent) 26%, transparent),
     0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
   padding-left:14px;
 }
@@ -1088,7 +1094,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wsc-badge.upcoming{background:var(--accent)}
 .wsc-row.is-live{
   background:color-mix(in srgb, var(--live) 14%, transparent);border-left-color:var(--live);
-  box-shadow:0 0 0 1px color-mix(in srgb, var(--live) 30%, transparent), 0 0 18px -6px color-mix(in srgb, var(--live) 55%, transparent);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--live) 30%, transparent), 0 0 12px -6px color-mix(in srgb, var(--live) 32%, transparent);
 }
 @keyframes wsc-live-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
 @media(prefers-reduced-motion: reduce){.wsc-badge.live i{animation:none}}
