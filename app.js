@@ -14,6 +14,22 @@ const colorFor=c=>COURSE_COLORS[canonical(c)]||"#7b8aa2";
 const venueOf=c=>c.venue||c.room||"Venue TBA";
 function load(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function animateCount(el,endVal,suffix=""){
+  if(!el)return;
+  endVal=Math.round(endVal);
+  const startVal=Number(el.dataset.countVal)||0;
+  if(startVal===endVal){el.textContent=endVal+suffix;el.dataset.countVal=endVal;return}
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){el.textContent=endVal+suffix;el.dataset.countVal=endVal;return}
+  const duration=550,start=performance.now();
+  cancelAnimationFrame(el._countRaf);
+  const tick=now=>{
+    const p=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-p,3);
+    el.textContent=Math.round(startVal+(endVal-startVal)*eased)+suffix;
+    if(p<1)el._countRaf=requestAnimationFrame(tick);
+    else el.dataset.countVal=endVal;
+  };
+  el._countRaf=requestAnimationFrame(tick);
+}
 function showToast(message){let toast=$("#appToast");if(!toast){toast=document.createElement("div");toast.id="appToast";toast.className="app-toast";toast.setAttribute("role","status");toast.setAttribute("aria-live","polite");document.body.appendChild(toast)}toast.textContent=message;toast.classList.remove("show");requestAnimationFrame(()=>toast.classList.add("show"));clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toast.classList.remove("show"),2400)}
 function updateOfflineBanner(reconnected){
   const el=$("#offlineBanner");if(!el)return;
@@ -509,7 +525,7 @@ function renderHome(){
   const termAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=termStart&&dateTime(c,"startTime")<=termEnd);
   const termDone=termAll.filter(c=>dateTime(c,"endTime")<now).length,termLeft=Math.max(0,termAll.length-termDone);
   const termPct=termAll.length?Math.round(termDone/termAll.length*100):0,termWeeksLeft=Math.max(0,Math.ceil((termEnd-now)/(7*24*3600000)));
-  $("#termProgressPct").textContent=`${termPct}%`;
+  animateCount($("#termProgressPct"),termPct,"%");
   const termBar=$("#termProgressBar");
   if(termBar){
     if(!state._termBarAnimated){
@@ -517,7 +533,7 @@ function renderHome(){
       requestAnimationFrame(()=>requestAnimationFrame(()=>{termBar.style.width=`${termPct}%`}));
     }else termBar.style.width=`${termPct}%`;
   }
-  $("#termDone").textContent=termDone;$("#termLeft").textContent=termLeft;$("#termWeeksLeft").textContent=termWeeksLeft;
+  animateCount($("#termDone"),termDone);animateCount($("#termLeft"),termLeft);animateCount($("#termWeeksLeft"),termWeeksLeft);
   renderTermOverviewStrip();renderWeekDigest();renderHomeLegend();
   const termTotalMs=termEnd-termStart,sep1=new Date("2026-09-01T00:00:00+05:30"),oct1=new Date("2026-10-01T00:00:00+05:30");
   const sepTick=$("#termTickSep"),octTick=$("#termTickOct");
@@ -639,7 +655,7 @@ function dayCardListHtml(classes,dayIso,opts={}){
       }
     }
     html+=`<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)};min-height:${blockPx}px">
-      <div class="day-cardlist-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small><span class="tag ${tag.cls}">${esc(tag.text)}</span></div>
+      <div class="day-cardlist-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small><span class="status-tag ${tag.cls}">${esc(tag.text)}</span></div>
       <div class="day-cardlist-body">
         <div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong>${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}${sessionN?`<span class="dc-session-badge">${sessionN}/${SESSION_TARGET}</span>`:""}</div>
         ${progress!==null?`<div class="day-cardlist-progress"><span style="width:${progress}%"></span></div>`:""}
@@ -1803,7 +1819,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova43",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova44",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
