@@ -1664,6 +1664,7 @@ function bind(){
   $("#sectionPeekSlider")?.addEventListener("click",e=>{const b=e.target.closest("[data-peek]");if(!b)return;setSectionView(b.dataset.peek)});
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
   $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$(`.accent-swatch[data-accent="${b.dataset.accent}"]`);if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
+  $("#resetAccentButton")?.addEventListener("click",()=>{state.profile.accent="plum";save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$('.accent-swatch[data-accent="plum"]');if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
   $("#topMoreButton")?.addEventListener("click",e=>{e.stopPropagation();const menu=$("#topMoreMenu"),open=menu.classList.toggle("open");$("#topMoreButton").setAttribute("aria-expanded",String(open))});
   document.addEventListener("click",e=>{const menu=$("#topMoreMenu");if(menu&&menu.classList.contains("open")&&!e.target.closest("#topMoreMenu,#topMoreButton")){menu.classList.remove("open");$("#topMoreButton").setAttribute("aria-expanded","false")}});
   $("#topMoreMenu")?.addEventListener("click",e=>{if(e.target.closest("button")){$("#topMoreMenu").classList.remove("open");$("#topMoreButton")?.setAttribute("aria-expanded","false")}});
@@ -1795,7 +1796,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova40",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova41",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);

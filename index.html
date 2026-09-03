@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260902-nova40">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova41">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -385,7 +385,11 @@
                 <label><span>Section</span><select id="profileSection"><option value="A">Section A</option><option value="B">Section B</option></select></label>
                 <div class="selected-electives-card"><span>Electives</span><div id="selectedElectiveChips" class="selected-elective-chips"></div><button class="secondary-button" type="button" id="chooseElectivesInline">Choose electives</button></div>
                 <label><span>Appearance</span><select id="profileTheme"><option value="system">Follow device</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
-                <div class="accent-picker-field"><span>Accent color</span><div class="accent-swatches" id="accentSwatches"></div><div class="accent-preview" id="accentPreview"><span class="accent-preview-tag">PREVIEW</span><strong>Hero card</strong></div></div>
+                <div class="accent-picker-field">
+                  <div class="accent-picker-label-row"><span>Accent color</span><button type="button" class="accent-reset-button" id="resetAccentButton">Reset to default</button></div>
+                  <div class="accent-swatches" id="accentSwatches"></div>
+                  <div class="accent-preview" id="accentPreview"><span class="accent-preview-tag">PREVIEW</span><strong>Hero card</strong></div>
+                </div>
                 <button class="primary-button" type="submit">Save profile</button>
               </form>
             </article>
@@ -568,9 +572,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260902-nova40"></script>
-  <script src="exam-data.js?v=20260902-nova40"></script>
-  <script src="app.js?v=20260902-nova40"></script>
-  <script src="polish.js?v=20260902-nova40"></script>
+  <script src="campus-data.js?v=20260902-nova41"></script>
+  <script src="exam-data.js?v=20260902-nova41"></script>
+  <script src="app.js?v=20260902-nova41"></script>
+  <script src="polish.js?v=20260902-nova41"></script>
 </body>
 </html>
