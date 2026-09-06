@@ -1052,9 +1052,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    instead of a muted label squeezed between two arrows. */
 .week-scan-head{display:flex;align-items:center;gap:8px;margin:-2px 0 16px}
 .week-scan-title{flex:1;min-width:0;text-align:center}
-.week-scan-eyebrow{
-  display:block;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--accent);margin-bottom:3px;
-}
 #weekScanRange{
   font-family:var(--font-display);font-size:clamp(24px,6.4vw,30px);font-weight:800;
   letter-spacing:-.02em;line-height:1.05;margin:0;
@@ -1063,18 +1060,47 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-nav-arrow{width:36px;height:36px;border-radius:10px;flex:none}
 .week-nav-arrow svg{width:16px;height:16px}
 /* ===== The accordion week ===== */
-.week-planner{margin-top:14px;overflow:hidden}
+.week-planner{margin-top:14px}
 .week-tools{display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .week-tool-chips{flex:1;min-width:0;margin-top:0}
 .week-tool-chips:not(:has(> :not([hidden]))){display:none}
 .week-month-button{flex:none;width:38px;height:38px;border-radius:11px}
 .week-course-row{margin-top:8px}
 .week-course-row[hidden]{display:none}
+/* Head and strip travel together and stay reachable while an open day is scrolled. */
+.week-sticky{
+  position:sticky;top:56px;z-index:6;margin:-18px -18px 0;padding:16px 18px 10px;
+  background:var(--bg-elevated);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+}
+.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px}
+.ws-cell{
+  display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;
+  border:1px solid transparent;border-radius:10px;background:var(--bg-panel);
+  font:inherit;color:inherit;cursor:pointer;min-width:0;
+  transition:background .2s ease,border-color .2s ease,transform .12s ease;
+}
+.ws-cell:active{transform:scale(.94)}
+.ws-dow{font-size:9.5px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint);line-height:1}
+.ws-num{font-family:var(--font-display);font-size:14px;font-weight:750;line-height:1.1}
+.ws-dots{display:flex;align-items:center;justify-content:center;gap:2px;height:5px}
+.ws-dots i{width:4px;height:4px;border-radius:50%;background:var(--course,var(--accent))}
+.ws-cell.is-today .ws-num{color:var(--accent);font-weight:800}
+.ws-cell.is-today{border-color:color-mix(in srgb, var(--accent) 45%, transparent)}
+.ws-cell.is-open{background:color-mix(in srgb, var(--accent) 16%, var(--bg-panel));border-color:color-mix(in srgb, var(--accent) 50%, transparent)}
+.ws-cell.has-exam{box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 45%, transparent)}
+.week-scan-eyebrow{
+  display:block;margin:0 auto 3px;border:0;background:none;padding:2px 8px;border-radius:99px;
+  font:inherit;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--accent);cursor:default;
+}
+.week-scan-eyebrow.is-away{
+  cursor:pointer;background:color-mix(in srgb, var(--accent) 14%, transparent);
+}
+@media (hover:hover){.week-scan-eyebrow.is-away:hover{background:color-mix(in srgb, var(--accent) 24%, transparent)}}
 .week-day-list{display:flex;flex-direction:column;gap:6px;margin-top:14px}
 @keyframes wp-day-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 .wp-day{
-  border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;
+  border:1px solid var(--border);border-radius:var(--radius-md);
   background:var(--bg-panel);position:relative;
   transition:background .25s ease,border-color .25s ease,box-shadow .25s ease;
   animation:wp-day-in .4s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i, 0) * 45ms);
@@ -1119,6 +1145,12 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 @media (hover:hover){.wp-day:not(.is-open) .wp-day-head:hover{background:color-mix(in srgb, var(--ink) 4%, transparent)}}
 .wp-day-head:active{transform:scale(.995)}
 
+/* Scrolling a day's classes should never leave you wondering which day you are in, so
+   the open day's header pins under the week header. */
+.wp-day.is-open .wp-day-head{
+  position:sticky;top:calc(52px + var(--week-sticky-h, 150px));z-index:4;
+  background:inherit;border-radius:var(--radius-md) var(--radius-md) 0 0;
+}
 .wp-day-body{padding:0 13px 14px;animation:wp-open .28s cubic-bezier(.22,1,.36,1) both}
 @keyframes wp-open{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion: reduce){.wp-day-body{animation:none}}
@@ -1142,26 +1174,56 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .pes-days{flex:none;font-family:var(--font-display);font-size:14px;font-weight:800;color:var(--course,var(--accent-2))}
 .next-exam-strip.is-imminent .pes-days{color:var(--danger)}
 
-.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-.calendar-head h2{font-size:16.5px}
+.month-panel{margin-top:14px}
+.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.calendar-head-title{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.calendar-head-title .today-button{align-self:center;width:auto;padding:6px 14px;font-size:12.5px}
+.calendar-head h2{font-family:var(--font-display);font-size:clamp(21px,5.4vw,26px);font-weight:800;letter-spacing:-.02em;margin:0}
+.month-key{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.mk-item{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:650;color:var(--ink-muted)}
+.mk-swatch{width:11px;height:11px;border-radius:4px;flex:none}
+.mk-classes{background:color-mix(in srgb, var(--accent) 34%, transparent)}
+.mk-exam{background:var(--danger);border-radius:50%;width:8px;height:8px}
+.mk-holiday{background:color-mix(in srgb, var(--amber) 40%, transparent)}
+.mk-week{background:color-mix(in srgb, var(--accent) 14%, transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent)}
 .today-button{
-  display:flex;align-items:center;gap:7px;width:100%;justify-content:center;margin-bottom:12px;
-  background:var(--accent-soft);color:var(--accent);border:0;border-radius:10px;padding:10px;font-size:13px;font-weight:750;
+  display:inline-flex;align-items:center;gap:6px;justify-content:center;
+  background:var(--accent-soft);color:var(--accent);border:0;border-radius:99px;padding:6px 14px;font-size:12.5px;font-weight:750;
+  cursor:pointer;transition:background .2s ease;
 }
+@media (hover:hover){.today-button:hover{background:color-mix(in srgb, var(--accent) 22%, transparent)}}
 .weekday-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px}
 .weekday-row span{text-align:center;font-size:11.5px;font-weight:750;color:var(--ink-faint)}
 .weekday-row span.weekend{color:var(--accent)}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .calendar-day{
-  aspect-ratio:1/1;border:1px solid transparent;background:transparent;border-radius:10px;
-  color:var(--ink);position:relative;transition:transform .12s ease;
+  aspect-ratio:1/1;border:1px solid transparent;border-radius:10px;
+  color:var(--ink);position:relative;transition:transform .12s ease,background .2s ease;
+  background:color-mix(in srgb, var(--accent) calc(var(--fill, 0) * 34%), transparent);
 }
 .calendar-day:active{transform:scale(.94)}
-.calendar-day.weekend{background:color-mix(in srgb, var(--accent) 6%, transparent)}
+.calendar-day.weekend .calendar-day-number{color:var(--accent-2)}
 .calendar-day-number{
-  position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  position:absolute;top:9px;left:50%;transform:translateX(-50%);
   font-size:13.5px;font-weight:650;line-height:1;
 }
+.calendar-day-count{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  font-size:10px;font-weight:800;line-height:1;color:var(--ink-muted);
+}
+.calendar-day[style*="--fill:0"] .calendar-day-count{display:none}
+/* The month is scanned to find the exam block, so exams are the loudest mark on it. */
+.calendar-exam-dot{
+  position:absolute;bottom:7px;left:50%;transform:translateX(-50%);
+  width:6px;height:6px;border-radius:50%;background:var(--danger);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--danger) 25%, transparent);
+}
+.calendar-day.has-exam{box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 55%, transparent)}
+.calendar-day.has-holiday .calendar-day-number{color:var(--amber)}
+.calendar-day.has-holiday{background:color-mix(in srgb, var(--amber) 12%, transparent)}
+/* The week you are working in, banded across the row. */
+.calendar-day.in-week{background:color-mix(in srgb, var(--accent) calc(14% + var(--fill, 0) * 30%), transparent)}
+.calendar-day.in-week .calendar-day-number{color:var(--ink)}
 .calendar-day.weekend .calendar-day-number{color:var(--accent)}
 .calendar-day.outside{opacity:.32}
 .calendar-day.today{border-color:var(--accent)}
@@ -1172,15 +1234,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   transition:box-shadow .25s ease,background .25s ease;
 }
 .calendar-day.selected .calendar-day-number{color:var(--accent);font-weight:800}
-.calendar-dashes{
-  position:absolute;bottom:9px;left:50%;transform:translateX(-50%);
-  display:flex;gap:2px;align-items:flex-end;height:4px;
-}
-.calendar-dashes i{width:3px;height:4px;border-radius:2px;background:var(--course,var(--accent));display:block}
-.calendar-dashes i.cancelled{background:var(--danger)}
+
 .calendar-day.holiday .calendar-day-number{color:var(--danger)}
-.calendar-day.has-exam::after{content:"";position:absolute;top:6px;left:7px;width:5px;height:5px;border-radius:50%;background:var(--accent-2)}
-.calendar-dash-more{font-size:8px;font-weight:800;color:var(--ink-faint);line-height:1;margin-left:1px}
 .week-course-row{margin-top:8px}
 .week-course-row .filter-chip{border-color:color-mix(in srgb, var(--course,var(--accent)) 30%, var(--border))}
 .week-course-row .filter-chip.active{background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);border-color:color-mix(in srgb, var(--course,var(--accent)) 45%, transparent);color:var(--course,var(--accent))}

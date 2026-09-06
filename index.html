@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260902-nova49">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova50">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -154,7 +154,8 @@
       <section class="page" id="calendarPage" data-page="calendar">
         <div class="page-heading"><div><p class="overline">TERM III</p><h1>Planner</h1></div></div>
         <div class="subtabs" id="plannerTabs">
-          <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span>Calendar</button>
+          <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span>Week</button>
+          <button class="subtab" data-planner-tab="month"><span data-icon="calendar"></span>Month</button>
           <button class="subtab" data-planner-tab="exams"><span data-icon="exams"></span>Exams</button>
         </div>
 
@@ -167,14 +168,17 @@
           </button>
 
           <article class="panel week-planner">
+            <div class="week-sticky">
             <div class="week-scan-head">
               <button type="button" class="icon-button week-nav-arrow" id="weekScanPrev" aria-label="Previous week"><span data-icon="chevron-left"></span></button>
               <div class="week-scan-title">
-                <span class="week-scan-eyebrow" id="weekScanEyebrow">THIS WEEK</span>
+                <button type="button" class="week-scan-eyebrow" id="weekScanEyebrow">THIS WEEK</button>
                 <h2 id="weekScanRange">Week</h2>
                 <p class="week-scan-meta" id="weekScanMeta"></p>
               </div>
               <button type="button" class="icon-button week-nav-arrow" id="weekScanNext" aria-label="Next week"><span data-icon="chevron-right"></span></button>
+            </div>
+            <div class="week-strip" id="weekStrip"></div>
             </div>
 
             <div class="week-tools">
@@ -182,11 +186,27 @@
                 <button type="button" class="filter-chip" id="jumpToNextClassButton">Jump to next class</button>
                 <button type="button" class="filter-chip" id="toggleCompletedButton">Show completed</button>
               </div>
-              <button type="button" class="icon-button week-month-button" id="openMonthView" aria-label="Open month view"><span data-icon="calendar"></span></button>
             </div>
             <div class="filter-chips week-course-row" id="agendaCourseRow"></div>
 
             <div class="week-day-list" id="weekScanList"></div>
+          </article>
+        </section>
+
+        <section class="planner-view" data-planner-view="month">
+          <article class="panel month-panel">
+            <div class="calendar-head">
+              <button class="icon-button week-nav-arrow" id="prevMonth" aria-label="Previous month"><span data-icon="chevron-left"></span></button>
+              <div class="calendar-head-title">
+                <h2 id="calendarTitle">August 2026</h2>
+                <button type="button" class="today-button" id="todayButton"><span data-icon="target"></span>Today</button>
+              </div>
+              <button class="icon-button week-nav-arrow" id="nextMonth" aria-label="Next month"><span data-icon="chevron-right"></span></button>
+            </div>
+            <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span class="weekend">Sat</span><span class="weekend">Sun</span></div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+            <div class="calendar-legend" id="calendarLegend"></div>
+            <div class="month-key" id="monthKey"></div>
           </article>
         </section>
 
@@ -210,26 +230,6 @@
         </section>
       </section>
 
-      <dialog id="monthViewDialog" class="class-action-dialog month-view-dialog">
-        <section class="class-action-sheet">
-          <div class="sheet-handle" aria-hidden="true"></div>
-          <header class="class-action-head">
-            <div>
-              <span class="sheet-code">MONTH VIEW</span>
-              <h2 id="calendarTitle">August 2026</h2>
-            </div>
-            <button type="button" class="icon-button sheet-close" id="closeMonthView" aria-label="Close month view"><span data-icon="close"></span></button>
-          </header>
-          <div class="calendar-head">
-            <button class="icon-button" id="prevMonth" aria-label="Previous month"><span data-icon="chevron-left"></span></button>
-            <button class="today-button" id="todayButton"><span data-icon="target"></span>Jump to today</button>
-            <button class="icon-button" id="nextMonth" aria-label="Next month"><span data-icon="chevron-right"></span></button>
-          </div>
-          <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span class="weekend">Sat</span><span class="weekend">Sun</span></div>
-          <div class="calendar-grid" id="calendarGrid"></div>
-          <div class="calendar-legend" id="calendarLegend"></div>
-        </section>
-      </dialog>
 
       <section class="page" id="campusPage" data-page="campus">
         <div class="page-heading">
@@ -539,9 +539,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260902-nova49"></script>
-  <script src="exam-data.js?v=20260902-nova49"></script>
-  <script src="app.js?v=20260902-nova49"></script>
-  <script src="polish.js?v=20260902-nova49"></script>
+  <script src="campus-data.js?v=20260902-nova50"></script>
+  <script src="exam-data.js?v=20260902-nova50"></script>
+  <script src="app.js?v=20260902-nova50"></script>
+  <script src="polish.js?v=20260902-nova50"></script>
 </body>
 </html>

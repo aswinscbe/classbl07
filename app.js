@@ -679,7 +679,45 @@ function agendaHtml(classes,tasks,exam,dayIso){
   }
   return html;
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight),dashes=dayClasses.slice(0,4).map(c=>`<i class="${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"></i>`).join(""),overflow=dayClasses.length>4?dayClasses.length-4:0;html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${dashes?`<span class="calendar-dashes">${dashes}${overflow?`<b class="calendar-dash-more">+${overflow}</b>`:""}</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});
+function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){
+  const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();
+  $("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);
+  const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);
+  const shownWeek=mondayIso(state.railStart||state.selectedDate||isoToday());
+  /* Density as one fill rather than up to four dashes: a six-class day and a four-class
+     day used to look identical with a "+2" doing the work a colour can do. */
+  const monthIsos=[];
+  for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);monthIsos.push(`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`)}
+  const counts=monthIsos.map(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length);
+  const peak=Math.max(1,...counts);
+  let html="";
+  monthIsos.forEach((iso,i)=>{
+    const day=new Date(`${iso}T12:00:00+05:30`);
+    const dayClasses=state.classes.filter(c=>c.dateIso===iso),active=dayClasses.filter(c=>c.status!=="Cancelled");
+    const isWeekend=day.getDay()===0||day.getDay()===6;
+    const dayCourses=[...new Set(active.map(c=>canonical(c.code)))];
+    const dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight);
+    const exam=examOn(iso),holiday=HOLIDAYS[iso];
+    const intensity=active.length?Math.max(.28,active.length/peak):0;
+    const inShownWeek=mondayIso(iso)===shownWeek;
+    html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${exam?"has-exam":""} ${holiday?"has-holiday":""} ${inShownWeek?"in-week":""}" data-date="${iso}" style="--fill:${intensity}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
+      <span class="calendar-day-number">${day.getDate()}</span>
+      ${exam?'<span class="calendar-exam-dot" aria-hidden="true"></span>':active.length?`<span class="calendar-day-count">${active.length}</span>`:""}
+    </button>`;
+  });
+  $("#calendarGrid").innerHTML=html;
+  $$(".calendar-day").forEach(b=>{
+    b.addEventListener("click",()=>{
+      /* A month is scanned to pick a week to work in, so a tap lands you in that week. */
+      state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);
+      const dd=new Date(`${b.dataset.date}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
+      setPlannerTab("calendar");renderCalendar();
+    });
+    b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));
+    b.addEventListener("mouseleave",hideCalendarTooltip);
+  });
+  const keyEl=$("#monthKey");
+  if(keyEl)keyEl.innerHTML='<span class="mk-item"><i class="mk-swatch mk-classes"></i>Class day</span><span class="mk-item"><i class="mk-swatch mk-exam"></i>Exam</span><span class="mk-item"><i class="mk-swatch mk-holiday"></i>Holiday</span><span class="mk-item"><i class="mk-swatch mk-week"></i>Shown week</span>';
   $("#toggleCompletedButton")?.classList.toggle("active",!!state.agendaShowCompleted);
   const weekIsos=weekDaysFrom(state.railStart||mondayIso(state.selectedDate||isoToday()));
   const weekAll=weekIsos.flatMap(iso=>state.classes.filter(c=>c.dateIso===iso));
@@ -715,6 +753,30 @@ function renderWeekPlanner(){
   if(rangeEl)rangeEl.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
   if(metaEl)metaEl.textContent=weekActive.length?`${weekActive.length} ${weekActive.length===1?"class":"classes"} · ${compactDuration(weekMins)}`:"No classes this week";
 
+  /* The strip is the index for the rows below it, not a second week view: dots rather
+     than counts so it stays glanceable, and a tap opens that day's row. */
+  const strip=$("#weekStrip");
+  if(strip){
+    const letters=["M","T","W","T","F","S","S"];
+    strip.innerHTML=days.map((iso,i)=>{
+      const active=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled");
+      const dots=active.slice(0,4).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
+      return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-open":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}">
+        <span class="ws-dow">${letters[i]}</span>
+        <span class="ws-num">${Number(iso.slice(8))}</span>
+        <span class="ws-dots">${dots}</span>
+      </button>`;
+    }).join("");
+    $$(".ws-cell",strip).forEach(b=>b.addEventListener("click",()=>{
+      const iso=b.dataset.date;
+      state.selectedDate=iso;
+      const dd=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
+      renderCalendar();
+      requestAnimationFrame(()=>$(`.wp-day-head[data-date="${iso}"]`)?.scrollIntoView({behavior:"smooth",block:"center"}));
+    }));
+  }
+  const eyebrowBtn=$("#weekScanEyebrow");
+  if(eyebrowBtn)eyebrowBtn.classList.toggle("is-away",weekOffset!==0);
   list.innerHTML=days.map((iso,dayIdx)=>{
     const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
     const active=dayAll.filter(c=>c.status!=="Cancelled");
@@ -758,6 +820,10 @@ function renderWeekPlanner(){
   }));
   const openAgenda=$("#dayAgenda");
   if(openAgenda)bindTaskRows(openAgenda);
+  /* The pinned day header sits directly below the pinned week header, whose height
+     depends on the strip and the week's meta line, so it is measured rather than guessed. */
+  const stickyEl=$(".week-sticky");
+  if(stickyEl)document.documentElement.style.setProperty("--week-sticky-h",`${Math.round(stickyEl.offsetHeight)}px`);
   renderPlannerExamStrip();
 }
 /* Exams live behind their own tab, so the calendar could not tell you one was coming. */
@@ -1720,7 +1786,7 @@ function bind(){
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>openCampusTab(b.dataset.campusTab)));
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerTab(b.dataset.plannerTab)));
   $$(".subtab[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-profile-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".profile-view").forEach(v=>v.classList.toggle("active",v.dataset.profileView===b.dataset.profileTab))}));
-  $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});
+  $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
   $("#jumpToNextClassButton")?.addEventListener("click",()=>{
     const now=Date.now(),next=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime").getTime()>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
@@ -1734,7 +1800,6 @@ function bind(){
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
   bindDismissibleDialog($("#ledgerDialog"));
   bindDismissibleDialog($("#termHeatmapDialog"));
-  bindDismissibleDialog($("#monthViewDialog"));
   bindDismissibleDialog($("#classActionDialog"));
   $("#closeClassAction")?.addEventListener("click",()=>closeDialog($("#classActionDialog")));
   $("#sheetAddTask")?.addEventListener("click",()=>{
@@ -1756,10 +1821,13 @@ function bind(){
     const hero=e.target.closest("#focusPanel.has-focus");
     if(hero&&hero.dataset.focusClassId){const c=state.classes.find(x=>classIdentity(x)===hero.dataset.focusClassId);if(c)openClassSheet(c)}
   });
-  $("#closeMonthView")?.addEventListener("click",()=>closeDialog($("#monthViewDialog")));
-  $("#openMonthView")?.addEventListener("click",()=>{const d=new Date(`${state.selectedDate||isoToday()}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();$("#monthViewDialog").showModal()});
   bindSwipeGesture($(".week-planner"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:56});
   $("#plannerExamStrip")?.addEventListener("click",()=>setPlannerTab("exams"));
+  $("#weekScanEyebrow")?.addEventListener("click",()=>{
+    state.railStart=mondayIso(isoToday());state.selectedDate=isoToday();
+    const n=new Date();state.calendarMonth=new Date(n.getFullYear(),n.getMonth(),1);
+    renderCalendar();
+  });
   $("#weekScanPrev")?.addEventListener("click",()=>shiftRailWeek(-1));
   $("#weekScanNext")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
@@ -1811,7 +1879,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova49",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova50",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
