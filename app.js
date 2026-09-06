@@ -5,7 +5,7 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
 const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69",IS:"#5aa06a"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,plannerViewMode:"day",peekSection:null,peekAll:null};
+const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,peekSection:null,peekAll:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function haptic(ms=12){try{navigator.vibrate?.(ms)}catch(e){}}
@@ -246,7 +246,7 @@ function positionNavIndicator(){
   ind.style.transform=`translateX(${btnRect.left-navRect.left}px)`;
   requestAnimationFrame(()=>ind.classList.add("ready"));
 }
-function showPage(n){if(n==="home"){state.timelineOffset=0;state.timelineTouched=false}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.plannerViewMode="day"}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){setPlannerViewMode("day");renderCalendar();renderExamsPage()}positionNavIndicator()}
+function showPage(n){if(n==="home"){state.timelineOffset=0;state.timelineTouched=false}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1)}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){renderCalendar();renderExamsPage()}positionNavIndicator()}
 function setPlannerTab(tab){
   $$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===tab));
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
@@ -635,9 +635,9 @@ function dayCardListHtml(classes,dayIso,opts={}){
   chronological.forEach(c=>{
     if(prevEnd!=null){
       const gap=minutes(c.startTime)-prevEnd;
-      if(gap>=45){const capped=Math.max(36,Math.min(80,Math.round(gap*0.5)));html+=`<div class="day-cardlist-gap" style="min-height:${capped}px"><span class="dc-gap-label">${icon("clock")}${esc(compactDuration(gap))} free</span></div>`}
+      if(gap>=45){html+=`<div class="day-cardlist-gap"><span class="dc-gap-label">${icon("clock")}${esc(compactDuration(gap))} free</span></div>`}
     }
-    const status=agendaStatus(c),tag=agendaTag(c),dur=minutes(c.endTime)-minutes(c.startTime),blockPx=Math.max(64,Math.min(180,Math.round(dur*1.2))),sessionN=subjectSessionOrdinal(c);
+    const status=agendaStatus(c),tag=agendaTag(c),dur=minutes(c.endTime)-minutes(c.startTime),sessionN=subjectSessionOrdinal(c);
     const cls=["day-cardlist-item",status==="Live"?"current":"",status==="Completed"?"completed":"",c.status==="Cancelled"?"cancelled":""].filter(Boolean).join(" ");
     const progress=status==="Live"?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
     const chips=[
@@ -652,7 +652,7 @@ function dayCardListHtml(classes,dayIso,opts={}){
         nextLine=`<p class="dc-next-occurrence">Next ${esc(canonical(c.code))} — ${esc(label)}, ${esc(fmtTime(nxt.startTime))}</p>`;
       }
     }
-    html+=`<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)};min-height:${blockPx}px">
+    html+=`<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
       <div class="day-cardlist-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small><span class="status-tag ${tag.cls}">${esc(tag.text)}</span></div>
       <div class="day-cardlist-body">
         <div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong>${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}${sessionN?`<span class="dc-session-badge">${sessionN}/${SESSION_TARGET}</span>`:""}</div>
@@ -679,122 +679,99 @@ function agendaHtml(classes,tasks,exam,dayIso){
   }
   return html;
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight),dashes=dayClasses.slice(0,4).map(c=>`<i class="${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"></i>`).join(""),overflow=dayClasses.length>4?dayClasses.length-4:0;html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${dashes?`<span class="calendar-dashes">${dashes}${overflow?`<b class="calendar-dash-more">+${overflow}</b>`:""}</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});const allDayClasses=state.classes.filter(c=>c.dateIso===state.selectedDate),completedFiltered=state.agendaShowCompleted?allDayClasses:allDayClasses.filter(c=>!isClassCompleted(c)),classes=state.calendarHighlight?completedFiltered.filter(c=>canonical(c.code)===state.calendarHighlight):completedFiltered,tasks=state.tasks.filter(t=>t.date===state.selectedDate);$("#agendaDate").textContent=fmtDate(state.selectedDate,{weekday:"long",day:"numeric",month:"long"});const agendaActive=classes.filter(c=>c.status!=="Cancelled"),agendaMins=agendaActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0),agendaMeta=$("#agendaDayMeta");if(agendaMeta)agendaMeta.textContent=agendaActive.length?`${agendaActive.length} ${agendaActive.length===1?"class":"classes"}${agendaMins?` · ${agendaMins>=60?`${Math.floor(agendaMins/60)}h${agendaMins%60?` ${agendaMins%60}m`:""}`:`${agendaMins}m`}`:""}`:"";$("#dayAgenda").innerHTML=agendaHtml(classes,tasks,examOn(state.selectedDate),state.selectedDate);
+function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();$("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);let html="";for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);const iso=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`,dayClasses=state.classes.filter(c=>c.dateIso===iso),classes=dayClasses.filter(c=>c.status!=="Cancelled"),isWeekend=day.getDay()===0||day.getDay()===6,dayCourses=[...new Set(classes.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight),dashes=dayClasses.slice(0,4).map(c=>`<i class="${c.status==="Cancelled"?"cancelled":""}" style="--course:${colorFor(c.code)}"></i>`).join(""),overflow=dayClasses.length>4?dayClasses.length-4:0;html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" data-courses="${esc(dayCourses.join(","))}"><span class="calendar-day-number">${day.getDate()}</span>${dashes?`<span class="calendar-dashes">${dashes}${overflow?`<b class="calendar-dash-more">+${overflow}</b>`:""}</span>`:""}</button>`}$("#calendarGrid").innerHTML=html;$$(".calendar-day").forEach(b=>{b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));b.addEventListener("mouseleave",hideCalendarTooltip)});
   $("#toggleCompletedButton")?.classList.toggle("active",!!state.agendaShowCompleted);
-  const hiddenCompletedCount=allDayClasses.length-classes.length;
-  const toggleCompletedBtn=$("#toggleCompletedButton");if(toggleCompletedBtn){toggleCompletedBtn.textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;toggleCompletedBtn.hidden=!hiddenCompletedCount&&!state.agendaShowCompleted;}const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};const courseRow=$("#agendaCourseRow");if(courseRow){const dayCourses=[...new Set(allDayClasses.map(c=>canonical(c.code)))];if(state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight))dayCourses.push(state.calendarHighlight);const showCourseChips=dayCourses.length>1||!!state.calendarHighlight;courseRow.innerHTML=showCourseChips?dayCourses.map(c=>`<button type="button" class="filter-chip ${c===state.calendarHighlight?"active":""}" data-course="${esc(c)}" style="--course:${colorFor(c)}">${esc(c)}</button>`).join(""):"";courseRow.hidden=!showCourseChips;courseRow.onclick=e=>{const btn=e.target.closest("[data-course]");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()}}bindTaskRows($("#dayAgenda"));renderDateRail()}
+  const weekIsos=weekDaysFrom(state.railStart||mondayIso(state.selectedDate||isoToday()));
+  const weekAll=weekIsos.flatMap(iso=>state.classes.filter(c=>c.dateIso===iso));
+  const hiddenCompletedCount=weekIsos.includes(isoToday())?state.classes.filter(c=>c.dateIso===isoToday()&&isClassCompleted(c)).length:0;
+  const toggleCompletedBtn=$("#toggleCompletedButton");if(toggleCompletedBtn){toggleCompletedBtn.textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;toggleCompletedBtn.hidden=!hiddenCompletedCount&&!state.agendaShowCompleted;}const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};const courseRow=$("#agendaCourseRow");if(courseRow){const dayCourses=[...new Set(weekAll.filter(c=>c.status!=="Cancelled").map(c=>canonical(c.code)))];if(state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight))dayCourses.push(state.calendarHighlight);const showCourseChips=dayCourses.length>1||!!state.calendarHighlight;courseRow.innerHTML=showCourseChips?dayCourses.map(c=>`<button type="button" class="filter-chip ${c===state.calendarHighlight?"active":""}" data-course="${esc(c)}" style="--course:${colorFor(c)}">${esc(c)}</button>`).join(""):"";courseRow.hidden=!showCourseChips;courseRow.onclick=e=>{const btn=e.target.closest("[data-course]");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()}}renderWeekPlanner()}
 function mondayIso(iso){const d=new Date(`${iso}T12:00:00+05:30`);d.setDate(d.getDate()-((d.getDay()+6)%7));return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
-function shiftRailWeek(delta){const d=new Date(`${state.railStart||mondayIso(state.selectedDate)}T12:00:00+05:30`);d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderDateRail()}
-function renderDateRail(){
-  const el=$("#dateRail");if(!el)return;
-  if(!state.railStart)state.railStart=mondayIso(state.selectedDate);
-  const start=new Date(`${state.railStart}T12:00:00+05:30`);
-  const labels=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  const days=[];
-  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);days.push(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d))}
-  el.innerHTML=days.map((iso,i)=>{
-    const dayClasses=state.classes.filter(c=>c.dateIso===iso),active=dayClasses.filter(c=>c.status!=="Cancelled"),count=active.length,isToday=iso===isoToday(),isSel=iso===state.selectedDate,hasExam=!!examOn(iso);
-    const dayCourses=[...new Set(active.map(c=>canonical(c.code)))],dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight);
-    return`<button type="button" class="rail-day ${isSel?"sel":""} ${isToday?"today":""} ${hasExam?"has-exam":""} ${dimmed?"dimmed":""}" data-date="${iso}"><span class="dow">${labels[i]}</span><b>${Number(iso.slice(8))}</b>${count?`<span class="cnt">${count}</span>`:'<span class="cnt empty">·</span>'}</button>`;
-  }).join("");
-  $$(".rail-day",el).forEach(b=>b.addEventListener("click",()=>{state.selectedDate=b.dataset.date;renderCalendar()}));
-  const label=$("#railWeekLabel");
-  if(label)label.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
-  renderFreeBlocks();
-  renderWeekScan(days);
+function shiftRailWeek(delta){const d=new Date(`${state.railStart||mondayIso(state.selectedDate)}T12:00:00+05:30`);d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderCalendar()}
+/* The planner is one accordion week: seven day rows always on screen, the selected day
+   opened in place. There is no day/week mode, because the week is the frame and the day
+   is the detail inside it — the old layout answered "what does my week look like" twice,
+   once with a date rail and once with a separate week card. */
+function weekDaysFrom(startIso){
+  const start=new Date(`${startIso}T12:00:00+05:30`),out=[];
+  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);out.push(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d))}
+  return out;
 }
-/* Read-only week scan — every day in the current rail week, each class as a compact row,
-   so scanning the week ahead doesn't mean tapping through 7 days one at a time. Tapping a
-   day jumps into the normal Day view for actions. */
-function renderWeekScan(days){
+function visibleDayClasses(iso){
+  const all=state.classes.filter(c=>c.dateIso===iso);
+  const shown=(state.agendaShowCompleted||iso!==isoToday())?all:all.filter(c=>!isClassCompleted(c));
+  return state.calendarHighlight?shown.filter(c=>canonical(c.code)===state.calendarHighlight):shown;
+}
+function renderWeekPlanner(){
   const list=$("#weekScanList");if(!list)return;
   const today=isoToday(),now=new Date();
-  /* The whole week, not just what is left of it — a week view that quietly drops Monday
-     once Monday is over cannot show the shape of the week, which is the point of it.
-     Days already gone are dimmed and collapsed to their heading. */
-  const weekTotals=days.reduce((acc,iso)=>{
-    state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").forEach(c=>{
-      acc.count++;acc.mins+=minutes(c.endTime)-minutes(c.startTime);
-    });
-    return acc;
-  },{count:0,mins:0});
+  if(!state.railStart)state.railStart=mondayIso(state.selectedDate);
+  const days=weekDaysFrom(state.railStart);
+  const weekActive=days.flatMap(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"));
+  const weekMins=weekActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
   const weekOffset=Math.round((new Date(`${days[0]}T12:00:00+05:30`)-new Date(`${mondayIso(today)}T12:00:00+05:30`))/(7*86400000));
   const eyebrow=weekOffset===0?"THIS WEEK":weekOffset===1?"NEXT WEEK":weekOffset===-1?"LAST WEEK":weekOffset>1?`IN ${weekOffset} WEEKS`:`${-weekOffset} WEEKS AGO`;
-  const rangeEl=$("#weekScanRange"),eyebrowEl=$("#weekScanEyebrow"),metaEl=$("#weekScanMeta");
+  const eyebrowEl=$("#weekScanEyebrow"),rangeEl=$("#weekScanRange"),metaEl=$("#weekScanMeta");
   if(eyebrowEl)eyebrowEl.textContent=eyebrow;
   if(rangeEl)rangeEl.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
-  if(metaEl)metaEl.textContent=weekTotals.count?`${weekTotals.count} ${weekTotals.count===1?"class":"classes"} · ${compactDuration(weekTotals.mins)}`:"No classes this week";
+  if(metaEl)metaEl.textContent=weekActive.length?`${weekActive.length} ${weekActive.length===1?"class":"classes"} · ${compactDuration(weekMins)}`:"No classes this week";
+
   list.innerHTML=days.map((iso,dayIdx)=>{
-    const dayClasses=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-    const isTodayRow=iso===today;
-    const nextUpId=isTodayRow?classIdentity(dayClasses.find(c=>c.status!=="Cancelled"&&now<dateTime(c,"startTime"))||{}):null;
-    const rows=dayClasses.map(c=>{
-      const cancelled=c.status==="Cancelled";
-      const isLive=isTodayRow&&!cancelled&&now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime");
-      const isNext=isTodayRow&&!cancelled&&classIdentity(c)===nextUpId;
-      const badge=isLive?'<b class="wsc-badge live"><i></i>LIVE</b>':isNext?'<b class="wsc-badge upcoming">UPCOMING</b>':"";
-      return`<div class="wsc-row ${cancelled?"cancelled":""} ${isLive?"is-live":""}" style="--course:${colorFor(c.code)}">
-        <div class="wsc-row-when"><b>${esc(fmtTime(c.startTime))}</b><small>${esc(fmtTime(c.endTime))}</small></div>
-        <div class="wsc-row-main">
-          <div class="wsc-row-title">
-            <span class="wsc-code">${esc(canonical(c.code))}</span>
-            <strong>${esc(c.course)}</strong>
-            ${badge}
-          </div>
-          <div class="wsc-row-room">${icon("pin")}<span>${esc(venueOf(c))}</span></div>
-        </div>
-      </div>`;
-    }).join("");
-    const isToday=iso===today;
-    const activeDayClasses=dayClasses.filter(c=>c.status!=="Cancelled");
-    const countText=activeDayClasses.length?(isToday?`${activeDayClasses.filter(c=>now>=dateTime(c,"endTime")).length}/${activeDayClasses.length}`:`${activeDayClasses.length} ${activeDayClasses.length===1?"class":"classes"}`):"";
-    const dayTint=activeDayClasses.length?colorFor(activeDayClasses[0].code):"transparent";
-    const isPast=iso<today;
-    const body=isPast?"":(rows||'<p class="wsc-empty">Free day</p>');
-    return`<button type="button" class="wsc-day ${isToday?"is-today":""} ${isPast?"is-past":""} ${!activeDayClasses.length?"is-free":""}" data-date="${iso}" style="--density:${Math.min(6,dayClasses.length)};--i:${dayIdx};--wsc-tint:${dayTint}">
-      <div class="wsc-day-head"><span>${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wsc-today-badge">TODAY</b>':""}</span><div class="wsc-day-head-right">${countText?`<b class="wsc-count">${esc(countText)}</b>`:""}<small>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</small></div></div>
-      ${body}
+    const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    const active=dayAll.filter(c=>c.status!=="Cancelled");
+    const isToday=iso===today,isPast=iso<today,isOpen=iso===state.selectedDate,exam=examOn(iso);
+    const done=active.filter(c=>now>=dateTime(c,"endTime")).length;
+    const countText=active.length?(isToday?`${done}/${active.length}`:`${active.length} ${active.length===1?"class":"classes"}`):(exam?"Exam day":"");
+    /* Course colours on the collapsed row, so a glance says which subjects a day holds
+       rather than only how many. */
+    const dots=active.slice(0,5).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
+    const head=`<button type="button" class="wp-day-head" data-date="${iso}" aria-expanded="${isOpen}">
+      <span class="wp-day-name">${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wp-today-badge">TODAY</b>':""}</span>
+      ${dots?`<span class="wp-dots">${dots}</span>`:""}
+      <span class="wp-day-right">
+        ${countText?`<span class="wp-count">${esc(countText)}</span>`:""}
+        <span class="wp-date">${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span>
+        <span class="wp-caret">${icon("chevron-right")}</span>
+      </span>
     </button>`;
+    let body="";
+    if(isOpen){
+      const visible=visibleDayClasses(iso),tasks=state.tasks.filter(t=>t.date===iso);
+      const vActive=visible.filter(c=>c.status!=="Cancelled");
+      const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
+      const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"";
+      body=`<div class="wp-day-body">
+        ${meta?`<p class="wp-day-meta">${esc(meta)}</p>`:""}
+        <div id="dayAgenda" class="schedule-list">${agendaHtml(visible,tasks,exam,iso)}</div>
+      </div>`;
+    }
+    return`<section class="wp-day ${isToday?"is-today":""} ${isPast?"is-past":""} ${isOpen?"is-open":""} ${!active.length?"is-free":""} ${exam?"has-exam":""}" style="--i:${dayIdx}">${head}${body}</section>`;
   }).join("");
-  $$(".wsc-day",list).forEach(b=>b.addEventListener("click",()=>{
-    state.selectedDate=b.dataset.date;
-    setPlannerViewMode("day");
+
+  $$(".wp-day-head",list).forEach(b=>b.addEventListener("click",()=>{
+    const iso=b.dataset.date;
+    state.selectedDate=state.selectedDate===iso?"":iso;
+    const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
     renderCalendar();
+    if(state.selectedDate===iso)requestAnimationFrame(()=>{
+      $(`.wp-day-head[data-date="${iso}"]`)?.scrollIntoView({behavior:"smooth",block:"nearest"});
+    });
   }));
+  const openAgenda=$("#dayAgenda");
+  if(openAgenda)bindTaskRows(openAgenda);
+  renderPlannerExamStrip();
 }
-function setPlannerViewMode(mode){
-  state.plannerViewMode=mode;
-  $$(".pv-toggle-btn").forEach(b=>b.classList.toggle("active",b.dataset.pvMode===mode));
-  $("#plannerDayWeekToggle")?.setAttribute("data-active",mode);
-  $("#plannerDayGroup")?.classList.toggle("hidden-view",mode!=="day");
-  const weekPanel=$("#weekScanPanel");if(weekPanel)weekPanel.hidden=mode!=="week";
-  /* The date rail is itself a week view. Showing it above the week card meant two
-     stacked answers to the same question, so in week mode the card owns the week and
-     its own navigation. */
-  const railPanel=$(".rail-panel");if(railPanel)railPanel.hidden=mode==="week";
-}
-/* Free time for the selected day only. The recurring 1:30-2:30pm lunch break is not
-   flagged as a "gap" since it's expected downtime — unless a class was cancelled during
-   it, in which case it's genuinely free and worth surfacing regardless of size. */
-function renderFreeBlocks(){
-  const panel=$("#freeBlocksPanel"),list=$("#freeBlocksList");if(!panel||!list)return;
-  const iso=state.selectedDate,LUNCH_START=13*60+30,LUNCH_END=14*60+30;
-  const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-  const scheduled=dayAll.filter(c=>c.status!=="Cancelled"),cancelled=dayAll.filter(c=>c.status==="Cancelled");
-  const titleEl=$("#freeBlocksTitle");
-  if(titleEl)titleEl.textContent=iso===isoToday()?"Today":iso===tomorrowIso()?"Tomorrow":fmtDate(iso,{weekday:"long"});
-  const gaps=[];
-  for(let i=0;i<scheduled.length-1;i++){
-    const gStart=minutes(scheduled[i].endTime),gEnd=minutes(scheduled[i+1].startTime),mins=gEnd-gStart;
-    if(mins<=0)continue;
-    const causedByCancellation=cancelled.some(c=>minutes(c.startTime)<gEnd&&minutes(c.endTime)>gStart);
-    const isLunch=!causedByCancellation&&gStart<=LUNCH_START+15&&gEnd>=LUNCH_END-15;
-    if(isLunch)continue;
-    if(mins>=(causedByCancellation?30:60))gaps.push({start:scheduled[i].endTime,end:scheduled[i+1].startTime,mins,causedByCancellation});
-  }
-  if(!gaps.length){panel.hidden=true;return}
-  panel.hidden=false;
-  list.innerHTML=gaps.map(g=>`<div class="free-block-row"><span class="fb-time">${esc(fmtTime(g.start))} – ${esc(fmtTime(g.end))}</span><span class="fb-dur">${esc(compactDuration(g.mins))}${g.causedByCancellation?" · class cancelled":" free"}</span></div>`).join("");
+/* Exams live behind their own tab, so the calendar could not tell you one was coming. */
+function renderPlannerExamStrip(){
+  const strip=$("#plannerExamStrip");if(!strip)return;
+  const next=nextExam();
+  if(!next){strip.hidden=true;return}
+  const firstSlot=Object.keys(next.slots)[0],entry=next.slots[firstSlot],daysLeft=examDaysLeft(next.date);
+  strip.hidden=false;
+  strip.style.setProperty("--course",colorFor(entry.code));
+  strip.classList.toggle("is-imminent",daysLeft<=3);
+  $("#plannerExamCode").textContent=entry.code;
+  $("#plannerExamTitle").textContent=entry.subject;
+  $("#plannerExamDays").textContent=daysLeft<=0?"Today":daysLeft===1?"Tomorrow":`${daysLeft}d`;
 }
 /* Status-aware desktop calendar preview. This declaration intentionally
    replaces the compact legacy renderer above without touching calendar flow. */
@@ -832,7 +809,8 @@ function openTaskEditor(t){
   clearDialogValidation($("#taskDialog"));
   $("#taskDialog").showModal();
 }
-function bindTaskRows(root){$$(".task-item",root).forEach(r=>{
+function bindTaskRows(root){
+  if(!root)return;$$(".task-item",root).forEach(r=>{
   $("input",r)?.addEventListener("change",e=>{
     const t=state.tasks.find(x=>x.id===r.dataset.task);if(!t)return;
     const commit=()=>{t.completed=e.target.checked;save(KEYS.tasks,state.tasks);syncTaskToGoogle(t);renderTasks();renderHomeTasks();renderCalendar();renderLedger()};
@@ -1743,7 +1721,6 @@ function bind(){
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerTab(b.dataset.plannerTab)));
   $$(".subtab[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-profile-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".profile-view").forEach(v=>v.classList.toggle("active",v.dataset.profileView===b.dataset.profileTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar();if($("#monthViewDialog").open)closeDialog($("#monthViewDialog"))});
-  $("#agendaPrevDay").addEventListener("click",()=>shiftSelectedDate(-1));$("#agendaNextDay").addEventListener("click",()=>shiftSelectedDate(1));
   $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
   $("#jumpToNextClassButton")?.addEventListener("click",()=>{
     const now=Date.now(),next=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime").getTime()>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
@@ -1780,14 +1757,11 @@ function bind(){
     if(hero&&hero.dataset.focusClassId){const c=state.classes.find(x=>classIdentity(x)===hero.dataset.focusClassId);if(c)openClassSheet(c)}
   });
   $("#closeMonthView")?.addEventListener("click",()=>closeDialog($("#monthViewDialog")));
-  $("#openMonthView")?.addEventListener("click",()=>{const d=new Date(`${state.selectedDate}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();$("#monthViewDialog").showModal()});
-  $("#railPrevWeek")?.addEventListener("click",()=>shiftRailWeek(-1));
-  $("#railNextWeek")?.addEventListener("click",()=>shiftRailWeek(1));
-  $("#railJumpToday")?.addEventListener("click",()=>{const n=new Date();state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date(n.getFullYear(),n.getMonth(),1);renderCalendar()});
-  bindSwipeGesture($("#dateRail"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"",threshold:46});
+  $("#openMonthView")?.addEventListener("click",()=>{const d=new Date(`${state.selectedDate||isoToday()}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();$("#monthViewDialog").showModal()});
+  bindSwipeGesture($(".week-planner"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:56});
+  $("#plannerExamStrip")?.addEventListener("click",()=>setPlannerTab("exams"));
   $("#weekScanPrev")?.addEventListener("click",()=>shiftRailWeek(-1));
   $("#weekScanNext")?.addEventListener("click",()=>shiftRailWeek(1));
-  $("#plannerDayWeekToggle")?.addEventListener("click",e=>{const b=e.target.closest("[data-pv-mode]");if(!b)return;setPlannerViewMode(b.dataset.pvMode)});
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
   $("#termProgressCard")?.addEventListener("click",()=>{renderTermHeatmap();$("#termHeatmapDialog").showModal()});
   $("#termHeatmapGrid")?.addEventListener("click",e=>{
@@ -1818,7 +1792,6 @@ async function init(){
   applyTheme();
   renderIcons();
   bind();
-  setPlannerViewMode(state.plannerViewMode);
   bindPullToRefresh();
   updateOfflineBanner();
   const c=load(KEYS.cache,null);
@@ -1838,11 +1811,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova48",{updateViaCache:"none"}).catch(console.error)
-  const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
-  if(sentinel&&heading&&"IntersectionObserver"in window){
-    new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
-  }
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova49",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

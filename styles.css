@@ -560,9 +560,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card .day-cardlist-item{
   background:color-mix(in srgb, var(--course,var(--accent)) 7%, var(--bg-panel));
   border-color:color-mix(in srgb, var(--course,var(--accent)) 14%, var(--border));
-  min-height:0!important;
 }
-.hero-card .day-cardlist-gap{min-height:0!important;padding:1px 2px}
+.hero-card .day-cardlist-gap{padding:1px 2px}
 .hero-card .day-cardlist-item.current{
   background:color-mix(in srgb, var(--course,var(--accent)) 15%, var(--bg-panel));
   border-color:color-mix(in srgb, var(--course,var(--accent)) 34%, var(--border));
@@ -1046,19 +1045,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 
 /* ============ Calendar page ============ */
 .calendar-layout{display:flex;flex-direction:column;gap:14px;margin-top:14px}
-.rail-panel,.agenda-panel{margin-top:0}
-.rail-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.rail-week-label{flex:1;text-align:center;font-family:var(--font-display);font-size:13.5px;font-weight:650;color:var(--ink-muted)}
 .rail-jump-today{color:var(--accent)}
 .rail-month-toggle{margin-left:2px}
-
-.planner-view-toggle{position:relative;display:flex;gap:6px;background:var(--bg-panel);padding:4px;border-radius:12px}
-.pv-toggle-thumb{position:absolute;top:4px;left:4px;width:calc(50% - 7px);height:calc(100% - 8px);border-radius:9px;background:color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));border:1px solid color-mix(in srgb, var(--accent) 35%, transparent);transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:0}
-.planner-view-toggle[data-active="week"] .pv-toggle-thumb{transform:translateX(calc(100% + 6px))}
-.pv-toggle-btn{position:relative;z-index:1;flex:1;background:none;border:0;padding:9px 8px;border-radius:9px;font-size:13.5px;font-weight:750;color:var(--ink-muted);transition:color .25s ease}
-.pv-toggle-btn.active{color:var(--accent)}
-#plannerDayGroup{display:flex;flex-direction:column;gap:14px}
-#plannerDayGroup.hidden-view{display:none}
 
 /* In week mode the week is the subject of the screen, so it gets a real heading
    instead of a muted label squeezed between two arrows. */
@@ -1074,105 +1062,86 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-scan-meta{margin:5px 0 0;font-size:12.5px;font-weight:600;color:var(--ink-muted)}
 .week-nav-arrow{width:36px;height:36px;border-radius:10px;flex:none}
 .week-nav-arrow svg{width:16px;height:16px}
-.week-scan-list{display:flex;flex-direction:column;gap:10px}
-/* Days already gone stay in the week so its shape is legible, but they step back to a
-   single quiet line rather than holding a card's worth of space each. */
-.wsc-day.is-past{opacity:.5;padding:9px 14px}
-.wsc-day.is-past .wsc-day-head{margin-bottom:0}
-.wsc-day.is-past .wsc-day-head span{font-size:14px;font-weight:700}
-.wsc-day.is-past .wsc-day-head small{font-size:11.5px}
-.wsc-day.is-past .wsc-count{font-size:10.5px;padding:2px 7px}
-.wsc-day.is-past::before{opacity:.5}
-.wsc-day.is-past.is-free{border-style:solid;background:transparent}
-.wsc-day{
-  display:block;width:100%;text-align:left;border:1px solid var(--border);
-  background:color-mix(in srgb, var(--accent) calc(var(--density, 0) * 3%), var(--bg-panel));
-  border-radius:var(--radius-md);padding:15px 14px 12px;font:inherit;color:inherit;
-  transition:background .3s ease,border-color .3s ease;position:relative;overflow:hidden;
-  animation:wsc-day-in .45s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i, 0) * 55ms);
+/* ===== The accordion week ===== */
+.week-planner{margin-top:14px;overflow:hidden}
+.week-tools{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.week-tool-chips{flex:1;min-width:0;margin-top:0}
+.week-tool-chips:not(:has(> :not([hidden]))){display:none}
+.week-month-button{flex:none;width:38px;height:38px;border-radius:11px}
+.week-course-row{margin-top:8px}
+.week-course-row[hidden]{display:none}
+.week-day-list{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+@keyframes wp-day-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.wp-day{
+  border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;
+  background:var(--bg-panel);position:relative;
+  transition:background .25s ease,border-color .25s ease,box-shadow .25s ease;
+  animation:wp-day-in .4s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i, 0) * 45ms);
 }
-@keyframes wsc-day-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion: reduce){.wsc-day{animation:none}}
-.wsc-day:not(.is-today)::before{
-  content:"";position:absolute;left:0;right:0;top:0;height:3px;
-  background:color-mix(in srgb, var(--wsc-tint, transparent) 75%, transparent);
+@media(prefers-reduced-motion: reduce){.wp-day{animation:none}}
+.wp-day-head{
+  display:flex;align-items:center;gap:9px;width:100%;padding:13px 13px;
+  background:none;border:0;font:inherit;color:inherit;cursor:pointer;text-align:left;
 }
-.wsc-day.is-free:not(.is-today){border-style:dashed;background:transparent}
-.wsc-day.is-free:not(.is-today) .wsc-day-head span{color:var(--ink-faint);font-weight:700}
-.wsc-day.is-today{
+.wp-day-name{
+  font-family:var(--font-display);font-size:15.5px;font-weight:750;letter-spacing:-.01em;color:var(--ink);
+  display:flex;align-items:center;gap:7px;flex:none;
+}
+.wp-today-badge{font-size:9.5px;font-weight:800;letter-spacing:.05em;color:#fff;background:var(--accent);border-radius:99px;padding:2.5px 7px}
+/* Course colours so a collapsed day says which subjects it holds, not only how many. */
+.wp-dots{display:flex;align-items:center;gap:3px;flex:none}
+.wp-dots i{width:6px;height:6px;border-radius:50%;background:var(--course,var(--accent))}
+.wp-day-right{display:flex;align-items:center;gap:9px;margin-left:auto;flex:none}
+.wp-count{font-size:11.5px;font-weight:700;color:var(--ink-muted);white-space:nowrap}
+.wp-date{font-size:11.5px;font-weight:650;color:var(--ink-faint);white-space:nowrap}
+.wp-caret{display:flex;color:var(--ink-faint);flex:none;transition:transform .28s cubic-bezier(.22,1,.36,1)}
+.wp-caret svg{width:15px;height:15px}
+.wp-day.is-open .wp-caret{transform:rotate(90deg);color:var(--accent)}
+
+.wp-day.is-today{
   border-color:transparent;
   background:color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
   box-shadow:var(--shadow-md),
     inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent),
-    0 0 24px -12px color-mix(in srgb, var(--accent) 26%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
-  padding-left:14px;
+    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
 }
-.wsc-day.is-today::before{
-  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-  background:radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%);
+.wp-day.is-today .wp-day-name{color:var(--accent)}
+.wp-day.is-past:not(.is-open){opacity:.5}
+.wp-day.is-free:not(.is-today):not(.is-open){background:transparent;border-style:dashed}
+.wp-day.is-free:not(.is-today) .wp-day-name{color:var(--ink-faint);font-weight:700}
+.wp-day.has-exam .wp-day-head{box-shadow:inset 3px 0 0 var(--accent-2)}
+.wp-day.is-open{
+  background:var(--bg-elevated);border-color:color-mix(in srgb, var(--accent) 26%, var(--border));
+  box-shadow:var(--shadow-md);
 }
-.wsc-day.is-today>*{position:relative;z-index:1}
-.wsc-day-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;gap:8px}
-.wsc-day-head span{font-family:var(--font-display);font-size:17px;font-weight:800;display:flex;align-items:center;gap:7px;letter-spacing:-.01em}
-.wsc-day.is-today .wsc-day-head span{color:var(--accent);font-size:18.5px}
-.wsc-today-badge{font-size:10px;font-weight:800;letter-spacing:.04em;color:#fff;background:var(--accent);border-radius:99px;padding:2.5px 8px}
-.wsc-day-head-right{display:flex;align-items:center;gap:8px;flex:none}
-.wsc-day-head small{font-size:12.5px;font-weight:650;color:var(--ink-muted)}
-.wsc-count{font-size:11px;font-weight:750;color:var(--ink-muted);background:var(--bg-panel);border-radius:99px;padding:3px 9px}
-.wsc-day.is-today .wsc-count{color:var(--accent);background:color-mix(in srgb, var(--accent) 14%, var(--bg-panel))}
-/* A week is scanned to find out *what* is on, so the subject leads the row and the
-   time sits in a gutter beside it — the same shape the day list and Today card use,
-   rather than a big time range with the subject reduced to a code chip. */
-.wsc-row{
-  display:flex;align-items:flex-start;gap:11px;padding:9px 10px;font-size:13.5px;border-radius:10px;
-  border-left:3px solid color-mix(in srgb, var(--course,var(--accent)) 65%, transparent);
-  background:color-mix(in srgb, var(--course,var(--accent)) 6%, transparent);
-  margin-bottom:4px;transition:box-shadow .25s ease,background .25s ease;
+.wp-day.is-open.is-today{border-color:transparent}
+@media (hover:hover){.wp-day:not(.is-open) .wp-day-head:hover{background:color-mix(in srgb, var(--ink) 4%, transparent)}}
+.wp-day-head:active{transform:scale(.995)}
+
+.wp-day-body{padding:0 13px 14px;animation:wp-open .28s cubic-bezier(.22,1,.36,1) both}
+@keyframes wp-open{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion: reduce){.wp-day-body{animation:none}}
+.wp-day-meta{margin:0 0 10px;font-size:12px;font-weight:650;color:var(--ink-muted)}
+
+/* Next exam, surfaced in the calendar instead of living only behind the Exams tab. */
+.next-exam-strip{
+  display:flex;align-items:center;gap:9px;width:100%;margin-top:14px;padding:11px 14px;
+  border-radius:var(--radius-md);border:1px solid color-mix(in srgb, var(--course,var(--accent-2)) 26%, var(--border));
+  background:color-mix(in srgb, var(--course,var(--accent-2)) 8%, var(--bg-panel));
+  font:inherit;color:inherit;cursor:pointer;text-align:left;
+  transition:transform .12s ease,box-shadow .2s ease;
 }
-.wsc-row-when{
-  flex:none;min-width:58px;display:flex;flex-direction:column;line-height:1.25;
-  font-variant-numeric:tabular-nums;padding-top:1px;
+.next-exam-strip:active{transform:scale(.99)}
+.pes-label{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-faint);flex:none}
+.pes-code{
+  flex:none;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:6px;
+  background:color-mix(in srgb, var(--course,var(--accent-2)) 22%, transparent);color:var(--course,var(--accent-2));
 }
-.wsc-row-when b{font-family:var(--font-display);font-size:13.5px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
-.wsc-row-when small{font-size:11.5px;font-weight:600;color:var(--ink-faint)}
-.wsc-row-main{flex:1;min-width:0}
-.wsc-row-title{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
-.wsc-row-title strong{font-size:13.5px;font-weight:750;color:var(--ink);line-height:1.25;min-width:0}
-.wsc-row .wsc-code{flex:none;padding:2px 8px;border-radius:6px;font-weight:800;font-size:10.5px;letter-spacing:.02em;background:color-mix(in srgb, var(--course,var(--accent)) 20%, transparent);color:var(--course,var(--accent))}
-.wsc-row-title .wsc-badge{margin-left:auto}
-.wsc-row-room{display:flex;align-items:center;gap:5px;min-width:0;margin-top:3px;font-size:12px;color:var(--ink-muted);font-weight:600}
-.wsc-row-room svg{width:12px;height:12px;flex:none;opacity:.65}
-.wsc-row-room span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wsc-row.cancelled{opacity:.55}
-.wsc-row.cancelled .wsc-row-title strong{text-decoration:line-through}
-.wsc-row.is-live .wsc-row-when b{color:var(--live)}
-.wsc-badge{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;letter-spacing:.04em;padding:3px 8px;border-radius:99px;color:#fff}
-.wsc-badge.live{background:var(--live)}
-.wsc-badge.live i{width:5px;height:5px;border-radius:50%;background:#fff;animation:wsc-live-pulse 1.2s ease-in-out infinite}
-.wsc-badge.upcoming{background:var(--accent)}
-.wsc-row.is-live{
-  background:color-mix(in srgb, var(--live) 14%, transparent);border-left-color:var(--live);
-  box-shadow:0 0 0 1px color-mix(in srgb, var(--live) 30%, transparent), 0 0 12px -6px color-mix(in srgb, var(--live) 32%, transparent);
-}
-@keyframes wsc-live-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
-@media(prefers-reduced-motion: reduce){.wsc-badge.live i{animation:none}}
-.wsc-row.cancelled .wsc-row-when b,.wsc-row.cancelled .wsc-row-room span{text-decoration:line-through}
-.wsc-empty{margin:2px 0 0;font-size:12.5px;color:var(--ink-faint);font-weight:500}
-.date-rail{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
-.rail-day{
-  flex:1;min-width:42px;display:flex;flex-direction:column;align-items:center;gap:6px;
-  padding:10px 4px;border-radius:14px;background:var(--bg-panel);color:var(--ink-muted);border:1px solid transparent;
-}
-.rail-day .dow{font-size:10.5px;font-weight:700;letter-spacing:.02em}
-.rail-day b{font-family:var(--font-display);font-size:15px;font-weight:650;color:var(--ink)}
-.rail-day .cnt{font-family:var(--font-display);font-size:10.5px;font-weight:700;color:var(--accent-2)}
-.rail-day .cnt.empty{color:var(--ink-faint);font-weight:600}
-.rail-day.today{border-color:var(--accent)}
-.rail-day.sel{background:color-mix(in srgb, var(--accent) 14%, var(--bg-panel));border-color:color-mix(in srgb, var(--accent) 45%, transparent)}
-.rail-day.sel .dow{color:var(--accent)}
-.rail-day.sel b{color:var(--ink)}
-.rail-day.sel .cnt{color:var(--accent)}
+.pes-title{flex:1;min-width:0;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pes-days{flex:none;font-family:var(--font-display);font-size:14px;font-weight:800;color:var(--course,var(--accent-2))}
+.next-exam-strip.is-imminent .pes-days{color:var(--danger)}
+
 .calendar-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .calendar-head h2{font-size:16.5px}
 .today-button{
@@ -1211,13 +1180,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-dashes i.cancelled{background:var(--danger)}
 .calendar-day.holiday .calendar-day-number{color:var(--danger)}
 .calendar-day.has-exam::after{content:"";position:absolute;top:6px;left:7px;width:5px;height:5px;border-radius:50%;background:var(--accent-2)}
-.rail-day.has-exam{box-shadow:inset 0 0 0 1px var(--accent-2)}
-.rail-day.dimmed{opacity:.35}
 .calendar-dash-more{font-size:8px;font-weight:800;color:var(--ink-faint);line-height:1;margin-left:1px}
-.agenda-course-row{margin-top:8px}
-.agenda-course-row .filter-chip{border-color:color-mix(in srgb, var(--course,var(--accent)) 30%, var(--border))}
-.agenda-course-row .filter-chip.active{background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);border-color:color-mix(in srgb, var(--course,var(--accent)) 45%, transparent);color:var(--course,var(--accent))}
-.agenda-heading-sentinel{position:relative;top:0;height:1px}
+.week-course-row{margin-top:8px}
+.week-course-row .filter-chip{border-color:color-mix(in srgb, var(--course,var(--accent)) 30%, var(--border))}
+.week-course-row .filter-chip.active{background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);border-color:color-mix(in srgb, var(--course,var(--accent)) 45%, transparent);color:var(--course,var(--accent))}
 .calendar-holiday-mark{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--amber);overflow:hidden;font-size:0;line-height:0;color:transparent}
 .calendar-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .legend-item{
@@ -1230,26 +1196,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .legend-item:active{transform:scale(.95)}
 .legend-item.active{background:color-mix(in srgb, var(--course,var(--accent)) 16%, transparent);border-color:color-mix(in srgb, var(--course,var(--accent)) 40%, transparent);color:var(--ink)}
 .calendar-day.dimmed{opacity:.28}
-
-.agenda-heading{
-  margin:-18px -18px 10px;padding:14px 18px;
-  position:sticky;top:60px;z-index:5;
-  background:var(--bg-elevated);
-  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-  border-bottom:1px solid transparent;
-}
-.agenda-heading.is-stuck{border-bottom-color:var(--border);box-shadow:var(--shadow-md)}
-.agenda-heading-text{min-width:0}
-#agendaDate{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
-.agenda-day-meta{margin:2px 0 0;font-size:12px;font-weight:600;color:var(--ink-muted)}
-.agenda-day-meta:empty{display:none}
 /* The filter rows are answers to questions this day may not raise — they collapse out
    of the way rather than sitting above an empty agenda. */
 .agenda-utility-row:not(:has(> :not([hidden]))){display:none}
-.agenda-course-row[hidden]{display:none}
-.agenda-day-controls{display:flex;align-items:center;gap:2px}
-.agenda-day-arrow{width:34px;height:34px;border-radius:9px}
-.agenda-day-arrow svg{width:15px;height:15px}
+.week-course-row[hidden]{display:none}
 .schedule-list{margin-top:16px}
 .agenda-group-title{font-size:11.5px;font-weight:800;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
 .agenda-exam-section{margin-bottom:14px}
@@ -1299,8 +1249,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .session-ring-meta strong{font-size:13px;font-weight:750}
 .session-ring-meta span{font-size:11px;color:var(--ink-muted);font-weight:600}
 .empty-inline{font-size:13px;color:var(--ink-muted);padding:4px 0}
-
-.agenda-utility-row{margin:2px 0 4px}
 
 .day-cardlist-item{cursor:pointer}
 #focusPanel.has-focus{cursor:pointer}
@@ -1546,14 +1494,11 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:7px;
 .panel-compact .panel-heading{margin-bottom:4px}
 .panel-compact .panel-heading h2{font-size:13.5px}
 .panel-compact .overline{margin-bottom:2px;font-size:10px}
-.free-blocks-panel{margin-top:10px}
-.free-blocks-list{display:flex;flex-direction:column;gap:0}
-.free-block-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 2px;font-size:12px}
 .fb-time{color:var(--ink-muted);font-weight:600}
 .fb-dur{font-weight:800;color:var(--accent);flex:none;font-size:11.5px}
 
-.wsc-day,.exam-strip,.term-progress-head{transition:transform .15s ease,box-shadow .15s ease}
+.exam-strip,.term-progress-head{transition:transform .15s ease,box-shadow .15s ease}
 @media (hover:hover){
-  .wsc-day:hover,.exam-strip:hover,.term-progress-head:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+  .exam-strip:hover,.term-progress-head:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 }
-.wsc-day:active,.exam-strip:active,.term-progress-head:active{transform:scale(.98)}
+.exam-strip:active,.term-progress-head:active{transform:scale(.98)}

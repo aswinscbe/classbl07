@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260902-nova48">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova49">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -159,61 +159,35 @@
         </div>
 
         <section class="planner-view active" data-planner-view="calendar">
-          <div class="calendar-layout">
-            <article class="rail-panel panel">
-              <div class="rail-head">
-                <button class="icon-button" id="railPrevWeek" aria-label="Previous week"><span data-icon="chevron-left"></span></button>
-                <span class="rail-week-label" id="railWeekLabel">Week</span>
-                <button class="icon-button" id="railNextWeek" aria-label="Next week"><span data-icon="chevron-right"></span></button>
-                <button class="icon-button icon-button-lg rail-jump-today" id="railJumpToday" aria-label="Jump to today"><span data-icon="target"></span></button>
-                <button class="icon-button icon-button-lg rail-month-toggle" id="openMonthView" aria-label="Open month view"><span data-icon="calendar"></span></button>
-              </div>
-              <div class="date-rail" id="dateRail"></div>
-            </article>
+          <button type="button" class="next-exam-strip" id="plannerExamStrip" hidden>
+            <span class="pes-label">NEXT EXAM</span>
+            <span class="pes-code" id="plannerExamCode">—</span>
+            <span class="pes-title" id="plannerExamTitle">—</span>
+            <b class="pes-days" id="plannerExamDays">—</b>
+          </button>
 
-            <div class="planner-view-toggle" id="plannerDayWeekToggle" data-active="day">
-              <span class="pv-toggle-thumb" aria-hidden="true"></span>
-              <button type="button" class="pv-toggle-btn active" data-pv-mode="day">Day</button>
-              <button type="button" class="pv-toggle-btn" data-pv-mode="week">Week</button>
+          <article class="panel week-planner">
+            <div class="week-scan-head">
+              <button type="button" class="icon-button week-nav-arrow" id="weekScanPrev" aria-label="Previous week"><span data-icon="chevron-left"></span></button>
+              <div class="week-scan-title">
+                <span class="week-scan-eyebrow" id="weekScanEyebrow">THIS WEEK</span>
+                <h2 id="weekScanRange">Week</h2>
+                <p class="week-scan-meta" id="weekScanMeta"></p>
+              </div>
+              <button type="button" class="icon-button week-nav-arrow" id="weekScanNext" aria-label="Next week"><span data-icon="chevron-right"></span></button>
             </div>
 
-            <div id="plannerDayGroup">
-            <article class="panel panel-compact free-blocks-panel" id="freeBlocksPanel" hidden>
-              <div class="panel-heading"><div><p class="overline">FREE TIME</p><h2 id="freeBlocksTitle">Today</h2></div></div>
-              <div class="free-blocks-list" id="freeBlocksList"></div>
-            </article>
-
-            <article class="agenda-panel panel">
-              <div class="agenda-heading-sentinel" id="agendaHeadingSentinel" aria-hidden="true"></div>
-              <div class="panel-heading agenda-heading" id="agendaHeading">
-                <div class="agenda-heading-text"><h2 id="agendaDate">Choose a date</h2><p class="agenda-day-meta" id="agendaDayMeta"></p></div>
-                <div class="agenda-day-controls">
-                  <button class="icon-button agenda-day-arrow" id="agendaPrevDay" aria-label="Previous day"><span data-icon="chevron-left"></span></button>
-                  <button class="icon-button agenda-day-arrow" id="agendaNextDay" aria-label="Next day"><span data-icon="chevron-right"></span></button>
-                </div>
-              </div>
-              <div class="filter-chips agenda-utility-row" id="agendaUtilityRow">
+            <div class="week-tools">
+              <div class="filter-chips week-tool-chips" id="agendaUtilityRow">
                 <button type="button" class="filter-chip" id="jumpToNextClassButton">Jump to next class</button>
                 <button type="button" class="filter-chip" id="toggleCompletedButton">Show completed</button>
               </div>
-              <div class="filter-chips agenda-course-row" id="agendaCourseRow"></div>
-              <div id="dayAgenda" class="schedule-list"></div>
-            </article>
+              <button type="button" class="icon-button week-month-button" id="openMonthView" aria-label="Open month view"><span data-icon="calendar"></span></button>
             </div>
+            <div class="filter-chips week-course-row" id="agendaCourseRow"></div>
 
-            <article class="panel week-scan-panel" id="weekScanPanel" hidden>
-              <div class="week-scan-head">
-                <button type="button" class="icon-button week-nav-arrow" id="weekScanPrev" aria-label="Previous week"><span data-icon="chevron-left"></span></button>
-                <div class="week-scan-title">
-                  <span class="week-scan-eyebrow" id="weekScanEyebrow">THIS WEEK</span>
-                  <h2 id="weekScanRange">Week</h2>
-                  <p class="week-scan-meta" id="weekScanMeta"></p>
-                </div>
-                <button type="button" class="icon-button week-nav-arrow" id="weekScanNext" aria-label="Next week"><span data-icon="chevron-right"></span></button>
-              </div>
-              <div class="week-scan-list" id="weekScanList"></div>
-            </article>
-          </div>
+            <div class="week-day-list" id="weekScanList"></div>
+          </article>
         </section>
 
         <section class="planner-view" data-planner-view="exams">
@@ -565,9 +539,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260902-nova48"></script>
-  <script src="exam-data.js?v=20260902-nova48"></script>
-  <script src="app.js?v=20260902-nova48"></script>
-  <script src="polish.js?v=20260902-nova48"></script>
+  <script src="campus-data.js?v=20260902-nova49"></script>
+  <script src="exam-data.js?v=20260902-nova49"></script>
+  <script src="app.js?v=20260902-nova49"></script>
+  <script src="polish.js?v=20260902-nova49"></script>
 </body>
 </html>
