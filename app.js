@@ -690,22 +690,39 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
   for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);monthIsos.push(`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`)}
   const counts=monthIsos.map(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length);
   const peak=Math.max(1,...counts);
+  /* Built as six week rows rather than a flat grid of 42 tiles, so the week you are
+     working in can be banded as an actual band and a row is a tap target of its own. */
   let html="";
-  monthIsos.forEach((iso,i)=>{
-    const day=new Date(`${iso}T12:00:00+05:30`);
-    const dayClasses=state.classes.filter(c=>c.dateIso===iso),active=dayClasses.filter(c=>c.status!=="Cancelled");
-    const isWeekend=day.getDay()===0||day.getDay()===6;
-    const dayCourses=[...new Set(active.map(c=>canonical(c.code)))];
-    const dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight);
-    const exam=examOn(iso),holiday=HOLIDAYS[iso];
-    const intensity=active.length?Math.max(.28,active.length/peak):0;
-    const inShownWeek=mondayIso(iso)===shownWeek;
-    html+=`<button class="calendar-day ${day.getMonth()!==m?"outside":""} ${isWeekend?"weekend":""} ${iso===isoToday()?"today":""} ${iso===state.selectedDate?"selected":""} ${dimmed?"dimmed":""} ${exam?"has-exam":""} ${holiday?"has-holiday":""} ${inShownWeek?"in-week":""}" data-date="${iso}" style="--fill:${intensity}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
-      <span class="calendar-day-number">${day.getDate()}</span>
-      ${exam?'<span class="calendar-exam-dot" aria-hidden="true"></span>':active.length?`<span class="calendar-day-count">${active.length}</span>`:""}
-    </button>`;
-  });
+  for(let w=0;w<6;w++){
+    const rowIsos=monthIsos.slice(w*7,w*7+7);
+    const rowInWeek=mondayIso(rowIsos[0])===shownWeek;
+    const cells=rowIsos.map(iso=>{
+      const day=new Date(`${iso}T12:00:00+05:30`);
+      const active=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled");
+      const isWeekend=day.getDay()===0||day.getDay()===6;
+      const dayCourses=[...new Set(active.map(c=>canonical(c.code)))];
+      const dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight);
+      const exam=examOn(iso),holiday=HOLIDAYS[iso];
+      const load=active.length?Math.max(.34,Math.min(1,active.length/peak)):0;
+      const cls=["calendar-day",day.getMonth()!==m?"outside":"",isWeekend?"weekend":"",
+        iso===isoToday()?"today":"",iso===state.selectedDate?"selected":"",dimmed?"dimmed":"",
+        exam?"has-exam":"",holiday?"has-holiday":""].filter(Boolean).join(" ");
+      const mark=exam
+        ?'<span class="cd-mark cd-exam" aria-hidden="true"></span>'
+        :active.length?`<span class="cd-mark cd-load" style="--load:${load}" aria-hidden="true"></span>`
+        :holiday?'<span class="cd-mark cd-holiday" aria-hidden="true"></span>':"";
+      return`<button class="${cls}" data-date="${iso}" style="--fill:${load}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
+        <span class="calendar-day-number">${day.getDate()}</span>${mark}
+      </button>`;
+    }).join("");
+    html+=`<div class="month-week ${rowInWeek?"in-week":""}">${cells}</div>`;
+  }
   $("#calendarGrid").innerHTML=html;
+  $$(".month-week").forEach(row=>row.addEventListener("click",e=>{
+    if(e.target.closest(".calendar-day"))return;
+    const firstIso=row.querySelector(".calendar-day")?.dataset.date;if(!firstIso)return;
+    state.railStart=mondayIso(firstIso);setPlannerTab("calendar");renderCalendar();
+  }));
   $$(".calendar-day").forEach(b=>{
     b.addEventListener("click",()=>{
       /* A month is scanned to pick a week to work in, so a tap lands you in that week. */
@@ -717,12 +734,12 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
     b.addEventListener("mouseleave",hideCalendarTooltip);
   });
   const keyEl=$("#monthKey");
-  if(keyEl)keyEl.innerHTML='<span class="mk-item"><i class="mk-swatch mk-classes"></i>Class day</span><span class="mk-item"><i class="mk-swatch mk-exam"></i>Exam</span><span class="mk-item"><i class="mk-swatch mk-holiday"></i>Holiday</span><span class="mk-item"><i class="mk-swatch mk-week"></i>Shown week</span>';
+  if(keyEl)keyEl.innerHTML='<span class="mk-item"><i class="mk-swatch mk-classes"></i>Classes</span><span class="mk-item"><i class="mk-swatch mk-exam"></i>Exam</span><span class="mk-item"><i class="mk-swatch mk-holiday"></i>Holiday</span>';
   $("#toggleCompletedButton")?.classList.toggle("active",!!state.agendaShowCompleted);
   const weekIsos=weekDaysFrom(state.railStart||mondayIso(state.selectedDate||isoToday()));
   const weekAll=weekIsos.flatMap(iso=>state.classes.filter(c=>c.dateIso===iso));
   const hiddenCompletedCount=weekIsos.includes(isoToday())?state.classes.filter(c=>c.dateIso===isoToday()&&isClassCompleted(c)).length:0;
-  const toggleCompletedBtn=$("#toggleCompletedButton");if(toggleCompletedBtn){toggleCompletedBtn.textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;toggleCompletedBtn.hidden=!hiddenCompletedCount&&!state.agendaShowCompleted;}const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;$("#calendarLegend").innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");$("#calendarLegend").onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};const courseRow=$("#agendaCourseRow");if(courseRow){const dayCourses=[...new Set(weekAll.filter(c=>c.status!=="Cancelled").map(c=>canonical(c.code)))];if(state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight))dayCourses.push(state.calendarHighlight);const showCourseChips=dayCourses.length>1||!!state.calendarHighlight;courseRow.innerHTML=showCourseChips?dayCourses.map(c=>`<button type="button" class="filter-chip ${c===state.calendarHighlight?"active":""}" data-course="${esc(c)}" style="--course:${colorFor(c)}">${esc(c)}</button>`).join(""):"";courseRow.hidden=!showCourseChips;courseRow.onclick=e=>{const btn=e.target.closest("[data-course]");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()}}renderWeekPlanner()}
+  const toggleCompletedBtn=$("#toggleCompletedButton");if(toggleCompletedBtn){toggleCompletedBtn.textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;toggleCompletedBtn.hidden=!hiddenCompletedCount&&!state.agendaShowCompleted;}const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;const legendEl=$("#calendarLegend");if(legendEl)legendEl.innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");if(legendEl)legendEl.onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};const courseRow=$("#agendaCourseRow");if(courseRow){const dayCourses=[...new Set(weekAll.filter(c=>c.status!=="Cancelled").map(c=>canonical(c.code)))];if(state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight))dayCourses.push(state.calendarHighlight);const showCourseChips=dayCourses.length>1||!!state.calendarHighlight;courseRow.innerHTML=showCourseChips?dayCourses.map(c=>`<button type="button" class="filter-chip ${c===state.calendarHighlight?"active":""}" data-course="${esc(c)}" style="--course:${colorFor(c)}">${esc(c)}</button>`).join(""):"";courseRow.hidden=!showCourseChips;courseRow.onclick=e=>{const btn=e.target.closest("[data-course]");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()}}renderWeekPlanner()}
 function mondayIso(iso){const d=new Date(`${iso}T12:00:00+05:30`);d.setDate(d.getDate()-((d.getDay()+6)%7));return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
 function shiftRailWeek(delta){const d=new Date(`${state.railStart||mondayIso(state.selectedDate)}T12:00:00+05:30`);d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderCalendar()}
 /* The planner is one accordion week: seven day rows always on screen, the selected day
@@ -1879,7 +1896,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova50",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova51",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

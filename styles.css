@@ -1181,65 +1181,59 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-head h2{font-family:var(--font-display);font-size:clamp(21px,5.4vw,26px);font-weight:800;letter-spacing:-.02em;margin:0}
 .month-key{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
 .mk-item{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:650;color:var(--ink-muted)}
-.mk-swatch{width:11px;height:11px;border-radius:4px;flex:none}
-.mk-classes{background:color-mix(in srgb, var(--accent) 34%, transparent)}
-.mk-exam{background:var(--danger);border-radius:50%;width:8px;height:8px}
-.mk-holiday{background:color-mix(in srgb, var(--amber) 40%, transparent)}
-.mk-week{background:color-mix(in srgb, var(--accent) 14%, transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent)}
+.mk-swatch{width:14px;height:3px;border-radius:99px;flex:none}
+.mk-classes{background:color-mix(in srgb, var(--accent) 75%, transparent)}
+.mk-exam{background:var(--danger);border-radius:50%;width:7px;height:7px}
+.mk-holiday{background:color-mix(in srgb, var(--amber) 65%, transparent)}
 .today-button{
   display:inline-flex;align-items:center;gap:6px;justify-content:center;
   background:var(--accent-soft);color:var(--accent);border:0;border-radius:99px;padding:6px 14px;font-size:12.5px;font-weight:750;
   cursor:pointer;transition:background .2s ease;
 }
 @media (hover:hover){.today-button:hover{background:color-mix(in srgb, var(--accent) 22%, transparent)}}
-.weekday-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px}
-.weekday-row span{text-align:center;font-size:11.5px;font-weight:750;color:var(--ink-faint)}
-.weekday-row span.weekend{color:var(--accent)}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.weekday-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin:0 2px 8px;padding:0 2px}
+.weekday-row span{text-align:center;font-size:10.5px;font-weight:800;letter-spacing:.05em;color:var(--ink-faint);text-transform:uppercase}
+.weekday-row span.weekend{color:var(--ink-faint);opacity:.7}
+.calendar-grid{display:flex;flex-direction:column;gap:4px}
+.month-week{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:2px;
+  padding:2px;border-radius:12px;border:1px solid transparent;
+  transition:background .25s ease,border-color .25s ease;
+}
+/* The week you are working in, banded as one continuous row rather than seven
+   separately tinted squares with gaps knocking holes in the band. */
+.month-week.in-week{
+  background:color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color:color-mix(in srgb, var(--accent) 30%, transparent);
+}
 .calendar-day{
-  aspect-ratio:1/1;border:1px solid transparent;border-radius:10px;
-  color:var(--ink);position:relative;transition:transform .12s ease,background .2s ease;
-  background:color-mix(in srgb, var(--accent) calc(var(--fill, 0) * 34%), transparent);
+  aspect-ratio:1/1;border:0;background:none;border-radius:10px;
+  color:var(--ink);position:relative;cursor:pointer;padding:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  transition:transform .12s ease,background .2s ease;
 }
-.calendar-day:active{transform:scale(.94)}
-.calendar-day.weekend .calendar-day-number{color:var(--accent-2)}
+.calendar-day:active{transform:scale(.9)}
+@media (hover:hover){.calendar-day:hover{background:color-mix(in srgb, var(--ink) 7%, transparent)}}
 .calendar-day-number{
-  position:absolute;top:9px;left:50%;transform:translateX(-50%);
-  font-size:13.5px;font-weight:650;line-height:1;
+  font-family:var(--font-display);font-size:14.5px;font-weight:700;line-height:1;
+  display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
 }
-.calendar-day-count{
-  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
-  font-size:10px;font-weight:800;line-height:1;color:var(--ink-muted);
-}
-.calendar-day[style*="--fill:0"] .calendar-day-count{display:none}
-/* The month is scanned to find the exam block, so exams are the loudest mark on it. */
-.calendar-exam-dot{
-  position:absolute;bottom:7px;left:50%;transform:translateX(-50%);
-  width:6px;height:6px;border-radius:50%;background:var(--danger);
-  box-shadow:0 0 0 2px color-mix(in srgb, var(--danger) 25%, transparent);
-}
-.calendar-day.has-exam{box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 55%, transparent)}
-.calendar-day.has-holiday .calendar-day-number{color:var(--amber)}
-.calendar-day.has-holiday{background:color-mix(in srgb, var(--amber) 12%, transparent)}
-/* The week you are working in, banded across the row. */
-.calendar-day.in-week{background:color-mix(in srgb, var(--accent) calc(14% + var(--fill, 0) * 30%), transparent)}
-.calendar-day.in-week .calendar-day-number{color:var(--ink)}
-.calendar-day.weekend .calendar-day-number{color:var(--accent)}
-.calendar-day.outside{opacity:.32}
-.calendar-day.today{border-color:var(--accent)}
-.calendar-day.today .calendar-day-number{color:var(--accent);font-weight:800}
-.calendar-day.selected{
-  background:color-mix(in srgb, var(--accent) 16%, var(--bg-panel));border-color:color-mix(in srgb, var(--accent) 55%, transparent);
-  box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 14px -2px color-mix(in srgb, var(--accent) 45%, transparent);
-  transition:box-shadow .25s ease,background .25s ease;
-}
-.calendar-day.selected .calendar-day-number{color:var(--accent);font-weight:800}
-
-.calendar-day.holiday .calendar-day-number{color:var(--danger)}
-.week-course-row{margin-top:8px}
-.week-course-row .filter-chip{border-color:color-mix(in srgb, var(--course,var(--accent)) 30%, var(--border))}
-.week-course-row .filter-chip.active{background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);border-color:color-mix(in srgb, var(--course,var(--accent)) 45%, transparent);color:var(--course,var(--accent))}
-.calendar-holiday-mark{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--amber);overflow:hidden;font-size:0;line-height:0;color:transparent}
+.calendar-day.weekend .calendar-day-number{color:var(--ink-muted)}
+.calendar-day.outside{opacity:.22}
+.calendar-day.outside .cd-mark{display:none}
+/* Today is a filled disc, the selected day a ring — states you can read instantly. */
+.calendar-day.today .calendar-day-number{background:var(--accent);color:#fff;font-weight:800}
+.calendar-day.selected .calendar-day-number{box-shadow:inset 0 0 0 2px var(--accent);color:var(--accent);font-weight:800}
+.calendar-day.today.selected .calendar-day-number{box-shadow:0 0 0 2px var(--bg-elevated),0 0 0 4px var(--accent);color:#fff}
+/* Load as a bar whose width tracks the number of classes: a six-class day and a
+   four-class day are now different at a glance. */
+.cd-mark{height:3px;border-radius:99px;flex:none}
+.cd-load{width:calc(6px + var(--load, 0) * 16px);background:color-mix(in srgb, var(--accent) calc(45% + var(--load, 0) * 55%), transparent)}
+.cd-exam{width:6px;height:6px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 3px color-mix(in srgb, var(--danger) 20%, transparent)}
+.cd-holiday{width:14px;background:color-mix(in srgb, var(--amber) 65%, transparent)}
+.calendar-day.has-exam .calendar-day-number{color:var(--danger)}
+.calendar-day.has-exam.today .calendar-day-number{color:#fff}
+.calendar-day.dimmed{opacity:.25}
 .calendar-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .legend-item{
   display:flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--ink-muted);
