@@ -246,7 +246,7 @@ function positionNavIndicator(){
   ind.style.transform=`translateX(${btnRect.left-navRect.left}px)`;
   requestAnimationFrame(()=>ind.classList.add("ready"));
 }
-function showPage(n){if(n==="home"){state.timelineOffset=0}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.plannerViewMode="day"}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){setPlannerViewMode("day");renderCalendar();renderExamsPage()}positionNavIndicator()}
+function showPage(n){if(n==="home"){state.timelineOffset=0;state.timelineTouched=false}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.plannerViewMode="day"}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){setPlannerViewMode("day");renderCalendar();renderExamsPage()}positionNavIndicator()}
 function setPlannerTab(tab){
   $$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===tab));
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
@@ -478,37 +478,35 @@ function renderHome(){
       }).join("");
       const nowMin=Number(istParts().hour)*60+Number(istParts().minute);
       const nowMarker=(shownDayIso===today&&nowMin>=dayStart&&nowMin<=dayEnd)?`<span class="hero-strip-now" style="left:${((nowMin-dayStart)/span)*100}%"></span>`:"";
-      const stripLabel=shownDayIso!==today?`<p class="hero-strip-label">${esc(fmtDate(shownDayIso,{weekday:"long",day:"numeric",month:"short"}))}</p>`:"";
-      stripEl.innerHTML=`${stripLabel}<div class="hero-strip-track">${segs}${nowMarker}</div>`;
-    }
-  }
-  /* Day at a glance — every class on the day the hero is currently focused on (today,
-     unless today's classes are all done, in which case this follows the "next up" day),
-     as a compact row, so checking the day doesn't require tapping through classes one
-     at a time. The strip above already labels the day when it isn't today. */
-  const todayListEl=$("#heroTodayList");
-  if(todayListEl){
-    const glanceList=state.classes.filter(c=>c.dateIso===shownDayIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-    if(!glanceList.length)todayListEl.hidden=true;
-    else{
-      todayListEl.hidden=false;
-      todayListEl.innerHTML=glanceList.map(c=>{
-        const st=c.status==="Cancelled"?"cancelled":now>=dateTime(c,"endTime")?"done":(now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime"))?"current":"upcoming";
-        return`<div class="hero-today-row ${st}" style="--course:${colorFor(c.code)}">
-          <span class="htr-time">${esc(fmtRange(c.startTime,c.endTime))}</span>
-          <span class="htr-code">${esc(canonical(c.code))}</span>
-          <span class="htr-room">${esc(venueOf(c))}</span>
-        </div>`;
-      }).join("");
+      /* A single class fills the whole strip, which just reads as a stray bar — the shape
+         of the day is only worth drawing once there is more than one class on it. The day
+         itself is labelled by the day nav below, so the strip needs no label of its own. */
+      if(stripClasses.length<2)stripEl.hidden=true;
+      else stripEl.innerHTML=`<div class="hero-strip-track">${segs}${nowMarker}</div>`;
     }
   }
   fitHeroTime();
+  /* The day list follows whichever day the hero is showing (today, or the next day with
+     classes once today is done) so the card never has its header on one day and its list
+     on another — until the reader browses days themselves, which takes over. */
+  if(!state.timelineTouched){
+    const dayDiff=Math.round((new Date(`${shownDayIso}T12:00:00+05:30`)-new Date(`${today}T12:00:00+05:30`))/86400000);
+    state.timelineOffset=Math.max(0,Math.min(6,dayDiff||0));
+  }
   const timelineOffset=state.timelineOffset||0,timelineIso=isoForDayOffset(timelineOffset),timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-  $("#timelineDateTitle").textContent=timelineOffset===0?"Today":timelineOffset===1?"Tomorrow":fmtDate(timelineIso,{weekday:"long"});
-  $("#timelineFullDate").textContent=fmtDate(timelineIso,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  $("#todaySwitchDate").textContent=fmtDate(today,{day:"numeric",month:"short"});
-  $("#tomorrowSwitchDate").textContent=fmtDate(tomorrowIso(),{day:"numeric",month:"short"});
-  $$(".timeline-day-button").forEach(b=>b.classList.toggle("active",Number(b.dataset.timelineOffset)===timelineOffset));
+  $("#timelineDateTitle").textContent=timelineOffset===0?"Today":timelineOffset===1?"Tomorrow":fmtDate(timelineIso,{weekday:"short",day:"numeric",month:"short"});
+  const prevDayBtn=$("#timelinePrevDay"),nextDayBtn=$("#timelineNextDay");
+  if(prevDayBtn)prevDayBtn.disabled=timelineOffset<=0;
+  if(nextDayBtn)nextDayBtn.disabled=timelineOffset>=6;
+  /* The day list is worth showing when it says more than the headline above it already
+     does. On a free day, or a day whose only class is the one in the headline, it would
+     just repeat itself — so it stays collapsed until the reader browses to another day
+     (swiping the card counts), at which point the list is what they came for. */
+  const daySectionEl=$(".hero-day-section");
+  if(daySectionEl){
+    const onlyClassIsFocus=timelineClasses.length===1&&classIdentity(timelineClasses[0])===focusPanel.dataset.focusClassId;
+    daySectionEl.hidden=!state.timelineTouched&&(!timelineClasses.length||onlyClassIsFocus);
+  }
   $("#todayProgressRail").innerHTML=timelineClasses.length?dayCardListHtml(timelineClasses,timelineIso,{showNext:true}):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
   const holidayBanner=$("#todayProgressRail")?.previousElementSibling;
   const holiday=HOLIDAYS[timelineIso];
@@ -518,7 +516,7 @@ function renderHome(){
   const activeTimelineClasses=timelineClasses.filter(c=>c.status!=="Cancelled");
   const totalMins=activeTimelineClasses.reduce((sum,c)=>sum+(minutes(c.endTime)-minutes(c.startTime)),0);
   const hoursLabel=totalMins?` · ${totalMins>=60?`${Math.floor(totalMins/60)}h${totalMins%60?` ${totalMins%60}m`:""}`:`${totalMins}m`}`:"";
-  $("#progressSummary").textContent=(timelineIso===today?`${completed} / ${activeTimelineClasses.length}`:`${activeTimelineClasses.length} classes`)+hoursLabel;
+  $("#progressSummary").textContent=(timelineIso===today?`${completed} / ${activeTimelineClasses.length}`:`${activeTimelineClasses.length} ${activeTimelineClasses.length===1?"class":"classes"}`)+hoursLabel;
   const monday=new Date(`${mondayIso(today)}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
   /* Term-wide progress — classes completed/remaining and weeks left across the full term window. */
   const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
@@ -895,6 +893,7 @@ function busStopLabel(stop){
    tomorrow (1) since today's schedule already lives in the hero card. */
 function setTimelineOffset(offset,direction){
   offset=Math.max(0,Math.min(6,offset));
+  state.timelineTouched=true;
   if(state.timelineOffset===offset)return;
   const rail=$("#todayProgressRail");
   if(!rail){state.timelineOffset=offset;renderHome();return}
@@ -1231,7 +1230,10 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";$("#prof
   $("#stubSection").textContent=`Section ${state.profile.section||"A"}`;
   const avatarDisc=$("#profileAvatarDisc");if(avatarDisc){avatarDisc.setAttribute("data-initials",initials(state.profile.name));avatarDisc.classList.toggle("section-b",state.profile.section==="B")}
   const bc=$("#stubBarcode");if(bc)bc.innerHTML=barcodeHtml(state.profile.name||state.profile.section);
-  $("#lastUpdated").textContent=state.lastUpdated?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(state.lastUpdated))}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>'
+  /* A malformed updatedAt from the feed used to throw here, and since renderProfile runs
+     before renderHome in renderAll, that took the whole app down with it. */
+  const lastSynced=state.lastUpdated?new Date(state.lastUpdated):null;
+  $("#lastUpdated").textContent=lastSynced&&!isNaN(lastSynced)?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(lastSynced)}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>'
   renderSessionRings();
   renderAccentSwatches();
   renderTermRing();
@@ -1679,7 +1681,7 @@ function bind(){
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   document.addEventListener("click",e=>{
-    const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.rail-day,.wsc-day,.day-pill,.meal-tab,.subtab,.accent-swatch,.timeline-day-button,.pv-toggle-btn,.section-slider-opt");
+    const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.rail-day,.wsc-day,.day-pill,.meal-tab,.subtab,.accent-swatch,.hero-day-arrow,.pv-toggle-btn,.section-slider-opt");
     if(!t||t.disabled)return;
     haptic(t.matches(".primary-button,.danger-button,.google-tasks-button")?18:10);
   },{capture:true});
@@ -1692,11 +1694,12 @@ function bind(){
   document.addEventListener("click",e=>{const menu=$("#topMoreMenu");if(menu&&menu.classList.contains("open")&&!e.target.closest("#topMoreMenu,#topMoreButton")){menu.classList.remove("open");$("#topMoreButton").setAttribute("aria-expanded","false")}});
   $("#topMoreMenu")?.addEventListener("click",e=>{if(e.target.closest("button")){$("#topMoreMenu").classList.remove("open");$("#topMoreButton")?.setAttribute("aria-expanded","false")}});
   $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
-  $("#timelineDaySwitch")?.addEventListener("click",e=>{const b=e.target.closest("[data-timeline-offset]");if(!b)return;setTimelineOffset(Number(b.dataset.timelineOffset),"auto")});
-  bindSwipeGesture($(".today-progress-card"),direction=>{
+  $("#timelinePrevDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)-1,"backward"));
+  $("#timelineNextDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)+1,"forward"));
+  bindSwipeGesture($("#focusPanel"),direction=>{
     const delta=direction==="left"?1:-1;
     setTimelineOffset((state.timelineOffset||0)+delta,delta>0?"forward":"backward");
-  },{ignore:"input,select,textarea,a"});
+  },{ignore:"input,select,textarea,a,button"});
   $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);
   $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();closeNotifications();showToast("Notifications marked as read")});
   $("#clearNotifications")?.addEventListener("click",()=>{
@@ -1712,14 +1715,6 @@ function bind(){
   });
   window.addEventListener("focus",()=>{scheduleIdleSync();scheduleGoogleTasksSync()});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
-  $("#quickCaptureForm")?.addEventListener("submit",e=>{
-    e.preventDefault();
-    const input=$("#quickCaptureInput"),title=input.value.trim();
-    if(!title)return;
-    addTask(title,"General",isoToday());
-    input.value="";
-    showToast("Task added");
-  });
   window.addEventListener("online",()=>{scheduleIdleSync();updateOfflineBanner(true)});
   window.addEventListener("offline",()=>updateOfflineBanner(false));
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>openCampusTab(b.dataset.campusTab)));
@@ -1819,7 +1814,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova44",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova45",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
