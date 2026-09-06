@@ -734,12 +734,15 @@ function renderWeekScan(days){
       const isNext=isTodayRow&&!cancelled&&classIdentity(c)===nextUpId;
       const badge=isLive?'<b class="wsc-badge live"><i></i>LIVE</b>':isNext?'<b class="wsc-badge upcoming">UPCOMING</b>':"";
       return`<div class="wsc-row ${cancelled?"cancelled":""} ${isLive?"is-live":""}" style="--course:${colorFor(c.code)}">
-        <div class="wsc-row-top">
-          <span class="wsc-time">${esc(fmtRange(c.startTime,c.endTime))}</span>
-          <span class="wsc-code">${esc(canonical(c.code))}</span>
-          ${badge}
+        <div class="wsc-row-when"><b>${esc(fmtTime(c.startTime))}</b><small>${esc(fmtTime(c.endTime))}</small></div>
+        <div class="wsc-row-main">
+          <div class="wsc-row-title">
+            <span class="wsc-code">${esc(canonical(c.code))}</span>
+            <strong>${esc(c.course)}</strong>
+            ${badge}
+          </div>
+          <div class="wsc-row-room">${icon("pin")}<span>${esc(venueOf(c))}</span></div>
         </div>
-        <div class="wsc-row-room">${icon("pin")}<span>${esc(venueOf(c))}</span></div>
       </div>`;
     }).join("");
     const isToday=iso===today;
@@ -1835,7 +1838,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova47",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova48",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);
