@@ -709,6 +709,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
     if(e.target.closest(".calendar-day"))return;
     const firstIso=row.querySelector(".calendar-day")?.dataset.date;if(!firstIso)return;
     state.railStart=mondayIso(firstIso);setPlannerTab("calendar");renderCalendar();
+    const dlg=$("#monthViewDialog");if(dlg?.open)closeDialog(dlg);
   }));
   $$(".calendar-day").forEach(b=>{
     b.addEventListener("click",()=>{
@@ -726,7 +727,9 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
   const weekIsos=weekDaysFrom(state.railStart||mondayIso(state.selectedDate||isoToday()));
   const weekAll=weekIsos.flatMap(iso=>state.classes.filter(c=>c.dateIso===iso));
   const hiddenCompletedCount=weekIsos.includes(isoToday())?state.classes.filter(c=>c.dateIso===isoToday()&&isClassCompleted(c)).length:0;
-  const toggleCompletedBtn=$("#toggleCompletedButton");if(toggleCompletedBtn){toggleCompletedBtn.textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;toggleCompletedBtn.hidden=!hiddenCompletedCount&&!state.agendaShowCompleted;}const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;const legendEl=$("#calendarLegend");if(legendEl)legendEl.innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");if(legendEl)legendEl.onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};const courseRow=$("#agendaCourseRow");if(courseRow){const dayCourses=[...new Set(weekAll.filter(c=>c.status!=="Cancelled").map(c=>canonical(c.code)))];if(state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight))dayCourses.push(state.calendarHighlight);const showCourseChips=dayCourses.length>1||!!state.calendarHighlight;courseRow.innerHTML=showCourseChips?dayCourses.map(c=>`<button type="button" class="filter-chip ${c===state.calendarHighlight?"active":""}" data-course="${esc(c)}" style="--course:${colorFor(c)}">${esc(c)}</button>`).join(""):"";courseRow.hidden=!showCourseChips;courseRow.onclick=e=>{const btn=e.target.closest("[data-course]");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()}}renderWeekPlanner()}
+  const courseFilterBtn=$("#toggleCourseFilter");
+  if(courseFilterBtn)courseFilterBtn.classList.toggle("active",!!state.courseFilterOpen||!!state.calendarHighlight);
+  const toggleCompletedBtn=$("#toggleCompletedButton");if(toggleCompletedBtn){toggleCompletedBtn.textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;toggleCompletedBtn.hidden=!hiddenCompletedCount&&!state.agendaShowCompleted;}const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;const legendEl=$("#calendarLegend");if(legendEl)legendEl.innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");if(legendEl)legendEl.onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};const courseRow=$("#agendaCourseRow");if(courseRow){const dayCourses=[...new Set(weekAll.filter(c=>c.status!=="Cancelled").map(c=>canonical(c.code)))];if(state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight))dayCourses.push(state.calendarHighlight);const showCourseChips=dayCourses.length>1||!!state.calendarHighlight;courseRow.innerHTML=showCourseChips?dayCourses.map(c=>`<button type="button" class="filter-chip ${c===state.calendarHighlight?"active":""}" data-course="${esc(c)}" style="--course:${colorFor(c)}">${esc(c)}</button>`).join(""):"";courseRow.hidden=!showCourseChips||!state.courseFilterOpen;courseRow.onclick=e=>{const btn=e.target.closest("[data-course]");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()}}renderWeekPlanner()}
 function mondayIso(iso){const d=new Date(`${iso}T12:00:00+05:30`);d.setDate(d.getDate()-((d.getDay()+6)%7));return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
 function shiftRailWeek(delta){const d=new Date(`${state.railStart||mondayIso(state.selectedDate)}T12:00:00+05:30`);d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderCalendar()}
 /* The planner is one accordion week: seven day rows always on screen, the selected day
@@ -781,6 +784,8 @@ function renderWeekPlanner(){
   }
   const eyebrowBtn=$("#weekScanEyebrow");
   if(eyebrowBtn)eyebrowBtn.classList.toggle("is-away",weekOffset!==0);
+  const wideWeek=matchMedia("(min-width:900px)").matches;
+  list.classList.toggle("is-wide",wideWeek);
   list.innerHTML=days.map((iso,dayIdx)=>{
     const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
     const active=dayAll.filter(c=>c.status!=="Cancelled");
@@ -800,14 +805,14 @@ function renderWeekPlanner(){
       </span>
     </button>`;
     let body="";
-    if(isOpen){
+    if(isOpen||wideWeek){
       const visible=visibleDayClasses(iso),tasks=state.tasks.filter(t=>t.date===iso);
       const vActive=visible.filter(c=>c.status!=="Cancelled");
       const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
       const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"";
       body=`<div class="wp-day-body">
         ${meta?`<p class="wp-day-meta">${esc(meta)}</p>`:""}
-        <div id="dayAgenda" class="schedule-list">${agendaHtml(visible,tasks,exam,iso)}</div>
+        <div${isOpen?' id="dayAgenda"':""} class="schedule-list day-agenda">${agendaHtml(visible,tasks,exam,iso)}</div>
       </div>`;
     }
     return`<section class="wp-day ${isToday?"is-today":""} ${isPast?"is-past":""} ${isOpen?"is-open":""} ${!active.length?"is-free":""} ${exam?"has-exam":""}" style="--i:${dayIdx}">${head}${body}</section>`;
@@ -822,8 +827,7 @@ function renderWeekPlanner(){
       $(`.wp-day-head[data-date="${iso}"]`)?.scrollIntoView({behavior:"smooth",block:"nearest"});
     });
   }));
-  const openAgenda=$("#dayAgenda");
-  if(openAgenda)bindTaskRows(openAgenda);
+  $$(".day-agenda",list).forEach(bindTaskRows);
   /* The pinned day header sits directly below the pinned week header, whose height
      depends on the strip and the week's meta line, so it is measured rather than guessed. */
   const stickyEl=$(".week-sticky");
@@ -1254,24 +1258,26 @@ function renderBuses(){
   scheduleLeavingSoonAlert(next.d);
 }
 
-/* Every row on this board is the route the rider just chose, so restating it on each
-   line only buried the time — the one thing that actually differs. A row now carries the
-   time, and a note only when the time needs one: services that start somewhere else show
-   their origin's departure, not the rider's. */
+/* Rows carry the service and its stops again — stripping them to a bare time left the
+   board looking unfinished. What the heading already says is the *chosen* route; what a
+   row says is which service runs it, which differs line to line. */
 function busRow(bus,nextKey,now=new Date(),lastKey=null){
   const key=`${bus.time}|${bus.from}|${bus.to}`;
   const isNext=nextKey===key;
   /* On a board already filtered to one route, "last" means the last departure the rider
      can catch — not the last of each separate origin, which showed several LAST badges. */
   const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),elapsed=!isNext&&busDate(bus)<now;
-  const offOrigin=bus.from!==state.busFrom;
-  const note=offOrigin?`Departs ${esc(busStopLabel(bus.from))}`:"";
   return`<article class="board-row ${mainGate?"is-maingate":"is-shuttle"} ${isNext?"next":""} ${elapsed?"elapsed":""}">
     <span class="t">${esc(fmtTime(bus.time))}</span>
-    <div class="r">${note?`<span class="board-row-note">${note}</span>`:""}</div>
+    <div class="r">
+      <strong>${esc(busStopLabel(bus.from))} → ${esc(busStopLabel(bus.to))}</strong>
+      <span>${esc(routeStops(bus).map(busStopLabel).join(" · "))}</span>
+    </div>
     <div class="board-row-badges">
       ${isNext?'<span class="tag tag-next">NEXT</span>':""}
-      ${last?'<span class="tag tag-last">LAST</span>':""}
+      ${mainGate?'<span class="tag tag-gate">MAIN GATE</span>':""}
+      ${last?'<span class="tag tag-last">LAST BUS</span>':""}
+      ${bus.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(bus.from))}">ORIGIN TIME</span>`:""}
     </div>
   </article>`;
 }
@@ -1859,6 +1865,14 @@ function bind(){
   });
   bindSwipeGesture($(".week-planner"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:56});
   $("#plannerExamStrip")?.addEventListener("click",()=>setPlannerTab("exams"));
+  bindDismissibleDialog($("#monthViewDialog"));
+  $("#closeMonthView")?.addEventListener("click",()=>closeDialog($("#monthViewDialog")));
+  $("#openMonthView")?.addEventListener("click",()=>{
+    const d=new Date(`${state.selectedDate||isoToday()}T12:00:00+05:30`);
+    state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
+    renderCalendar();$("#monthViewDialog").showModal();
+  });
+  $("#toggleCourseFilter")?.addEventListener("click",()=>{state.courseFilterOpen=!state.courseFilterOpen;renderCalendar()});
   $("#weekScanEyebrow")?.addEventListener("click",()=>{
     state.railStart=mondayIso(isoToday());state.selectedDate=isoToday();
     const n=new Date();state.calendarMonth=new Date(n.getFullYear(),n.getMonth(),1);
@@ -1915,7 +1929,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova52",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova53",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
