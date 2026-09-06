@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260902-nova51">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova52">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -279,12 +279,9 @@
 
           <div class="bus-col-board">
           <article class="panel">
-            <div class="panel-heading"><div><p class="overline">NEXT DEPARTURES</p><h2>Upcoming services</h2></div></div>
+            <div class="panel-heading"><div><p class="overline">DEPARTURES</p><h2 id="busBoardRoute">Today</h2></div></div>
             <div class="board-list" id="upcomingBuses"></div>
-          </article>
-
-          <article class="panel">
-            <div class="panel-heading"><div><p class="overline">FULL DAY</p><h2>Matching services</h2></div><button class="secondary-button small" type="button" id="toggleFullBus">Show all</button></div>
+            <button class="secondary-button small board-earlier-toggle" type="button" id="toggleFullBus">Show earlier</button>
             <div class="board-list collapsed" id="fullBusList"></div>
           </article>
           </div>
@@ -331,11 +328,7 @@
           <div class="panel section-peek-panel">
             <div class="settings-row-stack">
               <div><strong>Peek section</strong><p>Look at the other section's Core classes — read-only, doesn't change your saved section above.</p></div>
-              <div class="section-slider" id="sectionPeekSlider" data-active="A">
-                <span class="section-slider-thumb" aria-hidden="true"></span>
-                <button type="button" class="section-slider-opt active" data-peek="A">Section A</button>
-                <button type="button" class="section-slider-opt" data-peek="B">Section B</button>
-              </div>
+              <button type="button" class="secondary-button peek-toggle" id="sectionPeekToggle">Preview Section B</button>
             </div>
           </div>
 
@@ -348,9 +341,20 @@
             <article class="panel">
               <form id="profileForm" class="profile-form">
                 <label><span>Name</span><input id="profileName" type="text" required></label>
-                <label><span>Section</span><select id="profileSection"><option value="A">Section A</option><option value="B">Section B</option></select></label>
+                <div class="field"><span class="field-label">Section</span>
+                  <div class="seg-control" id="profileSectionSeg" data-value="A">
+                    <button type="button" class="seg-opt active" data-value="A">Section A</button>
+                    <button type="button" class="seg-opt" data-value="B">Section B</button>
+                  </div>
+                </div>
                 <div class="selected-electives-card"><span>Electives</span><div id="selectedElectiveChips" class="selected-elective-chips"></div><button class="secondary-button" type="button" id="chooseElectivesInline">Choose electives</button></div>
-                <label><span>Appearance</span><select id="profileTheme"><option value="system">Follow device</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
+                <div class="field"><span class="field-label">Appearance</span>
+                  <div class="seg-control" id="profileThemeSeg" data-value="system">
+                    <button type="button" class="seg-opt active" data-value="system">Device</button>
+                    <button type="button" class="seg-opt" data-value="dark">Dark</button>
+                    <button type="button" class="seg-opt" data-value="light">Light</button>
+                  </div>
+                </div>
                 <div class="accent-picker-field">
                   <div class="accent-picker-label-row"><span>Accent color</span><button type="button" class="accent-reset-button" id="resetAccentButton">Reset to default</button></div>
                   <div class="accent-swatches" id="accentSwatches"></div>
@@ -538,9 +542,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260902-nova51"></script>
-  <script src="exam-data.js?v=20260902-nova51"></script>
-  <script src="app.js?v=20260902-nova51"></script>
-  <script src="polish.js?v=20260902-nova51"></script>
+  <script src="campus-data.js?v=20260902-nova52"></script>
+  <script src="exam-data.js?v=20260902-nova52"></script>
+  <script src="app.js?v=20260902-nova52"></script>
+  <script src="polish.js?v=20260902-nova52"></script>
 </body>
 </html>

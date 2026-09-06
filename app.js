@@ -143,27 +143,20 @@ async function fetchSectionClasses(section){
   return d.classes||[];
 }
 async function setSectionView(target){
-  const mySection=state.profile.section||"A",slider=$("#sectionPeekSlider");
+  const mySection=state.profile.section||"A",btn=$("#sectionPeekToggle");
   if(target===mySection){
     state.peekSection=null;state.classes=filteredClasses();renderAll();
     return;
   }
-  const targetBtn=slider?$(`.section-slider-opt[data-peek="${target}"]`,slider):null;
-  if(slider){
-    slider.classList.add("is-peek-loading");
-    slider.dataset.active=target;
-    $$(".section-slider-opt",slider).forEach(b=>b.classList.toggle("active",b.dataset.peek===target));
-  }
-  if(targetBtn)targetBtn.classList.add("is-fetching");
+  if(btn){btn.classList.add("is-fetching");btn.disabled=true}
   try{
     if(!state.peekAll||state.peekSection!==target)state.peekAll=await fetchSectionClasses(target);
     state.peekSection=target;state.classes=filteredClasses();renderAll();
   }catch(e){
     showToast("Couldn't load the other section right now");
-    renderSectionPeekSlider();
   }finally{
-    if(slider)slider.classList.remove("is-peek-loading");
-    if(targetBtn)targetBtn.classList.remove("is-fetching");
+    const after=$("#sectionPeekToggle");
+    if(after){after.classList.remove("is-fetching");after.disabled=false}
   }
 }
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
@@ -370,13 +363,7 @@ function applyShortcutParams(){
   else if(target==="mess"){showPage("campus");openCampusTab("mess")}
   history.replaceState(null,"",location.pathname);
 }
-function renderSectionPeekSlider(){
-  const slider=$("#sectionPeekSlider");if(!slider)return;
-  const active=state.peekSection||state.profile.section||"A";
-  slider.dataset.active=active;
-  $$(".section-slider-opt",slider).forEach(b=>b.classList.toggle("active",b.dataset.peek===active));
-}
-function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderSectionPeekSlider();renderIcons()}
+function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
 function heroPill(html,tone=""){return`<span class="hero-pill ${tone}">${html}</span>`}
 function fitHeroTime(){
   const el=$("#focusRange");if(!el)return;
@@ -1179,6 +1166,8 @@ function renderBuses(){
 
   const heroRoute=$("#nextBusRoute");
   if(heroRoute)heroRoute.textContent=`${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;
+  const boardRoute=$("#busBoardRoute");
+  if(boardRoute)boardRoute.textContent=`${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;
   updateLeavingSoonButton();
 
   if(!services.length){
@@ -1248,28 +1237,41 @@ function renderBuses(){
     `<div class="route-stop"><i style="--i:${i}"></i><span>${esc(busStopLabel(stop))}</span></div>`
   ).join("");
 
-  const upcoming=withTimes.filter(item=>item.d>now).slice(0,5);
-  upcomingList.innerHTML=(upcoming.length?upcoming:[next]).map(({b})=>busRow(b,nextKey,now)).join("");
-  fullList.innerHTML=withTimes.map(({b})=>busRow(b,nextKey,now)).join("");
+  /* "Upcoming" and "Full day" were two lists of the same buses, the second starting at
+     midnight with everything already gone. One board now: what is left today, with the
+     earlier departures available on request. */
+  const upcoming=withTimes.filter(item=>item.d>now);
+  const earlier=withTimes.filter(item=>item.d<=now);
+  const finalRun=withTimes[withTimes.length-1];
+  const lastKey=finalRun?`${finalRun.b.time}|${finalRun.b.from}|${finalRun.b.to}`:null;
+  upcomingList.innerHTML=(upcoming.length?upcoming:[next]).map(({b})=>busRow(b,nextKey,now,lastKey)).join("");
+  fullList.innerHTML=earlier.map(({b})=>busRow(b,nextKey,now,lastKey)).join("");
   const toggle=$("#toggleFullBus");
-  if(toggle)toggle.textContent=fullList.classList.contains("collapsed")?"Show all":"Collapse";
+  if(toggle){
+    toggle.hidden=!earlier.length;
+    toggle.textContent=fullList.classList.contains("collapsed")?`Show ${earlier.length} earlier`:"Hide earlier";
+  }
   scheduleLeavingSoonAlert(next.d);
 }
 
-function busRow(bus,nextKey,now=new Date()){
-  const isNext=nextKey===`${bus.time}|${bus.from}|${bus.to}`;
-  const last=isLastBus(bus),mainGate=isMainGateService(bus),elapsed=!isNext&&busDate(bus)<now;
+/* Every row on this board is the route the rider just chose, so restating it on each
+   line only buried the time — the one thing that actually differs. A row now carries the
+   time, and a note only when the time needs one: services that start somewhere else show
+   their origin's departure, not the rider's. */
+function busRow(bus,nextKey,now=new Date(),lastKey=null){
+  const key=`${bus.time}|${bus.from}|${bus.to}`;
+  const isNext=nextKey===key;
+  /* On a board already filtered to one route, "last" means the last departure the rider
+     can catch — not the last of each separate origin, which showed several LAST badges. */
+  const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),elapsed=!isNext&&busDate(bus)<now;
+  const offOrigin=bus.from!==state.busFrom;
+  const note=offOrigin?`Departs ${esc(busStopLabel(bus.from))}`:"";
   return`<article class="board-row ${mainGate?"is-maingate":"is-shuttle"} ${isNext?"next":""} ${elapsed?"elapsed":""}">
     <span class="t">${esc(fmtTime(bus.time))}</span>
-    <div class="r">
-      <strong>${esc(busStopLabel(bus.from))} → ${esc(busStopLabel(bus.to))}</strong>
-      <span>${esc(routeStops(bus).map(busStopLabel).join(" · "))}</span>
-    </div>
+    <div class="r">${note?`<span class="board-row-note">${note}</span>`:""}</div>
     <div class="board-row-badges">
       ${isNext?'<span class="tag tag-next">NEXT</span>':""}
-      ${mainGate?'<span class="tag tag-gate">MAIN GATE</span>':""}
-      ${last?'<span class="tag tag-last">LAST BUS</span>':""}
-      ${bus.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(bus.from))}">ORIGIN TIME</span>`:""}
+      ${last?'<span class="tag tag-last">LAST</span>':""}
     </div>
   </article>`;
 }
@@ -1308,7 +1310,19 @@ function barcodeHtml(seed){
   for(let i=0;i<28;i++){h=(h*1103515245+12345)>>>0;bars.push(8+(h%19))}
   return bars.map(v=>`<i style="height:${v}px"></i>`).join("");
 }
-function renderProfile(){$("#profileName").value=state.profile.name||"";$("#profileSection").value=state.profile.section||"A";$("#profileTheme").value=state.profile.theme||"system";
+function setSegValue(id,value){
+  const el=$(id);if(!el)return;
+  el.dataset.value=value;
+  $$(".seg-opt",el).forEach(b=>b.classList.toggle("active",b.dataset.value===value));
+}
+function segValue(id,fallback){return $(id)?.dataset.value||fallback}
+function renderProfile(){$("#profileName").value=state.profile.name||"";setSegValue("#profileSectionSeg",state.profile.section||"A");setSegValue("#profileThemeSeg",state.profile.theme||"system");
+  const peekBtn=$("#sectionPeekToggle");
+  if(peekBtn){
+    const mine=state.profile.section||"A",other=mine==="A"?"B":"A";
+    peekBtn.textContent=state.peekSection?`Back to Section ${mine}`:`Preview Section ${other}`;
+    peekBtn.classList.toggle("is-peeking",!!state.peekSection);
+  }
   $("#stubName").textContent=state.profile.name||"Student";
   $("#stubSection").textContent=`Section ${state.profile.section||"A"}`;
   const avatarDisc=$("#profileAvatarDisc");if(avatarDisc){avatarDisc.setAttribute("data-initials",initials(state.profile.name));avatarDisc.classList.toggle("section-b",state.profile.section==="B")}
@@ -1764,12 +1778,17 @@ function bind(){
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   document.addEventListener("click",e=>{
-    const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.rail-day,.wsc-day,.day-pill,.meal-tab,.subtab,.accent-swatch,.hero-day-arrow,.pv-toggle-btn,.section-slider-opt");
+    const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.ws-cell,.wp-day-head,.day-pill,.meal-tab,.subtab,.accent-swatch,.hero-day-arrow,.seg-opt,.week-nav-arrow");
     if(!t||t.disabled)return;
     haptic(t.matches(".primary-button,.danger-button,.google-tasks-button")?18:10);
   },{capture:true});
   document.addEventListener("change",e=>{if(e.target.matches('input[type="checkbox"]'))haptic(16)});
-  $("#sectionPeekSlider")?.addEventListener("click",e=>{const b=e.target.closest("[data-peek]");if(!b)return;setSectionView(b.dataset.peek)});
+  $("#sectionPeekToggle")?.addEventListener("click",()=>{
+    const mine=state.profile.section||"A";
+    setSectionView(state.peekSection?mine:(mine==="A"?"B":"A"));
+  });
+  $("#profileSectionSeg")?.addEventListener("click",e=>{const b=e.target.closest("[data-value]");if(!b)return;setSegValue("#profileSectionSeg",b.dataset.value)});
+  $("#profileThemeSeg")?.addEventListener("click",e=>{const b=e.target.closest("[data-value]");if(!b)return;setSegValue("#profileThemeSeg",b.dataset.value)});
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
   $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$(`.accent-swatch[data-accent="${b.dataset.accent}"]`);if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
   $("#resetAccentButton")?.addEventListener("click",()=>{state.profile.accent="plum";save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$('.accent-swatch[data-accent="plum"]');if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
@@ -1865,7 +1884,7 @@ function bind(){
   $("#openNoteForm").addEventListener("click",()=>{clearDialogValidation(noteDialog);noteDialog.showModal()});
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
-  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),section:$("#profileSection").value,electives:[...(state.profile.electives||[])],theme:$("#profileTheme").value,homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);state.peekSection=null;state.peekAll=null;applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
+  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),section:segValue("#profileSectionSeg","A"),electives:[...(state.profile.electives||[])],theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);state.peekSection=null;state.peekAll=null;applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{const list=$("#fullBusList"),collapsed=list.classList.toggle("collapsed");$("#toggleFullBus").textContent=collapsed?"Show all":"Collapse"});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week at a glance"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
@@ -1896,7 +1915,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova51",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova52",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
