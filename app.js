@@ -709,9 +709,22 @@ function renderDateRail(){
 function renderWeekScan(days){
   const list=$("#weekScanList");if(!list)return;
   const today=isoToday(),now=new Date();
-  const upcoming=days.filter(iso=>iso>=today);
-  const visibleDays=upcoming.length?upcoming:days;
-  list.innerHTML=visibleDays.map((iso,dayIdx)=>{
+  /* The whole week, not just what is left of it — a week view that quietly drops Monday
+     once Monday is over cannot show the shape of the week, which is the point of it.
+     Days already gone are dimmed and collapsed to their heading. */
+  const weekTotals=days.reduce((acc,iso)=>{
+    state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").forEach(c=>{
+      acc.count++;acc.mins+=minutes(c.endTime)-minutes(c.startTime);
+    });
+    return acc;
+  },{count:0,mins:0});
+  const weekOffset=Math.round((new Date(`${days[0]}T12:00:00+05:30`)-new Date(`${mondayIso(today)}T12:00:00+05:30`))/(7*86400000));
+  const eyebrow=weekOffset===0?"THIS WEEK":weekOffset===1?"NEXT WEEK":weekOffset===-1?"LAST WEEK":weekOffset>1?`IN ${weekOffset} WEEKS`:`${-weekOffset} WEEKS AGO`;
+  const rangeEl=$("#weekScanRange"),eyebrowEl=$("#weekScanEyebrow"),metaEl=$("#weekScanMeta");
+  if(eyebrowEl)eyebrowEl.textContent=eyebrow;
+  if(rangeEl)rangeEl.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
+  if(metaEl)metaEl.textContent=weekTotals.count?`${weekTotals.count} ${weekTotals.count===1?"class":"classes"} · ${compactDuration(weekTotals.mins)}`:"No classes this week";
+  list.innerHTML=days.map((iso,dayIdx)=>{
     const dayClasses=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
     const isTodayRow=iso===today;
     const nextUpId=isTodayRow?classIdentity(dayClasses.find(c=>c.status!=="Cancelled"&&now<dateTime(c,"startTime"))||{}):null;
@@ -733,9 +746,11 @@ function renderWeekScan(days){
     const activeDayClasses=dayClasses.filter(c=>c.status!=="Cancelled");
     const countText=activeDayClasses.length?(isToday?`${activeDayClasses.filter(c=>now>=dateTime(c,"endTime")).length}/${activeDayClasses.length}`:`${activeDayClasses.length} ${activeDayClasses.length===1?"class":"classes"}`):"";
     const dayTint=activeDayClasses.length?colorFor(activeDayClasses[0].code):"transparent";
-    return`<button type="button" class="wsc-day ${isToday?"is-today":""} ${!activeDayClasses.length?"is-free":""}" data-date="${iso}" style="--density:${Math.min(6,dayClasses.length)};--i:${dayIdx};--wsc-tint:${dayTint}">
+    const isPast=iso<today;
+    const body=isPast?"":(rows||'<p class="wsc-empty">Free day</p>');
+    return`<button type="button" class="wsc-day ${isToday?"is-today":""} ${isPast?"is-past":""} ${!activeDayClasses.length?"is-free":""}" data-date="${iso}" style="--density:${Math.min(6,dayClasses.length)};--i:${dayIdx};--wsc-tint:${dayTint}">
       <div class="wsc-day-head"><span>${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wsc-today-badge">TODAY</b>':""}</span><div class="wsc-day-head-right">${countText?`<b class="wsc-count">${esc(countText)}</b>`:""}<small>${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</small></div></div>
-      ${rows||'<p class="wsc-empty">Free day</p>'}
+      ${body}
     </button>`;
   }).join("");
   $$(".wsc-day",list).forEach(b=>b.addEventListener("click",()=>{
@@ -750,6 +765,10 @@ function setPlannerViewMode(mode){
   $("#plannerDayWeekToggle")?.setAttribute("data-active",mode);
   $("#plannerDayGroup")?.classList.toggle("hidden-view",mode!=="day");
   const weekPanel=$("#weekScanPanel");if(weekPanel)weekPanel.hidden=mode!=="week";
+  /* The date rail is itself a week view. Showing it above the week card meant two
+     stacked answers to the same question, so in week mode the card owns the week and
+     its own navigation. */
+  const railPanel=$(".rail-panel");if(railPanel)railPanel.hidden=mode==="week";
 }
 /* Free time for the selected day only. The recurring 1:30-2:30pm lunch break is not
    flagged as a "gap" since it's expected downtime — unless a class was cancelled during
@@ -1763,6 +1782,8 @@ function bind(){
   $("#railNextWeek")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#railJumpToday")?.addEventListener("click",()=>{const n=new Date();state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date(n.getFullYear(),n.getMonth(),1);renderCalendar()});
   bindSwipeGesture($("#dateRail"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"",threshold:46});
+  $("#weekScanPrev")?.addEventListener("click",()=>shiftRailWeek(-1));
+  $("#weekScanNext")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#plannerDayWeekToggle")?.addEventListener("click",e=>{const b=e.target.closest("[data-pv-mode]");if(!b)return;setPlannerViewMode(b.dataset.pvMode)});
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
   $("#termProgressCard")?.addEventListener("click",()=>{renderTermHeatmap();$("#termHeatmapDialog").showModal()});
@@ -1814,7 +1835,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova46",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova47",{updateViaCache:"none"}).catch(console.error)
   const sentinel=$("#agendaHeadingSentinel"),heading=$("#agendaHeading");
   if(sentinel&&heading&&"IntersectionObserver"in window){
     new IntersectionObserver(([e])=>heading.classList.toggle("is-stuck",!e.isIntersecting),{threshold:0}).observe(sentinel);

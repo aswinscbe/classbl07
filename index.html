@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260902-nova46">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova47">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -202,6 +202,15 @@
             </div>
 
             <article class="panel week-scan-panel" id="weekScanPanel" hidden>
+              <div class="week-scan-head">
+                <button type="button" class="icon-button week-nav-arrow" id="weekScanPrev" aria-label="Previous week"><span data-icon="chevron-left"></span></button>
+                <div class="week-scan-title">
+                  <span class="week-scan-eyebrow" id="weekScanEyebrow">THIS WEEK</span>
+                  <h2 id="weekScanRange">Week</h2>
+                  <p class="week-scan-meta" id="weekScanMeta"></p>
+                </div>
+                <button type="button" class="icon-button week-nav-arrow" id="weekScanNext" aria-label="Next week"><span data-icon="chevron-right"></span></button>
+              </div>
               <div class="week-scan-list" id="weekScanList"></div>
             </article>
           </div>
@@ -556,9 +565,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260902-nova46"></script>
-  <script src="exam-data.js?v=20260902-nova46"></script>
-  <script src="app.js?v=20260902-nova46"></script>
-  <script src="polish.js?v=20260902-nova46"></script>
+  <script src="campus-data.js?v=20260902-nova47"></script>
+  <script src="exam-data.js?v=20260902-nova47"></script>
+  <script src="app.js?v=20260902-nova47"></script>
+  <script src="polish.js?v=20260902-nova47"></script>
 </body>
 </html>
