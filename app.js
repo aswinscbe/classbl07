@@ -694,12 +694,14 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
       const cls=["calendar-day",day.getMonth()!==m?"outside":"",isWeekend?"weekend":"",
         iso===isoToday()?"today":"",iso===state.selectedDate?"selected":"",dimmed?"dimmed":"",
         exam?"has-exam":"",holiday?"has-holiday":""].filter(Boolean).join(" ");
-      const mark=exam
-        ?'<span class="cd-mark cd-exam" aria-hidden="true"></span>'
-        :active.length?`<span class="cd-mark cd-load" style="--load:${load}" aria-hidden="true"></span>`
-        :holiday?'<span class="cd-mark cd-holiday" aria-hidden="true"></span>':"";
+      /* A width-only bar could show "more than yesterday" but not "how many" — the one
+         thing a month view is for. The count is a real number again, in a badge whose
+         fill still carries the load at a glance. Exam is a separate ring around the
+         date so it never competes with, or gets replaced by, the class count. */
+      const countBadge=active.length?`<span class="calendar-day-count" style="--load:${load}">${active.length}</span>`:"";
+      const holidayMark=!active.length&&holiday?'<span class="cd-mark cd-holiday" aria-hidden="true"></span>':"";
       return`<button class="${cls}" data-date="${iso}" style="--fill:${load}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
-        <span class="calendar-day-number">${day.getDate()}</span>${mark}
+        <span class="calendar-day-number">${day.getDate()}</span>${countBadge}${holidayMark}
       </button>`;
     }).join("");
     html+=`<div class="month-week ${rowInWeek?"in-week":""}">${cells}</div>`;
@@ -722,7 +724,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
     b.addEventListener("mouseleave",hideCalendarTooltip);
   });
   const keyEl=$("#monthKey");
-  if(keyEl)keyEl.innerHTML='<span class="mk-item"><i class="mk-swatch mk-classes"></i>Classes</span><span class="mk-item"><i class="mk-swatch mk-exam"></i>Exam</span><span class="mk-item"><i class="mk-swatch mk-holiday"></i>Holiday</span>';
+  if(keyEl)keyEl.innerHTML='<span class="mk-item"><i class="mk-swatch mk-classes">3</i>Classes that day</span><span class="mk-item"><i class="mk-swatch mk-exam">1</i>Exam day</span><span class="mk-item"><i class="mk-swatch mk-holiday"></i>Holiday</span>';
   $("#toggleCompletedButton")?.classList.toggle("active",!!state.agendaShowCompleted);
   const weekIsos=weekDaysFrom(state.railStart||mondayIso(state.selectedDate||isoToday()));
   const weekAll=weekIsos.flatMap(iso=>state.classes.filter(c=>c.dateIso===iso));
@@ -1967,7 +1969,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova54",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova55",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

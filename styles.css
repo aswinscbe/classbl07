@@ -1267,10 +1267,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-head h2{font-family:var(--font-display);font-size:clamp(21px,5.4vw,26px);font-weight:800;letter-spacing:-.02em;margin:0}
 .month-key{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
 .mk-item{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:650;color:var(--ink-muted)}
-.mk-swatch{width:14px;height:3px;border-radius:99px;flex:none}
-.mk-classes{background:color-mix(in srgb, var(--accent) 75%, transparent)}
-.mk-exam{background:var(--danger);border-radius:50%;width:7px;height:7px}
-.mk-holiday{background:color-mix(in srgb, var(--amber) 65%, transparent)}
+.mk-swatch{width:16px;height:16px;border-radius:8px;flex:none;display:grid;place-items:center;font-family:var(--font-display);font-size:9.5px;font-weight:800;color:#fff}
+.mk-classes{background:var(--accent)}
+.mk-exam{background:none;box-shadow:0 0 0 2px var(--danger);color:var(--danger)}
+.mk-holiday{width:14px;height:3px;border-radius:99px;background:color-mix(in srgb, var(--amber) 65%, transparent)}
 .today-button{
   display:inline-flex;align-items:center;gap:6px;justify-content:center;
   background:var(--accent-soft);color:var(--accent);border:0;border-radius:99px;padding:6px 14px;font-size:12.5px;font-weight:750;
@@ -1311,14 +1311,22 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-day.today .calendar-day-number{background:var(--accent);color:#fff;font-weight:800}
 .calendar-day.selected .calendar-day-number{box-shadow:inset 0 0 0 2px var(--accent);color:var(--accent);font-weight:800}
 .calendar-day.today.selected .calendar-day-number{box-shadow:0 0 0 2px var(--bg-elevated),0 0 0 4px var(--accent);color:#fff}
-/* Load as a bar whose width tracks the number of classes: a six-class day and a
-   four-class day are now different at a glance. */
-.cd-mark{height:3px;border-radius:99px;flex:none}
-.cd-load{width:calc(6px + var(--load, 0) * 16px);background:color-mix(in srgb, var(--accent) calc(45% + var(--load, 0) * 55%), transparent)}
-.cd-exam{width:6px;height:6px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 3px color-mix(in srgb, var(--danger) 20%, transparent)}
-.cd-holiday{width:14px;background:color-mix(in srgb, var(--amber) 65%, transparent)}
-.calendar-day.has-exam .calendar-day-number{color:var(--danger)}
-.calendar-day.has-exam.today .calendar-day-number{color:#fff}
+/* The actual count, in a small badge whose fill still tracks load at a glance — a
+   width-only bar could say "more than yesterday" but never "how many", which is the one
+   thing a month view is for. */
+.calendar-day-count{
+  min-width:16px;height:16px;padding:0 3px;border-radius:8px;flex:none;
+  display:grid;place-items:center;font-family:var(--font-display);
+  font-size:10px;font-weight:800;line-height:1;color:#fff;
+  background:color-mix(in srgb, var(--accent) calc(55% + var(--load, 0) * 45%), var(--ink-faint));
+}
+.calendar-day.today .calendar-day-count{background:color-mix(in srgb, #fff 70%, var(--accent))}
+.cd-mark{height:3px;width:14px;border-radius:99px;flex:none;background:color-mix(in srgb, var(--amber) 65%, transparent)}
+/* Exams are a ring around the date, not a mark that could be mistaken for a class
+   count or replace it — a day can have both classes and an exam. */
+.calendar-day.has-exam .calendar-day-number{box-shadow:0 0 0 2px var(--danger);color:var(--danger)}
+.calendar-day.has-exam.today .calendar-day-number{background:var(--danger);box-shadow:none;color:#fff}
+.calendar-day.has-exam.selected .calendar-day-number{box-shadow:0 0 0 2px var(--danger),0 0 0 4px color-mix(in srgb, var(--danger) 30%, transparent);color:var(--danger)}
 .calendar-day.dimmed{opacity:.25}
 .calendar-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .legend-item{
