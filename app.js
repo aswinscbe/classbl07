@@ -719,6 +719,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
       state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);
       const dd=new Date(`${b.dataset.date}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
       setPlannerTab("calendar");renderCalendar();
+      const dlg=$("#monthViewDialog");if(dlg?.open)closeDialog(dlg);
     });
     b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));
     b.addEventListener("mouseleave",hideCalendarTooltip);
@@ -1969,7 +1970,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova55",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova56",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
