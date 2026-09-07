@@ -1163,7 +1163,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
      length of the right pane - which is the real fix for "which day am I looking at":
      the open row is always on screen, not just the heading above it. */
   .week-pane-left{min-width:0;position:sticky;top:70px;align-self:start}
-  .week-detail{min-width:0;padding-left:20px;border-left:1px solid var(--border)}
+  /* The left pane reads as a card because its rows carry their own background; the
+     detail pane had none of its own, so it looked like plain page content floating
+     next to a designed panel rather than the other half of one view. */
+  .week-detail{
+    min-width:0;padding:22px 26px;background:var(--bg-panel);
+    border-radius:var(--radius-lg);border:1px solid var(--border);
+  }
   .week-day-list.is-wide .wp-day-body{display:none}
   .week-day-list.is-wide .wp-day.is-open{
     background:color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));
@@ -1173,7 +1179,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   .week-detail-head{margin-bottom:14px}
   .week-detail-head h2{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0}
   .week-detail-head .wp-day-meta{margin:4px 0 0}
-  .week-detail .day-cardlist{gap:10px}
+  /* A day's two or three classes stretched edge-to-edge of a pane built to also fit a
+     seven-class day read as sparse and unfinished - a comfortable reading width, not
+     the full column, however wide the window is. */
+  .week-detail .day-cardlist{gap:10px;max-width:640px}
+  /* Three tool chips do not fit a 300px column - they were being cut off mid-label with
+     no scroll affordance to say more was there. They wrap instead. */
+  .week-tool-chips{flex-wrap:wrap;overflow-x:visible}
 }
 /* Stop the planner column stretching to the full width of a desktop window. */
 @media (min-width:900px){
