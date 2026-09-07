@@ -784,12 +784,21 @@ function renderWeekPlanner(){
   }
   const eyebrowBtn=$("#weekScanEyebrow");
   if(eyebrowBtn)eyebrowBtn.classList.toggle("is-away",weekOffset!==0);
+  /* Below 900px this is an accordion: one column, the open day expands in place. At
+     900px+ a 7-column grid squeezed real class cards into ~150px columns - names
+     wrapping four lines, chips spilling past the edge, badges and gaps deleted just to
+     make it fit. Wide screens instead get master-detail: the week stays a compact list
+     on the left, the selected day renders at full width on the right, so nothing about
+     a class card has to be shrunk or dropped to fit a column that was never wide enough
+     for it. */
   const wideWeek=matchMedia("(min-width:900px)").matches;
   list.classList.toggle("is-wide",wideWeek);
+  const detailIso=(wideWeek&&days.includes(state.selectedDate))?state.selectedDate:(wideWeek?today:null);
   list.innerHTML=days.map((iso,dayIdx)=>{
     const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
     const active=dayAll.filter(c=>c.status!=="Cancelled");
-    const isToday=iso===today,isPast=iso<today,isOpen=iso===state.selectedDate,exam=examOn(iso);
+    const isToday=iso===today,isPast=iso<today,exam=examOn(iso);
+    const isOpen=wideWeek?iso===detailIso:iso===state.selectedDate;
     const done=active.filter(c=>now>=dateTime(c,"endTime")).length;
     const countText=active.length?(isToday?`${done}/${active.length}`:`${active.length} ${active.length===1?"class":"classes"}`):(exam?"Exam day":"");
     /* Course colours on the collapsed row, so a glance says which subjects a day holds
@@ -805,35 +814,64 @@ function renderWeekPlanner(){
       </span>
     </button>`;
     let body="";
-    if(isOpen||wideWeek){
+    if(isOpen&&!wideWeek){
       const visible=visibleDayClasses(iso),tasks=state.tasks.filter(t=>t.date===iso);
       const vActive=visible.filter(c=>c.status!=="Cancelled");
       const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
       const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"";
       body=`<div class="wp-day-body">
         ${meta?`<p class="wp-day-meta">${esc(meta)}</p>`:""}
-        <div${isOpen?' id="dayAgenda"':""} class="schedule-list day-agenda">${agendaHtml(visible,tasks,exam,iso)}</div>
+        <div id="dayAgenda" class="schedule-list day-agenda">${agendaHtml(visible,tasks,exam,iso)}</div>
       </div>`;
     }
     return`<section class="wp-day ${isToday?"is-today":""} ${isPast?"is-past":""} ${isOpen?"is-open":""} ${!active.length?"is-free":""} ${exam?"has-exam":""}" style="--i:${dayIdx}">${head}${body}</section>`;
   }).join("");
 
+  const detailEl=$("#weekDetail");
+  if(detailEl){
+    if(wideWeek&&detailIso){
+      const visible=visibleDayClasses(detailIso),tasks=state.tasks.filter(t=>t.date===detailIso);
+      const vActive=visible.filter(c=>c.status!=="Cancelled");
+      const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
+      const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"Free day";
+      detailEl.innerHTML=`
+        <div class="week-detail-head">
+          <h2>${esc(fmtDate(detailIso,{weekday:"long",day:"numeric",month:"long"}))}</h2>
+          <p class="wp-day-meta">${esc(meta)}</p>
+        </div>
+        <div id="dayAgenda" class="schedule-list day-agenda">${agendaHtml(visible,tasks,examOn(detailIso),detailIso)}</div>`;
+    }else detailEl.innerHTML="";
+  }
+
   $$(".wp-day-head",list).forEach(b=>b.addEventListener("click",()=>{
     const iso=b.dataset.date;
-    state.selectedDate=state.selectedDate===iso?"":iso;
+    state.selectedDate=wideWeek?iso:(state.selectedDate===iso?"":iso);
     const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
     renderCalendar();
-    if(state.selectedDate===iso)requestAnimationFrame(()=>{
+    if(!wideWeek&&state.selectedDate===iso)requestAnimationFrame(()=>{
       $(`.wp-day-head[data-date="${iso}"]`)?.scrollIntoView({behavior:"smooth",block:"nearest"});
     });
   }));
   $$(".day-agenda",list).forEach(bindTaskRows);
+  const detailAgenda=detailEl?$("#dayAgenda",detailEl):null;
+  if(detailAgenda)bindTaskRows(detailAgenda);
   /* The pinned day header sits directly below the pinned week header, whose height
      depends on the strip and the week's meta line, so it is measured rather than guessed. */
   const stickyEl=$(".week-sticky");
   if(stickyEl)document.documentElement.style.setProperty("--week-sticky-h",`${Math.round(stickyEl.offsetHeight)}px`);
   renderPlannerExamStrip();
 }
+/* Resizing across the 900px breakpoint used to leave the wrong layout in place until
+   the next navigation - a plain resize listener, debounced, keeps the two in sync. */
+let _weekLayoutRaf=null;
+window.addEventListener("resize",()=>{
+  if(!$("#weekScanList"))return;
+  cancelAnimationFrame(_weekLayoutRaf);
+  _weekLayoutRaf=requestAnimationFrame(()=>{
+    const wide=matchMedia("(min-width:900px)").matches;
+    if($("#weekScanList").classList.contains("is-wide")!==wide)renderCalendar();
+  });
+});
 /* Exams live behind their own tab, so the calendar could not tell you one was coming. */
 function renderPlannerExamStrip(){
   const strip=$("#plannerExamStrip");if(!strip)return;
@@ -1929,7 +1967,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova53",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova54",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
