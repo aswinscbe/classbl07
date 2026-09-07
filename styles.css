@@ -1168,8 +1168,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
     border-color:color-mix(in srgb, var(--accent) 30%, transparent);
   }
   .week-day-list.is-wide .wp-day.is-open .wp-day-name{color:var(--accent)}
-  /* The left list is already the week's index; the strip above it would be a second one. */
-  .week-planner:has(.week-day-list.is-wide) .week-strip{display:none}
   .week-detail-head{margin-bottom:14px}
   .week-detail-head h2{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0}
   .week-detail-head .wp-day-meta{margin:4px 0 0}
@@ -1184,6 +1182,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   .subtab{flex:none;min-width:150px}
 }
 @keyframes wp-day-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* A visible cue that a day was picked, independent of whether anything needed to
+   scroll — on a tall detail pane already in view, a scroll alone gives no feedback. */
+@keyframes just-picked-flash{
+  0%{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent)}
+  100%{box-shadow:0 0 0 2px transparent}
+}
+.wp-day.just-picked,#weekDetail.just-picked{
+  animation:just-picked-flash .9s ease-out;border-radius:var(--radius-md);
+}
+@media(prefers-reduced-motion: reduce){.wp-day.just-picked,#weekDetail.just-picked{animation:none}}
 
 .wp-day{
   border:1px solid var(--border);border-radius:var(--radius-md);

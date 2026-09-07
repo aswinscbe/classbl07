@@ -721,7 +721,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
       setPlannerTab("calendar");renderCalendar();
       const dlg=$("#monthViewDialog");if(dlg?.open)closeDialog(dlg);
       const targetIso=b.dataset.date;
-      requestAnimationFrame(()=>requestAnimationFrame(()=>$(`.wp-day-head[data-date="${targetIso}"]`)?.scrollIntoView({behavior:"smooth",block:"center"})));
+      requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(targetIso)));
     });
     b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));
     b.addEventListener("mouseleave",hideCalendarTooltip);
@@ -750,6 +750,14 @@ function visibleDayClasses(iso){
   const all=state.classes.filter(c=>c.dateIso===iso);
   const shown=(state.agendaShowCompleted||iso!==isoToday())?all:all.filter(c=>!isClassCompleted(c));
   return state.calendarHighlight?shown.filter(c=>canonical(c.code)===state.calendarHighlight):shown;
+}
+function scrollToPickedDay(iso){
+  const wide=matchMedia("(min-width:900px)").matches;
+  const target=wide?$("#weekDetail"):$(`.wp-day-head[data-date="${iso}"]`);
+  if(!target)return;
+  target.scrollIntoView({behavior:"smooth",block:wide?"start":"center"});
+  const flashEl=wide?target:target.closest(".wp-day");
+  if(flashEl){flashEl.classList.remove("just-picked");void flashEl.offsetWidth;flashEl.classList.add("just-picked")}
 }
 function renderWeekPlanner(){
   const list=$("#weekScanList");if(!list)return;
@@ -784,7 +792,7 @@ function renderWeekPlanner(){
       state.selectedDate=iso;
       const dd=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
       renderCalendar();
-      requestAnimationFrame(()=>$(`.wp-day-head[data-date="${iso}"]`)?.scrollIntoView({behavior:"smooth",block:"center"}));
+      requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
     }));
   }
   const eyebrowBtn=$("#weekScanEyebrow");
@@ -850,12 +858,11 @@ function renderWeekPlanner(){
 
   $$(".wp-day-head",list).forEach(b=>b.addEventListener("click",()=>{
     const iso=b.dataset.date;
+    const opening=wideWeek||state.selectedDate!==iso;
     state.selectedDate=wideWeek?iso:(state.selectedDate===iso?"":iso);
     const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
     renderCalendar();
-    if(!wideWeek&&state.selectedDate===iso)requestAnimationFrame(()=>{
-      $(`.wp-day-head[data-date="${iso}"]`)?.scrollIntoView({behavior:"smooth",block:"nearest"});
-    });
+    if(opening)requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
   }));
   $$(".day-agenda",list).forEach(bindTaskRows);
   const detailAgenda=detailEl?$("#dayAgenda",detailEl):null;
@@ -1972,7 +1979,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova57",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova58",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
