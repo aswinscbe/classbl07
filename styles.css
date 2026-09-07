@@ -1176,7 +1176,15 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
     border-color:color-mix(in srgb, var(--accent) 30%, transparent);
   }
   .week-day-list.is-wide .wp-day.is-open .wp-day-name{color:var(--accent)}
-  .week-detail-head{margin-bottom:14px}
+  /* This heading is the only thing in the pane that names the day, and it was not
+     pinned - scroll a day with enough classes and it scrolls away with them, leaving a
+     column of cards with nothing saying which day they belong to. The left pane's
+     highlighted row is too easy to miss while attention is on the cards being scrolled. */
+  .week-detail-head{
+    position:sticky;top:70px;z-index:2;margin:-22px -26px 14px;padding:20px 26px 14px;
+    background:var(--bg-panel);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm);
+  }
   .week-detail-head h2{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0}
   .week-detail-head .wp-day-meta{margin:4px 0 0}
   /* A day's two or three classes stretched edge-to-edge of a pane built to also fit a
