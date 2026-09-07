@@ -44,52 +44,52 @@
   color-scheme:dark;
 }
 :root[data-theme="light"]{
-  --bg:#f3f5f8;
+  --bg:#e9edf3;
   --bg-elevated:#ffffff;
-  --bg-panel:#f6f8fa;
+  --bg-panel:#f4f6f9;
   --bg-raised:#ffffff;
-  --ink:#1c2128;
-  --ink-muted:#6b7280;
-  --ink-faint:#98a1ab;
-  --accent:#4a68b8;
-  --accent-2:#3d55a0;
-  --accent-soft:rgba(74,104,184,.12);
-  --live:#3f7d5c;
-  --live-soft:rgba(63,125,92,.12);
-  --amber:#a97a2e;
-  --amber-soft:rgba(169,122,46,.14);
-  --danger:#b34a4a;
-  --danger-soft:rgba(179,74,74,.12);
-  --border:#dde2e8;
-  --border-strong:#c7ced8;
-  --shadow-lg:0 22px 48px -28px rgba(20,30,50,.2);
-  --shadow-md:0 10px 22px -16px rgba(20,30,50,.16);
-  --shadow-sm:0 5px 12px -9px rgba(20,30,50,.14);
+  --ink:#161a20;
+  --ink-muted:#565f6c;
+  --ink-faint:#828b98;
+  --accent:#3d5aa8;
+  --accent-2:#324a8c;
+  --accent-soft:rgba(61,90,168,.16);
+  --live:#2e6b4a;
+  --live-soft:rgba(46,107,74,.15);
+  --amber:#93611f;
+  --amber-soft:rgba(147,97,31,.16);
+  --danger:#a63d3d;
+  --danger-soft:rgba(166,61,61,.14);
+  --border:#cfd7e2;
+  --border-strong:#b6c0cf;
+  --shadow-lg:0 22px 48px -28px rgba(20,30,50,.28);
+  --shadow-md:0 10px 22px -16px rgba(20,30,50,.22);
+  --shadow-sm:0 5px 12px -9px rgba(20,30,50,.18);
   color-scheme:light;
 }
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]):not([data-theme="light"]){
-    --bg:#f3f5f8;
+    --bg:#e9edf3;
     --bg-elevated:#ffffff;
-    --bg-panel:#f6f8fa;
+    --bg-panel:#f4f6f9;
     --bg-raised:#ffffff;
-    --ink:#1c2128;
-    --ink-muted:#6b7280;
-    --ink-faint:#98a1ab;
-    --accent:#4a68b8;
-    --accent-2:#3d55a0;
-    --accent-soft:rgba(74,104,184,.12);
-    --live:#3f7d5c;
-    --live-soft:rgba(63,125,92,.12);
-    --amber:#a97a2e;
-    --amber-soft:rgba(169,122,46,.14);
-    --danger:#b34a4a;
-    --danger-soft:rgba(179,74,74,.12);
-    --border:#dde2e8;
-    --border-strong:#c7ced8;
-    --shadow-lg:0 22px 48px -28px rgba(20,30,50,.2);
-    --shadow-md:0 10px 22px -16px rgba(20,30,50,.16);
-    --shadow-sm:0 5px 12px -9px rgba(20,30,50,.14);
+    --ink:#161a20;
+    --ink-muted:#565f6c;
+    --ink-faint:#828b98;
+    --accent:#3d5aa8;
+    --accent-2:#324a8c;
+    --accent-soft:rgba(61,90,168,.16);
+    --live:#2e6b4a;
+    --live-soft:rgba(46,107,74,.15);
+    --amber:#93611f;
+    --amber-soft:rgba(147,97,31,.16);
+    --danger:#a63d3d;
+    --danger-soft:rgba(166,61,61,.14);
+    --border:#cfd7e2;
+    --border-strong:#b6c0cf;
+    --shadow-lg:0 22px 48px -28px rgba(20,30,50,.28);
+    --shadow-md:0 10px 22px -16px rgba(20,30,50,.22);
+    --shadow-sm:0 5px 12px -9px rgba(20,30,50,.18);
     color-scheme:light;
   }
 }
@@ -855,6 +855,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .board-list{
   margin-top:14px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--bg-panel);
 }
+/* The toggle only flipped this class - nothing ever hid the list it names. */
+.board-list.collapsed{display:none}
 .board-row{
   display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:var(--radius-sm);
   border-left:3px solid var(--border-strong);background:var(--bg-panel);margin-bottom:6px;
