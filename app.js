@@ -873,7 +873,20 @@ function renderWeekPlanner(){
     if(opening)requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
   }));
   $$(".day-agenda",agendaEl).forEach(bindTaskRows);
+  /* Swiping inside the open day advances to the next/previous day: closes this one,
+     opens the adjacent one, scrolls to it. Bound fresh every render since the open
+     day's own node is rebuilt on every innerHTML swap. */
+  const openBody=$(".agenda-day-section.is-open .day-agenda",agendaEl);
+  if(openBody)bindSwipeGesture(openBody,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
   renderPlannerExamStrip();
+}
+function shiftSelectedDate(delta){
+  const day=new Date(`${state.selectedDate}T12:00:00+05:30`);day.setDate(day.getDate()+delta);
+  state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(day);
+  state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);
+  state.railStart=mondayIso(state.selectedDate);
+  renderCalendar();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(state.selectedDate)));
 }
 /* Exams live behind their own tab, so the calendar could not tell you one was coming. */
 function renderPlannerExamStrip(){
@@ -1975,7 +1988,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova69",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova70",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
