@@ -1594,6 +1594,8 @@ dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
 
 /* ============ Class action sheet ============ */
 .class-action-dialog{max-width:480px}
+.month-picker-dialog .month-view-panel{position:relative}
+.month-picker-dialog .dialog-close{position:absolute;top:14px;right:14px;z-index:2}
 .class-action-sheet{
   background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-xl) var(--radius-xl) 0 0;
   padding:10px 20px 22px;box-shadow:var(--shadow-lg);

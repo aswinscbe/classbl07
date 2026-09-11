@@ -733,14 +733,16 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
   $$(".month-week").forEach(row=>row.addEventListener("click",e=>{
     if(e.target.closest(".calendar-day"))return;
     const firstIso=row.querySelector(".calendar-day")?.dataset.date;if(!firstIso)return;
-    state.railStart=mondayIso(firstIso);setPlannerTab("calendar");renderCalendar();
+    state.railStart=mondayIso(firstIso);renderCalendar();
+    closeDialog($("#monthPickerDialog"));
   }));
   $$(".calendar-day").forEach(b=>{
     b.addEventListener("click",()=>{
       /* A month is scanned to pick a week to work in, so a tap lands you in that week. */
       state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);
       const dd=new Date(`${b.dataset.date}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
-      setPlannerTab("calendar");renderCalendar();
+      renderCalendar();
+      closeDialog($("#monthPickerDialog"));
       requestAnimationFrame(()=>requestAnimationFrame(flashDayFocus));
     });
     b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));
@@ -1927,6 +1929,9 @@ function bind(){
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerTab(b.dataset.plannerTab)));
   $$(".subtab[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-profile-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".profile-view").forEach(v=>v.classList.toggle("active",v.dataset.profileView===b.dataset.profileTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar()});
+  $("#openMonthPicker")?.addEventListener("click",()=>{renderCalendar();$("#monthPickerDialog").showModal()});
+  $("#closeMonthPicker")?.addEventListener("click",()=>closeDialog($("#monthPickerDialog")));
+  $("#monthPickerDialog")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeDialog(e.currentTarget)});
   $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
   $("#jumpToNextClassButton")?.addEventListener("click",()=>{
     const now=Date.now(),next=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime").getTime()>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
@@ -2034,7 +2039,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova72",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova73",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

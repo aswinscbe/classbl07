@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260902-nova72">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova73">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -155,7 +155,6 @@
         <div class="tab-row">
           <div class="subtabs" id="plannerTabs">
             <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span>Week</button>
-            <button class="subtab" data-planner-tab="month"><span data-icon="calendar"></span>Month</button>
             <button class="subtab" data-planner-tab="exams"><span data-icon="exams"></span>Exams</button>
           </div>
         </div>
@@ -177,6 +176,7 @@
                 <p class="week-scan-meta" id="weekScanMeta"></p>
               </div>
               <button type="button" class="icon-button week-nav-arrow" id="weekScanNext" aria-label="Next week"><span data-icon="chevron-right"></span></button>
+              <button type="button" class="icon-button" id="openMonthPicker" aria-label="Jump to a date"><span data-icon="calendar"></span></button>
             </div>
             <div class="week-strip" id="weekStrip"></div>
 
@@ -201,7 +201,7 @@
           </article>
         </section>
 
-        <section class="planner-view" data-planner-view="month">
+        <dialog id="monthPickerDialog" class="class-action-dialog month-picker-dialog">
           <article class="panel month-view-panel">
             <div class="calendar-head">
               <button class="icon-button week-nav-arrow" id="prevMonth" aria-label="Previous month"><span data-icon="chevron-left"></span></button>
@@ -214,8 +214,9 @@
             <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span class="weekend">Sat</span><span class="weekend">Sun</span></div>
             <div class="calendar-grid" id="calendarGrid"></div>
             <div class="month-key" id="monthKey"></div>
+            <button type="button" class="icon-button dialog-close" id="closeMonthPicker" aria-label="Close"><span data-icon="close"></span></button>
           </article>
-        </section>
+        </dialog>
 
         <section class="planner-view" data-planner-view="exams">
           <article class="exam-hero" id="examHero" hidden>
@@ -550,9 +551,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260902-nova72"></script>
-  <script src="exam-data.js?v=20260902-nova72"></script>
-  <script src="app.js?v=20260902-nova72"></script>
-  <script src="polish.js?v=20260902-nova72"></script>
+  <script src="campus-data.js?v=20260902-nova73"></script>
+  <script src="exam-data.js?v=20260902-nova73"></script>
+  <script src="app.js?v=20260902-nova73"></script>
+  <script src="polish.js?v=20260902-nova73"></script>
 </body>
 </html>
