@@ -1154,23 +1154,22 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 @media (hover:hover){.week-scan-eyebrow.is-away:hover{background:color-mix(in srgb, var(--accent) 24%, transparent)}}
 /* "Day Focus": one day's classes shown at a time below a fixed heading, picked from
-   the week strip. The heading pins in place under the week header — it lives outside
-   the scrolling content instead of inside it, so it is structurally unable to scroll
-   away, at every width. Below 900px the week-day-list (a secondary index of all 7
-   days) stays hidden; the strip up top is the only day-picker needed on a phone. */
+   the week strip. The heading is a genuinely static block above a separately
+   scrolling list — not a sticky header layered over the same scroll as the cards —
+   so a card can never end up straddling it and getting its text sliced mid-line the
+   way a sticky-over-content header does. Below 900px the week-day-list (a secondary
+   index of all 7 days) stays hidden; the strip up top is the only day-picker needed
+   on a phone. */
 .week-day-list{display:none}
 .week-detail{
-  min-width:0;padding:18px 18px 6px;background:var(--bg-panel);
+  min-width:0;padding:18px;background:var(--bg-panel);
   border-radius:var(--radius-lg);border:1px solid var(--border);margin-top:14px;
+  display:flex;flex-direction:column;max-height:min(620px,70vh);
 }
-.week-detail-head{
-  position:sticky;top:calc(52px + var(--week-sticky-h, 150px));z-index:2;
-  margin:-18px -18px 14px;padding:16px 18px 14px;
-  background:var(--bg-panel);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-  border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm);
-}
+.week-detail-head{flex:none;padding-bottom:14px;border-bottom:1px solid var(--border)}
 .week-detail-head h2{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.01em;margin:0}
 .week-detail-head .wp-day-meta{margin:4px 0 0}
+.week-detail .day-agenda{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:14px;margin:0 -18px;padding-left:18px;padding-right:18px}
 .week-detail.just-picked{animation:just-picked-flash .9s ease}
 /* Below 900px a 7-column grid squeezed real class cards into ~150px columns - names
    wrapping four lines, chips spilling past the edge, badges and gaps deleted just to
@@ -1183,13 +1182,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   /* The left pane holds the whole week and stays short, so it can stay in view for the
      length of the right pane. */
   .week-pane-left{min-width:0;position:sticky;top:70px;align-self:start}
-  .week-detail{padding:22px 26px}
+  .week-detail{padding:26px;max-height:calc(100vh - 140px)}
+  .week-detail .day-agenda{margin:0 -26px;padding-left:26px;padding-right:26px}
   .week-day-list.is-wide .wp-day.is-open{
     background:color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));
     border-color:color-mix(in srgb, var(--accent) 30%, transparent);
   }
   .week-day-list.is-wide .wp-day.is-open .wp-day-name{color:var(--accent)}
-  .week-detail-head{top:70px;margin:-22px -26px 14px;padding:20px 26px 14px}
   .week-detail-head h2{font-size:22px}
   /* A day's two or three classes stretched edge-to-edge of a pane built to also fit a
      seven-class day read as sparse and unfinished - a comfortable reading width, not

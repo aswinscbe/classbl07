@@ -872,10 +872,6 @@ function renderWeekPlanner(){
     bindTaskRows(detailAgenda);
     bindSwipeGesture(detailAgenda,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
   }
-  /* The detail heading pins directly below the week header, whose height depends on
-     the strip and the week's meta line, so it is measured rather than guessed. */
-  const stickyEl=$(".week-sticky");
-  if(stickyEl)document.documentElement.style.setProperty("--week-sticky-h",`${Math.round(stickyEl.offsetHeight)}px`);
   renderPlannerExamStrip();
 }
 /* Resizing across the 900px breakpoint used to leave the wrong layout in place until
@@ -1932,7 +1928,6 @@ function bind(){
     const hero=e.target.closest("#focusPanel.has-focus");
     if(hero&&hero.dataset.focusClassId){const c=state.classes.find(x=>classIdentity(x)===hero.dataset.focusClassId);if(c)openClassSheet(c)}
   });
-  bindSwipeGesture($(".week-planner"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:56});
   $("#plannerExamStrip")?.addEventListener("click",()=>setPlannerTab("exams"));
   $("#toggleCourseFilter")?.addEventListener("click",()=>{state.courseFilterOpen=!state.courseFilterOpen;renderCalendar()});
   $("#weekScanEyebrow")?.addEventListener("click",()=>{
@@ -1991,7 +1986,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova64",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova65",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
