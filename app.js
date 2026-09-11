@@ -699,12 +699,8 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
   $("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);
   const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);
   const shownWeek=mondayIso(state.railStart||state.selectedDate||isoToday());
-  /* Density as one fill rather than up to four dashes: a six-class day and a four-class
-     day used to look identical with a "+2" doing the work a colour can do. */
   const monthIsos=[];
   for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);monthIsos.push(`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`)}
-  const counts=monthIsos.map(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length);
-  const peak=Math.max(1,...counts);
   /* Built as six week rows rather than a flat grid of 42 tiles, so the week you are
      working in can be banded as an actual band and a row is a tap target of its own. */
   let html="";
@@ -718,18 +714,17 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
       const dayCourses=[...new Set(active.map(c=>canonical(c.code)))];
       const dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight);
       const exam=examOn(iso),holiday=HOLIDAYS[iso];
-      const load=active.length?Math.max(.34,Math.min(1,active.length/peak)):0;
       const cls=["calendar-day",day.getMonth()!==m?"outside":"",isWeekend?"weekend":"",
         iso===isoToday()?"today":"",iso===state.selectedDate?"selected":"",dimmed?"dimmed":"",
         exam?"has-exam":"",holiday?"has-holiday":""].filter(Boolean).join(" ");
-      /* A width-only bar could show "more than yesterday" but not "how many" — the one
-         thing a month view is for. The count is a real number again, in a badge whose
-         fill still carries the load at a glance. Exam is a separate ring around the
-         date so it never competes with, or gets replaced by, the class count. */
-      const countBadge=active.length?`<span class="calendar-day-count" style="--load:${load}">${active.length}</span>`:"";
+      /* One glowing dot, colored by the day's first class, instead of a numeric count
+         badge — enough to say "this day is busy" at a glance without competing with
+         the date number for attention. Exam stays a ring around the date so it never
+         gets confused with, or replaces, the class-day dot. */
+      const dayDot=active.length?`<span class="cd-dot" style="color:${colorFor(active[0].code)};background:${colorFor(active[0].code)}"></span>`:"";
       const holidayMark=!active.length&&holiday?'<span class="cd-mark cd-holiday" aria-hidden="true"></span>':"";
-      return`<button class="${cls}" data-date="${iso}" style="--fill:${load}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
-        <span class="calendar-day-number">${day.getDate()}</span>${countBadge}${holidayMark}
+      return`<button class="${cls}" data-date="${iso}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
+        <span class="calendar-day-number">${day.getDate()}</span>${dayDot}${holidayMark}
       </button>`;
     }).join("");
     html+=`<div class="month-week ${rowInWeek?"in-week":""}">${cells}</div>`;
@@ -754,7 +749,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
     b.addEventListener("mouseleave",hideCalendarTooltip);
   });
   const keyEl=$("#monthKey");
-  if(keyEl)keyEl.innerHTML='<span class="mk-item"><i class="mk-swatch mk-classes">3</i>Classes that day</span><span class="mk-item"><i class="mk-swatch mk-exam">1</i>Exam day</span><span class="mk-item"><i class="mk-swatch mk-holiday"></i>Holiday</span>';
+  if(keyEl)keyEl.innerHTML='<span class="mk-item"><i class="mk-swatch mk-classes"></i>Class day</span><span class="mk-item"><i class="mk-swatch mk-exam"></i>Exam day</span><span class="mk-item"><i class="mk-swatch mk-holiday"></i>Holiday</span>';
   $("#toggleCompletedButton")?.classList.toggle("active",!!state.agendaShowCompleted);
   const weekIsos=weekDaysFrom(state.railStart||mondayIso(state.selectedDate||isoToday()));
   const weekAll=weekIsos.flatMap(iso=>state.classes.filter(c=>c.dateIso===iso));
@@ -817,7 +812,6 @@ function renderWeekPlanner(){
     if(!strip.dataset.swipeBound){strip.dataset.swipeBound="1";bindSwipeGesture(strip,direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"a,input,select,textarea",threshold:46})}
   }
   renderDayFocus(state.selectedDate||today);
-  renderPlannerExamStrip();
 }
 /* Single-day focus: replaces the old accordion. One day's shape at a time — a time
    ruler with exact boundary labels, finished classes collapsed into a thin "earlier"
@@ -902,7 +896,7 @@ function renderDayFocus(iso){
         const dur=minutes(c.endTime)-minutes(c.startTime);
         const progress=isLive?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
         const sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessions(c.code).length:0;
-        return`<div class="pt-item">
+        return`<div class="pt-item" style="--i:${i}">
           <div class="pt-time-col"><span class="hh">${esc(fmtTime(c.startTime).replace(/\s?[ap]m/i,""))}</span><span class="ap">${esc((fmtTime(c.startTime).match(/[ap]m/i)||[""])[0])}</span></div>
           <div class="pt-spine">${i<remaining.length-1?`<div class="pt-line" style="--lc:${colorFor(c.code)}"></div>`:""}<div class="pt-node ${isLive?"live":""}" style="--dot:${colorFor(c.code)}"></div></div>
           <article class="pt-body ${isLive?"now":""}" data-class-id="${esc(classIdentity(c))}" style="--c:${colorFor(c.code)}">
@@ -933,18 +927,6 @@ function shiftSelectedDate(delta){
   renderCalendar();
 }
 /* Exams live behind their own tab, so the calendar could not tell you one was coming. */
-function renderPlannerExamStrip(){
-  const strip=$("#plannerExamStrip");if(!strip)return;
-  const next=nextExam();
-  if(!next){strip.hidden=true;return}
-  const firstSlot=Object.keys(next.slots)[0],entry=next.slots[firstSlot],daysLeft=examDaysLeft(next.date);
-  strip.hidden=false;
-  strip.style.setProperty("--course",colorFor(entry.code));
-  strip.classList.toggle("is-imminent",daysLeft<=3);
-  $("#plannerExamCode").textContent=entry.code;
-  $("#plannerExamTitle").textContent=entry.subject;
-  $("#plannerExamDays").textContent=daysLeft<=0?"Today":daysLeft===1?"Tomorrow":`${daysLeft}d`;
-}
 /* Status-aware desktop calendar preview. This declaration intentionally
    replaces the compact legacy renderer above without touching calendar flow. */
 function showCalendarTooltip(target,iso){
@@ -1977,7 +1959,6 @@ function bind(){
     const hero=e.target.closest("#focusPanel.has-focus");
     if(hero&&hero.dataset.focusClassId){const c=state.classes.find(x=>classIdentity(x)===hero.dataset.focusClassId);if(c)openClassSheet(c)}
   });
-  $("#plannerExamStrip")?.addEventListener("click",()=>setPlannerTab("exams"));
   $("#toggleCourseFilter")?.addEventListener("click",()=>{state.courseFilterOpen=!state.courseFilterOpen;renderCalendar()});
   $("#weekScanPrev")?.addEventListener("click",()=>shiftRailWeek(-1));
   $("#weekScanNext")?.addEventListener("click",()=>shiftRailWeek(1));
@@ -2030,7 +2011,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova75",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova76",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

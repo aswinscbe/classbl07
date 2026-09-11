@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260902-nova75">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova76">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -154,18 +154,12 @@
         <div class="page-heading"><div><p class="overline">TERM III</p><h1>Planner</h1></div></div>
         <div class="tab-row">
           <div class="subtabs" id="plannerTabs">
-            <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span>Week</button>
+            <button class="subtab active" data-planner-tab="calendar"><span data-icon="calendar"></span>Schedule</button>
             <button class="subtab" data-planner-tab="exams"><span data-icon="exams"></span>Exams</button>
           </div>
         </div>
 
         <section class="planner-view active" data-planner-view="calendar">
-          <button type="button" class="next-exam-strip" id="plannerExamStrip" hidden>
-            <span class="pes-label">NEXT EXAM</span>
-            <span class="pes-code" id="plannerExamCode">—</span>
-            <span class="pes-title" id="plannerExamTitle">—</span>
-            <b class="pes-days" id="plannerExamDays">—</b>
-          </button>
 
           <article class="panel week-planner">
             <div class="planner-header-row">
@@ -200,20 +194,22 @@
           </article>
         </section>
 
-        <dialog id="monthPickerDialog" class="class-action-dialog month-picker-dialog">
+        <dialog id="monthPickerDialog" class="month-picker-dialog">
           <article class="panel month-view-panel">
+            <div class="month-dialog-topline">
+              <button type="button" class="today-button" id="todayButton"><span data-icon="target"></span>Today</button>
+              <button type="button" class="icon-button" id="closeMonthPicker" aria-label="Close" autofocus><span data-icon="close"></span></button>
+            </div>
             <div class="calendar-head">
               <button class="icon-button week-nav-arrow" id="prevMonth" aria-label="Previous month"><span data-icon="chevron-left"></span></button>
               <div class="calendar-head-title">
                 <h2 id="calendarTitle">August 2026</h2>
-                <button type="button" class="today-button" id="todayButton"><span data-icon="target"></span>Today</button>
               </div>
               <button class="icon-button week-nav-arrow" id="nextMonth" aria-label="Next month"><span data-icon="chevron-right"></span></button>
             </div>
             <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span class="weekend">Sat</span><span class="weekend">Sun</span></div>
             <div class="calendar-grid" id="calendarGrid"></div>
             <div class="month-key" id="monthKey"></div>
-            <button type="button" class="icon-button dialog-close" id="closeMonthPicker" aria-label="Close"><span data-icon="close"></span></button>
           </article>
         </dialog>
 
@@ -550,9 +546,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260902-nova75"></script>
-  <script src="exam-data.js?v=20260902-nova75"></script>
-  <script src="app.js?v=20260902-nova75"></script>
-  <script src="polish.js?v=20260902-nova75"></script>
+  <script src="campus-data.js?v=20260902-nova76"></script>
+  <script src="exam-data.js?v=20260902-nova76"></script>
+  <script src="app.js?v=20260902-nova76"></script>
+  <script src="polish.js?v=20260902-nova76"></script>
 </body>
 </html>
