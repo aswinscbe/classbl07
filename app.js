@@ -243,7 +243,8 @@ function positionNavIndicator(){
   ind.style.transform=`translateX(${btnRect.left-navRect.left}px)`;
   requestAnimationFrame(()=>ind.classList.add("ready"));
 }
-function showPage(n){if(n==="home"){state.timelineOffset=0;state.timelineTouched=false}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1)}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){renderCalendar();renderExamsPage()}positionNavIndicator()}
+const PAGE_LABELS={home:"Home",calendar:"Planner",campus:"Campus",profile:"Profile"};
+function showPage(n){if(n==="home"){state.timelineOffset=0;state.timelineTouched=false}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1)}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){renderCalendar();renderExamsPage()}positionNavIndicator();const label=$("#topbarPageLabel");if(label)label.textContent=PAGE_LABELS[n]||"Home"}
 function setPlannerTab(tab){
   $$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===tab));
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
@@ -1899,6 +1900,7 @@ function bind(){
     addTask(`Prep: ${btn.dataset.prepSubject}`,btn.dataset.prepCode,btn.dataset.prepDate);
     showToast("Prep task added");
   });
+  window.addEventListener("scroll",()=>{$(".topbar")?.classList.toggle("is-scrolled",scrollY>4)},{passive:true});
   window.addEventListener("focus",()=>{scheduleIdleSync();scheduleGoogleTasksSync()});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
   window.addEventListener("online",()=>{scheduleIdleSync();updateOfflineBanner(true)});
@@ -2011,7 +2013,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova76",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova77",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
