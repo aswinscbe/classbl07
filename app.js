@@ -59,7 +59,7 @@ function nextExam(){
 }
 function examDaysLeft(iso){const now=new Date(`${isoToday()}T00:00:00+05:30`),target=new Date(`${iso}T00:00:00+05:30`);return Math.round((target-now)/86400000)}
 function subjectSessions(code){const want=canonical(code);return state.all.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===want).sort((a,b)=>dateTime(a)-dateTime(b))}
-function subjectSessionOrdinal(c){if(c.status==="Cancelled")return null;const list=subjectSessions(c.code);const i=list.findIndex(x=>classIdentity(x)===classIdentity(c));return i<0?null:i+1}
+function subjectSessionOrdinal(c){if(c.status==="Cancelled"||c.type==="General")return null;const list=subjectSessions(c.code);const i=list.findIndex(x=>classIdentity(x)===classIdentity(c));return i<0?null:i+1}
 function initials(n){return String(n||"ST").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function icon(name){const p={
 home:'<path d="M3.5 11 12 3.5 20.5 11V20a1 1 0 0 1-1 1h-4v-6h-5v6H4.5a1 1 0 0 1-1-1Z"/>',
@@ -1411,7 +1411,7 @@ function renderAccentSwatches(){
 }
 function renderSessionRings(){
   const el=$("#sessionRings");if(!el)return;
-  const codes=[...new Set(state.classes.map(c=>canonical(c.code)))].sort();
+  const codes=[...new Set(state.classes.filter(c=>c.type!=="General").map(c=>canonical(c.code)))].sort();
   if(!codes.length){el.innerHTML='<p class="empty-inline">No courses scheduled yet.</p>';return}
   const now=new Date();
   el.innerHTML=codes.map(code=>{
