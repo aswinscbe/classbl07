@@ -58,7 +58,6 @@ function nextExam(){
   return list[0]||null;
 }
 function examDaysLeft(iso){const now=new Date(`${isoToday()}T00:00:00+05:30`),target=new Date(`${iso}T00:00:00+05:30`);return Math.round((target-now)/86400000)}
-const SESSION_TARGET=24;
 function subjectSessions(code){const want=canonical(code);return state.all.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===want).sort((a,b)=>dateTime(a)-dateTime(b))}
 function subjectSessionOrdinal(c){if(c.status==="Cancelled")return null;const list=subjectSessions(c.code);const i=list.findIndex(x=>classIdentity(x)===classIdentity(c));return i<0?null:i+1}
 function initials(n){return String(n||"ST").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
@@ -430,8 +429,8 @@ function renderHome(){
     else if(onBreak){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`Starts in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
-    const heroSessionN=subjectSessionOrdinal(shown);
-    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${SESSION_TARGET}`));
+    const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
+    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${heroSessionTotal}`));
     if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`));
     $("#heroPills").innerHTML=pills.join("");
     const dayLabel=shown.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(shown.dateIso,{weekday:"long",day:"numeric",month:"short"});
@@ -624,7 +623,7 @@ function dayCardListHtml(classes,dayIso,opts={}){
       const gap=minutes(c.startTime)-prevEnd;
       if(gap>=45){html+=`<div class="day-cardlist-gap"><span class="dc-gap-label">${icon("clock")}${esc(compactDuration(gap))} free</span></div>`}
     }
-    const status=agendaStatus(c),tag=agendaTag(c),dur=minutes(c.endTime)-minutes(c.startTime),sessionN=subjectSessionOrdinal(c);
+    const status=agendaStatus(c),tag=agendaTag(c),dur=minutes(c.endTime)-minutes(c.startTime),sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessions(c.code).length:0;
     const cls=["day-cardlist-item",status==="Live"?"current":"",status==="Completed"?"completed":"",c.status==="Cancelled"?"cancelled":""].filter(Boolean).join(" ");
     const progress=status==="Live"?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
     const chips=[
@@ -642,7 +641,7 @@ function dayCardListHtml(classes,dayIso,opts={}){
     html+=`<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
       <div class="day-cardlist-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small><span class="status-tag ${tag.cls}">${esc(tag.text)}</span></div>
       <div class="day-cardlist-body">
-        <div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong>${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}${sessionN?`<span class="dc-session-badge">${sessionN}/${SESSION_TARGET}</span>`:""}</div>
+        <div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong>${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}${sessionN?`<span class="dc-session-badge">${sessionN}/${sessionTotal}</span>`:""}</div>
         ${progress!==null?`<div class="day-cardlist-progress"><span style="width:${progress}%"></span></div>`:""}
         <div class="day-cardlist-chips">${chips}</div>
         ${nextLine}
@@ -1546,8 +1545,8 @@ function openClassSheet(c){
   activeSheetClassId=classIdentity(c);
   $("#sheetClassCode").textContent=canonical(c.code)||"CLASS";
   $("#sheetClassTitle").textContent=c.course||"Class details";
-  const sheetSessionN=subjectSessionOrdinal(c);
-  $("#sheetClassMeta").textContent=[fmtRange(c.startTime,c.endTime),venueOf(c),c.faculty,sheetSessionN?`Session ${sheetSessionN}/${SESSION_TARGET}`:""].filter(Boolean).join(" · ");
+  const sheetSessionN=subjectSessionOrdinal(c),sheetSessionTotal=sheetSessionN?subjectSessions(c.code).length:0;
+  $("#sheetClassMeta").textContent=[fmtRange(c.startTime,c.endTime),venueOf(c),c.faculty,sheetSessionN?`Session ${sheetSessionN}/${sheetSessionTotal}`:""].filter(Boolean).join(" · ");
   const calendarLink=$("#sheetAddCalendar");
   if(calendarLink){
     if(c.status!=="Cancelled"){calendarLink.hidden=false;calendarLink.href=googleUrl(c)}
@@ -1979,7 +1978,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova61",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova62",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
