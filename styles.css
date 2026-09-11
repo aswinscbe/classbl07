@@ -1166,32 +1166,75 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-course-row{margin-top:8px}
 .week-course-row[hidden]{display:none}
 
-.week-agenda{margin-top:6px}
-.agenda-day-section{scroll-margin-top:60px}
-.agenda-day-section+.agenda-day-section{margin-top:2px}
+/* Accordion: every day is a compact one-line row; the open day expands in place to
+   show its cards. Only the open section ever has a body, so .agenda-day-head's
+   position:sticky (scoped to its own section, same as everywhere else in this file)
+   only ever has meaningful range to stick through on the one section that has content
+   below it — on a collapsed row it's inert, there's nothing to scroll past. */
+.week-agenda{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+/* overflow:hidden here (a tempting way to keep the head's corners clipped to the
+   section's own rounding) would silently break position:sticky on .agenda-day-head
+   below — a sticky element stops sticking the moment any ancestor sets overflow to
+   anything but visible, so the head instead gets its own matching border-radius. */
+.agenda-day-section{
+  scroll-margin-top:60px;border:1px solid var(--border);border-radius:var(--radius-md);
+  background:var(--bg-panel);
+  transition:background .25s ease,border-color .25s ease,box-shadow .25s ease;
+  animation:agenda-day-in .4s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i, 0) * 40ms);
+}
+@keyframes agenda-day-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion: reduce){.agenda-day-section{animation:none}}
 .agenda-day-head{
   position:sticky;top:52px;z-index:3;
-  display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 10px;
-  padding:14px 2px 10px;background:var(--bg-elevated);
-  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:9px;width:100%;padding:13px 13px;
+  background:var(--bg-panel);border:0;border-radius:var(--radius-md);font:inherit;color:inherit;cursor:pointer;text-align:left;
 }
+.agenda-day-section.is-open .agenda-day-head{border-radius:var(--radius-md) var(--radius-md) 0 0}
 .agenda-day-name{
-  font-family:var(--font-display);font-size:17px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
-  display:flex;align-items:center;gap:7px;
+  font-family:var(--font-display);font-size:15.5px;font-weight:750;letter-spacing:-.01em;color:var(--ink);
+  display:flex;align-items:center;gap:7px;flex:none;
 }
-.agenda-day-date{font-size:12.5px;font-weight:650;color:var(--ink-muted)}
-.agenda-day-count{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--ink-muted);white-space:nowrap}
 .wp-today-badge{font-size:9.5px;font-weight:800;letter-spacing:.05em;color:#fff;background:var(--accent);border-radius:99px;padding:2.5px 7px}
+.agenda-day-dots{display:flex;align-items:center;gap:3px;flex:none}
+.agenda-day-dots i{width:6px;height:6px;border-radius:50%;background:var(--course,var(--accent))}
+.agenda-day-right{display:flex;align-items:center;gap:9px;margin-left:auto;flex:none}
+.agenda-day-count{font-size:11.5px;font-weight:700;color:var(--ink-muted);white-space:nowrap}
+.agenda-day-date{font-size:11.5px;font-weight:650;color:var(--ink-faint);white-space:nowrap}
+.agenda-day-caret{display:flex;color:var(--ink-faint);flex:none;transition:transform .28s cubic-bezier(.22,1,.36,1)}
+.agenda-day-caret svg{width:15px;height:15px}
+.agenda-day-section.is-open .agenda-day-caret{transform:rotate(90deg);color:var(--accent)}
+
+.agenda-day-section.is-today{
+  border-color:transparent;
+  background:color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+  box-shadow:var(--shadow-md),
+    inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.agenda-day-section.is-today .agenda-day-head{background:transparent}
 .agenda-day-section.is-today .agenda-day-name{color:var(--accent)}
+.agenda-day-section.is-free:not(.is-today):not(.is-open){background:transparent;border-style:dashed}
+.agenda-day-section.is-free:not(.is-today) .agenda-day-name{color:var(--ink-faint);font-weight:700}
 .agenda-day-section.has-exam .agenda-day-head{box-shadow:inset 3px 0 0 var(--accent-2)}
-.agenda-day-section .day-agenda{padding:12px 2px 22px}
-.agenda-free-day{padding:8px 2px 22px;font-size:13px;font-weight:600;color:var(--ink-faint)}
+.agenda-day-section.is-open{
+  background:var(--bg-elevated);border-color:color-mix(in srgb, var(--accent) 26%, var(--border));
+  box-shadow:var(--shadow-md);
+}
+.agenda-day-section.is-open.is-today{border-color:transparent}
+.agenda-day-section.is-open .agenda-day-head{background:inherit}
+@media (hover:hover){.agenda-day-section:not(.is-open) .agenda-day-head:hover{background:color-mix(in srgb, var(--ink) 4%, transparent)}}
+.agenda-day-head:active{transform:scale(.995)}
+.agenda-day-body{padding:0 13px 14px;animation:agenda-open .28s cubic-bezier(.22,1,.36,1) both}
+@keyframes agenda-open{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion: reduce){.agenda-day-body{animation:none}}
+.agenda-day-meta{margin:0 0 10px;font-size:12px;font-weight:650;color:var(--ink-muted)}
+.agenda-day-section .day-agenda{padding-top:0}
 @keyframes just-picked-flash{
   0%{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent)}
   100%{box-shadow:0 0 0 2px transparent}
 }
-.agenda-day-section.just-picked .agenda-day-head{animation:just-picked-flash .9s ease-out;border-radius:var(--radius-sm)}
-@media(prefers-reduced-motion: reduce){.agenda-day-section.just-picked .agenda-day-head{animation:none}}
+.agenda-day-section.just-picked{animation:just-picked-flash .9s ease-out;border-radius:var(--radius-md)}
+@media(prefers-reduced-motion: reduce){.agenda-day-section.just-picked{animation:none}}
 
 @media (min-width:900px){
   .agenda-day-head{top:70px}

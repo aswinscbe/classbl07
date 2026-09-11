@@ -773,14 +773,11 @@ function scrollToPickedDay(iso){
   target.scrollIntoView({behavior:"smooth",block:"start"});
   target.classList.remove("just-picked");void target.offsetWidth;target.classList.add("just-picked");
 }
-/* One continuous week list instead of a single-day view picked from a strip: every
-   day's classes are always on the page, each behind its own date heading that is
-   position:sticky *within that day's own section* — the standard "section list"
-   pattern (Gmail's date dividers, Contacts' alphabet index). This is the one sticky
-   arrangement that is structurally guaranteed to behave: a section header can only
-   stay stuck for as long as its own section is being scrolled through, which is
-   exactly the range it needs to cover, so there is no separate containing-block to
-   get wrong and no second layer competing with it for space. */
+/* The week as an accordion: all 7 days are always listed as compact one-line rows, and
+   tapping one opens it in place, showing its cards and closing whichever day was open
+   before. Only ever one day's classes are on screen at a time, so browsing the week is
+   a glance down 7 short rows, not a scroll through the whole week's classes stacked
+   end to end. */
 function renderWeekPlanner(){
   const agendaEl=$("#weekAgenda");if(!agendaEl)return;
   const today=isoToday(),now=new Date();
@@ -822,24 +819,53 @@ function renderWeekPlanner(){
   const eyebrowBtn=$("#weekScanEyebrow");
   if(eyebrowBtn)eyebrowBtn.classList.toggle("is-away",weekOffset!==0);
 
+  /* Accordion, not a flat list of every day expanded: only the open day shows its
+     cards, everything else is a compact one-line row — so browsing the week is a
+     glance down 7 short rows, not a scroll through the whole week's classes at once.
+     The open row's own head is still position:sticky *scoped to that one section*
+     (the same per-section pattern proven correctly above), so it stays visible while
+     scrolling that day's cards without needing a second sticky layer or a taller
+     shared container — collapsed rows have no body to scroll through, so the same
+     rule on them is simply inert. */
+  const isOpen=iso=>iso===state.selectedDate;
   agendaEl.innerHTML=days.map((iso,dayIdx)=>{
-    const isToday=iso===today,exam=examOn(iso);
-    const visible=visibleDayClasses(iso),tasks=state.tasks.filter(t=>t.date===iso);
-    const vActive=visible.filter(c=>c.status!=="Cancelled");
-    const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
-    const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"";
-    const head=`<div class="agenda-day-head">
+    const isToday=iso===today,exam=examOn(iso),open=isOpen(iso);
+    const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    const active=dayAll.filter(c=>c.status!=="Cancelled");
+    const done=active.filter(c=>now>=dateTime(c,"endTime")).length;
+    const countText=active.length?(isToday?`${done}/${active.length}`:`${active.length} ${active.length===1?"class":"classes"}`):(exam?"Exam day":"");
+    const dots=active.slice(0,5).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
+    const head=`<button type="button" class="agenda-day-head" data-date="${iso}" aria-expanded="${open}">
       <span class="agenda-day-name">${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wp-today-badge">TODAY</b>':""}</span>
-      <span class="agenda-day-date">${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span>
-      ${meta?`<span class="agenda-day-count">${esc(meta)}</span>`:""}
-    </div>`;
-    const hasContent=visible.length||tasks.length||exam;
-    const body=hasContent
-      ?`<div class="schedule-list day-agenda">${agendaHtml(visible,tasks,exam,iso)}</div>`
-      :`<div class="agenda-free-day">Free day</div>`;
-    return`<section class="agenda-day-section ${isToday?"is-today":""} ${exam?"has-exam":""}" data-date="${iso}" style="--i:${dayIdx}">${head}${body}</section>`;
+      ${!open&&dots?`<span class="agenda-day-dots">${dots}</span>`:""}
+      <span class="agenda-day-right">
+        ${countText?`<span class="agenda-day-count">${esc(countText)}</span>`:""}
+        <span class="agenda-day-date">${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span>
+        <span class="agenda-day-caret">${icon("chevron-right")}</span>
+      </span>
+    </button>`;
+    let body="";
+    if(open){
+      const visible=visibleDayClasses(iso),tasks=state.tasks.filter(t=>t.date===iso);
+      const vActive=visible.filter(c=>c.status!=="Cancelled");
+      const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
+      const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"";
+      body=`<div class="agenda-day-body">
+        ${meta?`<p class="agenda-day-meta">${esc(meta)}</p>`:""}
+        <div class="schedule-list day-agenda">${agendaHtml(visible,tasks,exam,iso)}</div>
+      </div>`;
+    }
+    return`<section class="agenda-day-section ${isToday?"is-today":""} ${open?"is-open":""} ${!active.length?"is-free":""} ${exam?"has-exam":""}" data-date="${iso}" style="--i:${dayIdx}">${head}${body}</section>`;
   }).join("");
 
+  $$(".agenda-day-head",agendaEl).forEach(b=>b.addEventListener("click",()=>{
+    const iso=b.dataset.date;
+    const opening=state.selectedDate!==iso;
+    state.selectedDate=opening?iso:"";
+    const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
+    renderCalendar();
+    if(opening)requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
+  }));
   $$(".day-agenda",agendaEl).forEach(bindTaskRows);
   renderPlannerExamStrip();
 }
@@ -1943,7 +1969,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova67",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova68",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
