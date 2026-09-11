@@ -54,6 +54,10 @@ function minutes(t){const[h,m]=String(t||"00:00").split(":").map(Number);return 
 function dateTime(c,w="startTime"){return new Date(`${c.dateIso}T${c[w]||c[w==="startTime"?"start":"end"]}:00+05:30`)}
 function fmtTime(t){const[h,m]=t.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit"}).format(new Date(2026,0,1,h,m))}
 function fmtRange(a,b){return`${fmtTime(a)}–${fmtTime(b)}`}
+function updateTopbarClock(){
+  const el=$("#topbarClock");if(!el)return;
+  el.textContent=new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",hour:"numeric",minute:"2-digit"}).format(new Date());
+}
 /* 24h digits for the split-flap hero (independent of the localized fmtTime above) */
 function fmtDate(iso,o={weekday:"long",day:"numeric",month:"short"}){return new Intl.DateTimeFormat("en-IN",o).format(new Date(`${iso}T12:00:00+05:30`))}
 const EXAM_SLOT_LABELS={forenoon:"Forenoon",afternoon:"Afternoon",evening:"Evening"};
@@ -390,7 +394,7 @@ function fitHeroTime(){
 }
 function tagCountdown(totalMins){
   const m=Math.max(0,Math.round(totalMins));
-  return m>=60?`${Math.floor(m/60)}H${m%60?String(m%60).padStart(2,"0")+"M":""}`:`${m}M`;
+  return m>=60?`${Math.floor(m/60)}h${m%60?` ${m%60}m`:""}`:`${m}m`;
 }
 function renderHome(){
   renderExamCard();
@@ -620,7 +624,7 @@ function agendaTag(c){
   if(status==="Cancelled")return{cls:"off",text:"CANC."};
   if(status==="Completed")return{cls:"done",text:"DONE"};
   if(status==="Live")return{cls:"now",text:"LIVE"};
-  if(status==="Upcoming")return{cls:"",text:tagCountdown((dateTime(c,"startTime")-new Date())/60000)};
+  if(status==="Upcoming")return{cls:"countdown",text:tagCountdown((dateTime(c,"startTime")-new Date())/60000)};
   return{cls:"",text:"UPCOMING"};
 }
 function renderTermHeatmap(){
@@ -2010,10 +2014,12 @@ async function init(){
   renderGoogleTasksStatus();
   maybeOpenOnboarding();
   syncSchedule(false).then(()=>maybeOpenOnboarding());
+  updateTopbarClock();
+  setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova78",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova79",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

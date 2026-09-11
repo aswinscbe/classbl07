@@ -274,6 +274,12 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .notification-button b.pop{animation:badge-pop .45s cubic-bezier(.34,1.56,.64,1)}
 @keyframes badge-pop{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+/* A live clock instead of a static page label — the "alive" detail a premium bar
+   earns its glass treatment with. */
+.topbar-clock{
+  font-variant-numeric:tabular-nums;font-size:13.5px;font-weight:700;color:var(--ink-muted);
+  letter-spacing:-.01em;margin-right:2px;white-space:nowrap;
+}
 .sync-pill{
   display:none;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;
   background:var(--bg-elevated);border:1px solid var(--border);font-size:13px;font-weight:650;color:var(--ink-muted);
@@ -617,8 +623,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card .empty-state small{display:none}
 
 /* ===== Day schedule — shared proportional card list for Home's Class Timeline + Planner's day agenda ===== */
-.timeline-course-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.timeline-course-line strong{font-size:14.5px;font-weight:700}
+/* Fixed to one line with an ellipsis rather than wrap: a long course name wrapping
+   to a second line used to shove the session badge (margin-left:auto) off onto its
+   own isolated line below, instead of staying anchored beside the title. */
+.timeline-course-line{display:flex;align-items:center;gap:8px}
+.timeline-course-line strong{font-size:14.5px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .timeline-code-chip{
   font-size:12px;font-weight:800;padding:2px 7px;border-radius:6px;
   background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);color:var(--course,var(--accent));
@@ -627,6 +636,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .status-tag{
   flex:none;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-muted);
 }
+/* The countdown variant ("8h 0m") is a value, not a status word — keep it in the
+   natural case compactDuration already uses everywhere else, not shouted caps. */
+.status-tag.countdown{text-transform:none;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
 .status-tag.now{color:var(--live)}
 .status-tag.now::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--live);animation:pulse 1.6s ease-in-out infinite}
 .status-tag.done{color:var(--ink-faint)}
