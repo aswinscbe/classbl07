@@ -689,20 +689,6 @@ function dayCardListHtml(classes,dayIso,opts={}){
   });
   return html+'</div>';
 }
-function agendaHtml(classes,tasks,exam,dayIso){
-  if(!classes.length&&!tasks.length&&!exam)return`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("spark")}</span><p>Free day</p><small>No classes, tasks or notes for this date.</small></div>`;
-  let html="";
-  if(exam){
-    html+=`<section class="agenda-exam-section"><div class="agenda-group-title">End Term Exams</div>${Object.entries(exam.slots).map(([slot,entry])=>
-      `<article class="agenda-exam-card"><span class="exam-slot">${EXAM_SLOT_LABELS[slot]}</span><span class="agenda-exam-code" style="--course:${colorFor(entry.code)}">${esc(entry.code)}</span><strong>${esc(entry.subject)}</strong></article>`
-    ).join("")}</section>`;
-  }
-  if(classes.length)html+=dayCardListHtml(classes,dayIso);
-  if(tasks.length){
-    html+=`<section class="agenda-task-section"><div class="agenda-task-heading">Tasks due</div><div class="task-list">${tasks.map(taskHtml).join("")}</div></section>`;
-  }
-  return html;
-}
 function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){
   const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();
   $("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);
@@ -755,8 +741,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
       state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);
       const dd=new Date(`${b.dataset.date}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
       setPlannerTab("calendar");renderCalendar();
-      const targetIso=b.dataset.date;
-      requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(targetIso)));
+      requestAnimationFrame(()=>requestAnimationFrame(flashDayFocus));
     });
     b.addEventListener("mouseenter",()=>showCalendarTooltip(b,b.dataset.date));
     b.addEventListener("mouseleave",hideCalendarTooltip);
@@ -781,14 +766,8 @@ function weekDaysFrom(startIso){
   for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);out.push(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d))}
   return out;
 }
-function visibleDayClasses(iso){
-  const all=state.classes.filter(c=>c.dateIso===iso);
-  const shown=(state.agendaShowCompleted||iso!==isoToday())?all:all.filter(c=>!isClassCompleted(c));
-  return state.calendarHighlight?shown.filter(c=>canonical(c.code)===state.calendarHighlight):shown;
-}
-function scrollToPickedDay(iso){
-  const target=$(`.agenda-day-section[data-date="${iso}"]`);
-  if(!target)return;
+function flashDayFocus(){
+  const target=$("#dayFocus");if(!target)return;
   target.scrollIntoView({behavior:"smooth",block:"start"});
   target.classList.remove("just-picked");void target.offsetWidth;target.classList.add("just-picked");
 }
@@ -798,7 +777,7 @@ function scrollToPickedDay(iso){
    a glance down 7 short rows, not a scroll through the whole week's classes stacked
    end to end. */
 function renderWeekPlanner(){
-  const agendaEl=$("#weekAgenda");if(!agendaEl)return;
+  const dayFocusEl=$("#dayFocus");if(!dayFocusEl)return;
   const today=isoToday(),now=new Date();
   if(!state.railStart)state.railStart=mondayIso(state.selectedDate);
   const days=weekDaysFrom(state.railStart);
@@ -811,20 +790,19 @@ function renderWeekPlanner(){
   if(rangeEl)rangeEl.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
   if(metaEl)metaEl.textContent=weekActive.length?`${weekActive.length} ${weekActive.length===1?"class":"classes"} · ${compactDuration(weekMins)}`:"No classes this week";
 
-  /* The strip is a quick-jump index into the list below, not a second week view: dots
-     rather than counts so it stays glanceable, and a tap scrolls to that day's section. */
+  /* The strip is both the weekly shape at a glance and the fast in-week navigator: a
+     real class-count badge per day (not a dot row), so "how busy is this week" and
+     "jump to this day" are answered by the same seven cells. Swiping the strip itself
+     shifts the whole week (handled below); tapping a cell switches the day in place. */
   const strip=$("#weekStrip");
   if(strip){
     const letters=["M","T","W","T","F","S","S"];
-    const weekPeak=Math.max(1,...days.map(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length));
     strip.innerHTML=days.map((iso,i)=>{
       const active=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled");
-      const dots=active.slice(0,4).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
-      const load=active.length?Math.max(.3,Math.min(1,active.length/weekPeak)):0;
-      return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-selected":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" style="--fill:${load}">
+      return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-selected":""} ${!active.length?"is-zero":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}">
         <span class="ws-dow">${letters[i]}</span>
         <span class="ws-num">${Number(iso.slice(8))}</span>
-        <span class="ws-dots">${dots}</span>
+        <span class="ws-cnt">${active.length}</span>
       </button>`;
     }).join("");
     $$(".ws-cell",strip).forEach(b=>b.addEventListener("click",()=>{
@@ -832,72 +810,122 @@ function renderWeekPlanner(){
       state.selectedDate=iso;
       const dd=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
       renderCalendar();
-      requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
     }));
+    /* strip is a persistent node re-filled via innerHTML on every render, not replaced —
+       bind the swipe listener once or it stacks a new one on every call. */
+    if(!strip.dataset.swipeBound){strip.dataset.swipeBound="1";bindSwipeGesture(strip,direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"a,input,select,textarea",threshold:46})}
   }
   const eyebrowBtn=$("#weekScanEyebrow");
   if(eyebrowBtn)eyebrowBtn.classList.toggle("is-away",weekOffset!==0);
 
-  /* Accordion, not a flat list of every day expanded: only the open day shows its
-     cards, everything else is a compact one-line row — so browsing the week is a
-     glance down 7 short rows, not a scroll through the whole week's classes at once.
-     The open row's own head is still position:sticky *scoped to that one section*
-     (the same per-section pattern proven correctly above), so it stays visible while
-     scrolling that day's cards without needing a second sticky layer or a taller
-     shared container — collapsed rows have no body to scroll through, so the same
-     rule on them is simply inert. */
-  const isOpen=iso=>iso===state.selectedDate;
-  agendaEl.innerHTML=days.map((iso,dayIdx)=>{
-    const isToday=iso===today,exam=examOn(iso),open=isOpen(iso);
-    const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-    const active=dayAll.filter(c=>c.status!=="Cancelled");
-    const done=active.filter(c=>now>=dateTime(c,"endTime")).length;
-    const countText=active.length?(isToday?`${done}/${active.length}`:`${active.length} ${active.length===1?"class":"classes"}`):(exam?"Exam day":"");
-    const dots=active.slice(0,5).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
-    /* The open row's head is what stays on screen while its cards scroll past, so the
-       date can't be a small afterthought off to the side where the eye skips it — the
-       day name and date are fused into one string at full weight ("Wednesday, 16
-       September"), not "Wednesday" with "16 Sept" as a quiet chip nobody reads while
-       scrolling. Collapsed rows stay compact since they're just being scanned. */
-    const dayLabel=open?fmtDate(iso,{weekday:"long",day:"numeric",month:"long"}):fmtDate(iso,{weekday:"long"});
-    const head=`<button type="button" class="agenda-day-head" data-date="${iso}" aria-expanded="${open}">
-      <span class="agenda-day-name">${esc(dayLabel)}${isToday?'<b class="wp-today-badge">TODAY</b>':""}</span>
-      ${!open&&dots?`<span class="agenda-day-dots">${dots}</span>`:""}
-      <span class="agenda-day-right">
-        ${countText?`<span class="agenda-day-count">${esc(countText)}</span>`:""}
-        ${!open?`<span class="agenda-day-date">${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span>`:""}
-        <span class="agenda-day-caret">${icon("chevron-right")}</span>
-      </span>
-    </button>`;
-    let body="";
-    if(open){
-      const visible=visibleDayClasses(iso),tasks=state.tasks.filter(t=>t.date===iso);
-      const vActive=visible.filter(c=>c.status!=="Cancelled");
-      const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
-      const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"";
-      body=`<div class="agenda-day-body">
-        ${meta?`<p class="agenda-day-meta">${esc(meta)}</p>`:""}
-        <div class="schedule-list day-agenda">${agendaHtml(visible,tasks,exam,iso)}</div>
-      </div>`;
-    }
-    return`<section class="agenda-day-section ${isToday?"is-today":""} ${open?"is-open":""} ${!active.length?"is-free":""} ${exam?"has-exam":""}" data-date="${iso}" style="--i:${dayIdx}">${head}${body}</section>`;
-  }).join("");
-
-  $$(".agenda-day-head",agendaEl).forEach(b=>b.addEventListener("click",()=>{
-    const iso=b.dataset.date;
-    const opening=state.selectedDate!==iso;
-    state.selectedDate=opening?iso:"";
-    const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
-    renderCalendar();
-    if(opening)requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
-  }));
-  $$(".day-agenda",agendaEl).forEach(bindTaskRows);
-  /* Swiping inside the open day advances to the next/previous day: closes this one,
-     opens the adjacent one, scrolls to it. Bound fresh every render since the open
-     day's own node is rebuilt on every innerHTML swap. */
-  const openBody=$(".agenda-day-section.is-open .day-agenda",agendaEl);
-  if(openBody)bindSwipeGesture(openBody,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
+  renderDayFocus(state.selectedDate||today);
   renderPlannerExamStrip();
+}
+/* Single-day focus: replaces the old accordion. One day's shape at a time — a time
+   ruler with exact boundary labels, finished classes collapsed into a thin "earlier"
+   strip so the view stays short as the day goes on, then a premium vertical timeline
+   (bold time column, glowing gradient spine) for what's left. Swiping this whole
+   block moves to the adjacent day; the week-strip above handles moving whole weeks. */
+function renderDayFocus(iso){
+  const el=$("#dayFocus");if(!el)return;
+  const today=isoToday(),isToday=iso===today,now=new Date(),exam=examOn(iso);
+  const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  let active=dayAll.filter(c=>c.status!=="Cancelled");
+  if(state.calendarHighlight)active=active.filter(c=>canonical(c.code)===state.calendarHighlight);
+  const totalMins=active.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
+  $("#dayFocusTitle").textContent=fmtDate(iso,{weekday:"long",day:"numeric",month:"long"});
+  const subText=[active.length?`${active.length} ${active.length===1?"class":"classes"}`:(exam?"Exam day":"Free day"),totalMins?compactDuration(totalMins):null].filter(Boolean).join(" · ");
+  $("#dayFocusSub").innerHTML=`${esc(subText)}${isToday?' <b class="dfs-today">TODAY</b>':""}`;
+
+  /* Ruler: whole-day shape, exact class boundary times (not round hours), gaps shown
+     as a hatch pattern with no text label. */
+  const rulerEl=$("#dayRuler");
+  if(active.length<2)rulerEl.hidden=true;
+  else{
+    rulerEl.hidden=false;
+    const dayStart=minutes(active[0].startTime);
+    const lastEnd=active.reduce((a,b)=>minutes(a.endTime)>minutes(b.endTime)?a:b);
+    const dayEnd=minutes(lastEnd.endTime),span=Math.max(1,dayEnd-dayStart);
+    const nowMin=isToday?Number(istParts().hour)*60+Number(istParts().minute):-1;
+    /* Boundary labels crowd together when two classes sit close in time — skip a label
+       rather than let it overlap its neighbour; the segment itself still shows the
+       exact time on tap/hover via its title. */
+    let segs="",prevEnd=null,lastLabelPct=-99;
+    const labelPts=[];
+    active.forEach(c=>{
+      const s=minutes(c.startTime),e=minutes(c.endTime);
+      const left=((s-dayStart)/span)*100,width=((e-s)/span)*100;
+      const st=now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming";
+      segs+=`<button type="button" class="dr-seg ${st}" style="--course:${colorFor(c.code)};left:calc(${left}% + 1px);width:calc(${width}% - 2px)" data-class-id="${esc(classIdentity(c))}" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}">${width>13?`<span>${esc(canonical(c.code))}</span>`:""}</button>`;
+      if(prevEnd!=null&&s>prevEnd)segs+=`<div class="dr-gap" style="left:${((prevEnd-dayStart)/span)*100}%;width:${((s-prevEnd)/span)*100}%"></div>`;
+      labelPts.push({pct:left,text:fmtTime(c.startTime)});
+      prevEnd=e;
+    });
+    labelPts.push({pct:100,text:fmtTime(lastEnd.endTime)});
+    let labels="";
+    labelPts.forEach((pt,i)=>{
+      const isLast=i===labelPts.length-1;
+      const distToEnd=labelPts[labelPts.length-1].pct-pt.pct;
+      if(!isLast&&(pt.pct-lastLabelPct<16||distToEnd<16))return;
+      lastLabelPct=pt.pct;
+      labels+=`<span class="dr-tlab" style="left:${pt.pct}%">${esc(pt.text)}</span>`;
+    });
+    const nowMark=(isToday&&nowMin>=dayStart&&nowMin<=dayEnd)?`<div class="dr-now" style="left:${((nowMin-dayStart)/span)*100}%"></div>`:"";
+    rulerEl.innerHTML=`<div class="dr-ticklabels">${labels}</div><div class="dr-track">${segs}${nowMark}</div>`;
+    $$(".dr-seg",rulerEl).forEach(b=>b.addEventListener("click",()=>{
+      const c=state.classes.find(x=>classIdentity(x)===b.dataset.classId);if(c)openClassSheet(c);
+    }));
+  }
+
+  const earlierEl=$("#dayEarlier"),timelineEl=$("#premiumTimeline");
+  const showCompleted=state.agendaShowCompleted||!isToday;
+  const completed=isToday?active.filter(c=>now>=dateTime(c,"endTime")):[];
+  const remaining=isToday?active.filter(c=>now<dateTime(c,"endTime")):active;
+
+  if(completed.length&&showCompleted){
+    earlierEl.hidden=false;
+    earlierEl.innerHTML=`<p class="de-label"><span>Earlier today</span></p><div class="de-rows">${completed.map(c=>
+      `<article class="de-row day-cardlist-item" data-class-id="${esc(classIdentity(c))}"><span class="de-dot" style="background:${colorFor(c.code)}"></span><span class="de-txt">${esc(fmtRange(c.startTime,c.endTime))} · ${esc(c.course)}</span><span class="de-chk">${icon("check")}</span></article>`
+    ).join("")}</div>`;
+  }else{earlierEl.hidden=true;earlierEl.innerHTML=""}
+
+  if(!active.length&&!exam){
+    timelineEl.innerHTML=`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("spark")}</span><p>Free day</p><small>No classes, tasks or notes for this date.</small></div>`;
+  }else{
+    let html="";
+    if(exam){
+      html+=`<section class="agenda-exam-section"><div class="agenda-group-title">End Term Exams</div>${Object.entries(exam.slots).map(([slot,entry])=>
+        `<article class="agenda-exam-card"><span class="exam-slot">${EXAM_SLOT_LABELS[slot]}</span><span class="agenda-exam-code" style="--course:${colorFor(entry.code)}">${esc(entry.code)}</span><strong>${esc(entry.subject)}</strong></article>`
+      ).join("")}</section>`;
+    }
+    if(remaining.length){
+      html+=`<div class="pt-list">${remaining.map((c,i)=>{
+        const status=agendaStatus(c),isLive=status==="Live";
+        const dur=minutes(c.endTime)-minutes(c.startTime);
+        const progress=isLive?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
+        const sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessions(c.code).length:0;
+        return`<div class="pt-item">
+          <div class="pt-time-col"><span class="hh">${esc(fmtTime(c.startTime).replace(/\s?[ap]m/i,""))}</span><span class="ap">${esc((fmtTime(c.startTime).match(/[ap]m/i)||[""])[0])}</span></div>
+          <div class="pt-spine">${i<remaining.length-1?`<div class="pt-line" style="--lc:${colorFor(c.code)}"></div>`:""}<div class="pt-node ${isLive?"live":""}" style="--dot:${colorFor(c.code)}"></div></div>
+          <article class="pt-body day-cardlist-item ${isLive?"now":""}" data-class-id="${esc(classIdentity(c))}" style="--c:${colorFor(c.code)}">
+            <span class="pt-tag ${isLive?"live":"plain"}">${isLive?"NOW":esc(fmtRange(c.startTime,c.endTime))}</span>
+            <div class="pt-ttl">${esc(c.course)}${sessionN?`<span class="dc-session-badge">${sessionN}/${sessionTotal}</span>`:""}</div>
+            <div class="pt-meta"><span>${esc(c.code)}</span><span>${icon("pin")}${esc(venueOf(c))}</span>${c.faculty?`<span>${esc(c.faculty)}</span>`:""}<span>${esc(compactDuration(dur))}</span></div>
+            ${progress!==null?`<div class="pt-prog"><i style="width:${progress}%"></i></div>`:""}
+          </article>
+        </div>`;
+      }).join("")}</div>`;
+    }else if(active.length&&!exam){
+      html+=`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("check")}</span><p>All done for today</p><small>Every class on ${esc(fmtDate(iso,{weekday:"long"}))} is wrapped up.</small></div>`;
+    }
+    const tasks=state.tasks.filter(t=>t.date===iso);
+    if(tasks.length)html+=`<section class="agenda-task-section"><div class="agenda-task-heading">Tasks due</div><div class="task-list">${tasks.map(taskHtml).join("")}</div></section>`;
+    timelineEl.innerHTML=html;
+  }
+  bindTaskRows(timelineEl);
+  /* el is a persistent node whose children get replaced on every render, not el
+     itself — bind the swipe listener once or it stacks a new one on every call. */
+  if(!el.dataset.swipeBound){el.dataset.swipeBound="1";bindSwipeGesture(el,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46})}
 }
 function shiftSelectedDate(delta){
   const day=new Date(`${state.selectedDate}T12:00:00+05:30`);day.setDate(day.getDate()+delta);
@@ -905,7 +933,6 @@ function shiftSelectedDate(delta){
   state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);
   state.railStart=mondayIso(state.selectedDate);
   renderCalendar();
-  requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(state.selectedDate)));
 }
 /* Exams live behind their own tab, so the calendar could not tell you one was coming. */
 function renderPlannerExamStrip(){
@@ -2007,7 +2034,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova71",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova72",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

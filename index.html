@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260902-nova71">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova72">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -189,7 +189,15 @@
             </div>
             <div class="filter-chips week-course-row" id="agendaCourseRow"></div>
 
-            <div class="week-agenda" id="weekAgenda"></div>
+            <div class="day-focus" id="dayFocus">
+              <div class="day-focus-head">
+                <h2 class="day-focus-title" id="dayFocusTitle">—</h2>
+                <p class="day-focus-sub" id="dayFocusSub"></p>
+              </div>
+              <div class="day-ruler" id="dayRuler" hidden></div>
+              <div class="day-earlier" id="dayEarlier" hidden></div>
+              <div class="premium-timeline schedule-list" id="premiumTimeline"></div>
+            </div>
           </article>
         </section>
 
@@ -542,9 +550,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260902-nova71"></script>
-  <script src="exam-data.js?v=20260902-nova71"></script>
-  <script src="app.js?v=20260902-nova71"></script>
-  <script src="polish.js?v=20260902-nova71"></script>
+  <script src="campus-data.js?v=20260902-nova72"></script>
+  <script src="exam-data.js?v=20260902-nova72"></script>
+  <script src="app.js?v=20260902-nova72"></script>
+  <script src="polish.js?v=20260902-nova72"></script>
 </body>
 </html>

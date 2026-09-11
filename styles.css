@@ -1157,28 +1157,31 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 
 .week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:14px}
 .ws-cell{
-  display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 2px 7px;
-  border:1.5px solid transparent;border-radius:12px;
-  background:color-mix(in srgb, var(--accent) calc(var(--fill,0) * 14%), var(--bg-panel));
+  display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 2px 8px;
+  border:1.5px solid transparent;border-radius:14px;
+  background:var(--bg-panel);
   font:inherit;color:inherit;cursor:pointer;min-width:0;
   transition:background .2s ease,border-color .2s ease,transform .12s ease;
 }
 .ws-cell:active{transform:scale(.94)}
 .ws-dow{font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint);line-height:1}
 .ws-num{font-family:var(--font-display);font-size:16px;font-weight:750;line-height:1.2}
-.ws-dots{display:flex;align-items:center;justify-content:center;gap:2px;height:5px}
-.ws-dots i{width:4px;height:4px;border-radius:50%;background:var(--course,var(--accent))}
-.ws-cell.is-today{border-color:color-mix(in srgb, var(--accent) 40%, transparent)}
-.ws-cell.is-today .ws-num{color:var(--accent)}
+.ws-cnt{
+  font-size:9.5px;font-weight:800;color:var(--ink-faint);background:var(--bg-elevated);
+  border-radius:99px;padding:1.5px 7px;min-width:16px;text-align:center;
+}
+.ws-cell.is-zero .ws-cnt{opacity:.4}
+.ws-cell.is-today{border-color:color-mix(in srgb, var(--accent-2) 55%, transparent)}
+.ws-cell.is-today .ws-num{color:var(--accent-2)}
 /* The selected day needs to read unmistakably at a glance, not as a faint tint next to
-   six near-identical cells — a filled, high-contrast pill does that; a subtle border
-   tint did not. */
+   six near-identical cells — a filled, glowing pill does that; a subtle border tint did not. */
 .ws-cell.is-selected{
-  background:var(--accent);border-color:var(--accent);
-  box-shadow:0 4px 14px -6px color-mix(in srgb, var(--accent) 60%, transparent);
+  background:radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--accent) 65%, #fff 20%), var(--accent) 75%);
+  border-color:var(--accent);
+  box-shadow:0 4px 14px -5px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 .ws-cell.is-selected .ws-dow,.ws-cell.is-selected .ws-num{color:#fff}
-.ws-cell.is-selected .ws-dots i{background:#fff}
+.ws-cell.is-selected .ws-cnt{background:rgba(255,255,255,.25);color:#fff;opacity:1}
 .ws-cell.has-exam{box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 45%, transparent)}
 .ws-cell.is-selected.has-exam{box-shadow:0 4px 14px -6px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 0 0 1.5px #fff}
 
@@ -1190,83 +1193,89 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-course-row{margin-top:8px}
 .week-course-row[hidden]{display:none}
 
-/* Accordion: every day is a compact one-line row; the open day expands in place to
-   show its cards. Only the open section ever has a body, so .agenda-day-head's
-   position:sticky (scoped to its own section, same as everywhere else in this file)
-   only ever has meaningful range to stick through on the one section that has content
-   below it — on a collapsed row it's inert, there's nothing to scroll past. */
-.week-agenda{margin-top:10px;display:flex;flex-direction:column;gap:6px}
-/* overflow:hidden here (a tempting way to keep the head's corners clipped to the
-   section's own rounding) would silently break position:sticky on .agenda-day-head
-   below — a sticky element stops sticking the moment any ancestor sets overflow to
-   anything but visible, so the head instead gets its own matching border-radius. */
-.agenda-day-section{
-  scroll-margin-top:60px;border:1px solid var(--border);border-radius:var(--radius-md);
-  background:var(--bg-panel);
-  transition:background .25s ease,border-color .25s ease,box-shadow .25s ease;
-  animation:agenda-day-in .4s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i, 0) * 40ms);
+/* Single-day focus: one day's shape on screen at a time — a ruler for the whole day,
+   finished classes collapsed into a thin strip, then a premium timeline for what's
+   left. Swiping this whole block moves ±1 day; the week-strip above moves ±1 week. */
+.day-focus{margin-top:16px}
+.day-focus-head{padding:2px 2px 14px}
+.day-focus-title{
+  font-family:var(--font-display);font-size:clamp(22px,6vw,26px);font-weight:800;
+  letter-spacing:-.01em;margin:0;
 }
-@keyframes agenda-day-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion: reduce){.agenda-day-section{animation:none}}
-.agenda-day-head{
-  position:sticky;top:52px;z-index:3;
-  display:flex;align-items:center;gap:9px;width:100%;padding:13px 13px;
-  background:var(--bg-panel);border:0;border-radius:var(--radius-md);font:inherit;color:inherit;cursor:pointer;text-align:left;
-}
-.agenda-day-section.is-open .agenda-day-head{border-radius:var(--radius-md) var(--radius-md) 0 0}
-.agenda-day-name{
-  font-family:var(--font-display);font-size:15.5px;font-weight:750;letter-spacing:-.01em;color:var(--ink);
-  display:flex;align-items:center;gap:7px;flex:none;
-}
-.wp-today-badge{font-size:9.5px;font-weight:800;letter-spacing:.05em;color:#fff;background:var(--accent);border-radius:99px;padding:2.5px 7px}
-.agenda-day-dots{display:flex;align-items:center;gap:3px;flex:none}
-.agenda-day-dots i{width:6px;height:6px;border-radius:50%;background:var(--course,var(--accent))}
-.agenda-day-right{display:flex;align-items:center;gap:9px;margin-left:auto;flex:none}
-.agenda-day-count{font-size:11.5px;font-weight:700;color:var(--ink-muted);white-space:nowrap}
-.agenda-day-date{font-size:11.5px;font-weight:650;color:var(--ink-faint);white-space:nowrap}
-.agenda-day-caret{display:flex;color:var(--ink-faint);flex:none;transition:transform .28s cubic-bezier(.22,1,.36,1)}
-.agenda-day-caret svg{width:15px;height:15px}
-.agenda-day-section.is-open .agenda-day-caret{transform:rotate(90deg);color:var(--accent)}
+.day-focus-sub{margin:4px 0 0;font-size:13.5px;font-weight:650;color:var(--ink-muted);display:flex;align-items:center;gap:7px}
+.dfs-today{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:#fff;background:var(--accent);border-radius:99px;padding:3px 8px}
 
-.agenda-day-section.is-today{
-  border-color:transparent;
-  background:color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
-  box-shadow:var(--shadow-md),
-    inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+.day-ruler{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 14px 12px;margin-bottom:18px}
+.dr-ticklabels{position:relative;height:14px;margin-bottom:6px}
+.dr-tlab{position:absolute;transform:translateX(-50%);font-size:9px;font-weight:700;color:var(--ink-faint);white-space:nowrap}
+.dr-tlab:first-child{transform:none}
+.dr-tlab:last-child{transform:translateX(-100%)}
+.dr-track{position:relative;height:30px;border-radius:8px;background:color-mix(in srgb, var(--ink) 5%, transparent)}
+.dr-seg{
+  position:absolute;top:0;bottom:0;border:0;border-radius:7px;padding:0 8px;
+  display:flex;align-items:center;overflow:hidden;cursor:pointer;font:inherit;
+  background:var(--course,var(--accent));opacity:.5;transition:opacity .2s ease,transform .12s ease;
 }
-.agenda-day-section.is-today .agenda-day-head{background:transparent}
-.agenda-day-section.is-today .agenda-day-name{color:var(--accent)}
-.agenda-day-section.is-free:not(.is-today):not(.is-open){background:transparent;border-style:dashed}
-.agenda-day-section.is-free:not(.is-today) .agenda-day-name{color:var(--ink-faint);font-weight:700}
-.agenda-day-section.has-exam .agenda-day-head{box-shadow:inset 3px 0 0 var(--accent-2)}
-.agenda-day-section.is-open{
-  background:var(--bg-elevated);border-color:color-mix(in srgb, var(--accent) 26%, var(--border));
-  box-shadow:var(--shadow-md);
+.dr-seg:active{transform:scale(.96)}
+.dr-seg span{font-size:10px;font-weight:800;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.dr-seg.current{opacity:1;box-shadow:0 0 0 2px color-mix(in srgb, var(--course,var(--accent)) 45%, transparent)}
+.dr-seg.upcoming{opacity:.7}
+.dr-gap{position:absolute;top:9px;bottom:9px;border-radius:4px;background:repeating-linear-gradient(115deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 5px, transparent 5px 10px)}
+.dr-now{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--live);box-shadow:0 0 8px var(--live);z-index:2}
+.dr-now::before{content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--live);box-shadow:0 0 0 2px var(--bg-panel)}
+
+.day-earlier{margin-bottom:16px}
+.de-label{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--ink-faint);font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.de-label::before,.de-label::after{content:"";flex:1;height:1px;background:var(--border)}
+.de-rows{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+.de-row{display:flex;align-items:center;gap:9px;padding:9px 13px;border-bottom:1px solid var(--border);cursor:pointer}
+.de-row:last-child{border-bottom:none}
+.de-dot{width:7px;height:7px;border-radius:50%;flex:none}
+.de-txt{flex:1;min-width:0;font-size:11.5px;font-weight:600;color:var(--ink-muted);text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.de-chk{display:flex;color:var(--live);flex:none}
+.de-chk svg{width:13px;height:13px}
+
+/* Premium timeline: time in its own bold column, a gradient spine with glowing nodes
+   (the live one pulses), cards with more depth than a flat panel. */
+.pt-list{display:flex;flex-direction:column}
+.pt-item{position:relative;display:flex;gap:13px;padding-bottom:20px}
+.pt-time-col{width:50px;flex:none;padding-top:2px;text-align:right}
+.pt-time-col .hh{display:block;font-family:var(--font-display);font-size:18px;font-weight:750;line-height:1;color:var(--ink)}
+.pt-time-col .ap{display:block;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--ink-faint);margin-top:2px}
+.pt-spine{width:18px;flex:none;position:relative;display:flex;justify-content:center}
+.pt-line{position:absolute;top:0;bottom:-20px;width:2px;background:linear-gradient(180deg,var(--lc,var(--accent)) 0%,color-mix(in srgb, var(--lc,var(--accent)) 25%, transparent) 100%)}
+.pt-node{position:relative;width:13px;height:13px;border-radius:50%;background:var(--dot,var(--accent));box-shadow:0 0 0 4px var(--bg-panel), 0 0 10px color-mix(in srgb, var(--dot,var(--accent)) 65%, transparent);margin-top:3px}
+.pt-node.live{animation:pt-pulse 1.8s ease-in-out infinite}
+@keyframes pt-pulse{0%,100%{box-shadow:0 0 0 4px var(--bg-panel),0 0 0 0 color-mix(in srgb, var(--dot) 55%, transparent)}50%{box-shadow:0 0 0 4px var(--bg-panel),0 0 13px 3px color-mix(in srgb, var(--dot) 65%, transparent)}}
+@media(prefers-reduced-motion: reduce){.pt-node.live{animation:none}}
+.pt-body{
+  flex:1;min-width:0;cursor:pointer;background:linear-gradient(180deg,var(--bg-raised,var(--bg-elevated)),var(--bg-panel));
+  border:1px solid var(--border);border-radius:14px;padding:13px 15px;
+  box-shadow:0 4px 14px rgba(0,0,0,.14);
 }
-.agenda-day-section.is-open.is-today{border-color:transparent}
-.agenda-day-section.is-open .agenda-day-head{background:inherit}
-@media (hover:hover){.agenda-day-section:not(.is-open) .agenda-day-head:hover{background:color-mix(in srgb, var(--ink) 4%, transparent)}}
-.agenda-day-head:active{transform:scale(.995)}
-.agenda-day-body{padding:0 13px 14px;animation:agenda-open .28s cubic-bezier(.22,1,.36,1) both}
-@keyframes agenda-open{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion: reduce){.agenda-day-body{animation:none}}
-.agenda-day-meta{margin:0 0 10px;font-size:12px;font-weight:650;color:var(--ink-muted)}
-.agenda-day-section .day-agenda{padding-top:0}
+.pt-body.now{border-color:color-mix(in srgb, var(--c) 55%, var(--border));box-shadow:0 0 0 1px color-mix(in srgb, var(--c) 32%, transparent), 0 8px 22px rgba(0,0,0,.2)}
+.pt-tag{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:99px;margin-bottom:7px}
+.pt-tag.live{background:var(--c);color:#fff}
+.pt-tag.live::before{content:"";width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.4)}
+.pt-tag.plain{background:var(--bg-elevated);color:var(--ink-muted)}
+.pt-ttl{font-weight:800;font-size:15.5px;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;gap:7px}
+.pt-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:4px;font-size:11px;color:var(--ink-faint)}
+.pt-meta span{display:inline-flex;align-items:center;gap:3px}
+.pt-prog{height:4px;background:var(--bg-elevated);border-radius:2px;margin-top:11px;overflow:hidden}
+.pt-prog i{display:block;height:100%;background:linear-gradient(90deg,var(--c),color-mix(in srgb, var(--c) 55%, #fff));border-radius:2px;transition:width 1s linear}
+
 @keyframes just-picked-flash{
   0%{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent)}
   100%{box-shadow:0 0 0 2px transparent}
 }
-.agenda-day-section.just-picked{animation:just-picked-flash .9s ease-out;border-radius:var(--radius-md)}
-@media(prefers-reduced-motion: reduce){.agenda-day-section.just-picked{animation:none}}
+.day-focus.just-picked{animation:just-picked-flash .9s ease-out;border-radius:var(--radius-md)}
+@media(prefers-reduced-motion: reduce){.day-focus.just-picked{animation:none}}
 
 @media (min-width:900px){
-  .agenda-day-head{top:70px}
   /* A full desktop-width week-planner column reads better as a comfortable reading
      width than stretched edge-to-edge, so it gets its own narrower cap — Month and
      Exams (siblings under the same .planner-view) keep the wider shared page width. */
   .week-planner{max-width:760px;margin-left:auto;margin-right:auto}
-  .week-agenda .day-cardlist{gap:10px}
 }
 /* Stop the planner column stretching to the full width of a desktop window. */
 @media (min-width:900px){
