@@ -627,11 +627,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card .empty-state small{display:none}
 
 /* ===== Day schedule — shared proportional card list for Home's Class Timeline + Planner's day agenda ===== */
-/* Fixed to one line with an ellipsis rather than wrap: a long course name wrapping
-   to a second line used to shove the session badge (margin-left:auto) off onto its
-   own isolated line below, instead of staying anchored beside the title. */
-.timeline-course-line{display:flex;align-items:center;gap:8px}
-.timeline-course-line strong{font-size:14.5px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The course name needs to stay fully readable — never truncated — so it's free to
+   wrap onto as many lines as it needs. The session badge used to sit after the name
+   with margin-left:auto, which meant a wrapped name shoved it onto its own isolated
+   line below. Moved the badge to sit right after the code chip instead (before the
+   name), so its position never depends on how long the name is or how it wraps. */
+.timeline-course-line{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
+.timeline-course-line strong{font-size:14.5px;font-weight:700;flex:1 1 auto;min-width:120px}
 .timeline-code-chip{
   font-size:12px;font-weight:800;padding:2px 7px;border-radius:6px;
   background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);color:var(--course,var(--accent));
@@ -677,7 +679,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 ;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dc-chip svg{width:11px;height:11px;flex:none;color:var(--ink-faint)}
 .dc-session-badge{
-  margin-left:auto;flex:none;font-size:11px;font-weight:800;color:var(--ink-faint);
+  flex:none;font-size:11px;font-weight:800;color:var(--ink-faint);
   background:var(--bg-panel);padding:2px 8px;border-radius:99px;white-space:nowrap;
 }
 .day-cardlist-item.completed{opacity:.55}

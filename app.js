@@ -689,7 +689,7 @@ function dayCardListHtml(classes,dayIso,opts={}){
     html+=`<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
       <div class="day-cardlist-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small><span class="status-tag ${tag.cls}">${esc(tag.text)}</span></div>
       <div class="day-cardlist-body">
-        <div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span><strong>${esc(c.course)}</strong>${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}${sessionN?`<span class="dc-session-badge">${sessionN}/${sessionTotal}</span>`:""}</div>
+        <div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span>${sessionN?`<span class="dc-session-badge">${sessionN}/${sessionTotal}</span>`:""}<strong>${esc(c.course)}</strong>${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}</div>
         ${progress!==null?`<div class="day-cardlist-progress"><span style="width:${progress}%"></span></div>`:""}
         <div class="day-cardlist-chips">${chips}</div>
         ${nextLine}
@@ -2019,7 +2019,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova80",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova81",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
