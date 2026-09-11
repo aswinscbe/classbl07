@@ -835,12 +835,18 @@ function renderWeekPlanner(){
     const done=active.filter(c=>now>=dateTime(c,"endTime")).length;
     const countText=active.length?(isToday?`${done}/${active.length}`:`${active.length} ${active.length===1?"class":"classes"}`):(exam?"Exam day":"");
     const dots=active.slice(0,5).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
+    /* The open row's head is what stays on screen while its cards scroll past, so the
+       date can't be a small afterthought off to the side where the eye skips it — the
+       day name and date are fused into one string at full weight ("Wednesday, 16
+       September"), not "Wednesday" with "16 Sept" as a quiet chip nobody reads while
+       scrolling. Collapsed rows stay compact since they're just being scanned. */
+    const dayLabel=open?fmtDate(iso,{weekday:"long",day:"numeric",month:"long"}):fmtDate(iso,{weekday:"long"});
     const head=`<button type="button" class="agenda-day-head" data-date="${iso}" aria-expanded="${open}">
-      <span class="agenda-day-name">${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wp-today-badge">TODAY</b>':""}</span>
+      <span class="agenda-day-name">${esc(dayLabel)}${isToday?'<b class="wp-today-badge">TODAY</b>':""}</span>
       ${!open&&dots?`<span class="agenda-day-dots">${dots}</span>`:""}
       <span class="agenda-day-right">
         ${countText?`<span class="agenda-day-count">${esc(countText)}</span>`:""}
-        <span class="agenda-day-date">${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span>
+        ${!open?`<span class="agenda-day-date">${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span>`:""}
         <span class="agenda-day-caret">${icon("chevron-right")}</span>
       </span>
     </button>`;
@@ -1969,7 +1975,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova68",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova69",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
