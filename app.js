@@ -2,7 +2,12 @@
 "use strict";
 const API="https://script.google.com/macros/s/AKfycbxQWG7cS3quE0C8BBtRVx8PExapIvuqAB5-KLGzQMnOoDNKBMcblxMpztO77jME6EwShQ/exec";
 const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2",busRoute:"classbl07-nova-bus-route-v1",leavingSoon:"classbl07-nova-leaving-soon-v1"};
-const COURSE_COLORS={SM:"#8b7cf6",DBST:"#5b8def",AIB:"#24b3a8",OS:"#f29a52",CV:"#36b5d8",PM:"#6f7bea",POM:"#ee7656",CB:"#d866ad",SBM:"#d6a43b",NWW:"#b07c59",MAAS:"#8f66cf",ACC:"#e15d69",IS:"#5aa06a"};
+/* Evenly spaced around the hue wheel (27.7° apart, HSL S:70 L:58, darkened to
+   L:48 through the yellow-green band which otherwise reads washed out on a dark
+   background) so no two course colors sit close enough to be confused — SBM and
+   OS in particular used to both be warm amber/orange and were reported as
+   indistinguishable; they're now on opposite sides of the wheel. */
+const COURSE_COLORS={SM:"#49a0df",DBST:"#495bdf",AIB:"#7c49df",OS:"#c149df",CV:"#df49b7",PM:"#df4972",POM:"#df6549",CB:"#dfaa49",SBM:"#bdd025",NWW:"#6ed025",MAAS:"#25d02a",ACC:"#25d079",IS:"#49dfd8"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
 const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,peekSection:null,peekAll:null};
@@ -783,14 +788,8 @@ function renderWeekPlanner(){
   const today=isoToday(),now=new Date();
   if(!state.railStart)state.railStart=mondayIso(state.selectedDate);
   const days=weekDaysFrom(state.railStart);
-  const weekActive=days.flatMap(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled"));
-  const weekMins=weekActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
-  const weekOffset=Math.round((new Date(`${days[0]}T12:00:00+05:30`)-new Date(`${mondayIso(today)}T12:00:00+05:30`))/(7*86400000));
-  const eyebrow=weekOffset===0?"THIS WEEK":weekOffset===1?"NEXT WEEK":weekOffset===-1?"LAST WEEK":weekOffset>1?`IN ${weekOffset} WEEKS`:`${-weekOffset} WEEKS AGO`;
-  const eyebrowEl=$("#weekScanEyebrow"),rangeEl=$("#weekScanRange"),metaEl=$("#weekScanMeta");
-  if(eyebrowEl)eyebrowEl.textContent=eyebrow;
-  if(rangeEl)rangeEl.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
-  if(metaEl)metaEl.textContent=weekActive.length?`${weekActive.length} ${weekActive.length===1?"class":"classes"} · ${compactDuration(weekMins)}`:"No classes this week";
+  const pillEl=$("#dayFocusPillText");
+  if(pillEl)pillEl.textContent=fmtDate(state.selectedDate||today,{weekday:"short",day:"numeric",month:"short"});
 
   /* The strip is both the weekly shape at a glance and the fast in-week navigator: a
      real class-count badge per day (not a dot row), so "how busy is this week" and
@@ -817,9 +816,6 @@ function renderWeekPlanner(){
        bind the swipe listener once or it stacks a new one on every call. */
     if(!strip.dataset.swipeBound){strip.dataset.swipeBound="1";bindSwipeGesture(strip,direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"a,input,select,textarea",threshold:46})}
   }
-  const eyebrowBtn=$("#weekScanEyebrow");
-  if(eyebrowBtn)eyebrowBtn.classList.toggle("is-away",weekOffset!==0);
-
   renderDayFocus(state.selectedDate||today);
   renderPlannerExamStrip();
 }
@@ -1983,11 +1979,6 @@ function bind(){
   });
   $("#plannerExamStrip")?.addEventListener("click",()=>setPlannerTab("exams"));
   $("#toggleCourseFilter")?.addEventListener("click",()=>{state.courseFilterOpen=!state.courseFilterOpen;renderCalendar()});
-  $("#weekScanEyebrow")?.addEventListener("click",()=>{
-    state.railStart=mondayIso(isoToday());state.selectedDate=isoToday();
-    const n=new Date();state.calendarMonth=new Date(n.getFullYear(),n.getMonth(),1);
-    renderCalendar();
-  });
   $("#weekScanPrev")?.addEventListener("click",()=>shiftRailWeek(-1));
   $("#weekScanNext")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
@@ -2039,7 +2030,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova74",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova75",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

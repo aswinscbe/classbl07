@@ -1124,37 +1124,26 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .rail-jump-today{color:var(--accent)}
 .rail-month-toggle{margin-left:2px}
 
-/* In week mode the week is the subject of the screen, so it gets a real heading
-   instead of a muted label squeezed between two arrows. */
-.week-scan-head{display:flex;align-items:center;gap:8px;margin:-2px 0 16px}
-.week-scan-title{flex:1;min-width:0;text-align:center}
-#weekScanRange{
-  font-family:var(--font-display);font-size:clamp(24px,6.4vw,30px);font-weight:800;
-  letter-spacing:-.02em;line-height:1.05;margin:0;
-}
-.week-scan-meta{margin:5px 0 0;font-size:12.5px;font-weight:600;color:var(--ink-muted)}
 .week-nav-arrow{width:36px;height:36px;border-radius:10px;flex:none}
 .week-nav-arrow svg{width:16px;height:16px}
-/* ===== Continuous week agenda =====
-   Every day of the week is always on the page, one after another, each behind its own
-   date heading. That heading is position:sticky *scoped to its own section* — the
-   textbook "section list" pattern (Gmail's date dividers, an alphabet index) — which
-   is the one sticky arrangement that is structurally guaranteed to behave: a section
-   can only stay stuck for as long as its own content is being scrolled through, which
-   is exactly the range it needs to cover. No separate containing-block to get wrong,
-   no second sticky layer competing with another for space, one page scroll. */
 .week-planner{margin-top:14px}
-.week-scan-head{display:flex;align-items:center;gap:10px}
-.week-scan-title{flex:1;min-width:0;text-align:center}
-#weekScanRange{font-family:var(--font-display);font-size:clamp(21px,5vw,25px);font-weight:800;letter-spacing:-.02em;margin:2px 0 0}
-.week-scan-meta{margin:2px 0 0;font-size:12.5px;font-weight:600;color:var(--ink-muted)}
-.week-scan-eyebrow{
-  display:block;margin:0 auto 3px;border:0;background:none;padding:2px 8px;border-radius:99px;
-  font:inherit;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--accent);cursor:default;
-}
-.week-scan-eyebrow.is-away{cursor:pointer;background:color-mix(in srgb, var(--accent) 14%, transparent)}
-@media (hover:hover){.week-scan-eyebrow.is-away:hover{background:color-mix(in srgb, var(--accent) 24%, transparent)}}
 
+/* Header collapses to a single tappable pill — the day it opens to (not a week
+   range) plus a calendar glyph so it reads as a jump-to-date control at a glance,
+   not a plain label. Opens the month picker dialog. */
+.planner-header-row{display:flex;justify-content:center;margin-bottom:14px}
+.datepill{
+  display:flex;align-items:center;gap:8px;padding:9px 18px 9px 14px;border-radius:99px;
+  background:var(--bg-elevated);border:1px solid var(--border-strong);
+  font:inherit;font-size:15px;font-weight:750;color:var(--ink);cursor:pointer;
+  transition:background .15s ease,transform .12s ease;
+}
+.datepill:active{transform:scale(.97)}
+.datepill svg{width:16px;height:16px;color:var(--accent);flex:none}
+@media (hover:hover){.datepill:hover{background:var(--bg-raised)}}
+
+.week-strip-row{display:flex;align-items:center;gap:6px}
+.week-strip-row .week-strip{flex:1;margin-top:0}
 .week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:14px}
 .ws-cell{
   display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 2px 8px;
@@ -1254,10 +1243,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:0 4px 14px rgba(0,0,0,.14);
 }
 .pt-body.now{border-color:color-mix(in srgb, var(--c) 55%, var(--border));box-shadow:0 0 0 1px color-mix(in srgb, var(--c) 32%, transparent), 0 8px 22px rgba(0,0,0,.2)}
-.pt-tag{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:99px;margin-bottom:7px}
-.pt-tag.live{background:var(--c);color:#fff}
+.pt-tag{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums;padding:4px 11px;border-radius:99px;margin-bottom:8px}
+.pt-tag.live{background:var(--c);color:#fff;font-size:11px;letter-spacing:.04em}
 .pt-tag.live::before{content:"";width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.4)}
-.pt-tag.plain{background:var(--bg-elevated);color:var(--ink-muted)}
+.pt-tag.plain{background:var(--bg-elevated);color:var(--ink)}
 .pt-ttl{font-weight:800;font-size:15.5px;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;gap:7px}
 .pt-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:4px;font-size:11px;color:var(--ink-faint)}
 .pt-meta span{display:inline-flex;align-items:center;gap:3px}
