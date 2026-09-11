@@ -440,16 +440,30 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-pill svg{width:13px;height:13px;flex:none}
 .hero-pill.accent{background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent));font-weight:750;box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent), 0 0 0 1px color-mix(in srgb, var(--focus-course,var(--accent)) 22%, transparent)}
 .hero-card.is-empty{color:var(--on-grad)}
+/* A live time ruler for the shown day, not just a proportion bar: hour ticks make it
+   read as actual clock time, and each block is tappable straight into that class. */
 .hero-day-strip{margin-top:16px;padding-top:14px;border-top:1px solid var(--on-grad-line)}
-.hero-strip-label{margin:0 0 8px;font-size:11.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--amber)}
-.hero-strip-track{position:relative;height:6px;border-radius:99px;background:color-mix(in srgb, var(--on-grad-line) 55%, transparent)}
-.hero-strip-seg{position:absolute;top:0;height:100%;border-radius:99px;background:var(--course,var(--on-grad));opacity:.4}
-.hero-strip-seg.current{opacity:1;box-shadow:0 0 0 3px color-mix(in srgb, var(--course,var(--on-grad)) 30%, transparent)}
-.hero-strip-seg.upcoming{opacity:.7}
-.hero-strip-now{
-  position:absolute;top:-5px;width:8px;height:8px;border-radius:50%;transform:translateX(-4px);
-  background:var(--on-grad);border:2px solid var(--grad);box-shadow:0 1px 3px rgba(0,0,0,.4);
+.hero-strip-track{position:relative;height:34px;border-radius:10px;background:color-mix(in srgb, var(--on-grad-line) 45%, transparent)}
+.hero-strip-tick{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in srgb, var(--on-grad-line) 85%, transparent)}
+.hero-strip-seg{
+  position:absolute;top:3px;bottom:3px;border:0;border-radius:7px;padding:0 7px;
+  display:flex;align-items:center;overflow:hidden;cursor:pointer;
+  background:var(--course,var(--on-grad));opacity:.45;font:inherit;
+  transition:opacity .2s ease,transform .12s ease;
 }
+.hero-strip-seg:active{transform:scale(.96)}
+.hero-strip-seg span{font-size:10px;font-weight:800;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.hero-strip-seg.current{opacity:1;box-shadow:0 0 0 2px color-mix(in srgb, var(--course,var(--on-grad)) 45%, transparent)}
+.hero-strip-seg.upcoming{opacity:.65}
+.hero-strip-now{
+  position:absolute;top:-4px;bottom:-4px;width:2px;z-index:2;
+  background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);
+}
+.hero-strip-now::before{
+  content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);
+  width:7px;height:7px;border-radius:50%;background:var(--live);box-shadow:0 0 0 2px var(--grad);
+}
+.hero-strip-ends{display:flex;justify-content:space-between;margin-top:6px;font-size:10.5px;font-weight:700;color:var(--on-grad-muted)}
 
 .exam-hero{
   margin-top:14px;padding:14px 16px;border-radius:var(--radius-lg);
@@ -565,7 +579,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card .day-cardlist-item{
   background:color-mix(in srgb, var(--course,var(--accent)) 8%, var(--bg-panel));
 }
-.hero-card .day-cardlist-gap{padding:1px 2px}
+/* On Home the point is today at a glance, not a scale model of it — the gap stays
+   flattened here regardless of the proportional height set inline for the Planner. */
+.hero-card .day-cardlist-gap{height:auto!important;padding:8px 0 8px 20px}
 .hero-card .day-cardlist-item.current{
   background:color-mix(in srgb, var(--course,var(--accent)) 15%, var(--bg-panel));
   border-color:color-mix(in srgb, var(--course,var(--accent)) 34%, var(--border));
@@ -634,9 +650,17 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .day-cardlist-item.cancelled::before{background:var(--danger)}
 .day-cardlist-item.cancelled .timeline-code-chip{background:color-mix(in srgb, var(--danger) 16%, transparent);color:var(--danger)}
 .day-cardlist-item.cancelled strong{color:var(--danger);text-decoration:line-through}
-.day-cardlist-gap{display:flex;align-items:center;gap:10px;color:var(--ink-faint);font-size:11.5px;font-weight:600;padding:0 2px}
-.day-cardlist-gap::before,.day-cardlist-gap::after{content:"";flex:1;height:1px;background:repeating-linear-gradient(90deg, var(--border) 0 4px, transparent 4px 8px)}
-.dc-gap-label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+/* A gap between classes gets real, proportional height (set inline per gap, see
+   dayCardListHtml) instead of a flat compressed divider — a 3h free block actually
+   looks like more room than a 45-minute one. A dashed rail continues through it at
+   the same x-position as each card's own colour bar, so the whole day reads as one
+   continuous line: solid where there's a class, dashed where there's a gap. */
+.day-cardlist-gap{position:relative;display:flex;align-items:center;padding:0 0 0 20px;color:var(--ink-faint);font-size:11.5px;font-weight:600}
+.day-cardlist-gap::before{
+  content:"";position:absolute;left:1.5px;top:0;bottom:0;width:2px;
+  background:repeating-linear-gradient(to bottom, var(--border-strong) 0 4px, transparent 4px 9px);
+}
+.dc-gap-label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;background:var(--bg-panel);padding:4px 10px;border-radius:99px}
 .dc-gap-label svg{width:12px;height:12px;color:var(--ink-faint)}
 .timeline-holiday-banner{
   display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:10px;border-radius:var(--radius-sm);

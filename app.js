@@ -472,22 +472,34 @@ function renderHome(){
   const stripEl=$("#heroDayStrip");
   if(stripEl){
     const stripClasses=state.classes.filter(c=>c.dateIso===shownDayIso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-    if(!stripClasses.length)stripEl.hidden=true;
+    /* A single class fills the whole strip, which just reads as a stray bar — the shape
+       of the day is only worth drawing once there is more than one class on it. The day
+       itself is labelled by the day nav below, so the strip needs no label of its own. */
+    if(stripClasses.length<2)stripEl.hidden=true;
     else{
       stripEl.hidden=false;
-      const dayStart=minutes(stripClasses[0].startTime),dayEnd=Math.max(...stripClasses.map(c=>minutes(c.endTime))),span=Math.max(1,dayEnd-dayStart);
+      const dayStart=minutes(stripClasses[0].startTime);
+      const lastEndClass=stripClasses.reduce((a,b)=>minutes(a.endTime)>minutes(b.endTime)?a:b);
+      const dayEnd=minutes(lastEndClass.endTime),span=Math.max(1,dayEnd-dayStart);
       const segs=stripClasses.map(c=>{
         const left=((minutes(c.startTime)-dayStart)/span)*100,width=((minutes(c.endTime)-minutes(c.startTime))/span)*100;
         const st=now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming";
-        return`<span class="hero-strip-seg ${st}" style="--course:${colorFor(c.code)};left:calc(${left}% + 1px);width:calc(${width}% - 2px)" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}"></span>`;
+        const label=width>13?`<span>${esc(canonical(c.code))}</span>`:"";
+        return`<button type="button" class="hero-strip-seg ${st}" style="--course:${colorFor(c.code)};left:calc(${left}% + 1px);width:calc(${width}% - 2px)" data-class-id="${esc(classIdentity(c))}" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}">${label}</button>`;
       }).join("");
+      /* Hour ticks so the ruler reads as actual clock time, not just a proportion bar. */
+      let ticks="";
+      for(let h=Math.ceil(dayStart/60);h<=Math.floor(dayEnd/60);h++){
+        const pos=((h*60-dayStart)/span)*100;
+        if(pos>1&&pos<99)ticks+=`<i class="hero-strip-tick" style="left:${pos}%"></i>`;
+      }
       const nowMin=Number(istParts().hour)*60+Number(istParts().minute);
       const nowMarker=(shownDayIso===today&&nowMin>=dayStart&&nowMin<=dayEnd)?`<span class="hero-strip-now" style="left:${((nowMin-dayStart)/span)*100}%"></span>`:"";
-      /* A single class fills the whole strip, which just reads as a stray bar — the shape
-         of the day is only worth drawing once there is more than one class on it. The day
-         itself is labelled by the day nav below, so the strip needs no label of its own. */
-      if(stripClasses.length<2)stripEl.hidden=true;
-      else stripEl.innerHTML=`<div class="hero-strip-track">${segs}${nowMarker}</div>`;
+      stripEl.innerHTML=`<div class="hero-strip-track">${ticks}${segs}${nowMarker}</div>
+        <div class="hero-strip-ends"><span>${esc(fmtTime(stripClasses[0].startTime))}</span><span>${esc(fmtTime(lastEndClass.endTime))}</span></div>`;
+      $$(".hero-strip-seg",stripEl).forEach(b=>b.addEventListener("click",()=>{
+        const c=state.classes.find(x=>classIdentity(x)===b.dataset.classId);if(c)openClassSheet(c);
+      }));
     }
   }
   fitHeroTime();
@@ -640,7 +652,14 @@ function dayCardListHtml(classes,dayIso,opts={}){
   chronological.forEach(c=>{
     if(prevEnd!=null){
       const gap=minutes(c.startTime)-prevEnd;
-      if(gap>=45){html+=`<div class="day-cardlist-gap"><span class="dc-gap-label">${icon("clock")}${esc(compactDuration(gap))} free</span></div>`}
+      /* Proportional to the actual gap length (roughly 1.15px/minute), clamped so a
+         45-minute gap still reads clearly and an overnight one doesn't force a
+         marathon scroll — see .hero-card .day-cardlist-gap for where this gets
+         flattened back down on Home. */
+      if(gap>=45){
+        const gapPx=Math.max(46,Math.min(200,Math.round(gap*1.15)));
+        html+=`<div class="day-cardlist-gap" style="height:${gapPx}px"><span class="dc-gap-label">${icon("clock")}${esc(compactDuration(gap))} free</span></div>`;
+      }
     }
     const status=agendaStatus(c),tag=agendaTag(c),dur=minutes(c.endTime)-minutes(c.startTime),sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessions(c.code).length:0;
     const cls=["day-cardlist-item",status==="Live"?"current":"",status==="Completed"?"completed":"",c.status==="Cancelled"?"cancelled":""].filter(Boolean).join(" ");
@@ -1988,7 +2007,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova70",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova71",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
