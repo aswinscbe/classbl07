@@ -1124,8 +1124,17 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-course-row{margin-top:8px}
 .week-course-row[hidden]{display:none}
 /* Head and strip travel together and stay reachable while an open day is scrolled. */
+/* Sticky lives on .week-pane-left, not on .week-sticky itself: a sticky element can
+   only stay stuck while scrolling through its own containing block, and .week-sticky's
+   immediate parent used to be the short .week-pane-left (just the header+strip+chips),
+   which ends long before the day's card list below it does — so it silently un-stuck
+   and scrolled away well before you'd scrolled through a busy day. .week-pane-left's
+   own parent is .week-planner, which spans the full height including .week-detail, so
+   pinning the whole pane there actually holds for as long as there's day content to
+   scroll through. */
+.week-pane-left{position:sticky;top:56px;z-index:6}
 .week-sticky{
-  position:sticky;top:56px;z-index:6;margin:-18px -18px 0;padding:16px 18px 10px;
+  margin:-18px -18px 0;padding:16px 18px 10px;
   background:var(--bg-elevated);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
 }
 .week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px}
@@ -1153,23 +1162,29 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   cursor:pointer;background:color-mix(in srgb, var(--accent) 14%, transparent);
 }
 @media (hover:hover){.week-scan-eyebrow.is-away:hover{background:color-mix(in srgb, var(--accent) 24%, transparent)}}
-/* "Day Focus": one day's classes shown at a time below a fixed heading, picked from
-   the week strip. The heading is a genuinely static block above a separately
-   scrolling list — not a sticky header layered over the same scroll as the cards —
-   so a card can never end up straddling it and getting its text sliced mid-line the
-   way a sticky-over-content header does. Below 900px the week-day-list (a secondary
-   index of all 7 days) stays hidden; the strip up top is the only day-picker needed
-   on a phone. */
+/* The one thing that has to always stay visible while scrolling is the day's date —
+   so instead of layering a second sticky header over the card list (which either
+   slices card text mid-scroll, or needs its own nested scroll region to avoid that),
+   it lives as a slim line inside .week-sticky, the single proven sticky region this
+   view already has. Everything below it — the heading here included — is now plain,
+   unremarkable normal document flow: one page scroll, nothing pinned over cards. */
+.week-day-context{
+  display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);
+  font-family:var(--font-display);font-size:14px;font-weight:750;letter-spacing:-.005em;color:var(--ink);
+}
+.week-day-context b{color:var(--ink-muted);font-weight:600;margin-left:6px}
+/* "Day Focus": one day's classes shown at a time, picked from the week strip. Below
+   900px the week-day-list (a secondary index of all 7 days) stays hidden; the strip
+   up top is the only day-picker needed on a phone. */
 .week-day-list{display:none}
 .week-detail{
   min-width:0;padding:18px;background:var(--bg-panel);
   border-radius:var(--radius-lg);border:1px solid var(--border);margin-top:14px;
-  display:flex;flex-direction:column;max-height:min(620px,70vh);
 }
-.week-detail-head{flex:none;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.week-detail-head{padding-bottom:14px;border-bottom:1px solid var(--border)}
 .week-detail-head h2{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.01em;margin:0}
 .week-detail-head .wp-day-meta{margin:4px 0 0}
-.week-detail .day-agenda{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:14px;margin:0 -18px;padding-left:18px;padding-right:18px}
+.week-detail .day-agenda{padding-top:14px}
 .week-detail.just-picked{animation:just-picked-flash .9s ease}
 /* Below 900px a 7-column grid squeezed real class cards into ~150px columns - names
    wrapping four lines, chips spilling past the edge, badges and gaps deleted just to
@@ -1180,10 +1195,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   .week-planner:has(.week-day-list.is-wide){display:grid;grid-template-columns:300px 1fr;align-items:start;gap:20px}
   .week-day-list{display:flex;flex-direction:column;gap:6px;margin-top:14px}
   /* The left pane holds the whole week and stays short, so it can stay in view for the
-     length of the right pane. */
-  .week-pane-left{min-width:0;position:sticky;top:70px;align-self:start}
-  .week-detail{padding:26px;max-height:calc(100vh - 140px)}
-  .week-detail .day-agenda{margin:0 -26px;padding-left:26px;padding-right:26px}
+     length of the right pane — the detail pane's own heading is not sticky, so this is
+     what keeps the date visible once a busy day's cards are scrolled past it. */
+  .week-pane-left{min-width:0;top:70px;align-self:start}
+  .week-detail{padding:26px}
   .week-day-list.is-wide .wp-day.is-open{
     background:color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));
     border-color:color-mix(in srgb, var(--accent) 30%, transparent);

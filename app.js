@@ -843,7 +843,7 @@ function renderWeekPlanner(){
     return`<section class="wp-day ${isToday?"is-today":""} ${isPast?"is-past":""} ${isOpen?"is-open":""} ${!active.length?"is-free":""} ${exam?"has-exam":""}" style="--i:${dayIdx}">${head}</section>`;
   }).join("");
 
-  const detailEl=$("#weekDetail");
+  const detailEl=$("#weekDetail"),dayLabel=fmtDate(detailIso,{weekday:"long",day:"numeric",month:"long"});
   if(detailEl){
     const visible=visibleDayClasses(detailIso),tasks=state.tasks.filter(t=>t.date===detailIso);
     const vActive=visible.filter(c=>c.status!=="Cancelled");
@@ -851,11 +851,16 @@ function renderWeekPlanner(){
     const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"Free day";
     detailEl.innerHTML=`
       <div class="week-detail-head">
-        <h2>${esc(fmtDate(detailIso,{weekday:"long",day:"numeric",month:"long"}))}</h2>
+        <h2>${esc(dayLabel)}</h2>
         <p class="wp-day-meta">${esc(meta)}</p>
       </div>
       <div id="dayAgenda" class="schedule-list day-agenda">${agendaHtml(visible,tasks,examOn(detailIso),detailIso)}</div>`;
   }
+  /* The one thing that must stay visible no matter how far the page is scrolled: which
+     day the cards below belong to. It lives here, inside the week header's own proven
+     sticky region, instead of as a second sticky layer over the card list. */
+  const dayContextEl=$("#weekDayContext");
+  if(dayContextEl){dayContextEl.style.display="block";dayContextEl.innerHTML=`${esc(dayLabel)}`}
 
   $$(".wp-day-head",list).forEach(b=>b.addEventListener("click",()=>{
     const iso=b.dataset.date;
@@ -1986,7 +1991,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova65",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova66",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
