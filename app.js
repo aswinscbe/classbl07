@@ -768,13 +768,21 @@ function visibleDayClasses(iso){
   return state.calendarHighlight?shown.filter(c=>canonical(c.code)===state.calendarHighlight):shown;
 }
 function scrollToPickedDay(iso){
-  const target=$("#weekDetail");
+  const target=$(`.agenda-day-section[data-date="${iso}"]`);
   if(!target)return;
   target.scrollIntoView({behavior:"smooth",block:"start"});
   target.classList.remove("just-picked");void target.offsetWidth;target.classList.add("just-picked");
 }
+/* One continuous week list instead of a single-day view picked from a strip: every
+   day's classes are always on the page, each behind its own date heading that is
+   position:sticky *within that day's own section* — the standard "section list"
+   pattern (Gmail's date dividers, Contacts' alphabet index). This is the one sticky
+   arrangement that is structurally guaranteed to behave: a section header can only
+   stay stuck for as long as its own section is being scrolled through, which is
+   exactly the range it needs to cover, so there is no separate containing-block to
+   get wrong and no second layer competing with it for space. */
 function renderWeekPlanner(){
-  const list=$("#weekScanList");if(!list)return;
+  const agendaEl=$("#weekAgenda");if(!agendaEl)return;
   const today=isoToday(),now=new Date();
   if(!state.railStart)state.railStart=mondayIso(state.selectedDate);
   const days=weekDaysFrom(state.railStart);
@@ -787,8 +795,8 @@ function renderWeekPlanner(){
   if(rangeEl)rangeEl.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
   if(metaEl)metaEl.textContent=weekActive.length?`${weekActive.length} ${weekActive.length===1?"class":"classes"} · ${compactDuration(weekMins)}`:"No classes this week";
 
-  /* The strip is the index for the rows below it, not a second week view: dots rather
-     than counts so it stays glanceable, and a tap opens that day's row. */
+  /* The strip is a quick-jump index into the list below, not a second week view: dots
+     rather than counts so it stays glanceable, and a tap scrolls to that day's section. */
   const strip=$("#weekStrip");
   if(strip){
     const letters=["M","T","W","T","F","S","S"];
@@ -797,7 +805,7 @@ function renderWeekPlanner(){
       const active=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled");
       const dots=active.slice(0,4).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
       const load=active.length?Math.max(.3,Math.min(1,active.length/weekPeak)):0;
-      return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-open":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" style="--fill:${load}">
+      return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-selected":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" style="--fill:${load}">
         <span class="ws-dow">${letters[i]}</span>
         <span class="ws-num">${Number(iso.slice(8))}</span>
         <span class="ws-dots">${dots}</span>
@@ -813,83 +821,28 @@ function renderWeekPlanner(){
   }
   const eyebrowBtn=$("#weekScanEyebrow");
   if(eyebrowBtn)eyebrowBtn.classList.toggle("is-away",weekOffset!==0);
-  /* "Day Focus": one day shown at a time, picked from the week strip above. At 900px+
-     a compact list of all 7 days also renders on the left as a secondary index, but the
-     right-hand detail pane below is the one real view at every width — no accordion,
-     no open/close state, so there is no longer a way for "which day am I on" to depend
-     on scroll position: the date lives in a fixed heading, not inside the thing that
-     scrolls. */
-  const wideWeek=matchMedia("(min-width:900px)").matches;
-  list.classList.toggle("is-wide",wideWeek);
-  const detailIso=days.includes(state.selectedDate)?state.selectedDate:today;
-  list.innerHTML=days.map((iso,dayIdx)=>{
-    const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-    const active=dayAll.filter(c=>c.status!=="Cancelled");
-    const isToday=iso===today,isPast=iso<today,exam=examOn(iso);
-    const isOpen=iso===detailIso;
-    const done=active.filter(c=>now>=dateTime(c,"endTime")).length;
-    const countText=active.length?(isToday?`${done}/${active.length}`:`${active.length} ${active.length===1?"class":"classes"}`):(exam?"Exam day":"");
-    /* Course colours on the collapsed row, so a glance says which subjects a day holds
-       rather than only how many. */
-    const dots=active.slice(0,5).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
-    const head=`<button type="button" class="wp-day-head" data-date="${iso}" aria-current="${isOpen}">
-      <span class="wp-day-name">${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wp-today-badge">TODAY</b>':""}</span>
-      ${dots?`<span class="wp-dots">${dots}</span>`:""}
-      <span class="wp-day-right">
-        ${countText?`<span class="wp-count">${esc(countText)}</span>`:""}
-        <span class="wp-date">${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span>
-      </span>
-    </button>`;
-    return`<section class="wp-day ${isToday?"is-today":""} ${isPast?"is-past":""} ${isOpen?"is-open":""} ${!active.length?"is-free":""} ${exam?"has-exam":""}" style="--i:${dayIdx}">${head}</section>`;
-  }).join("");
 
-  const detailEl=$("#weekDetail"),dayLabel=fmtDate(detailIso,{weekday:"long",day:"numeric",month:"long"});
-  if(detailEl){
-    const visible=visibleDayClasses(detailIso),tasks=state.tasks.filter(t=>t.date===detailIso);
+  agendaEl.innerHTML=days.map((iso,dayIdx)=>{
+    const isToday=iso===today,exam=examOn(iso);
+    const visible=visibleDayClasses(iso),tasks=state.tasks.filter(t=>t.date===iso);
     const vActive=visible.filter(c=>c.status!=="Cancelled");
     const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
-    const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"Free day";
-    detailEl.innerHTML=`
-      <div class="week-detail-head">
-        <h2>${esc(dayLabel)}</h2>
-        <p class="wp-day-meta">${esc(meta)}</p>
-      </div>
-      <div id="dayAgenda" class="schedule-list day-agenda">${agendaHtml(visible,tasks,examOn(detailIso),detailIso)}</div>`;
-  }
-  /* The one thing that must stay visible no matter how far the page is scrolled: which
-     day the cards below belong to. It lives here, inside the week header's own proven
-     sticky region, instead of as a second sticky layer over the card list. */
-  const dayContextEl=$("#weekDayContext");
-  if(dayContextEl){dayContextEl.style.display="block";dayContextEl.innerHTML=`${esc(dayLabel)}`}
+    const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"";
+    const head=`<div class="agenda-day-head">
+      <span class="agenda-day-name">${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wp-today-badge">TODAY</b>':""}</span>
+      <span class="agenda-day-date">${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span>
+      ${meta?`<span class="agenda-day-count">${esc(meta)}</span>`:""}
+    </div>`;
+    const hasContent=visible.length||tasks.length||exam;
+    const body=hasContent
+      ?`<div class="schedule-list day-agenda">${agendaHtml(visible,tasks,exam,iso)}</div>`
+      :`<div class="agenda-free-day">Free day</div>`;
+    return`<section class="agenda-day-section ${isToday?"is-today":""} ${exam?"has-exam":""}" data-date="${iso}" style="--i:${dayIdx}">${head}${body}</section>`;
+  }).join("");
 
-  $$(".wp-day-head",list).forEach(b=>b.addEventListener("click",()=>{
-    const iso=b.dataset.date;
-    state.selectedDate=iso;
-    const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
-    renderCalendar();
-    requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
-  }));
-  /* dayAgenda is rebuilt on every render (innerHTML swap), so a swipe binding made
-     once at startup goes stale the moment the day changes — rebind it here, against
-     the fresh node, every time. */
-  const detailAgenda=detailEl?$("#dayAgenda",detailEl):null;
-  if(detailAgenda){
-    bindTaskRows(detailAgenda);
-    bindSwipeGesture(detailAgenda,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
-  }
+  $$(".day-agenda",agendaEl).forEach(bindTaskRows);
   renderPlannerExamStrip();
 }
-/* Resizing across the 900px breakpoint used to leave the wrong layout in place until
-   the next navigation - a plain resize listener, debounced, keeps the two in sync. */
-let _weekLayoutRaf=null;
-window.addEventListener("resize",()=>{
-  if(!$("#weekScanList"))return;
-  cancelAnimationFrame(_weekLayoutRaf);
-  _weekLayoutRaf=requestAnimationFrame(()=>{
-    const wide=matchMedia("(min-width:900px)").matches;
-    if($("#weekScanList").classList.contains("is-wide")!==wide)renderCalendar();
-  });
-});
 /* Exams live behind their own tab, so the calendar could not tell you one was coming. */
 function renderPlannerExamStrip(){
   const strip=$("#plannerExamStrip");if(!strip)return;
@@ -918,7 +871,6 @@ function showCalendarTooltip(target,iso){
   tip.innerHTML=`<div class="calendar-tooltip-head"><h4>${esc(fmtDate(iso))}</h4><small>${esc(summary)}</small></div>${scheduled.length?rows:'<div class="calendar-tooltip-empty">No scheduled classes</div>'}${cancelledRows}`;
   const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-240,r.bottom+8)}px`;tip.classList.add("show")
 }
-function shiftSelectedDate(delta){const day=new Date(`${state.selectedDate}T12:00:00+05:30`);day.setDate(day.getDate()+delta);state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(day);state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);state.railStart=mondayIso(state.selectedDate);const agenda=$("#dayAgenda");if(agenda){agenda.classList.remove("slide-prev","slide-next");agenda.classList.add(delta>0?"slide-next":"slide-prev")}renderCalendar();requestAnimationFrame(()=>requestAnimationFrame(()=>agenda?.classList.remove("slide-prev","slide-next")))}
 function renderCourseOptions(){const selected=new Set((state.profile.electives||[]).map(canonical));const seen=new Set(),courses=[];state.all.forEach(c=>{const code=canonical(c.baseCode||c.code);const allowed=c.type==="General"?true:c.type==="Core"?c.section===state.profile.section:selected.has(code);if(allowed&&!seen.has(code)){seen.add(code);courses.push({code,course:c.course})}});const o=courses.sort((a,b)=>a.course.localeCompare(b.course)).map(e=>`<option value="${esc(e.code)}">${esc(e.code)} · ${esc(e.course)}</option>`).join("");["#quickTaskCourse","#taskCourse","#noteCourse"].forEach(s=>{const el=$(s);if(el)el.innerHTML='<option value="">General</option>'+o})}
 function addTask(title,course,date){
   const t={id:crypto.randomUUID(),title,course:course||"General",date,completed:false,createdAt:Date.now()};
@@ -1842,7 +1794,7 @@ function bind(){
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   document.addEventListener("click",e=>{
-    const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.ws-cell,.wp-day-head,.day-pill,.meal-tab,.subtab,.accent-swatch,.hero-day-arrow,.seg-opt,.week-nav-arrow");
+    const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.ws-cell,.day-pill,.meal-tab,.subtab,.accent-swatch,.hero-day-arrow,.seg-opt,.week-nav-arrow");
     if(!t||t.disabled)return;
     haptic(t.matches(".primary-button,.danger-button,.google-tasks-button")?18:10);
   },{capture:true});
@@ -1991,7 +1943,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova66",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova67",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

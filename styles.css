@@ -1111,107 +1111,95 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-scan-meta{margin:5px 0 0;font-size:12.5px;font-weight:600;color:var(--ink-muted)}
 .week-nav-arrow{width:36px;height:36px;border-radius:10px;flex:none}
 .week-nav-arrow svg{width:16px;height:16px}
-/* ===== The accordion week ===== */
+/* ===== Continuous week agenda =====
+   Every day of the week is always on the page, one after another, each behind its own
+   date heading. That heading is position:sticky *scoped to its own section* — the
+   textbook "section list" pattern (Gmail's date dividers, an alphabet index) — which
+   is the one sticky arrangement that is structurally guaranteed to behave: a section
+   can only stay stuck for as long as its own content is being scrolled through, which
+   is exactly the range it needs to cover. No separate containing-block to get wrong,
+   no second sticky layer competing with another for space, one page scroll. */
 .week-planner{margin-top:14px}
-.week-tools{display:flex;align-items:center;gap:8px;margin-bottom:2px}
-.week-tool-chips{
-  flex:1;min-width:0;margin-top:0;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;
-  scrollbar-width:none;-ms-overflow-style:none;
+.week-scan-head{display:flex;align-items:center;gap:10px}
+.week-scan-title{flex:1;min-width:0;text-align:center}
+#weekScanRange{font-family:var(--font-display);font-size:clamp(21px,5vw,25px);font-weight:800;letter-spacing:-.02em;margin:2px 0 0}
+.week-scan-meta{margin:2px 0 0;font-size:12.5px;font-weight:600;color:var(--ink-muted)}
+.week-scan-eyebrow{
+  display:block;margin:0 auto 3px;border:0;background:none;padding:2px 8px;border-radius:99px;
+  font:inherit;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--accent);cursor:default;
 }
-.week-tool-chips::-webkit-scrollbar{display:none}
-.week-tool-chips:not(:has(> :not([hidden]))){display:none}
-.week-month-button{flex:none;width:38px;height:38px;border-radius:11px}
-.week-course-row{margin-top:8px}
-.week-course-row[hidden]{display:none}
-/* Head and strip travel together and stay reachable while an open day is scrolled. */
-/* Sticky lives on .week-pane-left, not on .week-sticky itself: a sticky element can
-   only stay stuck while scrolling through its own containing block, and .week-sticky's
-   immediate parent used to be the short .week-pane-left (just the header+strip+chips),
-   which ends long before the day's card list below it does — so it silently un-stuck
-   and scrolled away well before you'd scrolled through a busy day. .week-pane-left's
-   own parent is .week-planner, which spans the full height including .week-detail, so
-   pinning the whole pane there actually holds for as long as there's day content to
-   scroll through. */
-.week-pane-left{position:sticky;top:56px;z-index:6}
-.week-sticky{
-  margin:-18px -18px 0;padding:16px 18px 10px;
-  background:var(--bg-elevated);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-}
-.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px}
+.week-scan-eyebrow.is-away{cursor:pointer;background:color-mix(in srgb, var(--accent) 14%, transparent)}
+@media (hover:hover){.week-scan-eyebrow.is-away:hover{background:color-mix(in srgb, var(--accent) 24%, transparent)}}
+
+.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:14px}
 .ws-cell{
-  display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;
-  border:1px solid transparent;border-radius:10px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 2px 7px;
+  border:1.5px solid transparent;border-radius:12px;
   background:color-mix(in srgb, var(--accent) calc(var(--fill,0) * 14%), var(--bg-panel));
   font:inherit;color:inherit;cursor:pointer;min-width:0;
   transition:background .2s ease,border-color .2s ease,transform .12s ease;
 }
 .ws-cell:active{transform:scale(.94)}
-.ws-dow{font-size:9.5px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint);line-height:1}
-.ws-num{font-family:var(--font-display);font-size:14px;font-weight:750;line-height:1.1}
+.ws-dow{font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint);line-height:1}
+.ws-num{font-family:var(--font-display);font-size:16px;font-weight:750;line-height:1.2}
 .ws-dots{display:flex;align-items:center;justify-content:center;gap:2px;height:5px}
 .ws-dots i{width:4px;height:4px;border-radius:50%;background:var(--course,var(--accent))}
-.ws-cell.is-today .ws-num{color:var(--accent);font-weight:800}
-.ws-cell.is-today{border-color:color-mix(in srgb, var(--accent) 45%, transparent)}
-.ws-cell.is-open{background:color-mix(in srgb, var(--accent) 16%, var(--bg-panel));border-color:color-mix(in srgb, var(--accent) 50%, transparent)}
+.ws-cell.is-today{border-color:color-mix(in srgb, var(--accent) 40%, transparent)}
+.ws-cell.is-today .ws-num{color:var(--accent)}
+/* The selected day needs to read unmistakably at a glance, not as a faint tint next to
+   six near-identical cells — a filled, high-contrast pill does that; a subtle border
+   tint did not. */
+.ws-cell.is-selected{
+  background:var(--accent);border-color:var(--accent);
+  box-shadow:0 4px 14px -6px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.ws-cell.is-selected .ws-dow,.ws-cell.is-selected .ws-num{color:#fff}
+.ws-cell.is-selected .ws-dots i{background:#fff}
 .ws-cell.has-exam{box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 45%, transparent)}
-.week-scan-eyebrow{
-  display:block;margin:0 auto 3px;border:0;background:none;padding:2px 8px;border-radius:99px;
-  font:inherit;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--accent);cursor:default;
+.ws-cell.is-selected.has-exam{box-shadow:0 4px 14px -6px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 0 0 1.5px #fff}
+
+.week-tools{display:flex;align-items:center;gap:8px;margin-top:14px;margin-bottom:2px}
+.week-tool-chips{
+  flex:1;min-width:0;margin-top:0;flex-wrap:wrap;overflow-x:visible;padding-bottom:2px;
 }
-.week-scan-eyebrow.is-away{
-  cursor:pointer;background:color-mix(in srgb, var(--accent) 14%, transparent);
+.week-tool-chips:not(:has(> :not([hidden]))){display:none}
+.week-course-row{margin-top:8px}
+.week-course-row[hidden]{display:none}
+
+.week-agenda{margin-top:6px}
+.agenda-day-section{scroll-margin-top:60px}
+.agenda-day-section+.agenda-day-section{margin-top:2px}
+.agenda-day-head{
+  position:sticky;top:52px;z-index:3;
+  display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 10px;
+  padding:14px 2px 10px;background:var(--bg-elevated);
+  border-bottom:1px solid var(--border);
 }
-@media (hover:hover){.week-scan-eyebrow.is-away:hover{background:color-mix(in srgb, var(--accent) 24%, transparent)}}
-/* The one thing that has to always stay visible while scrolling is the day's date —
-   so instead of layering a second sticky header over the card list (which either
-   slices card text mid-scroll, or needs its own nested scroll region to avoid that),
-   it lives as a slim line inside .week-sticky, the single proven sticky region this
-   view already has. Everything below it — the heading here included — is now plain,
-   unremarkable normal document flow: one page scroll, nothing pinned over cards. */
-.week-day-context{
-  display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);
-  font-family:var(--font-display);font-size:14px;font-weight:750;letter-spacing:-.005em;color:var(--ink);
+.agenda-day-name{
+  font-family:var(--font-display);font-size:17px;font-weight:800;letter-spacing:-.01em;color:var(--ink);
+  display:flex;align-items:center;gap:7px;
 }
-.week-day-context b{color:var(--ink-muted);font-weight:600;margin-left:6px}
-/* "Day Focus": one day's classes shown at a time, picked from the week strip. Below
-   900px the week-day-list (a secondary index of all 7 days) stays hidden; the strip
-   up top is the only day-picker needed on a phone. */
-.week-day-list{display:none}
-.week-detail{
-  min-width:0;padding:18px;background:var(--bg-panel);
-  border-radius:var(--radius-lg);border:1px solid var(--border);margin-top:14px;
+.agenda-day-date{font-size:12.5px;font-weight:650;color:var(--ink-muted)}
+.agenda-day-count{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--ink-muted);white-space:nowrap}
+.wp-today-badge{font-size:9.5px;font-weight:800;letter-spacing:.05em;color:#fff;background:var(--accent);border-radius:99px;padding:2.5px 7px}
+.agenda-day-section.is-today .agenda-day-name{color:var(--accent)}
+.agenda-day-section.has-exam .agenda-day-head{box-shadow:inset 3px 0 0 var(--accent-2)}
+.agenda-day-section .day-agenda{padding:12px 2px 22px}
+.agenda-free-day{padding:8px 2px 22px;font-size:13px;font-weight:600;color:var(--ink-faint)}
+@keyframes just-picked-flash{
+  0%{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent)}
+  100%{box-shadow:0 0 0 2px transparent}
 }
-.week-detail-head{padding-bottom:14px;border-bottom:1px solid var(--border)}
-.week-detail-head h2{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.01em;margin:0}
-.week-detail-head .wp-day-meta{margin:4px 0 0}
-.week-detail .day-agenda{padding-top:14px}
-.week-detail.just-picked{animation:just-picked-flash .9s ease}
-/* Below 900px a 7-column grid squeezed real class cards into ~150px columns - names
-   wrapping four lines, chips spilling past the edge, badges and gaps deleted just to
-   make it fit. 900px+ instead gets master-detail: the week as a compact list on the
-   left, the selected day at full width on the right, so nothing about a class card
-   has to be shrunk or dropped to fit a column that was never wide enough for it. */
+.agenda-day-section.just-picked .agenda-day-head{animation:just-picked-flash .9s ease-out;border-radius:var(--radius-sm)}
+@media(prefers-reduced-motion: reduce){.agenda-day-section.just-picked .agenda-day-head{animation:none}}
+
 @media (min-width:900px){
-  .week-planner:has(.week-day-list.is-wide){display:grid;grid-template-columns:300px 1fr;align-items:start;gap:20px}
-  .week-day-list{display:flex;flex-direction:column;gap:6px;margin-top:14px}
-  /* The left pane holds the whole week and stays short, so it can stay in view for the
-     length of the right pane — the detail pane's own heading is not sticky, so this is
-     what keeps the date visible once a busy day's cards are scrolled past it. */
-  .week-pane-left{min-width:0;top:70px;align-self:start}
-  .week-detail{padding:26px}
-  .week-day-list.is-wide .wp-day.is-open{
-    background:color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));
-    border-color:color-mix(in srgb, var(--accent) 30%, transparent);
-  }
-  .week-day-list.is-wide .wp-day.is-open .wp-day-name{color:var(--accent)}
-  .week-detail-head h2{font-size:22px}
-  /* A day's two or three classes stretched edge-to-edge of a pane built to also fit a
-     seven-class day read as sparse and unfinished - a comfortable reading width, not
-     the full column, however wide the window is. */
-  .week-detail .day-cardlist{gap:10px;max-width:640px}
-  /* Three tool chips do not fit a 300px column - they were being cut off mid-label with
-     no scroll affordance to say more was there. They wrap instead. */
-  .week-tool-chips{flex-wrap:wrap;overflow-x:visible}
+  .agenda-day-head{top:70px}
+  /* A full desktop-width week-planner column reads better as a comfortable reading
+     width than stretched edge-to-edge, so it gets its own narrower cap — Month and
+     Exams (siblings under the same .planner-view) keep the wider shared page width. */
+  .week-planner{max-width:760px;margin-left:auto;margin-right:auto}
+  .week-agenda .day-cardlist{gap:10px}
 }
 /* Stop the planner column stretching to the full width of a desktop window. */
 @media (min-width:900px){
@@ -1221,61 +1209,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   .tab-row .subtabs{flex:none;width:max-content}
   .subtab{flex:none;min-width:150px}
 }
-@keyframes wp-day-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-/* A visible cue that a day was picked, independent of whether anything needed to
-   scroll — on a tall detail pane already in view, a scroll alone gives no feedback. */
-@keyframes just-picked-flash{
-  0%{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent)}
-  100%{box-shadow:0 0 0 2px transparent}
-}
-.wp-day.just-picked,#weekDetail.just-picked{
-  animation:just-picked-flash .9s ease-out;border-radius:var(--radius-md);
-}
-@media(prefers-reduced-motion: reduce){.wp-day.just-picked,#weekDetail.just-picked{animation:none}}
-
-.wp-day{
-  border:1px solid var(--border);border-radius:var(--radius-md);
-  background:var(--bg-panel);position:relative;
-  transition:background .25s ease,border-color .25s ease,box-shadow .25s ease;
-  animation:wp-day-in .4s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i, 0) * 45ms);
-}
-@media(prefers-reduced-motion: reduce){.wp-day{animation:none}}
-.wp-day-head{
-  display:flex;align-items:center;gap:9px;width:100%;padding:13px 13px;
-  background:none;border:0;font:inherit;color:inherit;cursor:pointer;text-align:left;
-}
-.wp-day-name{
-  font-family:var(--font-display);font-size:15.5px;font-weight:750;letter-spacing:-.01em;color:var(--ink);
-  display:flex;align-items:center;gap:7px;flex:none;
-}
-.wp-today-badge{font-size:9.5px;font-weight:800;letter-spacing:.05em;color:#fff;background:var(--accent);border-radius:99px;padding:2.5px 7px}
-/* Course colours so a collapsed day says which subjects it holds, not only how many. */
-.wp-dots{display:flex;align-items:center;gap:3px;flex:none}
-.wp-dots i{width:6px;height:6px;border-radius:50%;background:var(--course,var(--accent))}
-.wp-day-right{display:flex;align-items:center;gap:9px;margin-left:auto;flex:none}
-.wp-count{font-size:11.5px;font-weight:700;color:var(--ink-muted);white-space:nowrap}
-.wp-date{font-size:11.5px;font-weight:650;color:var(--ink-faint);white-space:nowrap}
-
-.wp-day.is-today{
-  border-color:transparent;
-  background:color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
-  box-shadow:var(--shadow-md),
-    inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-.wp-day.is-today .wp-day-name{color:var(--accent)}
-.wp-day.is-past:not(.is-open){opacity:.5}
-.wp-day.is-free:not(.is-today):not(.is-open){background:transparent;border-style:dashed}
-.wp-day.is-free:not(.is-today) .wp-day-name{color:var(--ink-faint);font-weight:700}
-.wp-day.has-exam .wp-day-head{box-shadow:inset 3px 0 0 var(--accent-2)}
-.wp-day.is-open{
-  background:var(--bg-elevated);border-color:color-mix(in srgb, var(--accent) 26%, var(--border));
-  box-shadow:var(--shadow-md);
-}
-.wp-day.is-open.is-today{border-color:transparent}
-@media (hover:hover){.wp-day:not(.is-open) .wp-day-head:hover{background:color-mix(in srgb, var(--ink) 4%, transparent)}}
-.wp-day-head:active{transform:scale(.995)}
-.wp-day-meta{margin:0 0 10px;font-size:12px;font-weight:650;color:var(--ink-muted)}
 
 /* Next exam, surfaced in the calendar instead of living only behind the Exams tab. */
 .next-exam-strip{
