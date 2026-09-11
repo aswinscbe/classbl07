@@ -803,7 +803,7 @@ function renderWeekPlanner(){
       return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-selected":""} ${!active.length?"is-zero":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}">
         <span class="ws-dow">${letters[i]}</span>
         <span class="ws-num">${Number(iso.slice(8))}</span>
-        <span class="ws-cnt">${active.length}</span>
+        <span class="ws-cnt">${active.length||"–"}</span>
       </button>`;
     }).join("");
     $$(".ws-cell",strip).forEach(b=>b.addEventListener("click",()=>{
@@ -2019,7 +2019,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova81",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova82",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
