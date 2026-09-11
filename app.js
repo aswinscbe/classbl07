@@ -887,7 +887,7 @@ function renderDayFocus(iso){
   if(completed.length&&showCompleted){
     earlierEl.hidden=false;
     earlierEl.innerHTML=`<p class="de-label"><span>Earlier today</span></p><div class="de-rows">${completed.map(c=>
-      `<article class="de-row day-cardlist-item" data-class-id="${esc(classIdentity(c))}"><span class="de-dot" style="background:${colorFor(c.code)}"></span><span class="de-txt">${esc(fmtRange(c.startTime,c.endTime))} · ${esc(c.course)}</span><span class="de-chk">${icon("check")}</span></article>`
+      `<article class="de-row" data-class-id="${esc(classIdentity(c))}"><span class="de-dot" style="background:${colorFor(c.code)}"></span><span class="de-txt">${esc(fmtRange(c.startTime,c.endTime))} · ${esc(c.course)}</span><span class="de-chk">${icon("check")}</span></article>`
     ).join("")}</div>`;
   }else{earlierEl.hidden=true;earlierEl.innerHTML=""}
 
@@ -909,7 +909,7 @@ function renderDayFocus(iso){
         return`<div class="pt-item">
           <div class="pt-time-col"><span class="hh">${esc(fmtTime(c.startTime).replace(/\s?[ap]m/i,""))}</span><span class="ap">${esc((fmtTime(c.startTime).match(/[ap]m/i)||[""])[0])}</span></div>
           <div class="pt-spine">${i<remaining.length-1?`<div class="pt-line" style="--lc:${colorFor(c.code)}"></div>`:""}<div class="pt-node ${isLive?"live":""}" style="--dot:${colorFor(c.code)}"></div></div>
-          <article class="pt-body day-cardlist-item ${isLive?"now":""}" data-class-id="${esc(classIdentity(c))}" style="--c:${colorFor(c.code)}">
+          <article class="pt-body ${isLive?"now":""}" data-class-id="${esc(classIdentity(c))}" style="--c:${colorFor(c.code)}">
             <span class="pt-tag ${isLive?"live":"plain"}">${isLive?"NOW":esc(fmtRange(c.startTime,c.endTime))}</span>
             <div class="pt-ttl">${esc(c.course)}${sessionN?`<span class="dc-session-badge">${sessionN}/${sessionTotal}</span>`:""}</div>
             <div class="pt-meta"><span>${esc(c.code)}</span><span>${icon("pin")}${esc(venueOf(c))}</span>${c.faculty?`<span>${esc(c.faculty)}</span>`:""}<span>${esc(compactDuration(dur))}</span></div>
@@ -1937,7 +1937,7 @@ function bind(){
     const now=Date.now(),next=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime").getTime()>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
     if(!next){showToast("No upcoming classes");return}
     openCalendarPage(next.dateIso);
-    requestAnimationFrame(()=>{const card=$(`.day-cardlist-item[data-class-id="${CSS.escape(classIdentity(next))}"]`);if(card)card.scrollIntoView({behavior:"smooth",block:"center"})});
+    requestAnimationFrame(()=>{const card=$(`[data-class-id="${CSS.escape(classIdentity(next))}"].pt-body, .day-cardlist-item[data-class-id="${CSS.escape(classIdentity(next))}"]`);if(card)card.scrollIntoView({behavior:"smooth",block:"center"})});
   });
   $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
@@ -1976,7 +1976,7 @@ function bind(){
   });
   document.addEventListener("click",e=>{
     if(e.target.closest("button,a,input"))return;
-    const card=e.target.closest(".day-cardlist-item[data-class-id]");
+    const card=e.target.closest(".day-cardlist-item[data-class-id],.pt-body[data-class-id],.de-row[data-class-id]");
     if(card){const c=state.classes.find(x=>classIdentity(x)===card.dataset.classId);if(c)openClassSheet(c);return}
     const hero=e.target.closest("#focusPanel.has-focus");
     if(hero&&hero.dataset.focusClassId){const c=state.classes.find(x=>classIdentity(x)===hero.dataset.focusClassId);if(c)openClassSheet(c)}
@@ -2039,7 +2039,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova73",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova74",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
