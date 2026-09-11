@@ -363,6 +363,16 @@ function applyShortcutParams(){
   history.replaceState(null,"",location.pathname);
 }
 function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
+/* Ledger badge — tasks that are due today or overdue and still open, so a
+   glance at the header icon says whether anything needs attention without
+   opening the Tasks & Notes dialog. */
+function renderLedgerBadge(){
+  const badge=$("#ledgerBadge");if(!badge)return;
+  const today=isoToday();
+  const dueCount=state.tasks.filter(t=>!t.completed&&t.date&&t.date<=today).length;
+  badge.hidden=!dueCount;
+  badge.textContent=dueCount>9?"9+":String(dueCount);
+}
 function heroPill(html,tone=""){return`<span class="hero-pill ${tone}">${html}</span>`}
 function fitHeroTime(){
   const el=$("#focusRange");if(!el)return;
@@ -383,6 +393,9 @@ function renderHome(){
   $("#termOverviewStrip")?.closest(".term-overview-card")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $("#todayProgressRail")?.classList.toggle("is-loading",!!state.scheduleLoading);
   const now=new Date(),today=isoToday();$("#todayLabel").textContent=fmtDate(today,{weekday:"long",day:"numeric",month:"long"}).toUpperCase();$("#dateOrbitDay").textContent=today.slice(8);$("#dateOrbitMonth").textContent=fmtDate(today,{month:"short"}).toUpperCase();const h=Number(istParts().hour),firstName=String(state.profile.name||"").trim().split(/\s+/)[0],dayGreeting=`Good ${h<12?"morning":h<17?"afternoon":"evening"}`;$("#greeting").textContent=firstName?`${dayGreeting}, ${firstName}.`:`${dayGreeting}.`;
+  /* A faint time-of-day tint on the hero card, so it doesn't look identical at 9am and
+     9pm — purely ambient, layered under the existing accent/course colouring. */
+  $("#focusPanel")?.setAttribute("data-daypart",h<11?"morning":h<16?"midday":h<19?"evening":"night");
   const scheduled=state.classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
   const todays=scheduled.filter(c=>c.dateIso===today),current=todays.find(c=>now>=dateTime(c,"startTime")&&now<dateTime(c,"endTime")),todayNext=todays.find(c=>now<dateTime(c,"startTime")),future=scheduled.find(c=>now<dateTime(c,"startTime")),focus=current||todayNext||future;
   const onBreak=!current&&!!todayNext&&todays.some(c=>dateTime(c,"endTime")<=now);
@@ -417,18 +430,23 @@ function renderHome(){
     $("#focusCode").hidden=false;$("#focusCode").textContent=canonical(shown.code);$("#focusTitle").textContent=shown.course;
     $("#focusRange").textContent=fmtRange(shown.startTime,shown.endTime);
     const dayList=scheduled.filter(c=>c.dateIso===shown.dateIso),posIndex=dayList.indexOf(shown),nextInDay=dayList[posIndex+1];
-    const ring=$("#heroRing");
+    const ring=$("#heroRing"),liveProgress=$("#heroLiveProgress");
     if(isNow){
       const pct=Math.max(0,Math.min(100,((now-dateTime(shown,"startTime"))/(dateTime(shown,"endTime")-dateTime(shown,"startTime")))*100)),circ=2*Math.PI*15;
       ring.hidden=false;
       $("#heroRingFill").style.strokeDasharray=`${circ}`;
       $("#heroRingFill").style.strokeDashoffset=`${circ*(1-pct/100)}`;
-    }else ring.hidden=true;
+      if(liveProgress){liveProgress.hidden=false;$("#heroLiveProgressFill").style.width=`${pct}%`}
+    }else{
+      ring.hidden=true;
+      if(liveProgress)liveProgress.hidden=true;
+    }
     const pills=[];
     if(isNow){const mins=Math.max(0,Math.round((dateTime(shown,"endTime")-now)/60000));pills.push(heroPill(`Ends in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     else if(onBreak){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`Starts in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
+    if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`));
     const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
     if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${heroSessionTotal}`));
     if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`));
@@ -440,6 +458,7 @@ function renderHome(){
   else{
     focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-upcoming","is-future","is-break","has-focus");focusPanel.style.removeProperty("--focus-course");delete focusPanel.dataset.focusDate;delete focusPanel.dataset.focusClassId;
     $("#heroRing").hidden=true;
+    if($("#heroLiveProgress"))$("#heroLiveProgress").hidden=true;
     $("#focusPulse").style.display="none";
     $("#focusKicker").textContent=todays.length?"ALL DONE TODAY":"ALL CLEAR";
     if(todays.length&&!state._confettiFiredToday){state._confettiFiredToday=true;fireConfetti()}
@@ -532,7 +551,7 @@ function renderHome(){
       const d=new Date(monday);d.setDate(monday.getDate()+i);
       const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
       const dayClasses=state.classes.filter(c=>c.dateIso===iso),active=dayClasses.filter(c=>c.status!=="Cancelled"),hasCancelled=dayClasses.some(c=>c.status==="Cancelled");
-      dayCounts.push({iso,count:active.length,hasCancelled});
+      dayCounts.push({iso,count:active.length,hasCancelled,hasExam:!!examOn(iso),hasTask:state.tasks.some(t=>!t.completed&&t.date===iso)});
     }
     const maxCount=Math.max(1,...dayCounts.map(d=>d.count));
     heatEl.innerHTML=dayCounts.map((d,i)=>{
@@ -542,7 +561,8 @@ function renderHome(){
         ?`color-mix(in srgb, var(--accent) ${Math.round(intensity*100)}%, var(--bg-panel))`
         :d.hasCancelled?"var(--danger-soft)":"var(--bg-panel)";
       const fg=d.count&&intensity>.55?"#fff":"var(--ink)";
-      return`<div class="wk-dot-col ${isToday?"is-today":""}"><span class="sq" style="background:${bg};color:${fg}">${d.count||""}</span><small>${dayLetters[i]}</small></div>`;
+      const marks=`${d.hasExam?'<i class="wk-dot-mark exam"></i>':""}${d.hasTask?'<i class="wk-dot-mark task"></i>':""}`;
+      return`<div class="wk-dot-col ${isToday?"is-today":""}"><span class="sq" style="background:${bg};color:${fg}">${d.count||""}${marks}</span><small>${dayLetters[i]}</small></div>`;
     }).join("");
   }
   const unread=state.notifications.filter(n=>!n.read);
@@ -652,7 +672,7 @@ function dayCardListHtml(classes,dayIso,opts={}){
   return html+'</div>';
 }
 function agendaHtml(classes,tasks,exam,dayIso){
-  if(!classes.length&&!tasks.length&&!exam)return'<div class="agenda-empty">Nothing scheduled for this day.</div>';
+  if(!classes.length&&!tasks.length&&!exam)return`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("spark")}</span><p>Free day</p><small>No classes, tasks or notes for this date.</small></div>`;
   let html="";
   if(exam){
     html+=`<section class="agenda-exam-section"><div class="agenda-group-title">End Term Exams</div>${Object.entries(exam.slots).map(([slot,entry])=>
@@ -710,7 +730,6 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
     if(e.target.closest(".calendar-day"))return;
     const firstIso=row.querySelector(".calendar-day")?.dataset.date;if(!firstIso)return;
     state.railStart=mondayIso(firstIso);setPlannerTab("calendar");renderCalendar();
-    const dlg=$("#monthViewDialog");if(dlg?.open)closeDialog(dlg);
   }));
   $$(".calendar-day").forEach(b=>{
     b.addEventListener("click",()=>{
@@ -718,7 +737,6 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
       state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);
       const dd=new Date(`${b.dataset.date}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
       setPlannerTab("calendar");renderCalendar();
-      const dlg=$("#monthViewDialog");if(dlg?.open)closeDialog(dlg);
       const targetIso=b.dataset.date;
       requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(targetIso)));
     });
@@ -777,10 +795,12 @@ function renderWeekPlanner(){
   const strip=$("#weekStrip");
   if(strip){
     const letters=["M","T","W","T","F","S","S"];
+    const weekPeak=Math.max(1,...days.map(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length));
     strip.innerHTML=days.map((iso,i)=>{
       const active=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled");
       const dots=active.slice(0,4).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
-      return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-open":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}">
+      const load=active.length?Math.max(.3,Math.min(1,active.length/weekPeak)):0;
+      return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-open":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" style="--fill:${load}">
         <span class="ws-dow">${letters[i]}</span>
         <span class="ws-num">${Number(iso.slice(8))}</span>
         <span class="ws-dots">${dots}</span>
@@ -863,9 +883,13 @@ function renderWeekPlanner(){
     renderCalendar();
     if(opening)requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
   }));
-  $$(".day-agenda",list).forEach(bindTaskRows);
+  /* dayAgenda nodes are rebuilt on every render (innerHTML swap), so a swipe binding
+     made once at startup goes stale the moment the day changes — rebind it here,
+     against the fresh nodes, every time. */
+  const daySwipe=el=>bindSwipeGesture(el,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
+  $$(".day-agenda",list).forEach(el=>{bindTaskRows(el);daySwipe(el)});
   const detailAgenda=detailEl?$("#dayAgenda",detailEl):null;
-  if(detailAgenda)bindTaskRows(detailAgenda);
+  if(detailAgenda){bindTaskRows(detailAgenda);daySwipe(detailAgenda)}
   /* The pinned day header sits directly below the pinned week header, whose height
      depends on the strip and the week's meta line, so it is measured rather than guessed. */
   const stickyEl=$(".week-sticky");
@@ -973,6 +997,7 @@ function renderLedger(){
     return `<article class="ledgerrow" data-ledger-kind="note" data-ledger-id="${esc(it.id)}"><span class="n">${num}</span><span class="txt">${esc(it.title)}</span><span class="k">${esc(tag)}</span><button class="ledger-del" type="button" data-ledger-del="note" data-ledger-id="${esc(it.id)}" aria-label="Delete note">×</button></article><div class="ledger-body" id="ledgerBody-${esc(it.id)}" hidden>${esc(it.body||"")}</div>`;
   }).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("note")+'</span><p>Nothing here yet</p><small>Tasks and notes you add will show up in this ledger.</small></div>';
   bindLedgerRows();
+  renderLedgerBadge();
 }
 function bindLedgerRows(){
   $$(".ledgerrow").forEach(row=>{
@@ -1847,9 +1872,6 @@ function bind(){
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
   $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$(`.accent-swatch[data-accent="${b.dataset.accent}"]`);if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
   $("#resetAccentButton")?.addEventListener("click",()=>{state.profile.accent="plum";save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$('.accent-swatch[data-accent="plum"]');if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
-  $("#topMoreButton")?.addEventListener("click",e=>{e.stopPropagation();const menu=$("#topMoreMenu"),open=menu.classList.toggle("open");$("#topMoreButton").setAttribute("aria-expanded",String(open))});
-  document.addEventListener("click",e=>{const menu=$("#topMoreMenu");if(menu&&menu.classList.contains("open")&&!e.target.closest("#topMoreMenu,#topMoreButton")){menu.classList.remove("open");$("#topMoreButton").setAttribute("aria-expanded","false")}});
-  $("#topMoreMenu")?.addEventListener("click",e=>{if(e.target.closest("button")){$("#topMoreMenu").classList.remove("open");$("#topMoreButton")?.setAttribute("aria-expanded","false")}});
   $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
   $("#timelinePrevDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)-1,"backward"));
   $("#timelineNextDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)+1,"forward"));
@@ -1885,7 +1907,6 @@ function bind(){
     openCalendarPage(next.dateIso);
     requestAnimationFrame(()=>{const card=$(`.day-cardlist-item[data-class-id="${CSS.escape(classIdentity(next))}"]`);if(card)card.scrollIntoView({behavior:"smooth",block:"center"})});
   });
-  bindSwipeGesture($("#dayAgenda"),direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
   $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
@@ -1914,13 +1935,6 @@ function bind(){
   });
   bindSwipeGesture($(".week-planner"),direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:56});
   $("#plannerExamStrip")?.addEventListener("click",()=>setPlannerTab("exams"));
-  bindDismissibleDialog($("#monthViewDialog"));
-  $("#closeMonthView")?.addEventListener("click",()=>closeDialog($("#monthViewDialog")));
-  $("#openMonthView")?.addEventListener("click",()=>{
-    const d=new Date(`${state.selectedDate||isoToday()}T12:00:00+05:30`);
-    state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
-    renderCalendar();$("#monthViewDialog").showModal();
-  });
   $("#toggleCourseFilter")?.addEventListener("click",()=>{state.courseFilterOpen=!state.courseFilterOpen;renderCalendar()});
   $("#weekScanEyebrow")?.addEventListener("click",()=>{
     state.railStart=mondayIso(isoToday());state.selectedDate=isoToday();
@@ -1978,7 +1992,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova62",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova63",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

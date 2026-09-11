@@ -228,16 +228,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .desktop-nav-item svg{width:17px;height:17px}
 .desktop-nav-item.active{background:var(--accent-soft);color:var(--accent)}
 .top-actions{display:flex;align-items:center;gap:6px;margin-left:auto;position:relative}
-.icon-button.top-more-button{display:none}
-.top-more-menu{display:contents}
 @media (max-width:400px){
-  .icon-button.top-more-button{display:grid}
-  .top-more-menu{
-    display:none;position:absolute;top:48px;right:0;z-index:50;
-    flex-direction:column;gap:6px;padding:8px;border-radius:var(--radius-md);
-    background:var(--bg-elevated);border:1px solid var(--border);box-shadow:var(--shadow-lg);
-  }
-  .top-more-menu.open{display:flex}
+  .top-actions{gap:5px}
+  .top-actions .icon-button{width:35px;height:35px}
 }
 .icon-button{
   display:grid;place-items:center;width:38px;height:38px;border-radius:11px;border:0;
@@ -252,7 +245,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .icon-button-lg svg{width:22px;height:22px}
 .notification-button{transition:box-shadow .3s ease}
 .notification-button:has(b:not([hidden])){box-shadow:0 0 0 1px var(--border), 0 0 10px -4px color-mix(in srgb, var(--danger) 30%, transparent)}
-.notification-button b{
+.notification-button b,#ledgerButton b{
   position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:99px;
   background:var(--danger);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;
   border:2px solid var(--bg-elevated);box-shadow:0 0 0 1px color-mix(in srgb, var(--danger) 45%, transparent), 0 0 4px color-mix(in srgb, var(--danger) 32%, transparent);
@@ -367,11 +360,18 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   transition:background .4s ease, border-color .4s ease, box-shadow .4s ease;
 }
 .hero-card::before{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.9;transition:opacity .6s ease;
   background:radial-gradient(circle at 100% -10%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 55%),
     radial-gradient(circle at -10% 110%, color-mix(in srgb, var(--accent-2) 10%, transparent) 0%, transparent 50%),
     radial-gradient(circle at 78% 42%, color-mix(in srgb, var(--focus-course,var(--accent)) 9%, transparent) 0%, transparent 40%);
 }
+/* Time-of-day tint — a faint shift in how strong the hero's ambient gradient
+   reads, so the card doesn't look identical at 9am and 9pm. Opacity-only, so
+   it never fights the accent/course colours themselves. */
+.hero-card[data-daypart="morning"]::before{opacity:1}
+.hero-card[data-daypart="midday"]::before{opacity:.85}
+.hero-card[data-daypart="evening"]::before{opacity:.75}
+.hero-card[data-daypart="night"]::before{opacity:.6}
 .hero-card::after{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -425,6 +425,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-ring .ring-track{stroke:var(--on-grad-line)}
 .hero-ring .ring-fill{stroke:var(--live);stroke-linecap:round;transition:stroke-dashoffset 30s linear;filter:drop-shadow(0 0 3px color-mix(in srgb, var(--live) 55%, transparent))}
 .hero-card.is-urgent .hero-ring .ring-fill{stroke:var(--amber)}
+.hero-live-progress{margin-top:12px;height:4px;border-radius:99px;background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, var(--on-grad-line))}
+.hero-live-progress span{display:block;height:100%;border-radius:inherit;background:var(--focus-course,var(--accent));transition:width 30s linear;box-shadow:0 0 6px -1px color-mix(in srgb, var(--focus-course,var(--accent)) 55%, transparent)}
 .hero-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
 .hero-pill{
   display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:99px;
@@ -686,11 +688,14 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wk-dot-col{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1}
 .wk-dot-col .sq{
   width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:800;transition:background .3s ease;
+  font-size:12px;font-weight:800;transition:background .3s ease;position:relative;
 }
 .wk-dot-col small{font-size:10px;font-weight:750;color:var(--ink-faint)}
 .wk-dot-col.is-today small{color:var(--accent)}
 .wk-dot-col.is-today .sq{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent)}
+.wk-dot-mark{position:absolute;bottom:-2px;width:5px;height:5px;border-radius:50%;border:1.5px solid var(--bg-panel)}
+.wk-dot-mark.exam{right:-2px;background:var(--danger)}
+.wk-dot-mark.task{left:-2px;background:var(--amber)}
 
 .home-col-main,.home-col-side{display:flex;flex-direction:column}
 @media (min-width:900px){
@@ -716,7 +721,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .subtab{
   display:flex;align-items:center;justify-content:center;gap:8px;flex:1;min-width:0;
   background:none;border:0;color:var(--ink-muted);cursor:pointer;
-  padding:11px 16px;border-radius:10px;font-size:14.5px;font-weight:750;
+  padding:11px 16px;border-radius:10px;font-family:var(--font-display);font-size:14.5px;font-weight:700;letter-spacing:-.01em;
   transition:background .2s ease,color .2s ease,box-shadow .2s ease;
 }
 .subtab svg{width:17px;height:17px}
@@ -725,16 +730,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:var(--shadow-sm),inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 @media (hover:hover){.subtab:not(.active):hover{background:color-mix(in srgb, var(--ink) 5%, transparent);color:var(--ink)}}
-/* The month opener sits beside the tabs at the size of a real control, not an icon
-   tucked into a tool row. */
-.month-open-button{
-  display:inline-flex;align-items:center;gap:8px;flex:none;cursor:pointer;
-  height:52px;padding:0 16px;border-radius:14px;font:inherit;font-size:14.5px;font-weight:750;
-  background:var(--bg-elevated);border:1px solid var(--border);color:var(--ink);
-  box-shadow:var(--shadow-sm);transition:transform .12s ease,border-color .2s ease;
-}
-.month-open-button svg{width:20px;height:20px;color:var(--accent)}
-.month-open-button:active{transform:scale(.96)}
 @media (hover:hover){.month-open-button:hover{border-color:color-mix(in srgb, var(--accent) 45%, var(--border))}}
 @media (max-width:379px){.month-open-button span:last-child{display:none}.month-open-button{padding:0 14px}}
 .campus-view{display:none}
@@ -1131,7 +1126,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px}
 .ws-cell{
   display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;
-  border:1px solid transparent;border-radius:10px;background:var(--bg-panel);
+  border:1px solid transparent;border-radius:10px;
+  background:color-mix(in srgb, var(--accent) calc(var(--fill,0) * 14%), var(--bg-panel));
   font:inherit;color:inherit;cursor:pointer;min-width:0;
   transition:background .2s ease,border-color .2s ease,transform .12s ease;
 }
