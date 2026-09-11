@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://script.google.com">
-  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     (function(){
       try{
@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260902-nova63">
+  <link rel="stylesheet" href="styles.css?v=20260902-nova64">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -134,9 +134,8 @@
               <div class="term-progress-bar" id="termProgressBarTrack">
                 <span id="termProgressBar"></span>
                 <i class="term-month-tick" id="termTickSep" style="left:0"></i>
-                <i class="term-month-tick" id="termTickOct" style="left:0"></i>
               </div>
-              <div class="term-month-labels"><span>AUG</span><span>SEP</span><span>OCT</span></div>
+              <div class="term-month-labels"><span>AUG</span><span>SEP</span></div>
               <p class="term-progress-line"><strong id="termDone">0</strong> done · <strong id="termLeft">0</strong> left · <strong id="termWeeksLeft">0</strong> weeks to go</p>
               <div class="term-overview-strip" id="termOverviewStrip" aria-hidden="true"></div>
               <button type="button" class="exam-strip" id="examCard" hidden aria-label="Next exam">
@@ -334,7 +333,7 @@
 
           <div class="panel section-peek-panel">
             <div class="settings-row-stack">
-              <div><strong>Peek section</strong><p>Look at the other section's Core classes — read-only, doesn't change your saved section above.</p></div>
+              <strong>Peek section</strong>
               <button type="button" class="secondary-button peek-toggle" id="sectionPeekToggle">Preview Section B</button>
             </div>
           </div>
@@ -381,16 +380,10 @@
           <section class="profile-view" data-profile-view="insights">
             <p class="profile-insight" id="profileInsight" hidden></p>
 
-            <div class="profile-stats-row">
-              <article class="panel sessions-panel">
-                <p class="rail-section-label">Sessions delivered</p>
-                <div id="sessionRings" class="session-rings"></div>
-              </article>
-              <article class="panel workload-panel">
-                <p class="rail-section-label">Workload by course</p>
-                <div class="workload-chart" id="workloadChart"></div>
-              </article>
-            </div>
+            <article class="panel sessions-panel">
+              <p class="rail-section-label">Sessions delivered</p>
+              <div id="sessionRings" class="session-rings"></div>
+            </article>
           </section>
         </div>
       </section>
@@ -411,11 +404,11 @@
         <div><p class="overline">UPDATES</p><h2>Notifications</h2></div>
         <button class="icon-button" id="closeNotifications"><span data-icon="close"></span></button>
       </div>
-      <div id="notificationList" class="notification-list"></div>
       <div class="notification-actions">
         <button class="secondary-button" id="markNotificationsRead">Mark all as read</button>
         <button class="danger-button" id="clearNotifications">Clear all</button>
       </div>
+      <div id="notificationList" class="notification-list"></div>
     </div>
   </aside>
 
@@ -476,7 +469,12 @@
         </div>
         <button type="button" class="icon-button sheet-close" id="closeClassAction" aria-label="Close class details"><span data-icon="close"></span></button>
       </header>
-      <div class="class-action-grid">
+      <form class="sheet-quick-task" id="sheetQuickTask" hidden>
+        <input id="sheetQuickTaskInput" placeholder="What do you need to do?" maxlength="120" required>
+        <button type="button" class="secondary-button small" id="sheetQuickTaskCancel">Cancel</button>
+        <button type="submit" class="primary-button small">Save</button>
+      </form>
+      <div class="class-action-grid" id="sheetActionGrid">
         <button type="button" class="class-action primary-action" id="sheetAddTask"><span data-icon="check"></span><b>Add task</b><small>Plan something for this class</small></button>
         <button type="button" class="class-action" id="sheetAddNote"><span data-icon="note"></span><b>Add note</b><small>Capture an important point</small></button>
         <a class="class-action" id="sheetAddCalendar" target="_blank" rel="noopener"><span data-icon="calendar"></span><b>Add to Calendar</b><small>Save the class to Google Calendar</small></a>
@@ -549,9 +547,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260902-nova63"></script>
-  <script src="exam-data.js?v=20260902-nova63"></script>
-  <script src="app.js?v=20260902-nova63"></script>
-  <script src="polish.js?v=20260902-nova63"></script>
+  <script src="campus-data.js?v=20260902-nova64"></script>
+  <script src="exam-data.js?v=20260902-nova64"></script>
+  <script src="app.js?v=20260902-nova64"></script>
+  <script src="polish.js?v=20260902-nova64"></script>
 </body>
 </html>

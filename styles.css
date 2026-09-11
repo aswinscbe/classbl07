@@ -5,39 +5,42 @@
    ========================================================================== */
 
 :root{
-  /* dark (default until profile/system says otherwise) */
-  --bg:#12151a;
-  --bg-elevated:#1a1e25;
-  --bg-panel:#161920;
-  --bg-raised:#20242c;
-  --ink:#eef1f5;
-  --ink-muted:#9aa3b0;
-  --ink-faint:#6b7280;
-  --accent:#5b7fd6;
-  --accent-2:#4a68b8;
-  --accent-soft:rgba(91,127,214,.16);
-  --live:#5c9c82;
-  --live-soft:rgba(92,156,130,.15);
-  --amber:#c99a4a;
-  --amber-soft:rgba(201,154,74,.15);
-  --danger:#c1615f;
-  --danger-soft:rgba(193,97,95,.16);
-  --border:#262b33;
-  --border-strong:#333a44;
-  --shadow-lg:0 22px 48px -24px rgba(0,0,0,.6);
-  --shadow-md:0 12px 26px -16px rgba(0,0,0,.5);
-  --shadow-sm:0 6px 14px -10px rgba(0,0,0,.45);
-  --grad:linear-gradient(135deg,#12172a 0%,#1f2b52 55%,#4a68b8 100%);
-  --grad-glow:rgba(30,42,80,.35);
-  --on-grad:#eef1f5;
-  --on-grad-muted:#b7c0cc;
-  --on-grad-line:rgba(255,255,255,.12);
+  /* dark (default until profile/system says otherwise) — a deeper, more
+     separated aubergine/plum ground so surfaces actually lift off each
+     other, plus a warmer plum-to-bronze accent pairing instead of the
+     previous flat blue-gray. */
+  --bg:#131019;
+  --bg-elevated:#221c2c;
+  --bg-panel:#1a1522;
+  --bg-raised:#2c2438;
+  --ink:#f4f1f8;
+  --ink-muted:#aca3bd;
+  --ink-faint:#7a7290;
+  --accent:#9884f0;
+  --accent-2:#c98a52;
+  --accent-soft:rgba(152,132,240,.18);
+  --live:#5fb98c;
+  --live-soft:rgba(95,185,140,.16);
+  --amber:#d9a54c;
+  --amber-soft:rgba(217,165,76,.16);
+  --danger:#e2726f;
+  --danger-soft:rgba(226,114,111,.16);
+  --border:#332c40;
+  --border-strong:#473d58;
+  --shadow-lg:0 24px 52px -22px rgba(0,0,0,.65);
+  --shadow-md:0 14px 30px -16px rgba(0,0,0,.55);
+  --shadow-sm:0 7px 16px -10px rgba(0,0,0,.5);
+  --grad:linear-gradient(135deg,#1c1526 0%,#3a2a4d 55%,#a9714a 100%);
+  --grad-glow:rgba(120,84,60,.4);
+  --on-grad:#f4f1f8;
+  --on-grad-muted:#cabfdc;
+  --on-grad-line:rgba(255,255,255,.13);
   --radius-xl:20px;
   --radius-lg:16px;
   --radius-md:14px;
   --radius-sm:10px;
-  --font:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  --font-display:"Lexend",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-display:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 
 :root:not([data-theme="light"]){
@@ -1075,6 +1078,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .settings-row strong{font-size:14.5px;font-weight:750;display:block}
 .settings-row p{margin:3px 0 0;font-size:12.5px;color:var(--ink-muted);font-weight:500}
 .settings-row-stack{display:flex;flex-direction:column;gap:12px}
+.section-peek-panel{padding:14px 18px}
+.section-peek-panel .settings-row-stack{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
 .settings-row-stack strong{font-size:14.5px;font-weight:750;display:block}
 .settings-row-stack p{margin:3px 0 0;font-size:12.5px;color:var(--ink-muted);font-weight:500}
 @keyframes peek-spin{to{transform:rotate(360deg)}}
@@ -1148,41 +1153,44 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   cursor:pointer;background:color-mix(in srgb, var(--accent) 14%, transparent);
 }
 @media (hover:hover){.week-scan-eyebrow.is-away:hover{background:color-mix(in srgb, var(--accent) 24%, transparent)}}
-.week-day-list{display:flex;flex-direction:column;gap:6px;margin-top:14px}
-/* Below 900px this is an accordion in a single column. At 900px+, master-detail: the
-   week stays a compact list on the left (every row collapsed, never inline-expanded)
-   and the selected day renders at full width on the right - a 7-column grid squeezed
-   real class cards into ~150px columns, which is not a size a class card fits in. */
+/* "Day Focus": one day's classes shown at a time below a fixed heading, picked from
+   the week strip. The heading pins in place under the week header — it lives outside
+   the scrolling content instead of inside it, so it is structurally unable to scroll
+   away, at every width. Below 900px the week-day-list (a secondary index of all 7
+   days) stays hidden; the strip up top is the only day-picker needed on a phone. */
+.week-day-list{display:none}
+.week-detail{
+  min-width:0;padding:18px 18px 6px;background:var(--bg-panel);
+  border-radius:var(--radius-lg);border:1px solid var(--border);margin-top:14px;
+}
+.week-detail-head{
+  position:sticky;top:calc(52px + var(--week-sticky-h, 150px));z-index:2;
+  margin:-18px -18px 14px;padding:16px 18px 14px;
+  background:var(--bg-panel);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm);
+}
+.week-detail-head h2{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.01em;margin:0}
+.week-detail-head .wp-day-meta{margin:4px 0 0}
+.week-detail.just-picked{animation:just-picked-flash .9s ease}
+/* Below 900px a 7-column grid squeezed real class cards into ~150px columns - names
+   wrapping four lines, chips spilling past the edge, badges and gaps deleted just to
+   make it fit. 900px+ instead gets master-detail: the week as a compact list on the
+   left, the selected day at full width on the right, so nothing about a class card
+   has to be shrunk or dropped to fit a column that was never wide enough for it. */
 @media (min-width:900px){
   .week-planner:has(.week-day-list.is-wide){display:grid;grid-template-columns:300px 1fr;align-items:start;gap:20px}
+  .week-day-list{display:flex;flex-direction:column;gap:6px;margin-top:14px}
   /* The left pane holds the whole week and stays short, so it can stay in view for the
-     length of the right pane - which is the real fix for "which day am I looking at":
-     the open row is always on screen, not just the heading above it. */
+     length of the right pane. */
   .week-pane-left{min-width:0;position:sticky;top:70px;align-self:start}
-  /* The left pane reads as a card because its rows carry their own background; the
-     detail pane had none of its own, so it looked like plain page content floating
-     next to a designed panel rather than the other half of one view. */
-  .week-detail{
-    min-width:0;padding:22px 26px;background:var(--bg-panel);
-    border-radius:var(--radius-lg);border:1px solid var(--border);
-  }
-  .week-day-list.is-wide .wp-day-body{display:none}
+  .week-detail{padding:22px 26px}
   .week-day-list.is-wide .wp-day.is-open{
     background:color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));
     border-color:color-mix(in srgb, var(--accent) 30%, transparent);
   }
   .week-day-list.is-wide .wp-day.is-open .wp-day-name{color:var(--accent)}
-  /* This heading is the only thing in the pane that names the day, and it was not
-     pinned - scroll a day with enough classes and it scrolls away with them, leaving a
-     column of cards with nothing saying which day they belong to. The left pane's
-     highlighted row is too easy to miss while attention is on the cards being scrolled. */
-  .week-detail-head{
-    position:sticky;top:70px;z-index:2;margin:-22px -26px 14px;padding:20px 26px 14px;
-    background:var(--bg-panel);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-    border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm);
-  }
-  .week-detail-head h2{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0}
-  .week-detail-head .wp-day-meta{margin:4px 0 0}
+  .week-detail-head{top:70px;margin:-22px -26px 14px;padding:20px 26px 14px}
+  .week-detail-head h2{font-size:22px}
   /* A day's two or three classes stretched edge-to-edge of a pane built to also fit a
      seven-class day read as sparse and unfinished - a comfortable reading width, not
      the full column, however wide the window is. */
@@ -1233,9 +1241,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wp-day-right{display:flex;align-items:center;gap:9px;margin-left:auto;flex:none}
 .wp-count{font-size:11.5px;font-weight:700;color:var(--ink-muted);white-space:nowrap}
 .wp-date{font-size:11.5px;font-weight:650;color:var(--ink-faint);white-space:nowrap}
-.wp-caret{display:flex;color:var(--ink-faint);flex:none;transition:transform .28s cubic-bezier(.22,1,.36,1)}
-.wp-caret svg{width:15px;height:15px}
-.wp-day.is-open .wp-caret{transform:rotate(90deg);color:var(--accent)}
 
 .wp-day.is-today{
   border-color:transparent;
@@ -1256,16 +1261,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wp-day.is-open.is-today{border-color:transparent}
 @media (hover:hover){.wp-day:not(.is-open) .wp-day-head:hover{background:color-mix(in srgb, var(--ink) 4%, transparent)}}
 .wp-day-head:active{transform:scale(.995)}
-
-/* Scrolling a day's classes should never leave you wondering which day you are in, so
-   the open day's header pins under the week header. */
-.wp-day.is-open .wp-day-head{
-  position:sticky;top:calc(52px + var(--week-sticky-h, 150px));z-index:4;
-  background:inherit;border-radius:var(--radius-md) var(--radius-md) 0 0;
-}
-.wp-day-body{padding:0 13px 14px;animation:wp-open .28s cubic-bezier(.22,1,.36,1) both}
-@keyframes wp-open{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion: reduce){.wp-day-body{animation:none}}
 .wp-day-meta{margin:0 0 10px;font-size:12px;font-weight:650;color:var(--ink-muted)}
 
 /* Next exam, surfaced in the calendar instead of living only behind the Exams tab. */
@@ -1474,7 +1469,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .notification-item.unread .notification-row strong::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:7px;vertical-align:middle}
 .notification-item p{margin:4px 0 0;font-size:12.5px;color:var(--ink-muted);font-weight:500}
 .notification-item time{display:block;margin-top:6px;font-size:11px;color:var(--ink-faint);font-weight:600}
-.notification-actions{display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.notification-actions{display:flex;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
 .notification-actions button{flex:1}
 .badge{font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
 .badge-added{color:var(--live)}
@@ -1597,6 +1592,14 @@ dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
 .class-action.primary-action{background:var(--accent);border-color:transparent;color:#fff}
 .class-action.primary-action svg{color:#fff}
 .class-action.primary-action small{color:rgba(255,255,255,.8)}
+
+.sheet-quick-task{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+.sheet-quick-task input{
+  flex:1 1 100%;padding:13px 14px;border-radius:var(--radius-md);background:var(--bg-panel);border:1px solid var(--border);
+  color:var(--ink);font:inherit;font-size:14.5px;
+}
+.sheet-quick-task input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.sheet-quick-task>button{flex:1;justify-content:center}
 
 /* ============ Term heatmap dialog ============ */
 .term-heatmap-grid{display:flex;flex-direction:column;gap:8px;margin-top:14px;max-height:60vh;overflow-y:auto}

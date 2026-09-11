@@ -106,7 +106,7 @@ function renderThemeToggleIcon(theme){
   setTimeout(()=>span.classList.remove("icon-morph"),320);
 }
 const ACCENT_PRESETS={
-  plum:{name:"Slate Blue",dark:{accent:"#5b7fd6",accent2:"#4a68b8"},light:{accent:"#4a68b8",accent2:"#3d55a0"},grad:"linear-gradient(135deg,#12172a 0%,#1f2b52 55%,#4a68b8 100%)",glow:"#1f2b52"},
+  plum:{name:"Plum Bronze",dark:{accent:"#9884f0",accent2:"#c98a52"},light:{accent:"#4a68b8",accent2:"#3d55a0"},grad:"linear-gradient(135deg,#1c1526 0%,#3a2a4d 55%,#a9714a 100%)",glow:"#7a5438"},
   teal:{name:"Ocean Teal",dark:{accent:"#4fa3b0",accent2:"#4fb08a"},light:{accent:"#2f7a8c",accent2:"#2f8c68"},grad:"linear-gradient(135deg,#0e2530 0%,#155066 55%,#2f8c68 100%)",glow:"#155066"},
   crimson:{name:"Crimson Ember",dark:{accent:"#c15a6e",accent2:"#d98a4f"},light:{accent:"#a83f52",accent2:"#a5673f"},grad:"linear-gradient(135deg,#2a1114 0%,#5e2a35 55%,#a5673f 100%)",glow:"#5e2a35"},
   indigo:{name:"Indigo Slate",dark:{accent:"#6a7bc9",accent2:"#4fb0a0"},light:{accent:"#4a5aa8",accent2:"#2f8c7e"},grad:"linear-gradient(135deg,#151a35 0%,#2a3566 55%,#2f8c7e 100%)",glow:"#2a3566"},
@@ -281,7 +281,7 @@ function renderHomeLegend(){
 }
 function renderTermOverviewStrip(){
   const el=$("#termOverviewStrip");if(!el)return;
-  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30"),now=new Date();
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-09-30T23:59:59+05:30"),now=new Date();
   const weeks=[];
   let cur=new Date(termStart);cur.setHours(0,0,0,0);cur.setDate(cur.getDate()-((cur.getDay()+6)%7));
   while(cur<termEnd){
@@ -524,7 +524,7 @@ function renderHome(){
   $("#progressSummary").textContent=(timelineIso===today?`${completed} / ${activeTimelineClasses.length}`:`${activeTimelineClasses.length} ${activeTimelineClasses.length===1?"class":"classes"}`)+hoursLabel;
   const monday=new Date(`${mondayIso(today)}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
   /* Term-wide progress — classes completed/remaining and weeks left across the full term window. */
-  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-09-30T23:59:59+05:30");
   const termAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=termStart&&dateTime(c,"startTime")<=termEnd);
   const termDone=termAll.filter(c=>dateTime(c,"endTime")<now).length,termLeft=Math.max(0,termAll.length-termDone);
   const termPct=termAll.length?Math.round(termDone/termAll.length*100):0,termWeeksLeft=Math.max(0,Math.ceil((termEnd-now)/(7*24*3600000)));
@@ -538,10 +538,9 @@ function renderHome(){
   }
   animateCount($("#termDone"),termDone);animateCount($("#termLeft"),termLeft);animateCount($("#termWeeksLeft"),termWeeksLeft);
   renderTermOverviewStrip();renderWeekDigest();renderHomeLegend();
-  const termTotalMs=termEnd-termStart,sep1=new Date("2026-09-01T00:00:00+05:30"),oct1=new Date("2026-10-01T00:00:00+05:30");
-  const sepTick=$("#termTickSep"),octTick=$("#termTickOct");
+  const termTotalMs=termEnd-termStart,sep1=new Date("2026-09-01T00:00:00+05:30");
+  const sepTick=$("#termTickSep");
   if(sepTick)sepTick.style.left=`${Math.max(0,Math.min(100,((sep1-termStart)/termTotalMs)*100))}%`;
-  if(octTick)octTick.style.left=`${Math.max(0,Math.min(100,((oct1-termStart)/termTotalMs)*100))}%`;
   /* Week intensity dots — one column per day Mon-Sun, a color-fill square by class count instead of a bar-height chart. */
   const dayLetters=["M","T","W","T","F","S","S"];
   const heatEl=$("#weekHeatmap");
@@ -609,7 +608,7 @@ function agendaTag(c){
 function renderTermHeatmap(){
   renderTermDayGrid("#termHeatmapDayGrid");
   const grid=$("#termHeatmapGrid");if(!grid)return;
-  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-09-30T23:59:59+05:30");
   const weeks=[];
   let cur=new Date(termStart);cur.setHours(0,0,0,0);cur.setDate(cur.getDate()-((cur.getDay()+6)%7));
   const now=new Date();let maxCount=0;
@@ -769,12 +768,10 @@ function visibleDayClasses(iso){
   return state.calendarHighlight?shown.filter(c=>canonical(c.code)===state.calendarHighlight):shown;
 }
 function scrollToPickedDay(iso){
-  const wide=matchMedia("(min-width:900px)").matches;
-  const target=wide?$("#weekDetail"):$(`.wp-day-head[data-date="${iso}"]`);
+  const target=$("#weekDetail");
   if(!target)return;
-  target.scrollIntoView({behavior:"smooth",block:wide?"start":"center"});
-  const flashEl=wide?target:target.closest(".wp-day");
-  if(flashEl){flashEl.classList.remove("just-picked");void flashEl.offsetWidth;flashEl.classList.add("just-picked")}
+  target.scrollIntoView({behavior:"smooth",block:"start"});
+  target.classList.remove("just-picked");void target.offsetWidth;target.classList.add("just-picked");
 }
 function renderWeekPlanner(){
   const list=$("#weekScanList");if(!list)return;
@@ -816,82 +813,67 @@ function renderWeekPlanner(){
   }
   const eyebrowBtn=$("#weekScanEyebrow");
   if(eyebrowBtn)eyebrowBtn.classList.toggle("is-away",weekOffset!==0);
-  /* Below 900px this is an accordion: one column, the open day expands in place. At
-     900px+ a 7-column grid squeezed real class cards into ~150px columns - names
-     wrapping four lines, chips spilling past the edge, badges and gaps deleted just to
-     make it fit. Wide screens instead get master-detail: the week stays a compact list
-     on the left, the selected day renders at full width on the right, so nothing about
-     a class card has to be shrunk or dropped to fit a column that was never wide enough
-     for it. */
+  /* "Day Focus": one day shown at a time, picked from the week strip above. At 900px+
+     a compact list of all 7 days also renders on the left as a secondary index, but the
+     right-hand detail pane below is the one real view at every width — no accordion,
+     no open/close state, so there is no longer a way for "which day am I on" to depend
+     on scroll position: the date lives in a fixed heading, not inside the thing that
+     scrolls. */
   const wideWeek=matchMedia("(min-width:900px)").matches;
   list.classList.toggle("is-wide",wideWeek);
-  const detailIso=(wideWeek&&days.includes(state.selectedDate))?state.selectedDate:(wideWeek?today:null);
+  const detailIso=days.includes(state.selectedDate)?state.selectedDate:today;
   list.innerHTML=days.map((iso,dayIdx)=>{
     const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
     const active=dayAll.filter(c=>c.status!=="Cancelled");
     const isToday=iso===today,isPast=iso<today,exam=examOn(iso);
-    const isOpen=wideWeek?iso===detailIso:iso===state.selectedDate;
+    const isOpen=iso===detailIso;
     const done=active.filter(c=>now>=dateTime(c,"endTime")).length;
     const countText=active.length?(isToday?`${done}/${active.length}`:`${active.length} ${active.length===1?"class":"classes"}`):(exam?"Exam day":"");
     /* Course colours on the collapsed row, so a glance says which subjects a day holds
        rather than only how many. */
     const dots=active.slice(0,5).map(c=>`<i style="--course:${colorFor(c.code)}"></i>`).join("");
-    const head=`<button type="button" class="wp-day-head" data-date="${iso}" aria-expanded="${isOpen}">
+    const head=`<button type="button" class="wp-day-head" data-date="${iso}" aria-current="${isOpen}">
       <span class="wp-day-name">${esc(fmtDate(iso,{weekday:"long"}))}${isToday?'<b class="wp-today-badge">TODAY</b>':""}</span>
       ${dots?`<span class="wp-dots">${dots}</span>`:""}
       <span class="wp-day-right">
         ${countText?`<span class="wp-count">${esc(countText)}</span>`:""}
         <span class="wp-date">${esc(fmtDate(iso,{day:"numeric",month:"short"}))}</span>
-        <span class="wp-caret">${icon("chevron-right")}</span>
       </span>
     </button>`;
-    let body="";
-    if(isOpen&&!wideWeek){
-      const visible=visibleDayClasses(iso),tasks=state.tasks.filter(t=>t.date===iso);
-      const vActive=visible.filter(c=>c.status!=="Cancelled");
-      const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
-      const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"";
-      body=`<div class="wp-day-body">
-        ${meta?`<p class="wp-day-meta">${esc(meta)}</p>`:""}
-        <div id="dayAgenda" class="schedule-list day-agenda">${agendaHtml(visible,tasks,exam,iso)}</div>
-      </div>`;
-    }
-    return`<section class="wp-day ${isToday?"is-today":""} ${isPast?"is-past":""} ${isOpen?"is-open":""} ${!active.length?"is-free":""} ${exam?"has-exam":""}" style="--i:${dayIdx}">${head}${body}</section>`;
+    return`<section class="wp-day ${isToday?"is-today":""} ${isPast?"is-past":""} ${isOpen?"is-open":""} ${!active.length?"is-free":""} ${exam?"has-exam":""}" style="--i:${dayIdx}">${head}</section>`;
   }).join("");
 
   const detailEl=$("#weekDetail");
   if(detailEl){
-    if(wideWeek&&detailIso){
-      const visible=visibleDayClasses(detailIso),tasks=state.tasks.filter(t=>t.date===detailIso);
-      const vActive=visible.filter(c=>c.status!=="Cancelled");
-      const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
-      const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"Free day";
-      detailEl.innerHTML=`
-        <div class="week-detail-head">
-          <h2>${esc(fmtDate(detailIso,{weekday:"long",day:"numeric",month:"long"}))}</h2>
-          <p class="wp-day-meta">${esc(meta)}</p>
-        </div>
-        <div id="dayAgenda" class="schedule-list day-agenda">${agendaHtml(visible,tasks,examOn(detailIso),detailIso)}</div>`;
-    }else detailEl.innerHTML="";
+    const visible=visibleDayClasses(detailIso),tasks=state.tasks.filter(t=>t.date===detailIso);
+    const vActive=visible.filter(c=>c.status!=="Cancelled");
+    const mins=vActive.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
+    const meta=vActive.length?`${vActive.length} ${vActive.length===1?"class":"classes"} · ${compactDuration(mins)}`:"Free day";
+    detailEl.innerHTML=`
+      <div class="week-detail-head">
+        <h2>${esc(fmtDate(detailIso,{weekday:"long",day:"numeric",month:"long"}))}</h2>
+        <p class="wp-day-meta">${esc(meta)}</p>
+      </div>
+      <div id="dayAgenda" class="schedule-list day-agenda">${agendaHtml(visible,tasks,examOn(detailIso),detailIso)}</div>`;
   }
 
   $$(".wp-day-head",list).forEach(b=>b.addEventListener("click",()=>{
     const iso=b.dataset.date;
-    const opening=wideWeek||state.selectedDate!==iso;
-    state.selectedDate=wideWeek?iso:(state.selectedDate===iso?"":iso);
+    state.selectedDate=iso;
     const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
     renderCalendar();
-    if(opening)requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
+    requestAnimationFrame(()=>requestAnimationFrame(()=>scrollToPickedDay(iso)));
   }));
-  /* dayAgenda nodes are rebuilt on every render (innerHTML swap), so a swipe binding
-     made once at startup goes stale the moment the day changes — rebind it here,
-     against the fresh nodes, every time. */
-  const daySwipe=el=>bindSwipeGesture(el,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
-  $$(".day-agenda",list).forEach(el=>{bindTaskRows(el);daySwipe(el)});
+  /* dayAgenda is rebuilt on every render (innerHTML swap), so a swipe binding made
+     once at startup goes stale the moment the day changes — rebind it here, against
+     the fresh node, every time. */
   const detailAgenda=detailEl?$("#dayAgenda",detailEl):null;
-  if(detailAgenda){bindTaskRows(detailAgenda);daySwipe(detailAgenda)}
-  /* The pinned day header sits directly below the pinned week header, whose height
-     depends on the strip and the week's meta line, so it is measured rather than guessed. */
+  if(detailAgenda){
+    bindTaskRows(detailAgenda);
+    bindSwipeGesture(detailAgenda,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46});
+  }
+  /* The detail heading pins directly below the week header, whose height depends on
+     the strip and the week's meta line, so it is measured rather than guessed. */
   const stickyEl=$(".week-sticky");
   if(stickyEl)document.documentElement.style.setProperty("--week-sticky-h",`${Math.round(stickyEl.offsetHeight)}px`);
   renderPlannerExamStrip();
@@ -1419,7 +1401,7 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
 }
 function renderTermRing(){
   const fill=$("#termRingFill");if(!fill)return;
-  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30"),now=new Date();
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-09-30T23:59:59+05:30"),now=new Date();
   const totalMs=termEnd-termStart,elapsedMs=Math.max(0,Math.min(totalMs,now-termStart));
   const pct=totalMs>0?Math.round(elapsedMs/totalMs*100):0,daysLeft=Math.max(0,Math.ceil((termEnd-now)/86400000));
   fill.style.setProperty("--pct",pct);
@@ -1451,7 +1433,7 @@ function renderSessionRings(){
 }
 function renderTermDayGrid(selector){
   const grid=$(selector);if(!grid)return;
-  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-10-18T23:59:59+05:30");
+  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-09-30T23:59:59+05:30");
   const start=new Date(termStart);start.setHours(0,0,0,0);start.setDate(start.getDate()-((start.getDay()+6)%7));
   const todayIso=isoToday();
   const perDay={};
@@ -1577,6 +1559,7 @@ function openClassSheet(c){
     if(c.status!=="Cancelled"){calendarLink.hidden=false;calendarLink.href=googleUrl(c)}
     else calendarLink.hidden=true;
   }
+  $("#sheetQuickTask").hidden=true;$("#sheetActionGrid").hidden=false;
   $("#classActionDialog").showModal();
 }
 function activeSheetClass(){return state.classes.find(x=>classIdentity(x)===activeSheetClassId)}
@@ -1914,11 +1897,27 @@ function bind(){
   bindDismissibleDialog($("#termHeatmapDialog"));
   bindDismissibleDialog($("#classActionDialog"));
   $("#closeClassAction")?.addEventListener("click",()=>closeDialog($("#classActionDialog")));
+  /* Adding a task for a class used to hop through a second dialog asking for a
+     title, a course and a date — all three of which are already known from the
+     class just tapped. An inline field in the same sheet does the same job in
+     one step instead of two. */
   $("#sheetAddTask")?.addEventListener("click",()=>{
     const c=activeSheetClass();if(!c)return;
+    $("#sheetActionGrid").hidden=true;
+    const form=$("#sheetQuickTask");form.hidden=false;
+    const input=$("#sheetQuickTaskInput");input.value="";
+    requestAnimationFrame(()=>input.focus());
+  });
+  $("#sheetQuickTaskCancel")?.addEventListener("click",()=>{
+    $("#sheetQuickTask").hidden=true;$("#sheetActionGrid").hidden=false;
+  });
+  $("#sheetQuickTask")?.addEventListener("submit",e=>{
+    e.preventDefault();
+    const c=activeSheetClass();if(!c)return;
+    const title=$("#sheetQuickTaskInput").value.trim();if(!title)return;
+    addTask(title,canonical(c.code),c.dateIso);
+    showToast("Task added");
     closeDialog($("#classActionDialog"));
-    $("#taskTitle").value="";$("#taskCourse").value=canonical(c.code);$("#taskDate").value=c.dateIso;
-    clearDialogValidation($("#taskDialog"));$("#taskDialog").showModal();
   });
   $("#sheetAddNote")?.addEventListener("click",()=>{
     const c=activeSheetClass();if(!c)return;
@@ -1992,7 +1991,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova63",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova64",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
