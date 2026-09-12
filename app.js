@@ -868,7 +868,7 @@ function renderDayFocus(iso){
       labels+=`<span class="dr-tlab" style="left:${pt.pct}%">${esc(pt.text)}</span>`;
     });
     const nowMark=(isToday&&nowMin>=dayStart&&nowMin<=dayEnd)?`<div class="dr-now" style="left:${((nowMin-dayStart)/span)*100}%"></div>`:"";
-    rulerEl.innerHTML=`<div class="dr-ticklabels">${labels}</div><div class="dr-track">${segs}${nowMark}</div>`;
+    rulerEl.innerHTML=`<div class="dr-track">${segs}${nowMark}</div><div class="dr-ticklabels">${labels}</div>`;
     $$(".dr-seg",rulerEl).forEach(b=>b.addEventListener("click",()=>{
       const c=state.classes.find(x=>classIdentity(x)===b.dataset.classId);if(c)openClassSheet(c);
     }));
@@ -2034,7 +2034,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova87",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova88",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

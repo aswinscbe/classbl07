@@ -1264,12 +1264,14 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .day-focus-sub{margin:4px 0 0;font-size:14px;font-weight:600;color:var(--ink-muted);display:flex;align-items:center;gap:7px}
 .dfs-today{font-size:10px;font-weight:800;letter-spacing:.06em;color:#fff;background:var(--accent);border-radius:99px;padding:3px 8px}
 
-.day-ruler{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 14px 12px;margin-bottom:18px}
-.dr-ticklabels{position:relative;height:14px;margin-bottom:6px}
+/* Ticklabels now sit below the track (not above) so the "now" beacon has clean
+   room to float above the track without crowding into the time labels. */
+.day-ruler{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-md);padding:22px 14px 12px;margin-bottom:18px}
+.dr-ticklabels{position:relative;height:14px;margin-top:8px}
 .dr-tlab{position:absolute;transform:translateX(-50%);font-size:10px;font-weight:700;color:var(--ink-faint);white-space:nowrap}
 .dr-tlab:first-child{transform:none}
 .dr-tlab:last-child{transform:translateX(-100%)}
-.dr-track{position:relative;height:34px;border-radius:10px;background:color-mix(in srgb, var(--ink) 5%, transparent)}
+.dr-track{position:relative;height:34px;border-radius:10px;background:color-mix(in srgb, var(--ink) 5%, transparent);overflow:visible}
 .dr-seg{
   position:absolute;top:0;bottom:0;border:0;border-radius:7px;padding:0 8px;
   display:flex;align-items:center;overflow:hidden;cursor:pointer;font:inherit;
@@ -1280,8 +1282,18 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .dr-seg.current{opacity:1;box-shadow:0 0 0 2px color-mix(in srgb, var(--course,var(--accent)) 45%, transparent)}
 .dr-seg.upcoming{opacity:.65}
 .dr-gap{position:absolute;top:9px;bottom:9px;border-radius:4px;background:repeating-linear-gradient(115deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 5px, transparent 5px 10px)}
-.dr-now{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--live);box-shadow:0 0 8px var(--live);z-index:2}
-.dr-now::before{content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--live);box-shadow:0 0 0 2px var(--bg-panel)}
+/* Same pulsing-beacon language as the Hero ruler's now-marker — floats above the
+   track instead of a line running through the segments. */
+.dr-now{position:absolute;top:-15px;transform:translateX(-50%);width:1px;z-index:2}
+.dr-now::before{
+  content:"";position:absolute;top:0;left:0;width:9px;height:9px;margin-left:-4.5px;
+  border-radius:50%;background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);z-index:1;
+}
+.dr-now::after{
+  content:"";position:absolute;top:-6px;left:-6px;width:21px;height:21px;
+  border-radius:50%;border:1.5px solid var(--live);animation:beacon-pulse 1.8s ease-out infinite;
+}
+@media(prefers-reduced-motion: reduce){.dr-now::after{animation:none;opacity:0}}
 
 .day-earlier{margin-bottom:16px}
 .de-label{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--ink-faint);font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
@@ -1313,11 +1325,17 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    plain static rod — it creeps down the line as the wait between classes ticks by. */
 .pt-progress-dot{
   position:absolute;left:50%;width:9px;height:9px;border-radius:50%;
-  transform:translate(-50%,-50%);background:var(--live);
+  transform:translate(-50%,-50%);background:var(--live);z-index:1;
   box-shadow:0 0 0 3px var(--bg-panel), 0 0 8px 1px color-mix(in srgb, var(--live) 70%, transparent);
   transition:top 1s linear;
 }
-@media(prefers-reduced-motion: reduce){.pt-progress-dot{transition:none}}
+/* A pulsing halo instead of a static dot — the same "this is live" language as the
+   Hero/Planner ruler beacons and the timeline's own live node. */
+.pt-progress-dot::after{
+  content:"";position:absolute;top:50%;left:50%;width:21px;height:21px;margin:-10.5px 0 0 -10.5px;
+  border-radius:50%;border:1.5px solid var(--live);animation:beacon-pulse 1.8s ease-out infinite;
+}
+@media(prefers-reduced-motion: reduce){.pt-progress-dot{transition:none}.pt-progress-dot::after{animation:none;opacity:0}}
 .pt-node{position:relative;width:13px;height:13px;border-radius:50%;background:var(--dot,var(--accent));box-shadow:0 0 0 4px var(--bg-panel), 0 0 10px color-mix(in srgb, var(--dot,var(--accent)) 65%, transparent);margin-top:3px}
 .pt-node.live{animation:pt-pulse 1.8s ease-in-out infinite}
 @keyframes pt-pulse{0%,100%{box-shadow:0 0 0 4px var(--bg-panel),0 0 0 0 color-mix(in srgb, var(--dot) 55%, transparent)}50%{box-shadow:0 0 0 4px var(--bg-panel),0 0 13px 3px color-mix(in srgb, var(--dot) 65%, transparent)}}
