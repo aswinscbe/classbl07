@@ -466,10 +466,10 @@ function renderHome(){
     else if(onBreak){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`Starts in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     if(!isToday)pills.push(heroPill(`${dayList.length} ${dayList.length===1?"class":"classes"} that day`));
-    pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`,"muted"));
-    if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`,"muted"));
+    pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`,"info"));
+    if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`,"info"));
     const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
-    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${heroSessionTotal}`,"muted"));
+    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${heroSessionTotal}`,"info"));
     if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`,"accent"))
     $("#heroPills").innerHTML=pills.join("");
     const dayLabel=shown.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(shown.dateIso,{weekday:"short",day:"numeric",month:"short"});
@@ -831,7 +831,7 @@ function renderWeekPlanner(){
       return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-selected":""} ${!active.length?"is-zero":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}">
         <span class="ws-dow">${letters[i]}</span>
         <span class="ws-num">${Number(iso.slice(8))}</span>
-        <span class="ws-cnt">${active.length||"–"}</span>
+        ${active.length?`<span class="ws-dot" style="background:${colorFor(active[0].code)}"></span>`:'<span class="ws-dot is-empty"></span>'}
       </button>`;
     }).join("");
     $$(".ws-cell",strip).forEach(b=>b.addEventListener("click",()=>{
@@ -2063,7 +2063,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova96",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova97",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

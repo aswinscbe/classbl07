@@ -468,9 +468,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    the flex row instead of overflowing it — a flex item's default min-width:auto
    refuses to shrink below its unwrapped content width, and since .hero-card clips
    overflow, that meant a long name silently got cut off at the card's edge. */
-.hero-card h2#focusTitle{font-size:28px;font-weight:800;line-height:1.2;margin:0;color:var(--on-grad);letter-spacing:-.015em;flex:1 1 auto;min-width:0}
-.hero-time-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
-.hero-time{font-family:var(--font-display);font-size:clamp(20px,5vw,23px);font-weight:700;letter-spacing:-.01em;line-height:1;color:var(--on-grad-muted);white-space:nowrap;min-width:0}
+.hero-card h2#focusTitle{font-size:26px;font-weight:800;line-height:1.2;margin:0;color:var(--on-grad);letter-spacing:-.015em;flex:1 1 auto;min-width:0}
+.hero-time-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}
+.hero-time{font-family:var(--font-display);font-size:clamp(23px,6vw,27px);font-weight:800;letter-spacing:-.015em;line-height:1;color:var(--on-grad);white-space:nowrap;min-width:0}
 .hero-ring{position:relative;width:36px;height:36px;flex:none}
 .hero-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .hero-ring circle{fill:none;stroke-width:3.5}
@@ -493,13 +493,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:color-mix(in srgb, var(--focus-course,var(--accent)) 18%, transparent);color:var(--focus-course,var(--accent));font-weight:800;
   box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent), 0 0 0 1px color-mix(in srgb, var(--focus-course,var(--accent)) 26%, transparent), 0 0 10px -3px color-mix(in srgb, var(--focus-course,var(--accent)) 50%, transparent);
 }
-/* Venue/faculty/session are useful but static — dial them back so they don't
-   compete with the countdown and "what's next" pills, which are the two
-   pieces of info that actually change and matter most right now. */
-.hero-pill.muted{
-  background:transparent;box-shadow:none;color:var(--on-grad-muted);font-size:12px;font-weight:500;
-  padding:5px 9px 5px 8px;opacity:.8;
+/* Venue/faculty/session matter just as much as the countdown, but they answer a
+   different question ("where/what"), so they get their own identity — the
+   palette's warm copper accent — instead of either fading into the background
+   or being mistaken for the course-colored time-sensitive pills. */
+.hero-pill.info{
+  background:color-mix(in srgb, var(--accent-2) 13%, var(--hero-chip-bg));
+  color:var(--on-grad);font-weight:700;gap:6px;
+  box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent-2) 20%, transparent);
 }
+.hero-pill.info svg{color:var(--accent-2)}
 .hero-card.is-empty{color:var(--on-grad)}
 /* A live time ruler for the shown day, not just a proportion bar: hour ticks make it
    read as actual clock time, and each block is tappable straight into that class. */
@@ -701,8 +704,22 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .day-cardlist-item:active{transform:scale(.99)}
 .day-cardlist-item::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:2px;background:var(--course,var(--accent))}
-.day-cardlist-item.current{background:color-mix(in srgb, var(--course,var(--accent)) 14%, var(--bg-panel));border-color:color-mix(in srgb, var(--course,var(--accent)) 34%, transparent)}
+/* Status drives visual weight, not just tint: the live class is the one thing
+   that actually matters right now, so it gets a bigger card and bigger type;
+   a finished class needs almost none of that, so it shrinks down instead of
+   just fading via opacity. */
+.day-cardlist-item.current{
+  background:color-mix(in srgb, var(--course,var(--accent)) 14%, var(--bg-panel));border-color:color-mix(in srgb, var(--course,var(--accent)) 34%, transparent);
+  padding:16px 14px 16px 18px;
+}
 .day-cardlist-item.current::before{width:4px;box-shadow:0 0 0 3px color-mix(in srgb, var(--course) 18%, transparent)}
+.day-cardlist-item.current .day-cardlist-time{font-size:24px}
+.day-cardlist-item.current .timeline-course-line strong{font-size:18px}
+.day-cardlist-item.completed{padding:8px 10px 8px 14px}
+.day-cardlist-item.completed .day-cardlist-time{font-size:15px;gap:3px}
+.day-cardlist-item.completed .day-cardlist-time small{font-size:11px}
+.day-cardlist-item.completed .timeline-course-line strong{font-size:13px}
+.day-cardlist-item.completed .dc-chip,.day-cardlist-item.completed .dc-next-occurrence{display:none}
 .day-cardlist-time{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums;min-width:66px;line-height:1.15;flex:none;display:flex;flex-direction:column;gap:6px}
 .day-cardlist-time small{display:block;font-size:13px;font-weight:700;color:var(--ink-muted);margin-top:2px;font-variant-numeric:tabular-nums}
 .day-cardlist-time .status-tag{margin-top:3px}
@@ -805,7 +822,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   .home-layout{max-width:900px;margin-left:auto;margin-right:auto}
   .home-main{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
   .home-col-side{position:sticky;top:88px}
-  .hero-time{font-size:25px}
+  .hero-time{font-size:30px}
 }
 
 /* ============ Subtabs (Campus) ============ */
@@ -1240,22 +1257,20 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 
 .week-strip-row{display:flex;align-items:center;gap:6px}
 .week-strip-row .week-strip{flex:1;margin-top:0}
-.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:14px}
+.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px}
 .ws-cell{
-  display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 2px 8px;
-  border:1.5px solid transparent;border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:12px 2px 11px;
+  border:1.5px solid transparent;border-radius:16px;
   background:var(--bg-panel);
   font:inherit;color:inherit;cursor:pointer;min-width:0;
   transition:background .2s ease,border-color .2s ease,transform .12s ease;
 }
 .ws-cell:active{transform:scale(.94)}
-.ws-dow{font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint);line-height:1}
-.ws-num{font-family:var(--font-display);font-size:16px;font-weight:700;line-height:1.2}
-.ws-cnt{
-  font-size:10px;font-weight:800;color:var(--ink-faint);background:var(--bg-elevated);
-  border-radius:99px;padding:1.5px 7px;min-width:16px;text-align:center;
-}
-.ws-cell.is-zero .ws-cnt{opacity:.4}
+.ws-dow{font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint);line-height:1}
+.ws-num{font-family:var(--font-display);font-size:18px;font-weight:700;line-height:1}
+.ws-dot{width:5px;height:5px;border-radius:50%;box-shadow:0 0 4px color-mix(in srgb, currentColor 50%, transparent)}
+.ws-dot.is-empty{background:transparent;box-shadow:none}
+.ws-cell.is-zero .ws-dot{opacity:.4}
 .ws-cell.is-today{border-color:color-mix(in srgb, var(--accent-2) 55%, transparent)}
 .ws-cell.is-today .ws-num{color:var(--accent-2)}
 /* The selected day needs to read unmistakably at a glance, not as a faint tint next to
@@ -1266,7 +1281,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:0 4px 14px -5px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 .ws-cell.is-selected .ws-dow,.ws-cell.is-selected .ws-num{color:#fff}
-.ws-cell.is-selected .ws-cnt{background:rgba(255,255,255,.25);color:#fff;opacity:1}
+.ws-cell.is-selected .ws-dot{background:#fff !important;opacity:1;box-shadow:0 0 4px rgba(255,255,255,.6)}
 .ws-cell.has-exam{box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 45%, transparent)}
 .ws-cell.is-selected.has-exam{box-shadow:0 4px 14px -6px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 0 0 1.5px #fff}
 
@@ -1388,7 +1403,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* Same color, same left-edge-bar language as the ruler segment above it and the
    Home timeline card's ::before bar — one class reads as the same class everywhere
    it appears on screen, not a different color intensity per component. */
-.pt-body.now{border-left-width:4px;border-color:color-mix(in srgb, var(--c) 55%, var(--border));box-shadow:0 0 0 1px color-mix(in srgb, var(--c) 32%, transparent), 0 0 14px -3px color-mix(in srgb, var(--c) 45%, transparent), 0 8px 22px rgba(0,0,0,.2)}
+.pt-body.now{
+  border-left-width:4px;border-color:color-mix(in srgb, var(--c) 55%, var(--border));
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--c) 32%, transparent), 0 0 14px -3px color-mix(in srgb, var(--c) 45%, transparent), 0 8px 22px rgba(0,0,0,.2);
+  padding:17px 18px 17px 16px;
+}
+.pt-body.now .pt-ttl{font-size:19px}
+.pt-body.now .pt-tag.live{font-size:12px;padding:5px 12px}
 .pt-tag{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums;padding:4px 11px;border-radius:99px;margin-bottom:8px}
 .pt-tag.live{background:var(--c);color:#fff;font-size:11px;letter-spacing:.04em}
 .pt-tag.live::before{content:"";width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.4)}
