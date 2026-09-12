@@ -1238,7 +1238,19 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    finished classes collapsed into a thin strip, then a premium timeline for what's
    left. Swiping this whole block moves ±1 day; the week-strip above moves ±1 week. */
 .day-focus{margin-top:16px}
-.day-focus-head{padding:2px 2px 14px}
+/* Pinned while scrolling through this one day's ruler/timeline — scoped to
+   .day-focus itself (the "section list" pattern used elsewhere in this app), so it
+   can only ever stay stuck for as long as this day's own content is on screen, and
+   never needs a second sticky layer or a taller shared container to get right. */
+.day-focus-head{
+  position:sticky;top:60px;z-index:5;padding:10px 2px 14px;margin:-10px -2px 0;
+  background:var(--bg-elevated);
+}
+.day-focus-head::after{
+  content:"";position:absolute;left:2px;right:2px;bottom:0;height:1px;
+  background:var(--border);opacity:0;transition:opacity .2s ease;
+}
+.day-focus.is-pinned .day-focus-head::after{opacity:1}
 .day-focus-title{
   font-family:var(--font-display);font-size:clamp(26px,7vw,30px);font-weight:800;
   letter-spacing:-.01em;margin:0;

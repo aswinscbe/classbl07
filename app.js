@@ -2016,10 +2016,14 @@ async function init(){
   syncSchedule(false).then(()=>maybeOpenOnboarding());
   updateTopbarClock();
   setInterval(updateTopbarClock,15000);
+  const pinSentinel=$("#dayFocusPinSentinel");
+  if(pinSentinel){
+    new IntersectionObserver(([entry])=>{$("#dayFocus")?.classList.toggle("is-pinned",!entry.isIntersecting)},{threshold:0,rootMargin:"-61px 0px 0px 0px"}).observe(pinSentinel);
+  }
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova84",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova85",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
