@@ -853,7 +853,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 
 .next-bus-card{
   margin-top:14px;padding:20px;border-radius:var(--radius-xl);
-  background:color-mix(in srgb, var(--accent) 7%, var(--bg-elevated));color:var(--ink);
+  background:color-mix(in srgb, var(--accent) 7%, var(--bg-elevated) 78%);color:var(--ink);
+  backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);
   --on-grad:var(--ink);--on-grad-muted:var(--ink-muted);--on-grad-line:var(--border);
   --hero-chip-bg:color-mix(in srgb, var(--ink) 6%, transparent);
   box-shadow:var(--shadow-lg),
@@ -880,15 +881,17 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .leaving-soon-toggle{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 6%, transparent));border:1px solid var(--on-grad-line);color:var(--on-grad-muted);flex-shrink:0}
 .leaving-soon-toggle svg{width:16px;height:16px}
 .leaving-soon-toggle.active{background:var(--amber);color:#1a1200;border-color:transparent}
-.next-bus-time{font-family:var(--font-display);font-size:clamp(28px,7vw,36px);font-weight:800;letter-spacing:-.01em;color:var(--on-grad)}
-.next-bus-card h2{font-size:18px;font-weight:750;margin-top:8px;color:var(--on-grad)}
-.next-bus-card p#nextBusMeta{margin:3px 0 0;font-size:13.5px;color:var(--on-grad-muted);font-weight:550}
+/* The departure time is the one number you actually came here for — it gets more
+   presence than the route name/service label sitting right below it. */
+.next-bus-time{font-family:var(--font-display);font-size:clamp(32px,8.5vw,42px);font-weight:800;letter-spacing:-.02em;color:var(--on-grad)}
+.next-bus-card h2{font-size:16.5px;font-weight:700;margin-top:6px;color:var(--on-grad-muted)}
+.next-bus-card p#nextBusMeta{margin:2px 0 0;font-size:12.5px;color:var(--on-grad-muted);font-weight:550;opacity:.8}
 .next-bus-origin-note{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 6%, transparent));font-size:12.5px;color:var(--on-grad-muted);font-weight:550}
 .next-bus-origin-note b{color:var(--on-grad);font-weight:800}
 .next-bus-origin-note .passed{opacity:.7}
 .next-bus-origin-note .upcoming{color:var(--on-grad);font-weight:700}
-.route-visual{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.route-stop{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:650;color:var(--on-grad-muted)}
+.route-visual{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.route-stop{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--on-grad-muted);letter-spacing:-.005em}
 .route-stop i{width:6px;height:6px;border-radius:50%;background:var(--accent-2);animation:route-en-route 2.4s ease-in-out calc(var(--i,0) * .3s) infinite}
 @keyframes route-en-route{0%,60%,100%{opacity:.55;transform:scale(1)}20%{opacity:1;transform:scale(1.5)}}
 @media(prefers-reduced-motion: reduce){.route-stop i{animation:none}}
@@ -923,12 +926,12 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .board-list.collapsed{display:none}
 .board-row{
   display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:var(--radius-sm);
-  border-left:3px solid var(--border-strong);background:var(--bg-panel);margin-bottom:6px;
+  border-left:4px solid var(--border-strong);background:var(--bg-panel);margin-bottom:6px;
   box-shadow:0 2px 8px rgba(0,0,0,.1);
   transition:background .2s ease,border-color .2s ease,box-shadow .2s ease;
 }
 .board-row .t{
-  flex:none;font-family:var(--font-display);font-size:16px;font-weight:800;letter-spacing:-.01em;
+  flex:none;font-family:var(--font-display);font-size:18px;font-weight:800;letter-spacing:-.015em;
   font-variant-numeric:tabular-nums;color:var(--ink);min-width:74px;
 }
 .board-row .r{flex:1;min-width:0}
@@ -938,7 +941,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .board-row.is-shuttle{border-left-color:var(--accent)}
 .board-row.next{
   background:color-mix(in srgb, var(--accent) 12%, var(--bg-panel));border-left-color:var(--accent);
-  box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent), 0 6px 18px -6px color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 32%, transparent), 0 0 16px -4px color-mix(in srgb, var(--accent) 50%, transparent), 0 6px 18px -6px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .board-row.next .t{color:var(--accent)}
 .board-row.elapsed{opacity:.45}

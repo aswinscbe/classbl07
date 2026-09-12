@@ -1317,8 +1317,8 @@ function renderBuses(){
   $("#nextBusCountdown").textContent=remaining>=60?`${Math.floor(remaining/60)}h ${remaining%60}m`:`${remaining} min`;
   const ringWindow=60,pct=Math.max(0,Math.min(100,Math.round((remaining/ringWindow)*100)));
   const ring=$("#countdownRing");
-  if(ring){ring.style.setProperty("--pct",nextDay?100:pct);ring.classList.toggle("urgent",!nextDay&&remaining<=5)}
-  $(".next-bus-card")?.classList.toggle("is-urgent",!nextDay&&remaining<=5);
+  if(ring){ring.style.setProperty("--pct",nextDay?100:pct);ring.classList.toggle("urgent",!nextDay&&remaining<=10)}
+  $(".next-bus-card")?.classList.toggle("is-urgent",!nextDay&&remaining<=10);
 
   const stops=routeStops(next.b);
   const fromIndex=stops.indexOf(state.busFrom),toIndex=stops.indexOf(state.busTo);
@@ -2019,7 +2019,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova82",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova83",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
