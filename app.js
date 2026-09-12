@@ -466,11 +466,11 @@ function renderHome(){
     else if(onBreak){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`Starts in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
     if(!isToday)pills.push(heroPill(`${dayList.length} ${dayList.length===1?"class":"classes"} that day`));
-    pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
-    if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`));
+    pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`,"muted"));
+    if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`,"muted"));
     const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
-    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${heroSessionTotal}`));
-    if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`));
+    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${heroSessionTotal}`,"muted"));
+    if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`,"accent"))
     $("#heroPills").innerHTML=pills.join("");
     const dayLabel=shown.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(shown.dateIso,{weekday:"short",day:"numeric",month:"short"});
     const isFutureDay=shown.dateIso!==today;
@@ -2063,7 +2063,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova94",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova95",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
