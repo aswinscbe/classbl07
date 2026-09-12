@@ -1361,9 +1361,10 @@ function renderBuses(){
 
   const stops=routeStops(next.b);
   const fromIndex=stops.indexOf(state.busFrom),toIndex=stops.indexOf(state.busTo);
-  $("#nextBusVisual").innerHTML=stops.slice(fromIndex,toIndex+1).map((stop,i)=>
-    `<div class="route-stop"><i style="--i:${i}"></i><span>${esc(busStopLabel(stop))}</span></div>`
-  ).join("");
+  const routeSeq=stops.slice(fromIndex,toIndex+1);
+  const dots=routeSeq.map((stop,i)=>`${i>0?'<span class="route-map-seg"></span>':""}<span class="route-map-stop ${i===0?"is-origin":""}"></span>`).join("");
+  const labels=routeSeq.map((stop,i)=>`<span class="${i===0?"is-origin":i===routeSeq.length-1?"is-dest":""}">${esc(busStopLabel(stop))}</span>`).join("");
+  $("#nextBusVisual").innerHTML=`<div class="route-map">${dots}</div><div class="route-map-labels">${labels}</div>`;
 
   /* "Upcoming" and "Full day" were two lists of the same buses, the second starting at
      midnight with everything already gone. One board now: what is left today, with the
@@ -1391,18 +1392,19 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
   /* On a board already filtered to one route, "last" means the last departure the rider
      can catch — not the last of each separate origin, which showed several LAST badges. */
   const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),elapsed=!isNext&&busDate(bus)<now;
+  const badges=[
+    isNext?'<span class="tag tag-next">NEXT</span>':"",
+    mainGate?'<span class="tag tag-gate">MAIN GATE</span>':"",
+    last?'<span class="tag tag-last">LAST BUS</span>':"",
+    bus.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(bus.from))}">ORIGIN TIME</span>`:""
+  ].filter(Boolean).join("");
   return`<article class="board-row ${mainGate?"is-maingate":"is-shuttle"} ${isNext?"next":""} ${elapsed?"elapsed":""}">
-    <span class="t">${esc(fmtTime(bus.time))}</span>
+    <span class="board-row-avatar">${icon(mainGate?"pin":"bus")}</span>
     <div class="r">
       <strong>${esc(busStopLabel(bus.from))} → ${esc(busStopLabel(bus.to))}</strong>
-      <span>${esc(routeStops(bus).map(busStopLabel).join(" · "))}</span>
+      ${badges?`<div class="board-row-badges">${badges}</div>`:""}
     </div>
-    <div class="board-row-badges">
-      ${isNext?'<span class="tag tag-next">NEXT</span>':""}
-      ${mainGate?'<span class="tag tag-gate">MAIN GATE</span>':""}
-      ${last?'<span class="tag tag-last">LAST BUS</span>':""}
-      ${bus.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(bus.from))}">ORIGIN TIME</span>`:""}
-    </div>
+    <span class="t">${esc(fmtTime(bus.time))}</span>
   </article>`;
 }
 
@@ -2063,7 +2065,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova97",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova98",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
