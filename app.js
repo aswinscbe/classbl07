@@ -496,39 +496,6 @@ function renderHome(){
     $("#heroPills").innerHTML="";
     $("#heroDayCount").hidden=true;
   }
-  const stripEl=$("#heroDayStrip");
-  if(stripEl){
-    const stripClasses=state.classes.filter(c=>c.dateIso===shownDayIso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-    /* A single class fills the whole strip, which just reads as a stray bar — the shape
-       of the day is only worth drawing once there is more than one class on it. The day
-       itself is labelled by the day nav below, so the strip needs no label of its own. */
-    if(stripClasses.length<2)stripEl.hidden=true;
-    else{
-      stripEl.hidden=false;
-      const dayStart=minutes(stripClasses[0].startTime);
-      const lastEndClass=stripClasses.reduce((a,b)=>minutes(a.endTime)>minutes(b.endTime)?a:b);
-      const dayEnd=minutes(lastEndClass.endTime),span=Math.max(1,dayEnd-dayStart);
-      const segs=stripClasses.map(c=>{
-        const left=((minutes(c.startTime)-dayStart)/span)*100,width=((minutes(c.endTime)-minutes(c.startTime))/span)*100;
-        const st=now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming";
-        const label=width>13?`<span>${esc(canonical(c.code))}</span>`:"";
-        return`<button type="button" class="hero-strip-seg ${st}" style="--course:${colorFor(c.code)};left:calc(${left}% + 1px);width:calc(${width}% - 2px)" data-class-id="${esc(classIdentity(c))}" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}">${label}</button>`;
-      }).join("");
-      /* Hour ticks so the ruler reads as actual clock time, not just a proportion bar. */
-      let ticks="";
-      for(let h=Math.ceil(dayStart/60);h<=Math.floor(dayEnd/60);h++){
-        const pos=((h*60-dayStart)/span)*100;
-        if(pos>1&&pos<99)ticks+=`<i class="hero-strip-tick" style="left:${pos}%"></i>`;
-      }
-      const nowMin=Number(istParts().hour)*60+Number(istParts().minute);
-      const nowMarker=(shownDayIso===today&&nowMin>=dayStart&&nowMin<=dayEnd)?`<span class="hero-strip-now" style="left:${((nowMin-dayStart)/span)*100}%"></span>`:"";
-      stripEl.innerHTML=`<div class="hero-strip-track">${ticks}${segs}${nowMarker}</div>
-        <div class="hero-strip-ends"><span>${esc(fmtTime(stripClasses[0].startTime))}</span><span>${esc(fmtTime(lastEndClass.endTime))}</span></div>`;
-      $$(".hero-strip-seg",stripEl).forEach(b=>b.addEventListener("click",()=>{
-        const c=state.classes.find(x=>classIdentity(x)===b.dataset.classId);if(c)openClassSheet(c);
-      }));
-    }
-  }
   fitHeroTime();
   /* The day list follows whichever day the hero is showing (today, or the next day with
      classes once today is done) so the card never has its header on one day and its list
@@ -551,7 +518,7 @@ function renderHome(){
     const onlyClassIsFocus=timelineClasses.length===1&&classIdentity(timelineClasses[0])===focusPanel.dataset.focusClassId;
     daySectionEl.hidden=!state.timelineTouched&&(!timelineClasses.length||onlyClassIsFocus);
   }
-  $("#todayProgressRail").innerHTML=timelineClasses.length?dayCardListHtml(timelineClasses,timelineIso,{showNext:true}):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
+  $("#todayProgressRail").innerHTML=timelineClasses.length?scheduleRowsHtml(timelineClasses,timelineIso,{showNext:true}):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
   const holidayBanner=$("#todayProgressRail")?.previousElementSibling;
   const holiday=HOLIDAYS[timelineIso];
   $$(".timeline-holiday-banner").forEach(n=>n.remove());
@@ -672,43 +639,47 @@ function nextOccurrenceOf(c){
   const future=state.classes.filter(x=>x.status!=="Cancelled"&&canonical(x.code)===canonical(c.code)&&dateTime(x,"startTime")>dateTime(c,"endTime")).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
   return future[0]||null;
 }
-function dayCardListHtml(classes,dayIso,opts={}){
+/* One row design, three weight tiers driven by status — done classes compress to a
+   single compact line, the live class gets an elevated glowing card with a progress
+   bar, everything else sits at a consistent mid-weight with venue/session/duration
+   visible. Replaces the old dayCardListHtml (Home) and the separate ruler+pt-item
+   timeline (Planner) — both surfaces now render literally the same rows. */
+function scheduleRowsHtml(classes,dayIso,opts={}){
   const chronological=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   const now=new Date();
-  let html='<div class="day-cardlist">',prevEnd=null;
+  let html='<div class="sched-list">',prevEnd=null;
   chronological.forEach(c=>{
     if(prevEnd!=null){
       const gap=minutes(c.startTime)-prevEnd;
-      /* Proportional to the actual gap length (roughly 1.15px/minute), clamped so a
-         45-minute gap still reads clearly and an overnight one doesn't force a
-         marathon scroll — see .hero-card .day-cardlist-gap for where this gets
-         flattened back down on Home. */
-      if(gap>=45){
-        const gapPx=Math.max(46,Math.min(200,Math.round(gap*1.15)));
-        html+=`<div class="day-cardlist-gap" style="height:${gapPx}px"><span class="dc-gap-label">${icon("clock")}${esc(compactDuration(gap))} free</span></div>`;
-      }
+      if(gap>=45)html+=`<div class="sched-gap">${icon("clock")}${esc(compactDuration(gap))} free</div>`;
     }
-    const status=agendaStatus(c),tag=agendaTag(c),dur=minutes(c.endTime)-minutes(c.startTime),sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessions(c.code).length:0;
-    const cls=["day-cardlist-item",status==="Live"?"current":"",status==="Completed"?"completed":"",c.status==="Cancelled"?"cancelled":""].filter(Boolean).join(" ");
-    const progress=status==="Live"?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
-    const chips=[
-      `<span class="dc-chip">${icon("pin")}${esc(venueOf(c))}</span>`,
-      `<span class="dc-chip">${icon("clock")}${esc(compactDuration(dur))}</span>`
-    ].join("");
+    const status=agendaStatus(c),cancelled=c.status==="Cancelled";
+    const tier=cancelled?"cancelled":status==="Live"?"live":status==="Completed"?"done":"upcoming";
+    const dur=minutes(c.endTime)-minutes(c.startTime),sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessions(c.code).length:0;
+    const progress=tier==="live"?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
+    const [h12,ap]=fmtTime(c.startTime).split(/(?=[ap]m)/i);
     let nextLine="";
-    if(opts.showNext&&c.status!=="Cancelled"){
+    if(opts.showNext&&!cancelled){
       const nxt=nextOccurrenceOf(c);
       if(nxt){
         const label=nxt.dateIso===dayIso?"later today":nxt.dateIso===tomorrowIso()?"tomorrow":fmtDate(nxt.dateIso,{weekday:"short",day:"numeric",month:"short"});
-        nextLine=`<p class="dc-next-occurrence">Next ${esc(canonical(c.code))} — ${esc(label)}, ${esc(fmtTime(nxt.startTime))}</p>`;
+        nextLine=`<p class="sr-next">Next ${esc(canonical(c.code))} — ${esc(label)}, ${esc(fmtTime(nxt.startTime))}</p>`;
       }
     }
-    html+=`<article class="${cls}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
-      <div class="day-cardlist-time">${esc(fmtTime(c.startTime))}<small>${esc(fmtTime(c.endTime))}</small><span class="status-tag ${tag.cls}">${esc(tag.text)}</span></div>
-      <div class="day-cardlist-body">
-        <div class="timeline-course-line"><span class="timeline-code-chip">${esc(c.code)}</span>${sessionN?`<span class="dc-session-badge">${sessionN}/${sessionTotal}</span>`:""}<strong>${esc(c.course)}</strong>${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}</div>
-        ${progress!==null?`<div class="day-cardlist-progress"><span style="width:${progress}%"></span></div>`:""}
-        <div class="day-cardlist-chips">${chips}</div>
+    const meta=[venueOf(c),c.faculty,compactDuration(dur)].filter(Boolean);
+    if(tier==="live")meta.push(`ends in ${tagCountdown((dateTime(c,"endTime")-now)/60000)}`);
+    html+=`<article class="sched-row ${tier}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
+      <div class="sr-time"><b>${esc(h12)}</b><small>${esc((ap||"").toUpperCase())}</small></div>
+      <div class="sr-accent"></div>
+      <div class="sr-body">
+        <div class="sr-top">
+          <span class="sr-code">${esc(canonical(c.code))}</span>
+          <span class="sr-subj">${esc(c.course)}</span>
+          ${tier==="live"?'<span class="sr-live-pill">NOW</span>':cancelled?'<span class="sr-cancel-pill">CANC.</span>':sessionN?`<span class="sr-sess">${sessionN}/${sessionTotal}</span>`:""}
+          ${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}
+        </div>
+        ${tier!=="done"&&!cancelled?`<div class="sr-meta">${meta.map(esc).join('<span class="sep">·</span>')}</div>`:""}
+        ${progress!==null?`<div class="sr-bar"><span style="width:${progress}%"></span></div>`:""}
         ${nextLine}
       </div>
     </article>`;
@@ -850,67 +821,19 @@ function renderWeekPlanner(){
 function renderDayFocus(iso){
   const el=$("#dayFocus");if(!el)return;
   const today=isoToday(),isToday=iso===today,now=new Date(),exam=examOn(iso);
-  const dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-  let active=dayAll.filter(c=>c.status!=="Cancelled");
-  if(state.calendarHighlight)active=active.filter(c=>canonical(c.code)===state.calendarHighlight);
+  let dayAll=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  if(state.calendarHighlight)dayAll=dayAll.filter(c=>canonical(c.code)===state.calendarHighlight);
+  const active=dayAll.filter(c=>c.status!=="Cancelled");
   const totalMins=active.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
   $("#dayFocusTitle").innerHTML=`<span class="dft-weekday">${esc(fmtDate(iso,{weekday:"long"}))}</span> <span class="dft-date">${esc(fmtDate(iso,{day:"numeric",month:"long"}))}</span>`;
   const subText=[active.length?`${active.length} ${active.length===1?"class":"classes"}`:(exam?"Exam day":"Free day"),totalMins?compactDuration(totalMins):null].filter(Boolean).join(" · ");
   $("#dayFocusSub").innerHTML=`${esc(subText)}${isToday?' <b class="dfs-today">TODAY</b>':""}`;
 
-  /* Ruler: whole-day shape, exact class boundary times (not round hours), gaps shown
-     as a hatch pattern with no text label. */
-  const rulerEl=$("#dayRuler");
-  if(active.length<2)rulerEl.hidden=true;
-  else{
-    rulerEl.hidden=false;
-    const dayStart=minutes(active[0].startTime);
-    const lastEnd=active.reduce((a,b)=>minutes(a.endTime)>minutes(b.endTime)?a:b);
-    const dayEnd=minutes(lastEnd.endTime),span=Math.max(1,dayEnd-dayStart);
-    const nowMin=isToday?Number(istParts().hour)*60+Number(istParts().minute):-1;
-    /* Boundary labels crowd together when two classes sit close in time — skip a label
-       rather than let it overlap its neighbour; the segment itself still shows the
-       exact time on tap/hover via its title. */
-    let segs="",prevEnd=null,lastLabelPct=-99;
-    const labelPts=[];
-    active.forEach(c=>{
-      const s=minutes(c.startTime),e=minutes(c.endTime);
-      const left=((s-dayStart)/span)*100,width=((e-s)/span)*100;
-      const st=now>=dateTime(c,"endTime")?"done":now>=dateTime(c,"startTime")?"current":"upcoming";
-      segs+=`<button type="button" class="dr-seg ${st}" style="--course:${colorFor(c.code)};left:calc(${left}% + 1px);width:calc(${width}% - 2px)" data-class-id="${esc(classIdentity(c))}" title="${esc(c.code)} · ${esc(fmtRange(c.startTime,c.endTime))}">${width>13?`<span>${esc(canonical(c.code))}</span>`:""}</button>`;
-      if(prevEnd!=null&&s>prevEnd)segs+=`<div class="dr-gap" style="left:${((prevEnd-dayStart)/span)*100}%;width:${((s-prevEnd)/span)*100}%"></div>`;
-      labelPts.push({pct:left,text:fmtTime(c.startTime)});
-      prevEnd=e;
-    });
-    labelPts.push({pct:100,text:fmtTime(lastEnd.endTime)});
-    let labels="";
-    labelPts.forEach((pt,i)=>{
-      const isLast=i===labelPts.length-1;
-      const distToEnd=labelPts[labelPts.length-1].pct-pt.pct;
-      if(!isLast&&(pt.pct-lastLabelPct<16||distToEnd<16))return;
-      lastLabelPct=pt.pct;
-      labels+=`<span class="dr-tlab" style="left:${pt.pct}%">${esc(pt.text)}</span>`;
-    });
-    const nowMark=(isToday&&nowMin>=dayStart&&nowMin<=dayEnd)?`<div class="dr-now" style="left:${((nowMin-dayStart)/span)*100}%"></div>`:"";
-    rulerEl.innerHTML=`<div class="dr-track">${segs}${nowMark}</div><div class="dr-ticklabels">${labels}</div>`;
-    $$(".dr-seg",rulerEl).forEach(b=>b.addEventListener("click",()=>{
-      const c=state.classes.find(x=>classIdentity(x)===b.dataset.classId);if(c)openClassSheet(c);
-    }));
-  }
-
-  const earlierEl=$("#dayEarlier"),timelineEl=$("#premiumTimeline");
+  const timelineEl=$("#premiumTimeline");
   const showCompleted=state.agendaShowCompleted||!isToday;
-  const completed=isToday?active.filter(c=>now>=dateTime(c,"endTime")):[];
-  const remaining=isToday?active.filter(c=>now<dateTime(c,"endTime")):active;
+  const listClasses=showCompleted?dayAll:dayAll.filter(c=>c.status==="Cancelled"||now<dateTime(c,"endTime"));
 
-  if(completed.length&&showCompleted){
-    earlierEl.hidden=false;
-    earlierEl.innerHTML=`<p class="de-label"><span>Earlier today</span></p><div class="de-rows">${completed.map(c=>
-      `<article class="de-row" data-class-id="${esc(classIdentity(c))}"><span class="de-dot" style="background:${colorFor(c.code)}"></span><span class="de-txt">${esc(fmtRange(c.startTime,c.endTime))} · ${esc(c.course)}</span><span class="de-chk">${icon("check")}</span></article>`
-    ).join("")}</div>`;
-  }else{earlierEl.hidden=true;earlierEl.innerHTML=""}
-
-  if(!active.length&&!exam){
+  if(!dayAll.length&&!exam){
     timelineEl.innerHTML=`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("spark")}</span><p>Free day</p><small>No classes, tasks or notes for this date.</small></div>`;
   }else{
     let html="";
@@ -919,35 +842,9 @@ function renderDayFocus(iso){
         `<article class="agenda-exam-card"><span class="exam-slot">${EXAM_SLOT_LABELS[slot]}</span><span class="agenda-exam-code" style="--course:${colorFor(entry.code)}">${esc(entry.code)}</span><strong>${esc(entry.subject)}</strong></article>`
       ).join("")}</section>`;
     }
-    if(remaining.length){
-      html+=`<div class="pt-list">${remaining.map((c,i)=>{
-        const status=agendaStatus(c),isLive=status==="Live";
-        const dur=minutes(c.endTime)-minutes(c.startTime);
-        const progress=isLive?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
-        const sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessions(c.code).length:0;
-        /* The line to the next node shows a moving dot instead of a plain static
-           rod whenever "now" actually falls within that stretch — a marker that
-           creeps down as the wait ticks by, rather than an inert connector. */
-        let lineHtml="";
-        if(i<remaining.length-1){
-          const next=remaining[i+1];
-          const segStart=dateTime(c,"startTime"),segEnd=dateTime(next,"startTime");
-          const inSeg=now>=segStart&&now<=segEnd;
-          const segPct=inSeg?Math.max(0,Math.min(100,((now-segStart)/(segEnd-segStart))*100)):null;
-          lineHtml=`<div class="pt-line" style="--lc:${colorFor(c.code)}">${segPct!==null?`<span class="pt-progress-dot" style="top:${segPct}%"></span>`:""}</div>`;
-        }
-        return`<div class="pt-item" style="--i:${i}">
-          <div class="pt-time-col"><span class="hh">${esc(fmtTime(c.startTime).replace(/\s?[ap]m/i,""))}</span><span class="ap">${esc((fmtTime(c.startTime).match(/[ap]m/i)||[""])[0])}</span></div>
-          <div class="pt-spine">${lineHtml}<div class="pt-node ${isLive?"live":""}" style="--dot:${colorFor(c.code)}"></div></div>
-          <article class="pt-body ${isLive?"now":""}" data-class-id="${esc(classIdentity(c))}" style="--c:${colorFor(c.code)}">
-            <span class="pt-tag ${isLive?"live":"plain"}">${isLive?"NOW":esc(fmtRange(c.startTime,c.endTime))}</span>
-            <div class="pt-ttl">${esc(c.course)}${sessionN?`<span class="dc-session-badge">${sessionN}/${sessionTotal}</span>`:""}</div>
-            <div class="pt-meta"><span>${esc(c.code)}</span><span>${icon("pin")}${esc(venueOf(c))}</span>${c.faculty?`<span>${esc(c.faculty)}</span>`:""}<span>${esc(compactDuration(dur))}</span></div>
-            ${progress!==null?`<div class="pt-prog"><i style="width:${progress}%"></i></div>`:""}
-          </article>
-        </div>`;
-      }).join("")}</div>`;
-    }else if(active.length&&!exam){
+    if(listClasses.length){
+      html+=scheduleRowsHtml(listClasses,iso,{showNext:false});
+    }else if(dayAll.length&&!exam){
       html+=`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("check")}</span><p>All done for today</p><small>Every class on ${esc(fmtDate(iso,{weekday:"long"}))} is wrapped up.</small></div>`;
     }
     const tasks=state.tasks.filter(t=>t.date===iso);
@@ -1984,7 +1881,7 @@ function bind(){
     const now=Date.now(),next=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime").getTime()>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
     if(!next){showToast("No upcoming classes");return}
     openCalendarPage(next.dateIso);
-    requestAnimationFrame(()=>{const card=$(`[data-class-id="${CSS.escape(classIdentity(next))}"].pt-body, .day-cardlist-item[data-class-id="${CSS.escape(classIdentity(next))}"]`);if(card)card.scrollIntoView({behavior:"smooth",block:"center"})});
+    requestAnimationFrame(()=>{const card=$(`.sched-row[data-class-id="${CSS.escape(classIdentity(next))}"]`);if(card)card.scrollIntoView({behavior:"smooth",block:"center"})});
   });
   $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
@@ -2023,7 +1920,7 @@ function bind(){
   });
   document.addEventListener("click",e=>{
     if(e.target.closest("button,a,input"))return;
-    const card=e.target.closest(".day-cardlist-item[data-class-id],.pt-body[data-class-id],.de-row[data-class-id]");
+    const card=e.target.closest(".sched-row[data-class-id]");
     if(card){const c=state.classes.find(x=>classIdentity(x)===card.dataset.classId);if(c)openClassSheet(c);return}
     const hero=e.target.closest("#focusPanel.has-focus");
     if(hero&&hero.dataset.focusClassId){const c=state.classes.find(x=>classIdentity(x)===hero.dataset.focusClassId);if(c)openClassSheet(c)}
@@ -2086,7 +1983,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova101",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova102",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

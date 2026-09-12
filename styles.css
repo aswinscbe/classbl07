@@ -493,37 +493,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .hero-pill svg{width:13px;height:13px;flex:none}
 .hero-card.is-empty{color:var(--on-grad)}
-/* A live time ruler for the shown day, not just a proportion bar: hour ticks make it
-   read as actual clock time, and each block is tappable straight into that class. */
-.hero-day-strip{margin-top:16px;padding-top:22px;border-top:1px solid var(--on-grad-line)}
-.hero-strip-track{position:relative;height:34px;border-radius:10px;background:color-mix(in srgb, var(--on-grad-line) 45%, transparent);overflow:visible}
-.hero-strip-tick{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in srgb, var(--on-grad-line) 85%, transparent)}
-.hero-strip-seg{
-  position:absolute;top:3px;bottom:3px;border:0;border-radius:7px;padding:0 7px;
-  display:flex;align-items:center;overflow:hidden;cursor:pointer;
-  background:var(--course,var(--on-grad));opacity:.45;font:inherit;
-  transition:opacity .2s ease,transform .12s ease;
-}
-.hero-strip-seg:active{transform:scale(.96)}
-.hero-strip-seg span{font-size:10px;font-weight:800;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35)}
-.hero-strip-seg.current{opacity:1;box-shadow:0 0 0 2px color-mix(in srgb, var(--course,var(--on-grad)) 45%, transparent)}
-.hero-strip-seg.upcoming{opacity:.65}
-/* A pulsing beacon floating above the rail instead of a line through it — it used
-   to cut straight through segment text; this never touches the segments at all. */
-/* A floating pin above the rail — a dot with a short fading stem pointing down to
-   the exact time, stopping right at the track's top edge rather than crossing
-   through it (unlike the old line that used to cut through segment text). */
-.hero-strip-now{position:absolute;top:-20px;height:20px;width:2px;transform:translateX(-50%);z-index:2;pointer-events:none}
-.hero-strip-now::before{
-  content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:9px;height:9px;
-  border-radius:50%;background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);
-}
-.hero-strip-now::after{
-  content:"";position:absolute;top:9px;bottom:0;left:50%;width:2px;transform:translateX(-50%);
-  background:linear-gradient(180deg,var(--live),transparent);
-}
-@keyframes beacon-pulse{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
-.hero-strip-ends{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:700;color:var(--on-grad-muted)}
 
 .exam-hero{
   margin-top:14px;padding:14px 16px;border-radius:var(--radius-lg);
@@ -633,19 +602,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-day-chip{
   background:var(--hero-chip-bg);color:var(--on-grad-muted);font-size:12px;font-weight:700;padding:5px 11px;flex:none;
 }
-/* Class cards read as insets within the Today card rather than as their own panels.
-   Duration-proportional heights belong to the Planner's day view, where the shape of
-   the day is the point; on Home they only add dead space, so they are flattened here. */
-.hero-card .day-cardlist-item{
-  background:color-mix(in srgb, var(--course,var(--accent)) 8%, var(--bg-panel));
-}
-/* On Home the point is today at a glance, not a scale model of it — the gap stays
-   flattened here regardless of the proportional height set inline for the Planner. */
-.hero-card .day-cardlist-gap{height:auto!important;padding:8px 0 8px 20px}
-.hero-card .day-cardlist-item.current{
-  background:color-mix(in srgb, var(--course,var(--accent)) 15%, var(--bg-panel));
-  border-color:color-mix(in srgb, var(--course,var(--accent)) 34%, var(--border));
-}
 /* Free day: no giant empty headline block, just the status line and the day below it. */
 .hero-card.is-empty .hero-time-row{display:none}
 .hero-card.is-empty .hero-course-line{margin-top:12px}
@@ -657,93 +613,65 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card .empty-state p{font-size:14px;font-weight:700;color:var(--on-grad-muted)}
 .hero-card .empty-state small{display:none}
 
-/* ===== Day schedule — shared proportional card list for Home's Class Timeline + Planner's day agenda ===== */
-/* The course name needs to stay fully readable — never truncated — so it's free to
-   wrap onto as many lines as it needs. The session badge used to sit after the name
-   with margin-left:auto, which meant a wrapped name shoved it onto its own isolated
-   line below. Moved the badge to sit right after the code chip instead (before the
-   name), so its position never depends on how long the name is or how it wraps. */
-.timeline-course-line{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
-.timeline-course-line strong{font-size:15px;font-weight:700;flex:1 1 auto;min-width:120px}
-.timeline-code-chip{
-  font-size:12px;font-weight:800;padding:2px 7px;border-radius:6px;
-  background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);color:var(--course,var(--accent));
-}
-.timeline-added{display:inline-block;margin-left:6px;font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--live)}
-.status-tag{
-  flex:none;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-muted);
-}
-/* The countdown variant ("8h 0m") is a value, not a status word — keep it in the
-   natural case compactDuration already uses everywhere else, not shouted caps. */
-.status-tag.countdown{text-transform:none;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
-.status-tag.now{color:var(--live)}
-.status-tag.now::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--live);animation:pulse 1.6s ease-in-out infinite}
-.status-tag.done{color:var(--ink-faint)}
-.status-tag.done::before{content:"✓";font-size:11px;line-height:1}
-.status-tag.off{color:var(--danger)}
-.status-tag.off::before{content:"✕";font-size:10px;line-height:1}
+/* ===== Schedule list — one shared component for Home's Class Timeline and Planner's
+   day agenda, replacing what used to be three separate representations of the same
+   day (a mini strip, a segmented ruler, and a spine-and-node timeline). One list,
+   three weight tiers driven by status: done rows compress to a single line, the live
+   class gets an elevated glowing card with a progress bar, everything else sits at a
+   consistent mid-weight with venue/session/duration visible. */
+.timeline-added{display:inline-block;margin-left:2px;font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--live)}
+.sched-list{display:flex;flex-direction:column}
+.sched-gap{display:flex;align-items:center;gap:6px;padding:7px 0 7px 65px;color:var(--ink-faint);font-size:11.5px;font-weight:600}
+.sched-gap svg{width:12px;height:12px;flex:none}
 
-.day-cardlist{display:flex;flex-direction:column;gap:8px}
-.day-cardlist-item{
-  display:flex;align-items:flex-start;gap:12px;padding:12px 12px 12px 16px;position:relative;box-sizing:border-box;
-  border-radius:var(--radius-md);
-  background:color-mix(in srgb, var(--course,var(--accent)) 7%, var(--bg-panel));
-  border:1px solid transparent;
-  transition:background .15s ease,transform .12s ease;cursor:pointer;
+.sched-row{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s ease,transform .12s ease}
+.sched-row:last-child{border-bottom:0}
+.sched-row:active{transform:scale(.99)}
+.sr-time{width:50px;flex:none;text-align:right;padding-top:1px}
+.sr-time b{display:block;font-family:var(--font-display);font-size:14px;font-weight:800;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+.sr-time small{display:block;font-size:9.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;margin-top:3px}
+.sr-accent{width:3px;border-radius:2px;flex:none;align-self:stretch;background:var(--course,var(--accent))}
+.sr-body{flex:1;min-width:0;padding-top:1px}
+.sr-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;row-gap:4px}
+.sr-code{font-size:10px;font-weight:800;padding:2.5px 7px;border-radius:6px;line-height:1;flex:none;background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);color:var(--course,var(--accent))}
+.sr-subj{font-size:14px;font-weight:700;color:var(--ink)}
+.sr-sess{font-size:9.5px;font-weight:800;color:var(--ink-faint);background:var(--bg-panel);padding:2.5px 7px;border-radius:99px;flex:none}
+.sr-live-pill{font-size:9.5px;font-weight:800;background:var(--live);color:#04150c;padding:2.5px 8px;border-radius:99px;flex:none}
+.sr-cancel-pill{font-size:9.5px;font-weight:800;background:color-mix(in srgb, var(--danger) 20%, transparent);color:var(--danger);padding:2.5px 8px;border-radius:99px;flex:none}
+.sr-meta{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:11.5px;color:var(--ink-faint);flex-wrap:wrap}
+.sr-meta .sep{opacity:.4}
+.sr-next{margin:6px 0 0;font-size:11.5px;font-weight:600;color:var(--ink-faint)}
+.sr-bar{height:4px;border-radius:99px;background:color-mix(in srgb, var(--live) 18%, var(--bg-panel));overflow:hidden;margin-top:9px}
+.sr-bar span{display:block;height:100%;border-radius:inherit;background:var(--live);transition:width 1s linear}
+
+/* done: compact, receded */
+.sched-row.done{padding:7px 0}
+.sched-row.done .sr-time b{font-size:12px;font-weight:700;color:var(--ink-faint)}
+.sched-row.done .sr-time small{display:none}
+.sched-row.done .sr-subj{font-size:12.5px;font-weight:600;color:var(--ink-faint)}
+.sched-row.done .sr-code{opacity:.5}
+.sched-row.done .sr-accent{opacity:.35}
+
+/* live: elevated, glowing — the one thing that actually matters right now */
+.sched-row.live{
+  background:color-mix(in srgb, var(--course,var(--live)) 12%, var(--bg-panel));
+  border:1px solid color-mix(in srgb, var(--course,var(--live)) 34%, var(--border));
+  border-radius:var(--radius-md);padding:15px 14px;margin:4px 0;
+  box-shadow:0 0 24px -14px color-mix(in srgb, var(--course,var(--live)) 55%, transparent);
 }
-.day-cardlist-item:active{transform:scale(.99)}
-.day-cardlist-item::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:2px;background:var(--course,var(--accent))}
-/* Status drives visual weight, not just tint: the live class is the one thing
-   that actually matters right now, so it gets a bigger card and bigger type;
-   a finished class needs almost none of that, so it shrinks down instead of
-   just fading via opacity. */
-.day-cardlist-item.current{
-  background:color-mix(in srgb, var(--course,var(--accent)) 14%, var(--bg-panel));border-color:color-mix(in srgb, var(--course,var(--accent)) 34%, transparent);
-  padding:16px 14px 16px 18px;
-}
-.day-cardlist-item.current::before{width:4px;box-shadow:0 0 0 3px color-mix(in srgb, var(--course) 18%, transparent)}
-.day-cardlist-item.current .day-cardlist-time{font-size:24px}
-.day-cardlist-item.current .timeline-course-line strong{font-size:18px}
-.day-cardlist-item.completed{padding:8px 10px 8px 14px}
-.day-cardlist-item.completed .day-cardlist-time{font-size:15px;gap:3px}
-.day-cardlist-item.completed .day-cardlist-time small{font-size:11px}
-.day-cardlist-item.completed .timeline-course-line strong{font-size:13px}
-.day-cardlist-item.completed .dc-chip,.day-cardlist-item.completed .dc-next-occurrence{display:none}
-.day-cardlist-time{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums;min-width:66px;line-height:1.15;flex:none;display:flex;flex-direction:column;gap:6px}
-.day-cardlist-time small{display:block;font-size:13px;font-weight:700;color:var(--ink-muted);margin-top:2px;font-variant-numeric:tabular-nums}
-.day-cardlist-time .status-tag{margin-top:3px}
-.day-cardlist-item.current .day-cardlist-time{color:var(--live)}
-.day-cardlist-body{flex:1;min-width:0}
-.day-cardlist-progress{height:4px;border-radius:99px;background:color-mix(in srgb, var(--live) 18%, var(--bg-panel));overflow:hidden;margin:9px 0 1px}
-.day-cardlist-progress span{display:block;height:100%;border-radius:inherit;background:var(--live);transition:width 1s linear}
-.day-cardlist-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-width:0}
-.dc-next-occurrence{margin:7px 0 0;font-size:12px;font-weight:600;color:var(--ink-faint)}
-.dc-chip{
-  display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink-muted);
-  background:var(--bg-panel);border-radius:99px;padding:3px 8px 3px 6px;line-height:1;white-space:nowrap;
-;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dc-chip svg{width:11px;height:11px;flex:none;color:var(--ink-faint)}
-.dc-session-badge{
-  flex:none;font-size:11px;font-weight:800;color:var(--ink-faint);
-  background:var(--bg-panel);padding:2px 8px;border-radius:99px;white-space:nowrap;
-}
-.day-cardlist-item.completed{opacity:.55}
-.day-cardlist-item.cancelled{background:color-mix(in srgb, var(--danger) 8%, var(--bg-elevated));border-color:color-mix(in srgb, var(--danger) 24%, var(--border))}
-.day-cardlist-item.cancelled::before{background:var(--danger)}
-.day-cardlist-item.cancelled .timeline-code-chip{background:color-mix(in srgb, var(--danger) 16%, transparent);color:var(--danger)}
-.day-cardlist-item.cancelled strong{color:var(--danger);text-decoration:line-through}
-/* A gap between classes gets real, proportional height (set inline per gap, see
-   dayCardListHtml) instead of a flat compressed divider — a 3h free block actually
-   looks like more room than a 45-minute one. A dashed rail continues through it at
-   the same x-position as each card's own colour bar, so the whole day reads as one
-   continuous line: solid where there's a class, dashed where there's a gap. */
-.day-cardlist-gap{position:relative;display:flex;align-items:center;padding:0 0 0 20px;color:var(--ink-faint);font-size:12px;font-weight:600}
-.day-cardlist-gap::before{
-  content:"";position:absolute;left:1.5px;top:0;bottom:0;width:2px;
-  background:repeating-linear-gradient(to bottom, var(--border-strong) 0 4px, transparent 4px 9px);
-}
-.dc-gap-label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;background:var(--bg-panel);padding:4px 10px;border-radius:99px}
-.dc-gap-label svg{width:12px;height:12px;color:var(--ink-faint)}
+.sched-row.live .sr-accent{background:var(--course,var(--live)) !important;width:4px;box-shadow:0 0 8px color-mix(in srgb, var(--course,var(--live)) 60%, transparent)}
+.sched-row.live .sr-time b,.sched-row.live .sr-time small{color:var(--course,var(--live))}
+.sched-row.live .sr-time b{font-size:19px}
+.sched-row.live .sr-subj{font-size:17px}
+
+/* upcoming: mid weight, full info visible */
+.sched-row.upcoming .sr-subj{font-size:14.5px}
+
+/* cancelled */
+.sched-row.cancelled{opacity:.7}
+.sched-row.cancelled .sr-subj{text-decoration:line-through;color:var(--danger)}
+.sched-row.cancelled .sr-accent{background:var(--danger) !important}
+.sched-row.cancelled .sr-code{background:color-mix(in srgb, var(--danger) 16%, transparent);color:var(--danger)}
 .timeline-holiday-banner{
   display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:10px;border-radius:var(--radius-sm);
   background:var(--amber-soft);border:1px solid var(--border);
@@ -1330,110 +1258,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .day-focus-sub{margin:4px 0 0;font-size:14px;font-weight:600;color:var(--ink-muted);display:flex;align-items:center;gap:7px}
 .dfs-today{font-size:10px;font-weight:800;letter-spacing:.06em;color:#fff;background:var(--accent);border-radius:99px;padding:3px 8px}
 
-/* Ticklabels now sit below the track (not above) so the "now" beacon has clean
-   room to float above the track without crowding into the time labels. */
-.day-ruler{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-md);padding:22px 14px 12px;margin-bottom:18px}
-.dr-ticklabels{position:relative;height:14px;margin-top:8px}
-.dr-tlab{position:absolute;transform:translateX(-50%);font-size:10px;font-weight:700;color:var(--ink-faint);white-space:nowrap}
-.dr-tlab:first-child{transform:none}
-.dr-tlab:last-child{transform:translateX(-100%)}
-.dr-track{position:relative;height:34px;border-radius:10px;background:color-mix(in srgb, var(--ink) 5%, transparent);overflow:visible}
-.dr-seg{
-  position:absolute;top:0;bottom:0;border:0;border-radius:7px;padding:0 8px;
-  display:flex;align-items:center;overflow:hidden;cursor:pointer;font:inherit;
-  background:var(--course,var(--accent));opacity:.5;transition:opacity .2s ease,transform .12s ease;
-}
-.dr-seg:active{transform:scale(.96)}
-.dr-seg span{font-size:10px;font-weight:800;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.3)}
-.dr-seg.current{opacity:1;box-shadow:0 0 0 2px color-mix(in srgb, var(--course,var(--accent)) 45%, transparent)}
-.dr-seg.upcoming{opacity:.65}
-.dr-gap{position:absolute;top:9px;bottom:9px;border-radius:4px;background:repeating-linear-gradient(115deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 5px, transparent 5px 10px)}
-/* Same pulsing-beacon language as the Hero ruler's now-marker — floats above the
-   track instead of a line running through the segments. */
-/* Same floating-pin language as the Hero ruler — a dot with a fading stem that
-   stops right at the track's top edge instead of a line running through it. */
-.dr-now{position:absolute;top:-20px;height:20px;width:2px;transform:translateX(-50%);z-index:2;pointer-events:none}
-.dr-now::before{
-  content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:9px;height:9px;
-  border-radius:50%;background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);
-}
-.dr-now::after{
-  content:"";position:absolute;top:9px;bottom:0;left:50%;width:2px;transform:translateX(-50%);
-  background:linear-gradient(180deg,var(--live),transparent);
-}
 
-.day-earlier{margin-bottom:16px}
-.de-label{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--ink-faint);font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
-.de-label::before,.de-label::after{content:"";flex:1;height:1px;background:var(--border)}
-.de-rows{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.12)}
-.de-row{display:flex;align-items:center;gap:9px;padding:10px 13px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s ease}
-@media (hover:hover){.de-row:hover{background:color-mix(in srgb, var(--ink) 4%, transparent)}}
-.de-row:last-child{border-bottom:none}
-.de-dot{width:7px;height:7px;border-radius:50%;flex:none}
-.de-txt{flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--ink-muted);text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
-.de-chk{display:flex;color:var(--live);flex:none}
-.de-chk svg{width:13px;height:13px}
-
-/* Premium timeline: time in its own bold column, a gradient spine with glowing nodes
-   (the live one pulses), cards with more depth than a flat panel. */
-.pt-list{display:flex;flex-direction:column}
-/* Time, spine and card sat far enough apart (13+18+13px of empty gap) that the
-   time read as a disconnected label rather than belonging to its class card —
-   tightened throughout so the whole row reads as one integrated unit. */
-.pt-item{
-  position:relative;display:flex;gap:8px;padding-bottom:20px;
-  animation:pt-item-in .4s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0) * 60ms);
-}
-@keyframes pt-item-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion: reduce){.pt-item{animation:none}}
-.pt-time-col{width:44px;flex:none;padding-top:2px;text-align:right}
-.pt-time-col .hh{display:block;font-family:var(--font-display);font-size:18px;font-weight:700;line-height:1;color:var(--ink)}
-.pt-time-col .ap{display:block;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-faint);margin-top:2px}
-.pt-spine{width:14px;flex:none;position:relative;display:flex;justify-content:center}
-.pt-line{position:absolute;top:0;bottom:-20px;width:2px;background:linear-gradient(180deg,var(--lc,var(--accent)) 0%,color-mix(in srgb, var(--lc,var(--accent)) 25%, transparent) 100%)}
-/* A moving marker for the one stretch "now" actually falls within, instead of a
-   plain static rod — it creeps down the line as the wait between classes ticks by. */
-.pt-progress-dot{
-  position:absolute;left:50%;width:9px;height:9px;border-radius:50%;
-  transform:translate(-50%,-50%);background:var(--live);z-index:1;
-  box-shadow:0 0 0 3px var(--bg-panel), 0 0 8px 1px color-mix(in srgb, var(--live) 70%, transparent);
-  transition:top 1s linear;
-}
-/* A pulsing halo instead of a static dot. Capped at 12px (inside the 14px spine
-   column) so the ring never bleeds sideways into the time label or the card. */
-.pt-progress-dot::after{
-  content:"";position:absolute;top:50%;left:50%;width:12px;height:12px;margin:-6px 0 0 -6px;
-  border-radius:50%;border:1.5px solid var(--live);animation:beacon-pulse 1.8s ease-out infinite;
-}
-@media(prefers-reduced-motion: reduce){.pt-progress-dot{transition:none}.pt-progress-dot::after{animation:none;opacity:0}}
-.pt-node{position:relative;width:13px;height:13px;border-radius:50%;background:var(--dot,var(--accent));box-shadow:0 0 0 4px var(--bg-panel), 0 0 10px color-mix(in srgb, var(--dot,var(--accent)) 65%, transparent);margin-top:3px}
-.pt-node.live{animation:pt-pulse 1.8s ease-in-out infinite}
-@keyframes pt-pulse{0%,100%{box-shadow:0 0 0 4px var(--bg-panel),0 0 0 0 color-mix(in srgb, var(--dot) 55%, transparent)}50%{box-shadow:0 0 0 4px var(--bg-panel),0 0 13px 3px color-mix(in srgb, var(--dot) 65%, transparent)}}
-@media(prefers-reduced-motion: reduce){.pt-node.live{animation:none}}
-.pt-body{
-  flex:1;min-width:0;cursor:pointer;position:relative;background:linear-gradient(180deg,var(--bg-raised,var(--bg-elevated)),var(--bg-panel));
-  border:1px solid var(--border);border-left:3px solid var(--c);border-radius:14px;padding:13px 15px 13px 13px;
-  box-shadow:0 4px 14px rgba(0,0,0,.14);
-}
-/* Same color, same left-edge-bar language as the ruler segment above it and the
-   Home timeline card's ::before bar — one class reads as the same class everywhere
-   it appears on screen, not a different color intensity per component. */
-.pt-body.now{
-  border-left-width:4px;border-color:color-mix(in srgb, var(--c) 55%, var(--border));
-  box-shadow:0 0 0 1px color-mix(in srgb, var(--c) 32%, transparent), 0 0 14px -3px color-mix(in srgb, var(--c) 45%, transparent), 0 8px 22px rgba(0,0,0,.2);
-  padding:17px 18px 17px 16px;
-}
-.pt-body.now .pt-ttl{font-size:19px}
-.pt-body.now .pt-tag.live{font-size:12px;padding:5px 12px}
-.pt-tag{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums;padding:4px 11px;border-radius:99px;margin-bottom:8px}
-.pt-tag.live{background:var(--c);color:#fff;font-size:11px;letter-spacing:.04em}
-.pt-tag.live::before{content:"";width:5px;height:5px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.4)}
-.pt-tag.plain{background:var(--bg-elevated);color:var(--ink)}
-.pt-ttl{font-weight:800;font-size:16px;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;gap:7px}
-.pt-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:4px;font-size:11px;color:var(--ink-faint)}
-.pt-meta span{display:inline-flex;align-items:center;gap:3px}
-.pt-prog{height:4px;background:var(--bg-elevated);border-radius:2px;margin-top:11px;overflow:hidden}
-.pt-prog i{display:block;height:100%;background:linear-gradient(90deg,var(--c),color-mix(in srgb, var(--c) 55%, #fff));border-radius:2px;transition:width 1s linear}
 
 @keyframes just-picked-flash{
   0%{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent)}
@@ -1611,7 +1436,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .session-ring-meta span{font-size:11px;color:var(--ink-muted);font-weight:600}
 .empty-inline{font-size:13px;color:var(--ink-muted);padding:4px 0}
 
-.day-cardlist-item{cursor:pointer}
 #focusPanel.has-focus{cursor:pointer}
 .agenda-empty{padding:22px 8px;text-align:center;color:var(--ink-muted);font-size:14px;font-weight:600}
 .academic-date-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:10px;border-radius:var(--radius-sm);background:var(--amber-soft);border:1px solid var(--border)}
