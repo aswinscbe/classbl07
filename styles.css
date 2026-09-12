@@ -476,8 +476,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card.is-empty{color:var(--on-grad)}
 /* A live time ruler for the shown day, not just a proportion bar: hour ticks make it
    read as actual clock time, and each block is tappable straight into that class. */
-.hero-day-strip{margin-top:16px;padding-top:14px;border-top:1px solid var(--on-grad-line)}
-.hero-strip-track{position:relative;height:34px;border-radius:10px;background:color-mix(in srgb, var(--on-grad-line) 45%, transparent)}
+.hero-day-strip{margin-top:16px;padding-top:22px;border-top:1px solid var(--on-grad-line)}
+.hero-strip-track{position:relative;height:34px;border-radius:10px;background:color-mix(in srgb, var(--on-grad-line) 45%, transparent);overflow:visible}
 .hero-strip-tick{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in srgb, var(--on-grad-line) 85%, transparent)}
 .hero-strip-seg{
   position:absolute;top:3px;bottom:3px;border:0;border-radius:7px;padding:0 7px;
@@ -489,14 +489,19 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-strip-seg span{font-size:10px;font-weight:800;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.35)}
 .hero-strip-seg.current{opacity:1;box-shadow:0 0 0 2px color-mix(in srgb, var(--course,var(--on-grad)) 45%, transparent)}
 .hero-strip-seg.upcoming{opacity:.65}
-.hero-strip-now{
-  position:absolute;top:-4px;bottom:-4px;width:2px;z-index:2;
-  background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);
-}
+/* A pulsing beacon floating above the rail instead of a line through it — it used
+   to cut straight through segment text; this never touches the segments at all. */
+.hero-strip-now{position:absolute;top:-15px;transform:translateX(-50%);width:1px;z-index:2}
 .hero-strip-now::before{
-  content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);
-  width:7px;height:7px;border-radius:50%;background:var(--live);box-shadow:0 0 0 2px var(--grad);
+  content:"";position:absolute;top:0;left:0;width:9px;height:9px;margin-left:-4.5px;
+  border-radius:50%;background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);z-index:1;
 }
+.hero-strip-now::after{
+  content:"";position:absolute;top:-6px;left:-6px;width:21px;height:21px;
+  border-radius:50%;border:1.5px solid var(--live);animation:beacon-pulse 1.8s ease-out infinite;
+}
+@keyframes beacon-pulse{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
+@media(prefers-reduced-motion: reduce){.hero-strip-now::after{animation:none;opacity:0}}
 .hero-strip-ends{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:700;color:var(--on-grad-muted)}
 
 .exam-hero{
