@@ -491,17 +491,19 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-strip-seg.upcoming{opacity:.65}
 /* A pulsing beacon floating above the rail instead of a line through it — it used
    to cut straight through segment text; this never touches the segments at all. */
-.hero-strip-now{position:absolute;top:-15px;transform:translateX(-50%);width:1px;z-index:2}
+/* A floating pin above the rail — a dot with a short fading stem pointing down to
+   the exact time, stopping right at the track's top edge rather than crossing
+   through it (unlike the old line that used to cut through segment text). */
+.hero-strip-now{position:absolute;top:-20px;height:20px;width:2px;transform:translateX(-50%);z-index:2;pointer-events:none}
 .hero-strip-now::before{
-  content:"";position:absolute;top:0;left:0;width:9px;height:9px;margin-left:-4.5px;
-  border-radius:50%;background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);z-index:1;
+  content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:9px;height:9px;
+  border-radius:50%;background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);
 }
 .hero-strip-now::after{
-  content:"";position:absolute;top:-6px;left:-6px;width:21px;height:21px;
-  border-radius:50%;border:1.5px solid var(--live);animation:beacon-pulse 1.8s ease-out infinite;
+  content:"";position:absolute;top:9px;bottom:0;left:50%;width:2px;transform:translateX(-50%);
+  background:linear-gradient(180deg,var(--live),transparent);
 }
 @keyframes beacon-pulse{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
-@media(prefers-reduced-motion: reduce){.hero-strip-now::after{animation:none;opacity:0}}
 .hero-strip-ends{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:700;color:var(--on-grad-muted)}
 
 .exam-hero{
@@ -1284,16 +1286,17 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .dr-gap{position:absolute;top:9px;bottom:9px;border-radius:4px;background:repeating-linear-gradient(115deg, color-mix(in srgb, var(--ink) 10%, transparent) 0 5px, transparent 5px 10px)}
 /* Same pulsing-beacon language as the Hero ruler's now-marker — floats above the
    track instead of a line running through the segments. */
-.dr-now{position:absolute;top:-15px;transform:translateX(-50%);width:1px;z-index:2}
+/* Same floating-pin language as the Hero ruler — a dot with a fading stem that
+   stops right at the track's top edge instead of a line running through it. */
+.dr-now{position:absolute;top:-20px;height:20px;width:2px;transform:translateX(-50%);z-index:2;pointer-events:none}
 .dr-now::before{
-  content:"";position:absolute;top:0;left:0;width:9px;height:9px;margin-left:-4.5px;
-  border-radius:50%;background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);z-index:1;
+  content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:9px;height:9px;
+  border-radius:50%;background:var(--live);box-shadow:0 0 6px color-mix(in srgb, var(--live) 70%, transparent);
 }
 .dr-now::after{
-  content:"";position:absolute;top:-6px;left:-6px;width:21px;height:21px;
-  border-radius:50%;border:1.5px solid var(--live);animation:beacon-pulse 1.8s ease-out infinite;
+  content:"";position:absolute;top:9px;bottom:0;left:50%;width:2px;transform:translateX(-50%);
+  background:linear-gradient(180deg,var(--live),transparent);
 }
-@media(prefers-reduced-motion: reduce){.dr-now::after{animation:none;opacity:0}}
 
 .day-earlier{margin-bottom:16px}
 .de-label{display:flex;align-items:center;gap:8px;margin:0 0 8px;color:var(--ink-faint);font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
@@ -1329,10 +1332,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:0 0 0 3px var(--bg-panel), 0 0 8px 1px color-mix(in srgb, var(--live) 70%, transparent);
   transition:top 1s linear;
 }
-/* A pulsing halo instead of a static dot — the same "this is live" language as the
-   Hero/Planner ruler beacons and the timeline's own live node. */
+/* A pulsing halo instead of a static dot. Capped at 16px (inside the 18px spine
+   column) so the ring never bleeds sideways into the time label or the card. */
 .pt-progress-dot::after{
-  content:"";position:absolute;top:50%;left:50%;width:21px;height:21px;margin:-10.5px 0 0 -10.5px;
+  content:"";position:absolute;top:50%;left:50%;width:16px;height:16px;margin:-8px 0 0 -8px;
   border-radius:50%;border:1.5px solid var(--live);animation:beacon-pulse 1.8s ease-out infinite;
 }
 @media(prefers-reduced-motion: reduce){.pt-progress-dot{transition:none}.pt-progress-dot::after{animation:none;opacity:0}}
