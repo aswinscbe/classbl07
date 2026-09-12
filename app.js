@@ -1610,12 +1610,27 @@ function showDialogValidation(dialog,message){
   p.textContent=message;
   $(".dialog-actions",dialog)?.before(p);
 }
+/* Closing relied entirely on an "animationend" event to ever call dialog.close() —
+   if that event never fires (animation interrupted by a backgrounded tab, the
+   "closing" class already being present from an earlier aborted close so re-adding
+   it doesn't restart the animation, etc.) the dialog silently never closes, its
+   still-open backdrop keeps eating every tap underneath it, and the whole app reads
+   as "stuck" until a reload. Force a clean restart of the animation and fall back to
+   closing on a timer regardless of whether the animation event ever arrives. */
 function animateCloseDialog(dialog){
   if(!dialog||!dialog.open)return;
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){dialog.close();return}
+  dialog.classList.remove("closing");
+  void dialog.offsetWidth;
   dialog.classList.add("closing");
-  const done=()=>{dialog.classList.remove("closing");dialog.close()};
+  let finished=false;
+  const done=()=>{
+    if(finished)return;finished=true;
+    dialog.classList.remove("closing");
+    if(dialog.open)dialog.close();
+  };
   dialog.addEventListener("animationend",done,{once:true});
+  setTimeout(done,400);
 }
 function closeDialog(dialog,reset=false){
   clearDialogValidation(dialog);
@@ -2071,7 +2086,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova100",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova101",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
