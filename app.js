@@ -101,7 +101,8 @@ more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle c
 flame:'<path d="M12 2c1 3-2 4-2 7a3 3 0 0 0 6 0c0-1-.5-2-1-2 2 1 3 3 3 5a6 6 0 0 1-12 0c0-4 2-5 3-7 .5-1 1-2 3-3Z"/>',
 trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5a3 3 0 0 0 3 4M16 5h3a3 3 0 0 1-3 4"/><path d="M12 13v3M9 20h6M10 16.5h4v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2Z"/>',
 share:'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.3 10.7 7.4-4.4M8.3 13.3l7.4 4.4"/>',
-download:'<path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 19h16"/>'
+download:'<path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 19h16"/>',
+grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'
 };return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
 function renderIcons(){$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
 function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#1c1712":"#efe7d8";applyAccent();renderThemeToggleIcon(t)}
@@ -806,6 +807,17 @@ function renderWeekPlanner(){
   const days=weekDaysFrom(state.railStart);
   const pillEl=$("#dayFocusPillText");
   if(pillEl)pillEl.textContent=fmtDate(state.selectedDate||today,{weekday:"short",day:"numeric",month:"short"});
+
+  const summaryEl=$("#weekSummaryLine");
+  if(summaryEl){
+    const thisMon=mondayIso(today),thisWeekDays=weekDaysFrom(thisMon);
+    const nextMonDate=new Date(`${thisMon}T12:00:00+05:30`);nextMonDate.setDate(nextMonDate.getDate()+7);
+    const nextMon=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(nextMonDate);
+    const nextWeekDays=weekDaysFrom(nextMon);
+    const countIn=isos=>state.classes.filter(c=>c.status!=="Cancelled"&&isos.includes(c.dateIso)).length;
+    const thisWeekCount=countIn(thisWeekDays),nextWeekCount=countIn(nextWeekDays);
+    summaryEl.innerHTML=`<span>This week <b>${thisWeekCount}</b> ${thisWeekCount===1?"class":"classes"}</span><span class="wsl-sep">·</span><span>Next week <b>${nextWeekCount}</b> ${nextWeekCount===1?"class":"classes"}</span>`;
+  }
 
   /* The strip is both the weekly shape at a glance and the fast in-week navigator: a
      real class-count badge per day (not a dot row), so "how busy is this week" and
@@ -1941,6 +1953,7 @@ function bind(){
   $$(".subtab[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-profile-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".profile-view").forEach(v=>v.classList.toggle("active",v.dataset.profileView===b.dataset.profileTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#openMonthPicker")?.addEventListener("click",()=>{renderCalendar();$("#monthPickerDialog").showModal()});
+  $("#jumpToTodayPill")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#closeMonthPicker")?.addEventListener("click",()=>closeDialog($("#monthPickerDialog")));
   $("#monthPickerDialog")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeDialog(e.currentTarget)});
   $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
@@ -2050,7 +2063,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova93",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova94",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
