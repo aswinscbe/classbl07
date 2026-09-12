@@ -830,7 +830,7 @@ function renderDayFocus(iso){
   let active=dayAll.filter(c=>c.status!=="Cancelled");
   if(state.calendarHighlight)active=active.filter(c=>canonical(c.code)===state.calendarHighlight);
   const totalMins=active.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
-  $("#dayFocusTitle").textContent=fmtDate(iso,{weekday:"long",day:"numeric",month:"long"});
+  $("#dayFocusTitle").innerHTML=`<span class="dft-weekday">${esc(fmtDate(iso,{weekday:"long"}))}</span> <span class="dft-date">${esc(fmtDate(iso,{day:"numeric",month:"long"}))}</span>`;
   const subText=[active.length?`${active.length} ${active.length===1?"class":"classes"}`:(exam?"Exam day":"Free day"),totalMins?compactDuration(totalMins):null].filter(Boolean).join(" · ");
   $("#dayFocusSub").innerHTML=`${esc(subText)}${isToday?' <b class="dfs-today">TODAY</b>':""}`;
 
@@ -901,9 +901,20 @@ function renderDayFocus(iso){
         const dur=minutes(c.endTime)-minutes(c.startTime);
         const progress=isLive?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
         const sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessions(c.code).length:0;
+        /* The line to the next node shows a moving dot instead of a plain static
+           rod whenever "now" actually falls within that stretch — a marker that
+           creeps down as the wait ticks by, rather than an inert connector. */
+        let lineHtml="";
+        if(i<remaining.length-1){
+          const next=remaining[i+1];
+          const segStart=dateTime(c,"startTime"),segEnd=dateTime(next,"startTime");
+          const inSeg=now>=segStart&&now<=segEnd;
+          const segPct=inSeg?Math.max(0,Math.min(100,((now-segStart)/(segEnd-segStart))*100)):null;
+          lineHtml=`<div class="pt-line" style="--lc:${colorFor(c.code)}">${segPct!==null?`<span class="pt-progress-dot" style="top:${segPct}%"></span>`:""}</div>`;
+        }
         return`<div class="pt-item" style="--i:${i}">
           <div class="pt-time-col"><span class="hh">${esc(fmtTime(c.startTime).replace(/\s?[ap]m/i,""))}</span><span class="ap">${esc((fmtTime(c.startTime).match(/[ap]m/i)||[""])[0])}</span></div>
-          <div class="pt-spine">${i<remaining.length-1?`<div class="pt-line" style="--lc:${colorFor(c.code)}"></div>`:""}<div class="pt-node ${isLive?"live":""}" style="--dot:${colorFor(c.code)}"></div></div>
+          <div class="pt-spine">${lineHtml}<div class="pt-node ${isLive?"live":""}" style="--dot:${colorFor(c.code)}"></div></div>
           <article class="pt-body ${isLive?"now":""}" data-class-id="${esc(classIdentity(c))}" style="--c:${colorFor(c.code)}">
             <span class="pt-tag ${isLive?"live":"plain"}">${isLive?"NOW":esc(fmtRange(c.startTime,c.endTime))}</span>
             <div class="pt-ttl">${esc(c.course)}${sessionN?`<span class="dc-session-badge">${sessionN}/${sessionTotal}</span>`:""}</div>
@@ -2023,7 +2034,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova85",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova86",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
