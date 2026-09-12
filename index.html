@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260913-nova102">
+  <link rel="stylesheet" href="styles.css?v=20260913-nova103">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -163,17 +163,19 @@
         <section class="planner-view active" data-planner-view="calendar">
 
           <article class="panel week-planner">
-            <div class="planner-header-row">
-              <button type="button" class="datepill" id="jumpToTodayPill" aria-label="Jump to today">
-                <span data-icon="calendar"></span><span id="dayFocusPillText">—</span>
-              </button>
-              <button type="button" class="icon-button month-view-button" id="openMonthPicker" aria-label="Open month view" title="Month view"><span data-icon="grid"></span></button>
-            </div>
-            <p class="week-summary-line" id="weekSummaryLine"></p>
-            <div class="week-strip-row">
-              <button type="button" class="icon-button week-nav-arrow" id="weekScanPrev" aria-label="Previous week"><span data-icon="chevron-left"></span></button>
+            <div class="week-card">
+              <div class="week-card-head">
+                <button type="button" class="week-arrow" id="weekScanPrev" aria-label="Previous week"><span data-icon="chevron-left"></span></button>
+                <button type="button" class="week-card-mid" id="jumpToTodayPill" aria-label="Jump to today">
+                  <span class="week-card-date" id="weekCardDate">—</span>
+                  <span class="week-card-sub" id="weekCardSub">—</span>
+                </button>
+                <button type="button" class="week-arrow" id="weekScanNext" aria-label="Next week"><span data-icon="chevron-right"></span></button>
+              </div>
               <div class="week-strip" id="weekStrip"></div>
-              <button type="button" class="icon-button week-nav-arrow" id="weekScanNext" aria-label="Next week"><span data-icon="chevron-right"></span></button>
+              <div class="week-card-foot">
+                <button type="button" class="week-cal-btn" id="openMonthPicker"><span data-icon="calendar"></span><span id="weekCalBtnLabel">September 2026</span></button>
+              </div>
             </div>
 
             <div class="week-tools">
@@ -186,11 +188,6 @@
             <div class="filter-chips week-course-row" id="agendaCourseRow"></div>
 
             <div class="day-focus" id="dayFocus">
-              <div id="dayFocusPinSentinel" style="height:1px"></div>
-              <div class="day-focus-head">
-                <h2 class="day-focus-title" id="dayFocusTitle">—</h2>
-                <p class="day-focus-sub" id="dayFocusSub"></p>
-              </div>
               <div class="schedule-list" id="premiumTimeline"></div>
             </div>
           </article>
@@ -546,9 +543,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260913-nova102"></script>
-  <script src="exam-data.js?v=20260913-nova102"></script>
-  <script src="app.js?v=20260913-nova102"></script>
-  <script src="polish.js?v=20260913-nova102"></script>
+  <script src="campus-data.js?v=20260913-nova103"></script>
+  <script src="exam-data.js?v=20260913-nova103"></script>
+  <script src="app.js?v=20260913-nova103"></script>
+  <script src="polish.js?v=20260913-nova103"></script>
 </body>
 </html>

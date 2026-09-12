@@ -772,36 +772,26 @@ function renderWeekPlanner(){
   const today=isoToday(),now=new Date();
   if(!state.railStart)state.railStart=mondayIso(state.selectedDate);
   const days=weekDaysFrom(state.railStart);
-  const pillEl=$("#dayFocusPillText");
-  if(pillEl)pillEl.textContent=fmtDate(state.selectedDate||today,{weekday:"short",day:"numeric",month:"short"});
+  const calBtnLabel=$("#weekCalBtnLabel");
+  if(calBtnLabel)calBtnLabel.textContent=fmtDate(state.selectedDate||today,{month:"long",year:"numeric"});
 
-  const summaryEl=$("#weekSummaryLine");
-  if(summaryEl){
-    const thisMon=mondayIso(today),thisWeekDays=weekDaysFrom(thisMon);
-    const nextMonDate=new Date(`${thisMon}T12:00:00+05:30`);nextMonDate.setDate(nextMonDate.getDate()+7);
-    const nextMon=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(nextMonDate);
-    const nextWeekDays=weekDaysFrom(nextMon);
-    const countIn=isos=>state.classes.filter(c=>c.status!=="Cancelled"&&isos.includes(c.dateIso)).length;
-    const thisWeekCount=countIn(thisWeekDays),nextWeekCount=countIn(nextWeekDays);
-    summaryEl.innerHTML=`<span>This week <b>${thisWeekCount}</b> ${thisWeekCount===1?"class":"classes"}</span><span class="wsl-sep">·</span><span>Next week <b>${nextWeekCount}</b> ${nextWeekCount===1?"class":"classes"}</span>`;
-  }
-
-  /* The strip is both the weekly shape at a glance and the fast in-week navigator: a
+  /* The rail is both the week's shape at a glance and the fast in-week navigator: a
      real class-count badge per day (not a dot row), so "how busy is this week" and
-     "jump to this day" are answered by the same seven cells. Swiping the strip itself
-     shifts the whole week (handled below); tapping a cell switches the day in place. */
+     "jump to this day" are answered by the same seven cells. Swiping the rail itself
+     shifts the whole week (handled below); tapping a cell switches the day in place.
+     Every cell follows the same order — weekday, date, count — never swapped. */
   const strip=$("#weekStrip");
   if(strip){
-    const letters=["M","T","W","T","F","S","S"];
+    const letters=["MON","TUE","WED","THU","FRI","SAT","SUN"];
     strip.innerHTML=days.map((iso,i)=>{
       const active=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled");
-      return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-selected":""} ${!active.length?"is-zero":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}">
-        <span class="ws-dow">${letters[i]}</span>
-        <span class="ws-num">${Number(iso.slice(8))}</span>
-        <span class="ws-cnt">${active.length||"–"}</span>
+      return`<button type="button" class="wc-cell ${iso===today?"today":""} ${iso===state.selectedDate?"sel":""} ${!active.length?"zero":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}">
+        <span class="wc-dow">${letters[i]}</span>
+        <span class="wc-num">${Number(iso.slice(8))}</span>
+        <span class="wc-cnt">${active.length||"–"}</span>
       </button>`;
     }).join("");
-    $$(".ws-cell",strip).forEach(b=>b.addEventListener("click",()=>{
+    $$(".wc-cell",strip).forEach(b=>b.addEventListener("click",()=>{
       const iso=b.dataset.date;
       state.selectedDate=iso;
       const dd=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
@@ -825,9 +815,11 @@ function renderDayFocus(iso){
   if(state.calendarHighlight)dayAll=dayAll.filter(c=>canonical(c.code)===state.calendarHighlight);
   const active=dayAll.filter(c=>c.status!=="Cancelled");
   const totalMins=active.reduce((s,c)=>s+(minutes(c.endTime)-minutes(c.startTime)),0);
-  $("#dayFocusTitle").innerHTML=`<span class="dft-weekday">${esc(fmtDate(iso,{weekday:"long"}))}</span> <span class="dft-date">${esc(fmtDate(iso,{day:"numeric",month:"long"}))}</span>`;
+  const dateEl=$("#weekCardDate");
+  if(dateEl)dateEl.textContent=fmtDate(iso,{weekday:"long",day:"numeric",month:"long"});
   const subText=[active.length?`${active.length} ${active.length===1?"class":"classes"}`:(exam?"Exam day":"Free day"),totalMins?compactDuration(totalMins):null].filter(Boolean).join(" · ");
-  $("#dayFocusSub").innerHTML=`${esc(subText)}${isToday?' <b class="dfs-today">TODAY</b>':""}`;
+  const subEl=$("#weekCardSub");
+  if(subEl)subEl.innerHTML=`${esc(subText)}${isToday?' <b class="wc-today-badge">TODAY</b>':""}`;
 
   const timelineEl=$("#premiumTimeline");
   const showCompleted=state.agendaShowCompleted||!isToday;
@@ -1829,7 +1821,7 @@ function bind(){
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   document.addEventListener("click",e=>{
-    const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.ws-cell,.day-pill,.meal-tab,.subtab,.accent-swatch,.hero-day-arrow,.seg-opt,.week-nav-arrow");
+    const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.wc-cell,.day-pill,.meal-tab,.subtab,.accent-swatch,.hero-day-arrow,.seg-opt,.week-arrow");
     if(!t||t.disabled)return;
     haptic(t.matches(".primary-button,.danger-button,.google-tasks-button")?18:10);
   },{capture:true});
@@ -1976,14 +1968,10 @@ async function init(){
   syncSchedule(false).then(()=>maybeOpenOnboarding());
   updateTopbarClock();
   setInterval(updateTopbarClock,15000);
-  const pinSentinel=$("#dayFocusPinSentinel");
-  if(pinSentinel){
-    new IntersectionObserver(([entry])=>{$("#dayFocus")?.classList.toggle("is-pinned",!entry.isIntersecting)},{threshold:0,rootMargin:"-61px 0px 0px 0px"}).observe(pinSentinel);
-  }
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova102",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova103",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
