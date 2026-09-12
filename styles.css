@@ -848,16 +848,17 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .profile-view.active{display:block;animation:fade-in .15s ease}
 
 /* ============ Campus / Bus ============ */
-.route-planner{margin-top:14px}
-.route-select-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end}
-.route-select-grid label{display:flex;flex-direction:column;gap:5px;order:0;min-width:0}
+.route-planner{margin-top:14px;padding:14px 18px}
+.route-planner .panel-heading{margin-bottom:8px}
+.route-select-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:end}
+.route-select-grid label{display:flex;flex-direction:column;gap:4px;order:0;min-width:0}
 .route-select-grid label:last-of-type{order:0}
 .route-select-grid label span{font-size:11px;font-weight:700;color:var(--ink-muted)}
 .route-select-grid select{
-  width:100%;padding:10px 8px;border-radius:11px;border:1px solid var(--border);background:var(--bg-panel);color:var(--ink);font-size:13.5px;font-weight:600;
+  width:100%;padding:8px 8px;border-radius:11px;border:1px solid var(--border);background:var(--bg-panel);color:var(--ink);font-size:13.5px;font-weight:600;
 }
 .swap-route-button{
-  order:0;width:38px;height:38px;min-width:38px;border-radius:50%;padding:0;border:0;
+  order:0;width:34px;height:34px;min-width:34px;border-radius:50%;padding:0;border:0;
   background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;gap:8px;
   font-size:13px;font-weight:700;
 }
@@ -866,11 +867,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 
 @media (min-width:640px){
   .route-select-grid{gap:10px}
-  .route-select-grid select{padding:12px 13px;font-size:15px}
-  .swap-route-button{width:44px;min-width:44px;height:44px}
+  .route-select-grid select{padding:10px 13px;font-size:15px}
+  .swap-route-button{width:40px;min-width:40px;height:40px}
 }
 
 .filter-chips{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
+/* Reciprocal pairs (stop -> Aud, Aud -> stop) sit side by side on their own
+   row instead of stacking one-per-line — the two most-used routes for the
+   current selection stay compact at two lines total, not four. */
+#busFilterChips{display:grid;grid-template-columns:1fr 1fr;flex-wrap:unset}
+#busFilterChips .filter-chip{white-space:normal;text-align:center;justify-content:center;padding:8px 8px;font-size:12px;line-height:1.25}
 .filter-chip{
   background:var(--bg-elevated);border:1px solid var(--border-strong);border-radius:99px;padding:9px 15px;
   font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;flex:none;cursor:pointer;
