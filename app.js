@@ -462,15 +462,15 @@ function renderHome(){
       if(liveProgress)liveProgress.hidden=true;
     }
     const pills=[];
-    if(isNow){const mins=Math.max(0,Math.round((dateTime(shown,"endTime")-now)/60000));pills.push(heroPill(`Ends in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
-    else if(onBreak){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`Starts in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
-    else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`,"accent"))}
+    if(isNow){const mins=Math.max(0,Math.round((dateTime(shown,"endTime")-now)/60000));pills.push(heroPill(`Ends in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`))}
+    else if(onBreak){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`Starts in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`))}
+    else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`))}
     if(!isToday)pills.push(heroPill(`${dayList.length} ${dayList.length===1?"class":"classes"} that day`));
-    pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`,"info"));
-    if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`,"info"));
+    pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
+    if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`));
     const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
-    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${heroSessionTotal}`,"info"));
-    if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`,"accent"))
+    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${heroSessionTotal}`));
+    if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`))
     $("#heroPills").innerHTML=pills.join("");
     const dayLabel=shown.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(shown.dateIso,{weekday:"short",day:"numeric",month:"short"});
     const isFutureDay=shown.dateIso!==today;
@@ -739,11 +739,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
       const cls=["calendar-day",day.getMonth()!==m?"outside":"",isWeekend?"weekend":"",
         iso===isoToday()?"today":"",iso===state.selectedDate?"selected":"",dimmed?"dimmed":"",
         exam?"has-exam":"",holiday?"has-holiday":""].filter(Boolean).join(" ");
-      /* One glowing dot, colored by the day's first class, instead of a numeric count
-         badge — enough to say "this day is busy" at a glance without competing with
-         the date number for attention. Exam stays a ring around the date so it never
-         gets confused with, or replaces, the class-day dot. */
-      const dayDot=active.length?`<span class="cd-dot" style="color:${colorFor(active[0].code)};background:${colorFor(active[0].code)}"></span>`:"";
+      const dayDot=active.length?`<span class="cd-cnt" style="color:${colorFor(active[0].code)}">${active.length}</span>`:"";
       const holidayMark=!active.length&&holiday?'<span class="cd-mark cd-holiday" aria-hidden="true"></span>':"";
       return`<button class="${cls}" data-date="${iso}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
         <span class="calendar-day-number">${day.getDate()}</span>${dayDot}${holidayMark}
@@ -831,7 +827,7 @@ function renderWeekPlanner(){
       return`<button type="button" class="ws-cell ${iso===today?"is-today":""} ${iso===state.selectedDate?"is-selected":""} ${!active.length?"is-zero":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}">
         <span class="ws-dow">${letters[i]}</span>
         <span class="ws-num">${Number(iso.slice(8))}</span>
-        ${active.length?`<span class="ws-dot" style="background:${colorFor(active[0].code)}"></span>`:'<span class="ws-dot is-empty"></span>'}
+        <span class="ws-cnt">${active.length||"–"}</span>
       </button>`;
     }).join("");
     $$(".ws-cell",strip).forEach(b=>b.addEventListener("click",()=>{
@@ -1241,12 +1237,22 @@ function lastBusKeys(){
 }
 function isLastBus(bus){return lastBusKeys().has(`${bus.time}|${bus.from}|${bus.to}`)}
 
-const BUS_QUICK_ROUTES=[
-  {from:"C&D Housing",to:"PGP Auditorium",label:"C&D → Aud."},
-  {from:"PGP Auditorium",to:"C&D Housing",label:"Aud. → C&D"},
-  {from:"Main Gate",to:"PGP Auditorium",label:"Gate → Aud."},
-  {from:"PGP Auditorium",to:"Main Gate",label:"Aud. → Gate"}
-];
+/* Presets built from whatever stops are actually selected right now, instead of a
+   fixed pair — a hardcoded C&D/Main Gate set is useless to someone whose stop is
+   Phase 5. The Auditorium is the one hub every route in the network runs through,
+   so each non-Auditorium stop in the current From/To gets its own → Aud / Aud →
+   pair; if both sides are already non-Aud, both show up (up to 4 chips). */
+function busQuickRoutes(){
+  const AUD="PGP Auditorium";
+  const anchors=[...new Set([state.busFrom,state.busTo].filter(s=>s&&s!==AUD))];
+  if(!anchors.length)anchors.push(BUS_STOPS.find(s=>s!==AUD));
+  const routes=[];
+  anchors.forEach(stop=>{
+    routes.push({from:stop,to:AUD,label:`${busStopLabel(stop)} → ${busStopLabel(AUD)}`});
+    routes.push({from:AUD,to:stop,label:`${busStopLabel(AUD)} → ${busStopLabel(stop)}`});
+  });
+  return routes;
+}
 
 function renderCampus(){
   renderBusControls();
@@ -1265,7 +1271,7 @@ function renderBusControls(){
 
   const chips=$("#busFilterChips");
   if(chips){
-    chips.innerHTML=BUS_QUICK_ROUTES.map(r=>
+    chips.innerHTML=busQuickRoutes().map(r=>
       `<button class="filter-chip ${state.busFrom===r.from&&state.busTo===r.to?"active":""}" data-from="${esc(r.from)}" data-to="${esc(r.to)}">${esc(r.label)}</button>`
     ).join("");
     $$(".filter-chip",chips).forEach(button=>
@@ -2065,7 +2071,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova98",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova99",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

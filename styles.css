@@ -462,15 +462,18 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:color-mix(in srgb, var(--danger) 14%, transparent);color:var(--danger);font-size:13px;font-weight:700;
 }
 .hero-cancel-flag svg{width:14px;height:14px;flex:none}
-.hero-course-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;margin-top:14px}
+.hero-course-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;margin-top:16px}
 .hero-code{display:inline-flex;align-items:center;line-height:1;font-size:12px;font-weight:800;padding:5px 9px;border-radius:7px;background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent));box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent)}
 /* flex:1 1 auto + min-width:0 lets a long course name actually wrap/shrink inside
    the flex row instead of overflowing it — a flex item's default min-width:auto
    refuses to shrink below its unwrapped content width, and since .hero-card clips
    overflow, that meant a long name silently got cut off at the card's edge. */
-.hero-card h2#focusTitle{font-size:26px;font-weight:800;line-height:1.2;margin:0;color:var(--on-grad);letter-spacing:-.015em;flex:1 1 auto;min-width:0}
-.hero-time-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}
-.hero-time{font-family:var(--font-display);font-size:clamp(23px,6vw,27px);font-weight:800;letter-spacing:-.015em;line-height:1;color:var(--on-grad);white-space:nowrap;min-width:0}
+.hero-card h2#focusTitle{font-size:26px;font-weight:700;line-height:1.2;margin:0;color:var(--on-grad);letter-spacing:-.015em;flex:1 1 auto;min-width:0}
+.hero-time-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+/* Time and title read at the same size, but time carries more weight and a
+   faint glow — it's the thing your eyes should land on first, without the
+   two elements looking mismatched in scale. */
+.hero-time{font-family:var(--font-display);font-size:26px;font-weight:900;letter-spacing:-.015em;line-height:1;color:var(--on-grad);white-space:nowrap;min-width:0;text-shadow:0 0 20px color-mix(in srgb, var(--on-grad) 35%, transparent)}
 .hero-ring{position:relative;width:36px;height:36px;flex:none}
 .hero-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .hero-ring circle{fill:none;stroke-width:3.5}
@@ -479,30 +482,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card.is-urgent .hero-ring .ring-fill{stroke:var(--amber)}
 .hero-live-progress{margin-top:12px;height:4px;border-radius:99px;background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, var(--on-grad-line))}
 .hero-live-progress span{display:block;height:100%;border-radius:inherit;background:var(--focus-course,var(--accent));transition:width 30s linear;box-shadow:0 0 6px -1px color-mix(in srgb, var(--focus-course,var(--accent)) 55%, transparent)}
-.hero-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.hero-pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+/* All hero pills carry equal visual weight now — countdown, next-class, venue,
+   faculty and session are all read as equally important, no tiering. */
 .hero-pill{
-  display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:99px;
+  display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;
   background:color-mix(in srgb, var(--focus-course,var(--accent)) 12%, var(--hero-chip-bg));
   box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
   color:var(--on-grad-muted);font-size:13px;font-weight:600;line-height:1;
 }
 .hero-pill svg{width:13px;height:13px;flex:none}
-/* The countdown is the one piece of hero-pill info that's actually time-sensitive —
-   it gets a touch more presence than the static venue/faculty pills beside it. */
-.hero-pill.accent{
-  background:color-mix(in srgb, var(--focus-course,var(--accent)) 18%, transparent);color:var(--focus-course,var(--accent));font-weight:800;
-  box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent), 0 0 0 1px color-mix(in srgb, var(--focus-course,var(--accent)) 26%, transparent), 0 0 10px -3px color-mix(in srgb, var(--focus-course,var(--accent)) 50%, transparent);
-}
-/* Venue/faculty/session matter just as much as the countdown, but they answer a
-   different question ("where/what"), so they get their own identity — the
-   palette's warm copper accent — instead of either fading into the background
-   or being mistaken for the course-colored time-sensitive pills. */
-.hero-pill.info{
-  background:color-mix(in srgb, var(--accent-2) 13%, var(--hero-chip-bg));
-  color:var(--on-grad);font-weight:700;gap:6px;
-  box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent-2) 20%, transparent);
-}
-.hero-pill.info svg{color:var(--accent-2)}
 .hero-card.is-empty{color:var(--on-grad)}
 /* A live time ruler for the shown day, not just a proportion bar: hour ticks make it
    read as actual clock time, and each block is tappable straight into that class. */
@@ -822,7 +811,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   .home-layout{max-width:900px;margin-left:auto;margin-right:auto}
   .home-main{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
   .home-col-side{position:sticky;top:88px}
-  .hero-time{font-size:30px}
 }
 
 /* ============ Subtabs (Campus) ============ */
@@ -923,9 +911,12 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .next-bus-card>*{position:relative;z-index:1}
 .next-bus-card .overline.light{color:var(--on-grad-muted)}
-.next-bus-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.next-bus-head-actions{display:flex;align-items:center;gap:8px}
-.gate-tags{display:flex;align-items:center;gap:6px}
+/* Time and bell only ever compete with each other for width now — badges
+   (LAST BUS/ORIGIN TIME) used to sit in this same row and would squeeze the
+   time text until it wrapped mid-string; they get their own row below. */
+.next-bus-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.gate-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.gate-tags:empty{display:none}
 .leaving-soon-toggle{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 6%, transparent));border:1px solid var(--on-grad-line);color:var(--on-grad-muted);flex-shrink:0}
 .leaving-soon-toggle svg{width:16px;height:16px}
 .leaving-soon-toggle.active{background:var(--amber);color:#1a1200;border-color:transparent}
@@ -1281,9 +1272,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .ws-cell:active{transform:scale(.94)}
 .ws-dow{font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint);line-height:1}
 .ws-num{font-family:var(--font-display);font-size:18px;font-weight:700;line-height:1}
-.ws-dot{width:5px;height:5px;border-radius:50%;box-shadow:0 0 4px color-mix(in srgb, currentColor 50%, transparent)}
-.ws-dot.is-empty{background:transparent;box-shadow:none}
-.ws-cell.is-zero .ws-dot{opacity:.4}
+.ws-cnt{
+  font-size:10.5px;font-weight:800;color:var(--ink-faint);background:var(--bg-elevated);
+  border-radius:99px;padding:1.5px 7px;min-width:16px;text-align:center;
+}
+.ws-cell.is-zero .ws-cnt{opacity:.4}
 .ws-cell.is-today{border-color:color-mix(in srgb, var(--accent-2) 55%, transparent)}
 .ws-cell.is-today .ws-num{color:var(--accent-2)}
 /* The selected day needs to read unmistakably at a glance, not as a faint tint next to
@@ -1294,7 +1287,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:0 4px 14px -5px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 .ws-cell.is-selected .ws-dow,.ws-cell.is-selected .ws-num{color:#fff}
-.ws-cell.is-selected .ws-dot{background:#fff !important;opacity:1;box-shadow:0 0 4px rgba(255,255,255,.6)}
+.ws-cell.is-selected .ws-cnt{background:rgba(255,255,255,.25);color:#fff;opacity:1}
 .ws-cell.has-exam{box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 45%, transparent)}
 .ws-cell.is-selected.has-exam{box-shadow:0 4px 14px -6px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 0 0 1.5px #fff}
 
@@ -1378,16 +1371,19 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* Premium timeline: time in its own bold column, a gradient spine with glowing nodes
    (the live one pulses), cards with more depth than a flat panel. */
 .pt-list{display:flex;flex-direction:column}
+/* Time, spine and card sat far enough apart (13+18+13px of empty gap) that the
+   time read as a disconnected label rather than belonging to its class card —
+   tightened throughout so the whole row reads as one integrated unit. */
 .pt-item{
-  position:relative;display:flex;gap:13px;padding-bottom:20px;
+  position:relative;display:flex;gap:8px;padding-bottom:20px;
   animation:pt-item-in .4s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0) * 60ms);
 }
 @keyframes pt-item-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion: reduce){.pt-item{animation:none}}
-.pt-time-col{width:50px;flex:none;padding-top:2px;text-align:right}
+.pt-time-col{width:44px;flex:none;padding-top:2px;text-align:right}
 .pt-time-col .hh{display:block;font-family:var(--font-display);font-size:18px;font-weight:700;line-height:1;color:var(--ink)}
 .pt-time-col .ap{display:block;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-faint);margin-top:2px}
-.pt-spine{width:18px;flex:none;position:relative;display:flex;justify-content:center}
+.pt-spine{width:14px;flex:none;position:relative;display:flex;justify-content:center}
 .pt-line{position:absolute;top:0;bottom:-20px;width:2px;background:linear-gradient(180deg,var(--lc,var(--accent)) 0%,color-mix(in srgb, var(--lc,var(--accent)) 25%, transparent) 100%)}
 /* A moving marker for the one stretch "now" actually falls within, instead of a
    plain static rod — it creeps down the line as the wait between classes ticks by. */
@@ -1397,10 +1393,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:0 0 0 3px var(--bg-panel), 0 0 8px 1px color-mix(in srgb, var(--live) 70%, transparent);
   transition:top 1s linear;
 }
-/* A pulsing halo instead of a static dot. Capped at 16px (inside the 18px spine
+/* A pulsing halo instead of a static dot. Capped at 12px (inside the 14px spine
    column) so the ring never bleeds sideways into the time label or the card. */
 .pt-progress-dot::after{
-  content:"";position:absolute;top:50%;left:50%;width:16px;height:16px;margin:-8px 0 0 -8px;
+  content:"";position:absolute;top:50%;left:50%;width:12px;height:12px;margin:-6px 0 0 -6px;
   border-radius:50%;border:1.5px solid var(--live);animation:beacon-pulse 1.8s ease-out infinite;
 }
 @media(prefers-reduced-motion: reduce){.pt-progress-dot{transition:none}.pt-progress-dot::after{animation:none;opacity:0}}
@@ -1517,7 +1513,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .calendar-day.weekend .calendar-day-number{color:var(--ink-muted)}
 .calendar-day.outside{opacity:.22}
-.calendar-day.outside .cd-mark,.calendar-day.outside .cd-dot{display:none}
+.calendar-day.outside .cd-mark,.calendar-day.outside .cd-cnt{display:none}
 /* Today gets a warm outline ring with a soft glow behind it; the selected day gets
    a filled, glowing gradient pill — two visibly different treatments so they never
    get confused with each other even when the same date is both. */
@@ -1534,9 +1530,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   content:"";position:absolute;inset:-8px;border-radius:50%;z-index:-1;
   background:radial-gradient(circle,color-mix(in srgb, var(--accent) 45%, transparent),transparent 70%);
 }
-/* One glowing dot per day instead of a numeric count badge — enough to answer "is
-   this day busy" at a glance without competing with the date number for attention. */
-.cd-dot{width:5px;height:5px;border-radius:50%;box-shadow:0 0 4px color-mix(in srgb, currentColor 60%, transparent)}
+.cd-cnt{
+  font-size:9.5px;font-weight:800;line-height:1;background:color-mix(in srgb, currentColor 16%, var(--bg-panel));
+  border-radius:99px;padding:1.5px 6px;min-width:14px;text-align:center;
+}
 .cd-mark{height:3px;width:14px;border-radius:99px;flex:none;background:color-mix(in srgb, var(--amber) 65%, transparent)}
 /* Exams are a ring around the date, not a mark that could be mistaken for a class
    day or replace it — a day can have both classes and an exam. */
