@@ -240,12 +240,21 @@ function playHeroEntrance(){
 function positionNavIndicator(){
   const nav=$(".desktop-nav"),active=$(".desktop-nav-item.active",nav);
   let ind=$("#desktopNavIndicator");
-  if(!nav||!active)return;
-  if(!ind){ind=document.createElement("span");ind.id="desktopNavIndicator";ind.className="desktop-nav-indicator";nav.prepend(ind)}
-  const navRect=nav.getBoundingClientRect(),btnRect=active.getBoundingClientRect();
-  ind.style.width=`${btnRect.width}px`;
-  ind.style.transform=`translateX(${btnRect.left-navRect.left}px)`;
-  requestAnimationFrame(()=>ind.classList.add("ready"));
+  if(nav&&active){
+    if(!ind){ind=document.createElement("span");ind.id="desktopNavIndicator";ind.className="desktop-nav-indicator";nav.prepend(ind)}
+    const navRect=nav.getBoundingClientRect(),btnRect=active.getBoundingClientRect();
+    ind.style.width=`${btnRect.width}px`;
+    ind.style.transform=`translateX(${btnRect.left-navRect.left}px)`;
+    requestAnimationFrame(()=>ind.classList.add("ready"));
+  }
+  const bnav=$(".bottom-nav"),bactive=$(".nav-item.active",bnav);
+  let bind=$("#bottomNavIndicator");
+  if(!bnav||!bactive)return;
+  if(!bind){bind=document.createElement("span");bind.id="bottomNavIndicator";bind.className="bottom-nav-indicator";bnav.prepend(bind)}
+  const bnavRect=bnav.getBoundingClientRect(),bbtnRect=bactive.getBoundingClientRect();
+  bind.style.width=`${bbtnRect.width}px`;
+  bind.style.transform=`translateX(${bbtnRect.left-bnavRect.left}px)`;
+  requestAnimationFrame(()=>bind.classList.add("ready"));
 }
 const PAGE_LABELS={home:"Home",calendar:"Planner",campus:"Campus",profile:"Profile"};
 function showPage(n){if(n==="home"){state.timelineOffset=0;state.timelineTouched=false}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1)}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){renderCalendar();renderExamsPage()}positionNavIndicator();const label=$("#topbarPageLabel");if(label)label.textContent=PAGE_LABELS[n]||"Home"}
@@ -2034,7 +2043,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260902-nova89",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260912-nova90",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
