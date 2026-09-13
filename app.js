@@ -264,7 +264,20 @@ function setPlannerTab(tab){
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
 }
 function openPlannerTab(tab){showPage("calendar");setPlannerTab(tab);scrollTo({top:0,behavior:"auto"})}
-function openCalendarPage(iso){if(iso){state.selectedDate=iso;const d=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);state.railStart=mondayIso(iso)}openPlannerTab("calendar")}
+/* showPage("calendar") (called by openPlannerTab below) always resets
+   state.selectedDate to today as part of a fresh "open the Planner" — so the
+   target date has to be applied AFTER that reset, then re-rendered, or it was
+   silently overwritten right back to today before ever reaching the screen. */
+function openCalendarPage(iso){
+  openPlannerTab("calendar");
+  if(iso){
+    state.selectedDate=iso;
+    const d=new Date(`${iso}T12:00:00+05:30`);
+    state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
+    state.railStart=mondayIso(iso);
+    renderCalendar();
+  }
+}
 function renderExamCard(){
   const card=$("#examCard");if(!card)return;
   const exam=nextExam();
@@ -1866,6 +1879,7 @@ function bind(){
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#openMonthPicker")?.addEventListener("click",()=>{renderCalendar();$("#monthPickerDialog").showModal()});
   $("#jumpToTodayPill")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
+  $("#jumpToTodayButton")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#closeMonthPicker")?.addEventListener("click",()=>closeDialog($("#monthPickerDialog")));
   $("#monthPickerDialog")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeDialog(e.currentTarget)});
   $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
@@ -1971,7 +1985,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova105",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova106",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

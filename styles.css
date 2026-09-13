@@ -468,12 +468,12 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    the flex row instead of overflowing it — a flex item's default min-width:auto
    refuses to shrink below its unwrapped content width, and since .hero-card clips
    overflow, that meant a long name silently got cut off at the card's edge. */
-.hero-card h2#focusTitle{font-size:26px;font-weight:700;line-height:1.2;margin:0;color:var(--on-grad);letter-spacing:-.015em;flex:1 1 auto;min-width:0}
+.hero-card h2#focusTitle{font-size:22px;font-weight:700;line-height:1.2;margin:0;color:var(--on-grad);letter-spacing:-.015em;flex:1 1 auto;min-width:0}
 .hero-time-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
 /* Time and title read at the same size, but time carries more weight and a
    faint glow — it's the thing your eyes should land on first, without the
    two elements looking mismatched in scale. */
-.hero-time{font-family:var(--font-display);font-size:26px;font-weight:900;letter-spacing:-.015em;line-height:1;color:var(--on-grad);white-space:nowrap;min-width:0;text-shadow:0 0 20px color-mix(in srgb, var(--on-grad) 35%, transparent)}
+.hero-time{font-family:var(--font-display);font-size:22px;font-weight:900;letter-spacing:-.015em;line-height:1;color:var(--on-grad);white-space:nowrap;min-width:0;text-shadow:0 0 20px color-mix(in srgb, var(--on-grad) 35%, transparent)}
 .hero-ring{position:relative;width:36px;height:36px;flex:none}
 .hero-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .hero-ring circle{fill:none;stroke-width:3.5}
@@ -605,7 +605,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* Free day: no giant empty headline block, just the status line and the day below it. */
 .hero-card.is-empty .hero-time-row{display:none}
 .hero-card.is-empty .hero-course-line{margin-top:12px}
-.hero-card.is-empty h2#focusTitle{font-size:22px}
 /* A free day inside the Today card is one quiet line, not a 150px illustration. */
 .hero-card .empty-state{padding:10px 0 4px;flex-direction:row;justify-content:center;gap:8px;text-align:left}
 .hero-card .empty-state .empty-state-icon{width:24px;height:24px;margin-bottom:0;flex:none}
@@ -856,7 +855,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .leaving-soon-toggle.active{background:var(--amber);color:#1a1200;border-color:transparent}
 /* The departure time is the one number you actually came here for — it gets more
    presence than the route name/service label sitting right below it. */
-.next-bus-time{font-family:var(--font-display);font-size:clamp(32px,8.5vw,42px);font-weight:800;letter-spacing:-.02em;color:var(--on-grad)}
+.next-bus-time{font-family:var(--font-display);font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--on-grad)}
 .next-bus-card h2{font-size:17px;font-weight:700;margin-top:6px;color:var(--on-grad-muted)}
 .next-bus-card p#nextBusMeta{margin:2px 0 0;font-size:13px;color:var(--on-grad-muted);font-weight:500;opacity:.8}
 .next-bus-origin-note{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 6%, transparent));font-size:13px;color:var(--on-grad-muted);font-weight:500}
