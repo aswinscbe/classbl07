@@ -461,7 +461,7 @@ function renderHome(){
     $("#focusEmptyIcon").hidden=true;
     $("#focusKicker").textContent=isNow?"IN PROGRESS":onBreak?"ON A BREAK":isToday?"UPCOMING":"NEXT UP";
     $("#focusCode").hidden=false;$("#focusCode").textContent=canonical(shown.code);$("#focusTitle").textContent=shown.course;
-    $("#focusRange").textContent=fmtRange(shown.startTime,shown.endTime);
+    $("#focusRange").hidden=false;$("#focusRange").textContent=fmtRange(shown.startTime,shown.endTime);
     const dayList=scheduled.filter(c=>c.dateIso===shown.dateIso),posIndex=dayList.indexOf(shown),nextInDay=dayList[posIndex+1];
     const ring=$("#heroRing"),liveProgress=$("#heroLiveProgress");
     if(isNow){
@@ -504,8 +504,16 @@ function renderHome(){
     if(todays.length&&!state._confettiFiredToday){state._confettiFiredToday=true;fireConfetti()}
     $("#focusCode").hidden=true;
     const emptyIcon=$("#focusEmptyIcon");if(emptyIcon){emptyIcon.hidden=false;emptyIcon.innerHTML=icon(todays.length?"check":"moon")}
-    $("#focusTitle").textContent=todays.length?"You're all done for today":"No classes today";
-    $("#focusRange").textContent="—";
+    /* The empty-hero copy frames the day differently depending on when you're actually
+       reading it — a free morning reads as "ahead of you," the same free evening reads
+       as "day's wrapped" — instead of one static line all day long. */
+    let emptyTitle;
+    if(todays.length)emptyTitle=h<19?"You're all done for today":"Day's wrapped up";
+    else emptyTitle=h<12?"Free day ahead — no classes today":h<19?"No classes today":"No classes today — rest up";
+    $("#focusTitle").textContent=emptyTitle;
+    const rangeEl=$("#focusRange");
+    rangeEl.hidden=!future;
+    if(future)rangeEl.textContent=`Next: ${canonical(future.code)} · ${future.dateIso===tomorrowIso()?"tomorrow":fmtDate(future.dateIso,{weekday:"short",day:"numeric",month:"short"})}, ${fmtTime(future.startTime)}`;
     $("#heroPills").innerHTML="";
     $("#heroDayCount").hidden=true;
   }
@@ -779,6 +787,12 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
   for(let i=0;i<42;i++){const day=new Date(start);day.setDate(start.getDate()+i);monthIsos.push(`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,"0")}-${String(day.getDate()).padStart(2,"0")}`)}
   /* Built as six week rows rather than a flat grid of 42 tiles, so the week you are
      working in can be banded as an actual band and a row is a tap target of its own. */
+  /* A quiet background tint per day, scaled to how busy the month gets, plus a mark for
+     exam/deadline days — so a month reads as a density map before a single day is opened,
+     instead of every day looking the same until you dig into the count number. */
+  const inMonthCounts=monthIsos.filter(iso=>new Date(`${iso}T12:00:00+05:30`).getMonth()===m)
+    .map(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length);
+  const monthMaxLoad=Math.max(1,...inMonthCounts);
   let html="";
   for(let w=0;w<6;w++){
     const rowIsos=monthIsos.slice(w*7,w*7+7);
@@ -790,13 +804,16 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
       const dayCourses=[...new Set(active.map(c=>canonical(c.code)))];
       const dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight);
       const exam=examOn(iso),holiday=HOLIDAYS[iso];
+      const hasTask=state.tasks.some(t=>!t.completed&&t.date===iso);
       const cls=["calendar-day",day.getMonth()!==m?"outside":"",isWeekend?"weekend":"",
         iso===isoToday()?"today":"",iso===state.selectedDate?"selected":"",dimmed?"dimmed":"",
         exam?"has-exam":"",holiday?"has-holiday":""].filter(Boolean).join(" ");
+      const density=active.length?Math.max(.15,active.length/monthMaxLoad):0;
       const dayDot=active.length?`<span class="cd-cnt" style="color:${colorFor(active[0].code)}">${active.length}</span>`:"";
       const holidayMark=!active.length&&holiday?'<span class="cd-mark cd-holiday" aria-hidden="true"></span>':"";
-      return`<button class="${cls}" data-date="${iso}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
-        <span class="calendar-day-number">${day.getDate()}</span>${dayDot}${holidayMark}
+      const taskMark=hasTask?'<span class="cd-mark cd-task" aria-hidden="true"></span>':"";
+      return`<button class="${cls}" data-date="${iso}" style="--density:${density}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
+        <span class="calendar-day-number">${day.getDate()}</span>${dayDot}${holidayMark}${taskMark}
       </button>`;
     }).join("");
     html+=`<div class="month-week ${rowInWeek?"in-week":""}">${cells}</div>`;
@@ -1422,7 +1439,26 @@ function renderMessWeekGrid(){
     return`<div class="mess-week-row ${d===state.messDay?"is-today":""}"><span class="mwg-day">${d.slice(0,3).toUpperCase()}</span><span class="mwg-cell"><b data-meal="breakfast">B</b>${esc(mealSummary(menu.breakfast))}</span><span class="mwg-cell"><b data-meal="lunch">L</b>${esc(mealSummary(menu.lunch))}</span><span class="mwg-cell"><b data-meal="dinner">D</b>${esc(mealSummary(menu.dinner))}</span></div>`;
   }).join("");
 }
-function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const menu=window.CAMPUS_DATA.mess[state.messDay],meal=menu[state.meal];$("#messMenu").innerHTML=meal?mealCardHtml(meal,state.meal[0].toUpperCase()+state.meal.slice(1),state.meal):"";const nowHour=Number(istParts().hour),currentMeal=nowHour<11?"breakfast":nowHour<16?"lunch":"dinner";$$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal)})}
+function renderMess(){
+  const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  const nowHour=Number(istParts().hour),currentMeal=nowHour<11?"breakfast":nowHour<16?"lunch":"dinner";
+  const todayIso=isoToday(),todayDow=(new Date(`${todayIso}T12:00:00+05:30`).getDay()+6)%7,todayDayName=ds[todayDow];
+  /* Today's pill picks up the current meal's accent hue instead of a generic active
+     tint, so "which day am I on" and "what's serving right now" read off the same row. */
+  $("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""} ${d===todayDayName?"is-today":""}" data-day="${d}" ${d===todayDayName?`data-meal="${currentMeal}"`:""}>${d.slice(0,3).toUpperCase()}</button>`).join("");
+  $$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));
+  $("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);
+  const menu=window.CAMPUS_DATA.mess[state.messDay],meal=menu[state.meal];
+  $("#messMenu").innerHTML=meal?mealCardHtml(meal,state.meal[0].toUpperCase()+state.meal.slice(1),state.meal):"";
+  $$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal)});
+  const nowLine=$("#messNowLine");
+  if(nowLine){
+    if(state.messDay===todayDayName){
+      nowLine.hidden=false;nowLine.dataset.meal=currentMeal;
+      nowLine.innerHTML=`<span class="mnl-dot"></span>${currentMeal[0].toUpperCase()+currentMeal.slice(1)} is being served now`;
+    }else nowLine.hidden=true;
+  }
+}
 /* Deterministic CSS-only barcode heights, seeded off the student's name so it doesn't
    flicker on every re-render but still looks like a real ticket stub. */
 function barcodeHtml(seed){
@@ -2080,7 +2116,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova108",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova109",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

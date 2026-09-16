@@ -610,7 +610,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:var(--hero-chip-bg);color:var(--on-grad-muted);font-size:12px;font-weight:700;padding:5px 11px;flex:none;
 }
 /* Free day: no giant empty headline block, just the status line and the day below it. */
-.hero-card.is-empty .hero-time-row{display:none}
+.hero-card.is-empty .hero-time-row{margin-top:6px}
+.hero-card.is-empty .hero-time{font-size:14px;font-weight:700;color:var(--on-grad-muted);white-space:normal;text-shadow:none}
 .hero-card.is-empty .hero-course-line{margin-top:12px}
 /* A free day inside the Today card is one quiet line, not a 150px illustration. */
 .hero-card .empty-state{padding:10px 0 4px;flex-direction:row;justify-content:center;gap:8px;text-align:left}
@@ -989,6 +990,15 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:0 1px 2px rgba(0,0,0,.08);
 }
 .day-pill.active{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 2px 6px color-mix(in srgb, var(--accent) 40%, transparent)}
+.day-pill.is-today:not(.active){border-color:var(--meal-accent,var(--accent-2));color:var(--meal-accent,var(--accent-2))}
+.day-pill.is-today[data-meal="breakfast"]{--meal-accent:#d99a3a}
+.day-pill.is-today[data-meal="lunch"]{--meal-accent:#d97a3a}
+.day-pill.is-today[data-meal="dinner"]{--meal-accent:#8a6fc9}
+.mess-now-line{display:flex;align-items:center;gap:7px;margin:0;font-size:12px;font-weight:700;color:var(--ink-muted)}
+.mnl-dot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--meal-accent,var(--accent));box-shadow:0 0 0 3px color-mix(in srgb, var(--meal-accent,var(--accent)) 25%, transparent)}
+.mess-now-line[data-meal="breakfast"]{--meal-accent:#d99a3a}
+.mess-now-line[data-meal="lunch"]{--meal-accent:#d97a3a}
+.mess-now-line[data-meal="dinner"]{--meal-accent:#8a6fc9}
 .meal-tabs{display:flex;gap:6px}
 .meal-tab{
   flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;
@@ -1335,7 +1345,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   border-color:color-mix(in srgb, var(--accent) 26%, transparent);
 }
 .calendar-day{
-  aspect-ratio:1/1;border:0;background:none;border-radius:10px;
+  aspect-ratio:1/1;border:0;border-radius:10px;
+  background:color-mix(in srgb, var(--accent) calc(var(--density,0) * 16%), transparent);
   color:var(--ink);position:relative;cursor:pointer;padding:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
   transition:transform .15s ease,background .2s ease;
@@ -1370,6 +1381,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   border-radius:99px;padding:1.5px 6px;min-width:14px;text-align:center;
 }
 .cd-mark{height:3px;width:14px;border-radius:99px;flex:none;background:color-mix(in srgb, var(--amber) 65%, transparent)}
+.cd-mark.cd-task{background:var(--amber);width:5px;height:5px;border-radius:50%;position:absolute;bottom:3px;right:8px}
 /* Exams are a ring around the date, not a mark that could be mistaken for a class
    day or replace it — a day can have both classes and an exam. */
 .calendar-day.has-exam .calendar-day-number{box-shadow:0 0 0 2px var(--danger);color:var(--danger)}
