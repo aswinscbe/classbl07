@@ -488,6 +488,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   color:var(--on-grad-muted);font-size:13px;font-weight:600;line-height:1;
 }
 .hero-pill svg{width:13px;height:13px;flex:none}
+.hero-pill.warn{background:var(--amber-soft);color:var(--amber);font-weight:700}
 .hero-card.is-empty{color:var(--on-grad)}
 
 .exam-hero{
@@ -639,6 +640,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sr-sess{font-size:10px;font-weight:800;color:var(--ink-faint);background:var(--bg-panel);padding:2.5px 7px;border-radius:99px;flex:none}
 .sr-live-pill{font-size:10px;font-weight:800;background:var(--live);color:#04150c;padding:2.5px 8px;border-radius:99px;flex:none}
 .sr-cancel-pill{font-size:10px;font-weight:800;background:color-mix(in srgb, var(--danger) 20%, transparent);color:var(--danger);padding:2.5px 8px;border-radius:99px;flex:none}
+.sr-tbc-pill{font-size:10px;font-weight:800;letter-spacing:.02em;background:var(--amber-soft);color:var(--amber);padding:2.5px 7px;border-radius:99px;flex:none}
 .sr-meta{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;color:var(--ink-faint);flex-wrap:wrap}
 .sr-meta .sep{opacity:.4}
 .sr-next{margin:6px 0 0;font-size:12px;font-weight:600;color:var(--ink-faint)}

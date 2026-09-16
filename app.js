@@ -486,6 +486,7 @@ function renderHome(){
     else if(onBreak){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`Starts in ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`))}
     else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`))}
     if(!isToday)pills.push(heroPill(`${dayList.length} ${dayList.length===1?"class":"classes"} that day`));
+    if(shown.tentative)pills.push(heroPill("Timing not confirmed","warn"));
     pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
     if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`));
     const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
@@ -762,6 +763,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
     }
     const meta=[venueOf(c),c.faculty,compactDuration(dur)].filter(Boolean);
     if(tier==="live")meta.push(`ends in ${tagCountdown((dateTime(c,"endTime")-now)/60000)}`);
+    if(c.tentative)meta.push("timing not confirmed");
     html+=`<article class="sched-row ${tier}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
       <div class="sr-time"><b>${esc(h12)}</b><small>${esc((ap||"").toUpperCase())}</small></div>
       <div class="sr-accent"></div>
@@ -770,6 +772,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
           <span class="sr-code">${esc(canonical(c.code))}</span>
           <span class="sr-subj">${esc(c.course)}</span>
           ${tier==="live"?'<span class="sr-live-pill">NOW</span>':cancelled?'<span class="sr-cancel-pill">CANC.</span>':sessionN?`<span class="sr-sess">${sessionN}/${sessionTotal}</span>`:""}
+          ${c.tentative?'<span class="sr-tbc-pill" title="Timing not yet confirmed">TBC</span>':""}
           ${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}
         </div>
         ${tier!=="done"&&!cancelled?`<div class="sr-meta">${meta.map(esc).join('<span class="sep">·</span>')}</div>`:""}
@@ -2149,7 +2152,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova119",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova120",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
