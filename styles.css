@@ -680,11 +680,25 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sched-row.cancelled .sr-accent{background:var(--danger) !important}
 .sched-row.cancelled .sr-code{background:color-mix(in srgb, var(--danger) 16%, transparent);color:var(--danger)}
 .day-shape-bar{margin:2px 0 12px}
+.dsb-dots{display:flex;align-items:center;gap:5px;margin-bottom:6px}
+.dsb-dot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--border-strong)}
+.dsb-dot.done{background:var(--course,var(--live))}
+.dsb-dot.live{background:var(--course,var(--live));box-shadow:0 0 0 3px color-mix(in srgb, var(--course,var(--live)) 30%, transparent);animation:now-pulse 1.6s ease-in-out infinite}
+.dsb-dot.upcoming{background:transparent;box-shadow:inset 0 0 0 1.5px var(--border-strong)}
+@media(prefers-reduced-motion: reduce){.dsb-dot.live{animation:none}}
 .dsb-track{position:relative;height:8px;border-radius:99px;background:var(--bg-panel);overflow:visible}
 .dsb-block{position:absolute;top:0;height:100%;border-radius:99px;background:color-mix(in srgb, var(--course,var(--accent)) 75%, var(--bg-panel));min-width:3px}
 .dsb-block.done{opacity:.4}
 .dsb-block.live{box-shadow:0 0 0 2px color-mix(in srgb, var(--course,var(--accent)) 30%, transparent)}
 .dsb-now{position:absolute;top:-3px;width:2px;height:14px;border-radius:99px;background:var(--live);box-shadow:0 0 5px color-mix(in srgb, var(--live) 60%, transparent)}
+.dsb-labels{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.dsb-label{
+  font-size:10px;font-weight:800;letter-spacing:.02em;padding:2.5px 7px;border-radius:99px;
+  background:color-mix(in srgb, var(--course,var(--accent)) 16%, transparent);
+  color:color-mix(in srgb, var(--course,var(--accent)) 85%, var(--ink) 15%);
+}
+.dsb-label.done{opacity:.45}
+.dsb-label.live{box-shadow:0 0 0 1.5px var(--course,var(--accent))}
 .sched-done-summary{
   display:flex;align-items:center;gap:10px;width:100%;padding:9px 2px;
   background:none;border:0;border-bottom:1px solid var(--border);color:var(--ink-faint);text-align:left;

@@ -697,9 +697,16 @@ function shareToWhatsApp(text){window.open(`https://wa.me/?text=${encodeURICompo
 function renderDayShapeBar(classes,dayIso){
   const el=$("#dayShapeBar");if(!el)return;
   const WIN_START=7*60,WIN_END=21*60,WIN=WIN_END-WIN_START;
-  const active=classes.filter(c=>c.status!=="Cancelled");
+  const active=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   if(!active.length){el.innerHTML="";el.hidden=true;return}
   el.hidden=false;
+  /* A stepper row of one dot per class — filled once it's done, pulsing while live,
+     hollow while still ahead — answers "how far through today am I" at a glance,
+     above the proportional block track underneath it. */
+  const dots=active.map(c=>{
+    const status=agendaStatus(c),tier=status==="Live"?"live":status==="Completed"?"done":"upcoming";
+    return`<span class="dsb-dot ${tier}" style="--course:${colorFor(c.code)}"></span>`;
+  }).join("");
   const blocks=active.map(c=>{
     const s=Math.max(WIN_START,minutes(c.startTime)),e=Math.min(WIN_END,minutes(c.endTime));
     if(e<=s)return"";
@@ -712,7 +719,14 @@ function renderDayShapeBar(classes,dayIso){
     const nowMin=Number(istParts().hour)*60+Number(istParts().minute);
     if(nowMin>=WIN_START&&nowMin<=WIN_END)nowMark=`<span class="dsb-now" style="left:${((nowMin-WIN_START)/WIN)*100}%"></span>`;
   }
-  el.innerHTML=`<div class="dsb-track">${blocks}${nowMark}</div>`;
+  /* The subject codes that used to run under the timeline come back here as a
+     compact chip row, one per class in order, coloured to match its block and
+     dimmed once done — so the shape above always has names attached to it. */
+  const labels=active.map(c=>{
+    const status=agendaStatus(c),tier=status==="Live"?"live":status==="Completed"?"done":"upcoming";
+    return`<span class="dsb-label ${tier}" style="--course:${colorFor(c.code)}">${esc(canonical(c.code))}</span>`;
+  }).join("");
+  el.innerHTML=`<div class="dsb-dots">${dots}</div><div class="dsb-track">${blocks}${nowMark}</div><div class="dsb-labels">${labels}</div>`;
 }
 function scheduleRowsHtml(classes,dayIso,opts={}){
   const chronological=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
@@ -2116,7 +2130,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova109",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova110",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
