@@ -765,7 +765,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
     if(tier==="live")meta.push(`ends in ${tagCountdown((dateTime(c,"endTime")-now)/60000)}`);
     if(c.tentative)meta.push("timing not confirmed");
     html+=`<article class="sched-row ${tier}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
-      <div class="sr-time"><b>${esc(h12)}</b><small>${esc((ap||"").toUpperCase())}</small></div>
+      <div class="sr-time"><b>${esc(h12)}</b><small>${esc((ap||"").toUpperCase())}</small><span class="sr-time-end">${esc(fmtTime(c.endTime))}</span></div>
       <div class="sr-accent"></div>
       <div class="sr-body">
         <div class="sr-top">
@@ -2152,7 +2152,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova120",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova121",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

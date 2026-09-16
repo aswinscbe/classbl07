@@ -632,6 +632,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sr-time{width:50px;flex:none;text-align:right;padding-top:1px}
 .sr-time b{display:block;font-family:var(--font-display);font-size:14px;font-weight:800;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
 .sr-time small{display:block;font-size:10px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;margin-top:3px}
+.sr-time-end{display:block;font-size:10px;font-weight:600;color:var(--ink-faint);margin-top:4px;font-variant-numeric:tabular-nums}
+.sr-time-end::before{content:"– "}
 .sr-accent{width:3px;border-radius:2px;flex:none;align-self:stretch;background:var(--course,var(--accent))}
 .sr-body{flex:1;min-width:0;padding-top:1px}
 .sr-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;row-gap:4px}
@@ -650,7 +652,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* done: compact, receded */
 .sched-row.done{padding:7px 0}
 .sched-row.done .sr-time b{font-size:12px;font-weight:700;color:var(--ink-faint)}
-.sched-row.done .sr-time small{display:none}
+.sched-row.done .sr-time small,.sched-row.done .sr-time-end{display:none}
 .sched-row.done .sr-subj{font-size:13px;font-weight:600;color:var(--ink-faint)}
 .sched-row.done .sr-code{opacity:.5}
 .sched-row.done .sr-accent{opacity:.35}
