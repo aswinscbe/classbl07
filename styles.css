@@ -1297,7 +1297,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* ===== Month picker dialog — floating card with a soft glow, glowing selected
    date, dot-based day markers instead of numeric badges. ===== */
 .month-picker-dialog{border:0;padding:0;background:transparent;max-width:min(440px,92vw);width:100%}
-.month-picker-dialog::backdrop{background:radial-gradient(ellipse at 50% 100%, rgba(90,60,160,.16), rgba(5,3,12,.82) 70%);backdrop-filter:blur(3px)}
+.month-picker-dialog::backdrop{background:rgba(10,8,4,.55);backdrop-filter:blur(2px)}
 .month-picker-dialog .month-view-panel{
   position:relative;overflow:hidden;
   background:linear-gradient(165deg,color-mix(in srgb, var(--bg-elevated) 92%, #ad9bf7 8%) 0%,var(--bg-elevated) 55%,var(--bg-panel) 100%);

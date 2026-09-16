@@ -7,7 +7,11 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
    background) so no two course colors sit close enough to be confused — SBM and
    OS in particular used to both be warm amber/orange and were reported as
    indistinguishable; they're now on opposite sides of the wheel. */
-const COURSE_COLORS={SM:"#49a0df",DBST:"#495bdf",AIB:"#7c49df",OS:"#c149df",CV:"#df49b7",PM:"#df4972",POM:"#df6549",CB:"#dfaa49",SBM:"#bdd025",NWW:"#6ed025",MAAS:"#25d02a",ACC:"#25d079",IS:"#49dfd8"};
+/* Jewel-toned rather than a raw evenly-spaced hue wheel at max saturation — the
+   original set (S=70%, L=58%) read as a rainbow of candy colours once every
+   other surface in the app got muted; these keep the same hues (so existing
+   course associations don't shift) at lower saturation and deeper lightness. */
+const COURSE_COLORS={SM:"#4589ba",DBST:"#4553ba",AIB:"#6c45ba",OS:"#a345ba",CV:"#ba459b",PM:"#ba4564",POM:"#ba5a45",CB:"#ba9145",SBM:"#919c3a",NWW:"#659c3a",MAAS:"#3a9c3d",ACC:"#3a9c69",IS:"#45bab4"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
 const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,peekSection:null,peekAll:null};
@@ -2113,7 +2117,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova116",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova117",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
