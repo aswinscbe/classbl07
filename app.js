@@ -461,7 +461,6 @@ function renderHome(){
     $("#focusEmptyIcon").hidden=true;
     $("#focusKicker").textContent=isNow?"IN PROGRESS":onBreak?"ON A BREAK":isToday?"UPCOMING":"NEXT UP";
     $("#focusCode").hidden=false;$("#focusCode").textContent=canonical(shown.code);$("#focusTitle").textContent=shown.course;
-    const watermark=$("#heroWatermark");if(watermark)watermark.textContent=canonical(shown.code);
     $("#focusRange").hidden=false;$("#focusRange").textContent=fmtRange(shown.startTime,shown.endTime);
     const dayList=scheduled.filter(c=>c.dateIso===shown.dateIso),posIndex=dayList.indexOf(shown),nextInDay=dayList[posIndex+1];
     const ring=$("#heroRing"),liveProgress=$("#heroLiveProgress");
@@ -497,7 +496,6 @@ function renderHome(){
   }
   else{
     focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-upcoming","is-future","is-break","has-focus");focusPanel.style.removeProperty("--focus-course");delete focusPanel.dataset.focusDate;delete focusPanel.dataset.focusClassId;
-    const watermark=$("#heroWatermark");if(watermark)watermark.textContent="";
     $("#heroDateRibbon").hidden=true;
     $("#heroRing").hidden=true;
     if($("#heroLiveProgress"))$("#heroLiveProgress").hidden=true;
@@ -559,6 +557,7 @@ function renderHome(){
   const termDone=termAll.filter(c=>dateTime(c,"endTime")<now).length,termLeft=Math.max(0,termAll.length-termDone);
   const termPct=termAll.length?Math.round(termDone/termAll.length*100):0,termWeeksLeft=Math.max(0,Math.ceil((termEnd-now)/(7*24*3600000)));
   animateCount($("#termProgressPct"),termPct,"%");
+  $("#termHomeRingFill")?.style.setProperty("--pct",termPct);
   const termBar=$("#termProgressBar");
   if(termBar){
     if(!state._termBarAnimated){
@@ -571,7 +570,10 @@ function renderHome(){
   const termTotalMs=termEnd-termStart,sep1=new Date("2026-09-01T00:00:00+05:30");
   const sepTick=$("#termTickSep");
   if(sepTick)sepTick.style.left=`${Math.max(0,Math.min(100,((sep1-termStart)/termTotalMs)*100))}%`;
-  /* Week intensity dots — one column per day Mon-Sun, a color-fill square by class count instead of a bar-height chart. */
+  /* Week bar chart — count above, bar height by load, day letter below. A vertical
+     bar reads "how busy is this day" faster than a same-size square with a number
+     in it, and matches the muted single-hue premium direction (today's bar is the
+     only one that goes full accent; the rest step down from that). */
   const dayLetters=["M","T","W","T","F","S","S"];
   const heatEl=$("#weekHeatmap");
   if(heatEl){
@@ -583,15 +585,16 @@ function renderHome(){
       dayCounts.push({iso,count:active.length,hasCancelled,hasExam:!!examOn(iso),hasTask:state.tasks.some(t=>!t.completed&&t.date===iso)});
     }
     const maxCount=Math.max(1,...dayCounts.map(d=>d.count));
+    const MAX_BAR=64;
     heatEl.innerHTML=dayCounts.map((d,i)=>{
       const isToday=d.iso===isoToday();
-      const intensity=d.count?Math.max(.35,d.count/maxCount):0;
-      const bg=d.count
-        ?`color-mix(in srgb, var(--accent) ${Math.round(intensity*100)}%, var(--bg-panel))`
-        :d.hasCancelled?"var(--danger-soft)":"var(--bg-panel)";
-      const fg=d.count&&intensity>.55?"#fff":"var(--ink)";
-      const marks=`${d.hasExam?'<i class="wk-dot-mark exam"></i>':""}${d.hasTask?'<i class="wk-dot-mark task"></i>':""}`;
-      return`<div class="wk-dot-col ${isToday?"is-today":""}"><span class="sq" style="background:${bg};color:${fg}">${d.count||""}${marks}</span><small>${dayLetters[i]}</small></div>`;
+      const h=d.count?Math.round(Math.max(.18,d.count/maxCount)*MAX_BAR):4;
+      const marks=`${d.hasExam?'<i class="wk-bar-mark exam"></i>':""}${d.hasTask?'<i class="wk-bar-mark task"></i>':""}`;
+      return`<div class="wk-bar-col ${isToday?"is-today":""} ${!d.count?"zero":""} ${d.hasCancelled&&!d.count?"has-cancelled":""}">
+        <span class="wb-count">${d.count||"–"}</span>
+        <span class="wb-bar" style="height:${h}px">${marks}</span>
+        <small>${dayLetters[i]}</small>
+      </div>`;
     }).join("");
   }
   const unread=state.notifications.filter(n=>!n.read);
@@ -2110,7 +2113,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova114",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova115",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
