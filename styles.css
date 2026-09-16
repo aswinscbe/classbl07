@@ -898,13 +898,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .leaving-soon-toggle.active{background:var(--amber);color:#1a1200;border-color:transparent}
 /* The departure time is the one number you actually came here for — it gets more
    presence than the route name/service label sitting right below it. */
-.next-bus-time{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--on-grad-muted);font-variant-numeric:tabular-nums}
+.next-bus-time{font-family:var(--font-display);font-size:24px;font-weight:800;letter-spacing:-.015em;color:var(--on-grad);font-variant-numeric:tabular-nums;text-shadow:0 0 16px color-mix(in srgb, var(--on-grad) 30%, transparent)}
 .next-bus-card h2{font-size:17px;font-weight:700;margin-top:6px;color:var(--on-grad-muted)}
 .next-bus-card p#nextBusMeta{margin:2px 0 0;font-size:13px;color:var(--on-grad-muted);font-weight:500;opacity:.8}
-.next-bus-origin-note{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 6%, transparent));font-size:13px;color:var(--on-grad-muted);font-weight:500}
+.next-bus-origin-note{margin:8px 0 0;padding:9px 11px;border-radius:10px;background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 8%, transparent));font-size:14px;color:var(--on-grad-muted);font-weight:600;line-height:1.5}
 .next-bus-origin-note b{color:var(--on-grad);font-weight:800}
-.next-bus-origin-note .passed{opacity:.7}
-.next-bus-origin-note .upcoming{color:var(--on-grad);font-weight:700}
+.next-bus-origin-note .passed{opacity:.75;font-variant-numeric:tabular-nums}
+.next-bus-origin-note .upcoming{color:var(--on-grad);font-weight:800;font-variant-numeric:tabular-nums}
 /* A real mini route line instead of a wrapping list of stop names — your
    boarding stop lit up like "you are here", the rest of the stops laid out
    along the actual path to the destination. */
@@ -926,7 +926,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:flex;align-items:center;gap:12px;
 }
 .countdown-copy span{display:block;font-size:12px;font-weight:700;color:var(--on-grad-muted);text-transform:uppercase;letter-spacing:.04em}
-.countdown-copy strong{display:block;margin-top:1px;font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-.02em;color:var(--on-grad);font-variant-numeric:tabular-nums}
+.countdown-copy strong{display:block;margin-top:1px;font-family:var(--font-display);font-size:19px;font-weight:800;letter-spacing:-.015em;color:var(--on-grad);font-variant-numeric:tabular-nums}
 .countdown-ring{width:40px;height:40px;flex:none}
 .countdown-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .countdown-ring circle{fill:none;stroke-width:3.5}
