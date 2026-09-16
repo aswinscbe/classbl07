@@ -1021,22 +1021,51 @@ function renderNotes(){const search=$("#noteSearch");const list=$("#noteList");i
 function ledgerItems(){
   const q=($("#ledgerSearch")?.value||"").trim().toLowerCase(),filter=state.ledgerFilter||"all";
   let items=[
-    ...state.tasks.map(t=>({id:t.id,kind:"task",title:t.title,course:t.course,completed:t.completed,sortAt:t.createdAt||0})),
+    ...state.tasks.map(t=>({id:t.id,kind:"task",title:t.title,course:t.course,date:t.date,completed:t.completed,sortAt:t.createdAt||0})),
     ...state.notes.map(n=>({id:n.id,kind:"note",title:n.title,body:n.body,course:n.course,sortAt:n.createdAt||0}))
   ];
   if(filter!=="all")items=items.filter(i=>i.kind===(filter==="tasks"?"task":"note"));
   if(q)items=items.filter(i=>`${i.title||""} ${i.body||""} ${i.course||""}`.toLowerCase().includes(q));
   return items.sort((a,b)=>b.sortAt-a.sortAt);
 }
+/* A due date reads as "today/tomorrow/overdue" rather than a bare ISO string,
+   and carries its own tier colour (overdue = danger, today = accent, future =
+   neutral) the same way the rest of the app colour-codes urgency instead of
+   leaving every date the same flat grey. */
+function ledgerDateBadge(dateIso,completed){
+  if(!dateIso)return"";
+  const today=isoToday(),tomorrow=tomorrowIso();
+  let label,tier;
+  if(dateIso===today){label="Today";tier="today"}
+  else if(dateIso===tomorrow){label="Tomorrow";tier="soon"}
+  else if(dateIso<today&&!completed){label=fmtDate(dateIso,{day:"numeric",month:"short"});tier="overdue"}
+  else{label=fmtDate(dateIso,{day:"numeric",month:"short"});tier="future"}
+  return`<span class="ledger-date ${tier}">${esc(label)}</span>`;
+}
 function renderLedger(){
   const list=$("#ledgerList");if(!list)return;
   const items=ledgerItems();
-  list.innerHTML=items.length?items.map((it,i)=>{
-    const num=String(i+1).padStart(2,"0"),tag=it.course&&it.course!=="General"?canonical(it.course):"GEN";
+  list.innerHTML=items.length?items.map(it=>{
+    const tag=it.course&&it.course!=="General"?canonical(it.course):"",course=colorFor(it.course);
+    const chip=tag?`<span class="ledger-tag" style="--course:${course}">${esc(tag)}</span>`:"";
     if(it.kind==="task"){
-      return `<article class="ledgerrow" data-ledger-kind="task" data-ledger-id="${esc(it.id)}"><span class="n">${num}</span><span class="txt ${it.completed?"done":""}">${esc(it.title)}</span><span class="k">${esc(tag)}</span><button class="ledger-del" type="button" data-ledger-del="task" data-ledger-id="${esc(it.id)}" aria-label="Delete task">×</button></article>`;
+      return `<article class="ledgerrow" data-ledger-kind="task" data-ledger-id="${esc(it.id)}">
+        <span class="ledger-check ${it.completed?"done":""}">${it.completed?icon("check"):""}</span>
+        <span class="ledger-main">
+          <span class="txt ${it.completed?"done":""}">${esc(it.title)}</span>
+          <span class="ledger-meta">${chip}${ledgerDateBadge(it.date,it.completed)}</span>
+        </span>
+        <button class="ledger-del" type="button" data-ledger-del="task" data-ledger-id="${esc(it.id)}" aria-label="Delete task">${icon("close")}</button>
+      </article>`;
     }
-    return `<article class="ledgerrow" data-ledger-kind="note" data-ledger-id="${esc(it.id)}"><span class="n">${num}</span><span class="txt">${esc(it.title)}</span><span class="k">${esc(tag)}</span><button class="ledger-del" type="button" data-ledger-del="note" data-ledger-id="${esc(it.id)}" aria-label="Delete note">×</button></article><div class="ledger-body" id="ledgerBody-${esc(it.id)}" hidden>${esc(it.body||"")}</div>`;
+    return `<article class="ledgerrow" data-ledger-kind="note" data-ledger-id="${esc(it.id)}">
+      <span class="ledger-note-dot">${icon("note")}</span>
+      <span class="ledger-main">
+        <span class="txt">${esc(it.title)}</span>
+        <span class="ledger-meta">${chip}${it.body?`<span class="ledger-snippet">${esc(it.body.slice(0,60))}${it.body.length>60?"…":""}</span>`:""}</span>
+      </span>
+      <button class="ledger-del" type="button" data-ledger-del="note" data-ledger-id="${esc(it.id)}" aria-label="Delete note">${icon("close")}</button>
+    </article><div class="ledger-body" id="ledgerBody-${esc(it.id)}" hidden>${esc(it.body||"")}</div>`;
   }).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("note")+'</span><p>Nothing here yet</p><small>Tasks and notes you add will show up in this ledger.</small></div>';
   bindLedgerRows();
   renderLedgerBadge();
@@ -2117,7 +2146,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova117",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova118",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

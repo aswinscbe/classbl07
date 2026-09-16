@@ -1563,18 +1563,41 @@ dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
 .search-input{padding:11px 14px;border-radius:11px;border:1px solid var(--border);background:var(--bg-panel);color:var(--ink);font-size:15px;font-weight:500}
 .filter-row{display:flex;gap:8px}
 .filter{flex:1;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:9px 8px;font-size:13px;font-weight:700;color:var(--ink-muted)}
-.filter.active{background:var(--accent);color:#fff;border-color:transparent}
+.filter.active{background:var(--accent-soft);color:var(--accent);border-color:transparent}
 .ledger-list{display:flex;flex-direction:column}
 .ledgerrow{
-  display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:11px;padding:12px 4px;border-bottom:1px solid var(--border);
 }
 .ledger-list>.ledgerrow:last-of-type{border-bottom:0}
-.ledgerrow .n{font-size:12px;font-weight:700;color:var(--ink-faint);min-width:18px}
-.ledgerrow .txt{flex:1;font-size:15px;font-weight:600}
+/* Tasks get a real checkbox affordance (tap the row to toggle) instead of only
+   a strikethrough appearing after the fact; notes get a small note glyph in
+   the same slot so the two kinds read distinctly at a glance. */
+.ledger-check{
+  width:20px;height:20px;flex:none;border-radius:50%;border:1.5px solid var(--border-strong);
+  display:grid;place-items:center;color:transparent;
+}
+.ledger-check svg{width:12px;height:12px}
+.ledger-check.done{background:var(--live);border-color:transparent;color:#04150c}
+.ledger-note-dot{width:20px;height:20px;flex:none;border-radius:50%;background:var(--bg-panel);display:grid;place-items:center;color:var(--ink-faint)}
+.ledger-note-dot svg{width:11px;height:11px}
+.ledger-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ledgerrow .txt{font-size:14px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ledgerrow .txt.done{text-decoration:line-through;color:var(--ink-faint)}
-.ledgerrow .k{font-size:12px;font-weight:700;padding:3px 8px;border-radius:7px;background:var(--accent-soft);color:var(--accent)}
-.ledger-del{background:none;border:0;color:var(--ink-faint);font-size:20px;line-height:1;padding:0 4px}
-.ledger-body{padding:12px 14px 12px 34px;margin-top:-6px;border-radius:0;font-size:14px;color:var(--ink-muted);font-weight:500;white-space:pre-wrap;border-bottom:1px solid var(--border)}
+.ledger-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ledger-tag{
+  font-size:11px;font-weight:800;padding:2.5px 7px;border-radius:6px;
+  background:color-mix(in srgb, var(--course,var(--accent)) 16%, transparent);
+  color:color-mix(in srgb, var(--course,var(--accent)) 85%, var(--ink) 15%);
+}
+.ledger-date{font-size:11px;font-weight:700;color:var(--ink-faint)}
+.ledger-date.today{color:var(--accent);font-weight:800}
+.ledger-date.soon{color:var(--ink-muted)}
+.ledger-date.overdue{color:var(--danger);font-weight:800}
+.ledger-snippet{font-size:12px;color:var(--ink-faint);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.ledger-del{background:none;border:0;color:var(--ink-faint);padding:4px;flex:none;border-radius:8px}
+.ledger-del svg{width:14px;height:14px}
+@media(hover:hover){.ledger-del:hover{background:var(--bg-panel);color:var(--ink)}}
+.ledger-body{padding:12px 14px 12px 43px;margin-top:-6px;border-radius:0;font-size:14px;color:var(--ink-muted);font-weight:500;white-space:pre-wrap;border-bottom:1px solid var(--border)}
 
 /* ============ Onboarding ============ */
 .onboarding-dialog{max-width:min(480px,94vw)}
