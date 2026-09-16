@@ -11,7 +11,7 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
    original set (S=70%, L=58%) read as a rainbow of candy colours once every
    other surface in the app got muted; these keep the same hues (so existing
    course associations don't shift) at lower saturation and deeper lightness. */
-const COURSE_COLORS={SM:"#4589ba",DBST:"#4553ba",AIB:"#6c45ba",OS:"#a345ba",CV:"#ba459b",PM:"#ba4564",POM:"#ba5a45",CB:"#ba9145",SBM:"#919c3a",NWW:"#659c3a",MAAS:"#3a9c3d",ACC:"#3a9c69",IS:"#45bab4"};
+const COURSE_COLORS={SM:"#4589ba",DBST:"#4553ba",AIB:"#6c45ba",OS:"#a345ba",CV:"#ba459b",PM:"#ba4564",POM:"#ba5a45",CB:"#ba9145",SBM:"#919c3a",NWW:"#659c3a",MAAS:"#3a9c3d",ACC:"#3a9c69",IS:"#45bab4",IBEU:"#9e6447",SUST:"#427e8a"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
 const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,peekSection:null,peekAll:null};
@@ -147,7 +147,10 @@ function filteredClasses(){
   const coreSource=state.peekSection?(state.peekAll||[]):state.all;
   const core=coreSource.filter(c=>c.type==="Core"&&(activeSection==="A"?c.section==="A":c.section==="B"));
   const rest=state.all.filter(c=>c.type==="General"||(c.type!=="Core"&&selected.has(canonical(c.baseCode||c.code))));
-  return[...core,...rest].sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
+  /* Local overlay, same pattern as HOLIDAYS/EXAM_DATA — not part of the synced
+     Term III feed, so it survives every sync instead of getting wiped by it. */
+  const immersion=(window.IMMERSION_CLASSES||[]).filter(c=>c.section===activeSection);
+  return[...core,...rest,...immersion].sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
 }
 async function fetchSectionClasses(section){
   const u=new URL(API);u.searchParams.set("section",section);u.searchParams.set("electives","");u.searchParams.set("includeCancelled","true");
@@ -2146,7 +2149,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova118",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova119",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
