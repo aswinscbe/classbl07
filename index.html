@@ -24,7 +24,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260913-nova106">
+  <link rel="stylesheet" href="styles.css?v=20260916-nova107">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -184,6 +184,7 @@
                 <button type="button" class="filter-chip" id="jumpToNextClassButton"><span data-icon="target"></span>Jump to next class</button>
                 <button type="button" class="filter-chip" id="toggleCompletedButton">Show completed</button>
                 <button type="button" class="filter-chip" id="toggleCourseFilter"><span data-icon="spark"></span>Courses</button>
+                <button type="button" class="filter-chip" id="shareScheduleButton"><span data-icon="share"></span>Share</button>
               </div>
             </div>
             <div class="filter-chips week-course-row" id="agendaCourseRow"></div>
@@ -428,6 +429,25 @@
 
   <dialog id="shortcutDialog"><div class="dialog-card shortcut-card"><div class="dialog-head"><div><p class="overline">KEYBOARD</p><h2>Shortcuts</h2></div><button class="icon-button" id="closeShortcutDialog"><span data-icon="close"></span></button></div><div class="shortcut-grid"><span><kbd>H</kbd><b>Home</b></span><span><kbd>C</kbd><b>Campus</b></span><span><kbd>P</kbd><b>Planner</b></span><span><kbd>R</kbd><b>Refresh</b></span><span><kbd>N</kbd><b>Notifications</b></span><span><kbd>?</kbd><b>Shortcut help</b></span></div></div></dialog>
 
+  <dialog id="shareScheduleDialog">
+    <div class="dialog-card share-schedule-card">
+      <div class="dialog-head">
+        <div><p class="overline">SHARE TO WHATSAPP</p><h2>Share schedule</h2></div>
+        <button class="icon-button dialog-close" id="closeShareSchedule" aria-label="Close"><span data-icon="close"></span></button>
+      </div>
+      <button type="button" class="share-option" id="shareTodayOption">
+        <span class="share-option-icon"><span data-icon="target"></span></span>
+        <span class="share-option-text"><strong>Share today</strong><small id="shareTodayLabel">Today's classes</small></span>
+        <span data-icon="chevron-right"></span>
+      </button>
+      <button type="button" class="share-option" id="shareWeekOption">
+        <span class="share-option-icon"><span data-icon="calendar"></span></span>
+        <span class="share-option-text"><strong>Share this week</strong><small id="shareWeekLabel">Mon–Sun classes</small></span>
+        <span data-icon="chevron-right"></span>
+      </button>
+    </div>
+  </dialog>
+
   <dialog id="taskDialog">
     <form method="dialog" id="taskForm" class="dialog-card">
       <div class="dialog-head"><div><p class="overline">TASK</p><h2>Add task</h2></div><button type="button" class="icon-button dialog-close" aria-label="Close"><span data-icon="close"></span></button></div>
@@ -544,9 +564,9 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260913-nova106"></script>
-  <script src="exam-data.js?v=20260913-nova106"></script>
-  <script src="app.js?v=20260913-nova106"></script>
-  <script src="polish.js?v=20260913-nova106"></script>
+  <script src="campus-data.js?v=20260916-nova107"></script>
+  <script src="exam-data.js?v=20260916-nova107"></script>
+  <script src="app.js?v=20260916-nova107"></script>
+  <script src="polish.js?v=20260916-nova107"></script>
 </body>
 </html>

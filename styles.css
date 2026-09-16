@@ -1494,6 +1494,22 @@ dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
 .dialog-actions button{flex:1}
 .dialog-validation{margin:0;padding:11px 13px;border-radius:10px;background:var(--danger-soft);color:var(--danger);font-size:13px;font-weight:600}
 
+.share-option{
+  display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;border-radius:14px;
+  background:var(--bg-panel);border:1px solid var(--border);color:var(--ink);text-align:left;
+}
+.share-option:active{transform:scale(.98)}
+.share-option-icon{
+  width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;
+  background:color-mix(in srgb, var(--live) 16%, transparent);color:var(--live);
+}
+.share-option-icon svg{width:18px;height:18px}
+.share-option-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.share-option-text strong{font-size:14px;font-weight:700;color:var(--ink)}
+.share-option-text small{font-size:12px;font-weight:600;color:var(--ink-faint)}
+.share-option>svg,.share-option>[data-icon]{width:16px;height:16px;color:var(--ink-faint);flex:none}
+
+
 /* ============ Ledger dialog (Tasks & Notes) ============ */
 .ledger-dialog-card{max-width:480px}
 .ledger-add-buttons{display:flex;gap:10px}

@@ -652,6 +652,30 @@ function nextOccurrenceOf(c){
   const future=state.classes.filter(x=>x.status!=="Cancelled"&&canonical(x.code)===canonical(c.code)&&dateTime(x,"startTime")>dateTime(c,"endTime")).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
   return future[0]||null;
 }
+/* WhatsApp share — plain text built client-side, handed to wa.me's share intent so
+   the person can pick who to send it to themselves; nothing is sent automatically
+   and no phone number or server is involved. */
+function shareDayText(iso){
+  const classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  const header=`📅 *${fmtDate(iso,{weekday:"long",day:"numeric",month:"long"})}*`;
+  if(!classes.length)return`${header}\n\nFree day — no classes scheduled.`;
+  const lines=classes.map(c=>`*${fmtRange(c.startTime,c.endTime)}*\n${canonical(c.code)} · ${c.course}\n${venueOf(c)}`);
+  return`${header}\n\n${lines.join("\n\n")}`;
+}
+function shareWeekText(startIso){
+  const days=weekDaysFrom(startIso);
+  const header=`🗓️ *Week of ${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}*`;
+  const body=days.map(iso=>{
+    const classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    const dayHeader=`*${fmtDate(iso,{weekday:"long",day:"numeric",month:"short"})}*`;
+    if(!classes.length)return`${dayHeader}\nFree day`;
+    const rows=classes.map(c=>`${fmtRange(c.startTime,c.endTime)} — ${canonical(c.code)}: ${c.course} (${venueOf(c)})`);
+    return`${dayHeader}\n${rows.join("\n")}`;
+  }).join("\n\n");
+  return`${header}\n\n${body}\n\nSent from BL07 Planner`;
+}
+function shareToWhatsApp(text){window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank")}
+
 /* One row design, three weight tiers driven by status — done classes compress to a
    single compact line, the live class gets an elevated glowing card with a progress
    bar, everything else sits at a consistent mid-weight with venue/session/duration
@@ -1880,6 +1904,15 @@ function bind(){
   $("#openMonthPicker")?.addEventListener("click",()=>{renderCalendar();$("#monthPickerDialog").showModal()});
   $("#jumpToTodayPill")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#jumpToTodayButton")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
+  $("#shareScheduleButton")?.addEventListener("click",()=>{
+    const today=isoToday(),mon=mondayIso(today),days=weekDaysFrom(mon);
+    const dLabel=$("#shareTodayLabel");if(dLabel)dLabel.textContent=fmtDate(today,{weekday:"long",day:"numeric",month:"short"});
+    const wLabel=$("#shareWeekLabel");if(wLabel)wLabel.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
+    $("#shareScheduleDialog").showModal();
+  });
+  $("#shareTodayOption")?.addEventListener("click",()=>{shareToWhatsApp(shareDayText(isoToday()));closeDialog($("#shareScheduleDialog"))});
+  $("#shareWeekOption")?.addEventListener("click",()=>{shareToWhatsApp(shareWeekText(mondayIso(isoToday())));closeDialog($("#shareScheduleDialog"))});
+  bindDismissibleDialog($("#shareScheduleDialog"));
   $("#closeMonthPicker")?.addEventListener("click",()=>closeDialog($("#monthPickerDialog")));
   $("#monthPickerDialog")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeDialog(e.currentTarget)});
   $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
@@ -1985,7 +2018,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260913-nova106",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova107",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
