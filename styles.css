@@ -862,27 +862,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .route-chip-dot{width:7px;height:7px;border-radius:50%;flex:none;background:hsl(var(--route-hue,220) 62% 52%)}
 .route-chip.active .route-chip-dot{box-shadow:0 0 0 3px hsl(var(--route-hue,220) 62% 52% / .28)}
 
+/* Premium-neutral pass, same standard as the Home hero/term cards: was an
+   accent-tinted glass panel with a glow shadow and a colour wash — flattened to
+   a plain elevated surface, accent kept for the ring/time only. */
 .next-bus-card{
   margin-top:14px;padding:20px;border-radius:var(--radius-xl);
-  background:color-mix(in srgb, var(--accent) 7%, var(--bg-elevated) 78%);color:var(--ink);
-  backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);
+  background:var(--bg-elevated);color:var(--ink);
   --on-grad:var(--ink);--on-grad-muted:var(--ink-muted);--on-grad-line:var(--border);
-  --hero-chip-bg:color-mix(in srgb, var(--ink) 6%, transparent);
-  box-shadow:var(--shadow-lg),
-    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent),
-    0 0 32px -12px color-mix(in srgb, var(--accent) 24%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent);
+  --hero-chip-bg:var(--bg-panel);
+  box-shadow:var(--shadow-md);
   border:1px solid var(--border);position:relative;overflow:hidden;
-}
-.next-bus-card::before{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(circle at 100% -10%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 55%),
-    radial-gradient(circle at -10% 110%, color-mix(in srgb, var(--accent-2) 10%, transparent) 0%, transparent 50%);
-}
-.next-bus-card::after{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 .next-bus-card>*{position:relative;z-index:1}
 .next-bus-card .overline.light{color:var(--on-grad-muted)}
@@ -897,7 +886,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .leaving-soon-toggle.active{background:var(--amber);color:#1a1200;border-color:transparent}
 /* The departure time is the one number you actually came here for — it gets more
    presence than the route name/service label sitting right below it. */
-.next-bus-time{font-family:var(--font-display);font-size:24px;font-weight:800;letter-spacing:-.015em;color:var(--on-grad);font-variant-numeric:tabular-nums;text-shadow:0 0 16px color-mix(in srgb, var(--on-grad) 30%, transparent)}
+.next-bus-time{font-family:var(--font-display);font-size:24px;font-weight:800;letter-spacing:-.015em;color:var(--on-grad);font-variant-numeric:tabular-nums}
 .next-bus-card h2{font-size:17px;font-weight:700;margin-top:6px;color:var(--on-grad-muted)}
 .next-bus-card p#nextBusMeta{margin:2px 0 0;font-size:13px;color:var(--on-grad-muted);font-weight:500;opacity:.8}
 .next-bus-origin-note{margin:8px 0 0;padding:9px 11px;border-radius:10px;background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 8%, transparent));font-size:14px;color:var(--on-grad-muted);font-weight:600;line-height:1.5}
@@ -1020,12 +1009,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .meal-tab svg{flex:none}
 .meal-tab svg{width:15px;height:15px}
-.meal-tab.active{background:var(--live);color:#fff;border-color:transparent}
-/* Toned down to sit at the same glow intensity as Planner's "now" card instead of
-   outshining every other live/active state in the app. */
-.meal-tab[data-meal="breakfast"].active{background:linear-gradient(135deg,#d99a3a,#e8b563);box-shadow:0 0 10px -3px color-mix(in srgb, #d99a3a 40%, transparent)}
-.meal-tab[data-meal="lunch"].active{background:linear-gradient(135deg,#d97a3a,#e89a5c);box-shadow:0 0 10px -3px color-mix(in srgb, #d97a3a 40%, transparent)}
-.meal-tab[data-meal="dinner"].active{background:linear-gradient(135deg,#5b4fa3,#8a6fc9);box-shadow:0 0 10px -3px color-mix(in srgb, #5b4fa3 40%, transparent)}
+/* Premium-neutral pass: was a saturated two-tone gradient fill per meal, the
+   biggest patch of colour on the page — a soft tint pill instead, same
+   language as every other "active/selected" state in the app. */
+.meal-tab.active{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.meal-tab[data-meal="breakfast"].active{background:color-mix(in srgb, #d99a3a 16%, var(--bg-panel));color:#d99a3a}
+.meal-tab[data-meal="lunch"].active{background:color-mix(in srgb, #d97a3a 16%, var(--bg-panel));color:#d97a3a}
+.meal-tab[data-meal="dinner"].active{background:color-mix(in srgb, #8a6fc9 16%, var(--bg-panel));color:#8a6fc9}
 .meal-tab.is-now{border-color:var(--accent);color:var(--accent);position:relative;padding-right:34px}
 .meal-tab.is-now::after{content:"NOW";position:absolute;top:50%;right:5px;transform:translateY(-50%);font-size:9px;font-weight:800;letter-spacing:.03em;color:#fff;background:var(--accent);padding:2px 5px;border-radius:99px;animation:now-pulse 1.6s ease-in-out infinite}
 @keyframes now-pulse{0%,100%{opacity:1}50%{opacity:.72}}
@@ -1071,27 +1061,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 
 /* ============ Profile ============ */
 .profile-layout{display:flex;flex-direction:column;gap:14px}
+/* Premium-neutral pass, same standard as Home/Bus: flattened from an accent-tinted
+   glow card to a plain elevated surface — the ring keeps the only colour. */
 .identity-hero{
   display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px;
   padding:22px;border-radius:var(--radius-xl);
-  background:color-mix(in srgb, var(--accent) 7%, var(--bg-elevated));color:var(--ink);
+  background:var(--bg-elevated);color:var(--ink);
   --on-grad:var(--ink);--on-grad-muted:var(--ink-muted);--on-grad-line:var(--border);
-  --hero-chip-bg:color-mix(in srgb, var(--ink) 6%, transparent);
-  box-shadow:var(--shadow-lg),
-    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent),
-    0 0 32px -12px color-mix(in srgb, var(--accent) 24%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent);
+  --hero-chip-bg:var(--bg-panel);
+  box-shadow:var(--shadow-md);
   border:1px solid var(--border);position:relative;overflow:hidden;
-}
-.identity-hero::before{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 105% -15%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 55%),
-    radial-gradient(circle at -10% 110%, color-mix(in srgb, var(--accent-2) 10%, transparent) 0%, transparent 50%);
-}
-.identity-hero::after{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 .identity-hero-main,.identity-hero-term{position:relative;z-index:1;display:flex;align-items:center;gap:14px}
 .avatar-disc{
@@ -1135,13 +1114,20 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .workload-row .wl-track{flex:1;height:7px;border-radius:99px;background:var(--bg-panel);overflow:hidden}
 .workload-row .wl-track span{display:block;height:100%;border-radius:inherit;background:var(--course,var(--accent))}
 .workload-row .wl-hours{flex:none;font-weight:700;color:var(--ink-muted);min-width:34px;text-align:right}
+/* Used to preview the old gradient hero card — now that the hero is a flat
+   neutral surface, an honest preview shows the accent the way it's actually
+   spent today: a small coloured chip, not a wash across a whole card. */
 .accent-preview{
   margin-top:4px;padding:12px 14px;border-radius:var(--radius-md);
-  background:var(--grad);color:var(--on-grad);display:flex;align-items:center;justify-content:space-between;
-  box-shadow:0 10px 24px -16px var(--grad-glow);transition:background .3s ease;
+  background:var(--bg-panel);border:1px solid var(--border);color:var(--ink);
+  display:flex;align-items:center;justify-content:space-between;
+  transition:border-color .3s ease;
 }
-.accent-preview-tag{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--on-grad-muted)}
-.accent-preview strong{font-size:14px;font-weight:700;color:var(--on-grad)}
+.accent-preview-tag{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--ink-faint)}
+.accent-preview strong{
+  font-size:13px;font-weight:800;color:var(--accent);
+  padding:4px 10px;border-radius:99px;background:var(--accent-soft);
+}
 
 
 /* The form is built from the same segmented controls the rest of the app uses, rather
