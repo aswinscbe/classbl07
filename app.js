@@ -461,6 +461,7 @@ function renderHome(){
     $("#focusEmptyIcon").hidden=true;
     $("#focusKicker").textContent=isNow?"IN PROGRESS":onBreak?"ON A BREAK":isToday?"UPCOMING":"NEXT UP";
     $("#focusCode").hidden=false;$("#focusCode").textContent=canonical(shown.code);$("#focusTitle").textContent=shown.course;
+    const watermark=$("#heroWatermark");if(watermark)watermark.textContent=canonical(shown.code);
     $("#focusRange").hidden=false;$("#focusRange").textContent=fmtRange(shown.startTime,shown.endTime);
     const dayList=scheduled.filter(c=>c.dateIso===shown.dateIso),posIndex=dayList.indexOf(shown),nextInDay=dayList[posIndex+1];
     const ring=$("#heroRing"),liveProgress=$("#heroLiveProgress");
@@ -496,6 +497,7 @@ function renderHome(){
   }
   else{
     focusPanel.classList.add("is-empty");focusPanel.classList.remove("is-live","is-upcoming","is-future","is-break","has-focus");focusPanel.style.removeProperty("--focus-course");delete focusPanel.dataset.focusDate;delete focusPanel.dataset.focusClassId;
+    const watermark=$("#heroWatermark");if(watermark)watermark.textContent="";
     $("#heroDateRibbon").hidden=true;
     $("#heroRing").hidden=true;
     if($("#heroLiveProgress"))$("#heroLiveProgress").hidden=true;
@@ -685,29 +687,26 @@ function shareWeekText(startIso){
 }
 function shareToWhatsApp(text){window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank")}
 
-/* One row design, three weight tiers driven by status — done classes compress to a
-   single compact line, the live class gets an elevated glowing card with a progress
-   bar, everything else sits at a consistent mid-weight with venue/session/duration
-   visible. Replaces the old dayCardListHtml (Home) and the separate ruler+pt-item
-   timeline (Planner) — both surfaces now render literally the same rows. */
-/* One horizontal strip showing the whole day's shape — class blocks against free gaps
-   across the waking window — so "how does today look" is answered before reading a
-   single row below it. Distinct from the week heatmap (that's day-vs-day load); this is
-   inside one day. */
-/* One row of labelled boxes, one per class in order — each box sized to fit its own
-   code, not to its duration, so the code sits inside the box itself instead of a
-   separate track-plus-chip-row underneath. Progress is the box's own state (dimmed
-   once done, glowing while live) rather than a second dot row on top. */
+/* One row of labelled boxes, one per class in order, each sized to fit its own code —
+   a free gap of 45+ minutes between two classes gets its own hollow "free" box in the
+   same row, so the rail reads as a live strip of the whole day (classes AND the gaps
+   between them) instead of classes packed edge to edge with the free time invisible. */
 function renderDayShapeBar(classes,dayIso){
   const el=$("#dayShapeBar");if(!el)return;
   const active=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   if(!active.length){el.innerHTML="";el.hidden=true;return}
   el.hidden=false;
-  const boxes=active.map(c=>{
+  let html="",prevEnd=null;
+  active.forEach(c=>{
+    if(prevEnd!=null){
+      const gap=minutes(c.startTime)-prevEnd;
+      if(gap>=45)html+=`<span class="dsb-gap">${esc(compactDuration(gap))} free</span>`;
+    }
     const status=agendaStatus(c),tier=status==="Live"?"live":status==="Completed"?"done":"upcoming";
-    return`<span class="dsb-box ${tier}" style="--course:${colorFor(c.code)}" title="${esc(canonical(c.code))} ${esc(fmtRange(c.startTime,c.endTime))}">${esc(canonical(c.code))}</span>`;
-  }).join("");
-  el.innerHTML=`<div class="dsb-row">${boxes}</div>`;
+    html+=`<span class="dsb-box ${tier}" style="--course:${colorFor(c.code)}" title="${esc(canonical(c.code))} ${esc(fmtRange(c.startTime,c.endTime))}">${esc(canonical(c.code))}</span>`;
+    prevEnd=minutes(c.endTime);
+  });
+  el.innerHTML=`<div class="dsb-row">${html}</div>`;
 }
 function scheduleRowsHtml(classes,dayIso,opts={}){
   const chronological=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
@@ -2111,7 +2110,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova112",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova113",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

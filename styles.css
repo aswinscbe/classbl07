@@ -409,23 +409,37 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   transition:background .4s ease, border-color .4s ease, box-shadow .4s ease;
 }
 .hero-card::before{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.9;transition:opacity .6s ease;
-  background:radial-gradient(circle at 100% -10%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 55%),
-    radial-gradient(circle at -10% 110%, color-mix(in srgb, var(--accent-2) 10%, transparent) 0%, transparent 50%),
-    radial-gradient(circle at 78% 42%, color-mix(in srgb, var(--focus-course,var(--accent)) 9%, transparent) 0%, transparent 40%);
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.9;transition:opacity .6s ease, background .8s ease;
+  background:radial-gradient(circle at 100% -10%, color-mix(in srgb, var(--daypart-a,var(--accent)) 18%, transparent) 0%, transparent 55%),
+    radial-gradient(circle at -10% 110%, color-mix(in srgb, var(--daypart-b,var(--accent-2)) 12%, transparent) 0%, transparent 50%),
+    radial-gradient(circle at 78% 42%, color-mix(in srgb, var(--focus-course,var(--accent)) 9%, transparent) 0%, transparent 40%),
+    radial-gradient(circle, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1.5px);
+  background-size:auto,auto,auto,16px 16px;
 }
-/* Time-of-day tint — a faint shift in how strong the hero's ambient gradient
-   reads, so the card doesn't look identical at 9am and 9pm. Opacity-only, so
-   it never fights the accent/course colours themselves. */
+/* Time-of-day tint — the hero's ambient gradient actually shifts hue across the
+   day (dawn rose, midday cool blue, dusk amber, night indigo), not just opacity,
+   so the card genuinely looks different at 9am vs 9pm instead of the same
+   gradient turned down. */
+.hero-card[data-daypart="morning"]{--daypart-a:#f2a5c4;--daypart-b:#f7c98a}
+.hero-card[data-daypart="midday"]{--daypart-a:#7db8e8;--daypart-b:#8fd0c4}
+.hero-card[data-daypart="evening"]{--daypart-a:#e8935a;--daypart-b:#c9698a}
+.hero-card[data-daypart="night"]{--daypart-a:#5a5ea8;--daypart-b:#332e5c}
 .hero-card[data-daypart="morning"]::before{opacity:1}
 .hero-card[data-daypart="midday"]::before{opacity:.85}
-.hero-card[data-daypart="evening"]::before{opacity:.75}
+.hero-card[data-daypart="evening"]::before{opacity:.85}
 .hero-card[data-daypart="night"]::before{opacity:.6}
+.hero-watermark{
+  position:absolute;z-index:0;right:-6px;bottom:-16px;pointer-events:none;
+  font-family:var(--font-display);font-size:96px;font-weight:900;letter-spacing:-.04em;line-height:1;
+  color:color-mix(in srgb, var(--focus-course,var(--accent)) 10%, transparent);
+  white-space:nowrap;user-select:none;
+}
 .hero-card::after{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 .hero-card>*{position:relative;z-index:1}
+.hero-card>.hero-watermark{z-index:0}
 .hero-card.is-live{
   background:color-mix(in srgb, var(--live) 9%, var(--bg-elevated));border-color:color-mix(in srgb, var(--focus-course,var(--live)) 45%, var(--border));
   --hero-bar-fill:var(--live);
@@ -462,7 +476,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card.is-live.is-urgent .hero-status{color:var(--amber)}
 .hero-card.is-live .hero-status i{animation:pulse 1.1s infinite}
 .hero-card:not(.is-live) .hero-status i{display:none}
-.hero-empty-icon{display:inline-flex;width:14px;height:14px}
+.hero-empty-icon{display:inline-flex;width:14px;height:14px;position:relative}
+.hero-empty-icon::before{
+  content:"";position:absolute;inset:-5px;border-radius:50%;z-index:-1;
+  background:radial-gradient(circle, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%);
+}
 .hero-empty-icon svg{width:14px;height:14px}
 .hero-cancel-flag{
   display:flex;align-items:center;gap:6px;margin-top:12px;padding:8px 11px;border-radius:10px;
@@ -490,6 +508,12 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-live-progress{margin-top:12px;height:4px;border-radius:99px;background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, var(--on-grad-line))}
 .hero-live-progress span{display:block;height:100%;border-radius:inherit;background:var(--focus-course,var(--accent));transition:width 30s linear;box-shadow:0 0 6px -1px color-mix(in srgb, var(--focus-course,var(--accent)) 55%, transparent)}
 .hero-pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+/* Pills are rebuilt from scratch on every render (the countdown ticks every 30s), so a
+   fresh mount-in animation on each one gives the changing numbers a bit of life instead
+   of a flat swap — independent of the bigger .hero-enter entrance animation above. */
+.hero-pills .hero-pill{animation:hero-pill-tick .3s cubic-bezier(.22,1,.36,1) both}
+@keyframes hero-pill-tick{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion: reduce){.hero-pills .hero-pill{animation:none}}
 /* All hero pills carry equal visual weight now — countdown, next-class, venue,
    faculty and session are all read as equally important, no tiering. */
 .hero-pill{
@@ -691,6 +715,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .dsb-box.live{
   background:var(--course,var(--accent));color:#fff;border-color:transparent;
   box-shadow:0 0 0 3px color-mix(in srgb, var(--course,var(--accent)) 28%, transparent);
+}
+.dsb-gap{
+  font-size:11px;font-weight:600;padding:5px 9px;border-radius:9px;
+  color:var(--ink-faint);border:1px dashed var(--border-strong);background:transparent;
 }
 .sched-done-summary{
   display:flex;align-items:center;gap:10px;width:100%;padding:9px 2px;
