@@ -423,17 +423,32 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-card[data-daypart="morning"]{--daypart-a:#f2a5c4;--daypart-b:#f7c98a}
 .hero-card[data-daypart="midday"]{--daypart-a:#7db8e8;--daypart-b:#8fd0c4}
 .hero-card[data-daypart="evening"]{--daypart-a:#e8935a;--daypart-b:#c9698a}
+/* Light theme sits on a near-white card, so the same low mix percentages that
+   read as a glow on a dark card just look washed out here — this pass gives
+   light mode its own stronger tint instead of reusing the dark-tuned numbers. */
+:root[data-theme="light"] .hero-card{background:color-mix(in srgb, var(--accent) 13%, var(--bg-elevated))}
+:root[data-theme="light"] .hero-card::before{
+  background:radial-gradient(circle at 100% -10%, color-mix(in srgb, var(--daypart-a,var(--accent)) 30%, transparent) 0%, transparent 55%),
+    radial-gradient(circle at -10% 110%, color-mix(in srgb, var(--daypart-b,var(--accent-2)) 22%, transparent) 0%, transparent 50%),
+    radial-gradient(circle at 78% 42%, color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent) 0%, transparent 40%),
+    radial-gradient(circle, color-mix(in srgb, var(--ink) 6%, transparent) 1px, transparent 1.5px);
+  background-size:auto,auto,auto,16px 16px;
+}
 .hero-card[data-daypart="night"]{--daypart-a:#5a5ea8;--daypart-b:#332e5c}
 .hero-card[data-daypart="morning"]::before{opacity:1}
 .hero-card[data-daypart="midday"]::before{opacity:.85}
 .hero-card[data-daypart="evening"]::before{opacity:.85}
 .hero-card[data-daypart="night"]::before{opacity:.6}
+/* Kept small and pinned tight to the corner on purpose — a bigger version used to
+   overlap the status row on shorter card states (live/compact), reading as a stray
+   leftover element instead of a deliberate watermark. */
 .hero-watermark{
-  position:absolute;z-index:0;right:-6px;bottom:-16px;pointer-events:none;
-  font-family:var(--font-display);font-size:96px;font-weight:900;letter-spacing:-.04em;line-height:1;
-  color:color-mix(in srgb, var(--focus-course,var(--accent)) 10%, transparent);
+  position:absolute;z-index:0;right:-4px;bottom:-10px;max-width:60%;max-height:48px;overflow:hidden;pointer-events:none;
+  font-family:var(--font-display);font-size:48px;font-weight:900;letter-spacing:-.03em;line-height:1;
+  color:color-mix(in srgb, var(--focus-course,var(--accent)) 14%, transparent);
   white-space:nowrap;user-select:none;
 }
+:root[data-theme="light"] .hero-watermark{color:color-mix(in srgb, var(--focus-course,var(--accent)) 10%, transparent)}
 .hero-card::after{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
