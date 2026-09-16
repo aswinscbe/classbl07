@@ -97,6 +97,13 @@
   }
 }
 
+/* App-wide: numerals never jiggle mid-column (bus/mess/schedule times, counters) — a
+   plain global rule beats chasing every individual number display by hand. */
+.sr-time b,.wc-num,.wc-cnt,.next-bus-time,.countdown-copy strong,.wk-dot-col .sq,
+#termProgressPct,#dateOrbitDay,#progressSummary,.count-chip,.tag,.mwg-cell,
+.calendar-day-number,.cd-cnt,.termRingDays,#termRingDays{
+  font-variant-numeric:tabular-nums;
+}
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -671,6 +678,24 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sched-row.cancelled .sr-subj{text-decoration:line-through;color:var(--danger)}
 .sched-row.cancelled .sr-accent{background:var(--danger) !important}
 .sched-row.cancelled .sr-code{background:color-mix(in srgb, var(--danger) 16%, transparent);color:var(--danger)}
+.day-shape-bar{margin:2px 0 12px}
+.dsb-track{position:relative;height:8px;border-radius:99px;background:var(--bg-panel);overflow:visible}
+.dsb-block{position:absolute;top:0;height:100%;border-radius:99px;background:color-mix(in srgb, var(--course,var(--accent)) 75%, var(--bg-panel));min-width:3px}
+.dsb-block.done{opacity:.4}
+.dsb-block.live{box-shadow:0 0 0 2px color-mix(in srgb, var(--course,var(--accent)) 30%, transparent)}
+.dsb-now{position:absolute;top:-3px;width:2px;height:14px;border-radius:99px;background:var(--live);box-shadow:0 0 5px color-mix(in srgb, var(--live) 60%, transparent)}
+.sched-done-summary{
+  display:flex;align-items:center;gap:10px;width:100%;padding:9px 2px;
+  background:none;border:0;border-bottom:1px solid var(--border);color:var(--ink-faint);text-align:left;
+}
+.sds-icon{width:20px;height:20px;flex:none;border-radius:99px;display:grid;place-items:center;background:var(--live-soft);color:var(--live)}
+.sds-icon svg{width:12px;height:12px}
+.sds-text{flex:1;font-size:13px;font-weight:700}
+.sds-chevron{width:16px;height:16px;flex:none;color:var(--ink-faint);transition:transform .2s ease}
+.sds-chevron svg{width:16px;height:16px}
+.sched-done-summary.open .sds-chevron{transform:rotate(90deg)}
+.sched-done-block{display:contents}
+.sched-done-block.collapsed{display:none}
 .timeline-holiday-banner{
   display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:10px;border-radius:var(--radius-sm);
   background:var(--amber-soft);border:1px solid var(--border);
@@ -819,6 +844,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .filter-chip.active{background:var(--accent-soft);color:var(--accent);border-color:transparent}
 .filter-chip:active{transform:scale(.95)}
+.route-chip{display:inline-flex;align-items:center;gap:6px}
+.route-chip-dot{width:7px;height:7px;border-radius:50%;flex:none;background:hsl(var(--route-hue,220) 62% 52%)}
+.route-chip.active .route-chip-dot{box-shadow:0 0 0 3px hsl(var(--route-hue,220) 62% 52% / .28)}
 
 .next-bus-card{
   margin-top:14px;padding:20px;border-radius:var(--radius-xl);
@@ -855,7 +883,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .leaving-soon-toggle.active{background:var(--amber);color:#1a1200;border-color:transparent}
 /* The departure time is the one number you actually came here for — it gets more
    presence than the route name/service label sitting right below it. */
-.next-bus-time{font-family:var(--font-display);font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--on-grad)}
+.next-bus-time{font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--on-grad-muted);font-variant-numeric:tabular-nums}
 .next-bus-card h2{font-size:17px;font-weight:700;margin-top:6px;color:var(--on-grad-muted)}
 .next-bus-card p#nextBusMeta{margin:2px 0 0;font-size:13px;color:var(--on-grad-muted);font-weight:500;opacity:.8}
 .next-bus-origin-note{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 6%, transparent));font-size:13px;color:var(--on-grad-muted);font-weight:500}
@@ -883,7 +911,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:flex;align-items:center;gap:12px;
 }
 .countdown-copy span{display:block;font-size:12px;font-weight:700;color:var(--on-grad-muted);text-transform:uppercase;letter-spacing:.04em}
-.countdown-copy strong{display:block;margin-top:2px;font-size:20px;font-weight:800;color:var(--on-grad)}
+.countdown-copy strong{display:block;margin-top:1px;font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:-.02em;color:var(--on-grad);font-variant-numeric:tabular-nums}
 .countdown-ring{width:40px;height:40px;flex:none}
 .countdown-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .countdown-ring circle{fill:none;stroke-width:3.5}
@@ -949,6 +977,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .mwg-day{font-size:12px;font-weight:800;color:var(--ink-muted)}
 .mwg-cell{font-size:13px;color:var(--ink);line-height:1.4}
 .mwg-cell b{color:var(--accent);margin-right:5px;font-weight:800}
+.mwg-cell b[data-meal="breakfast"]{color:#d99a3a}
+.mwg-cell b[data-meal="lunch"]{color:#d97a3a}
+.mwg-cell b[data-meal="dinner"]{color:#8a6fc9}
 @media(max-width:520px){.mess-week-row{grid-template-columns:1fr;gap:4px}.mwg-day{margin-bottom:2px}}
 .mess-columns{display:flex;flex-direction:column;gap:16px}
 .mess-rail{display:flex;flex-direction:column;gap:14px}
@@ -976,7 +1007,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .meal-tab.is-now::after{content:"NOW";position:absolute;top:50%;right:5px;transform:translateY(-50%);font-size:9px;font-weight:800;letter-spacing:.03em;color:#fff;background:var(--accent);padding:2px 5px;border-radius:99px;animation:now-pulse 1.6s ease-in-out infinite}
 @keyframes now-pulse{0%,100%{opacity:1}50%{opacity:.72}}
 .menu-note{margin:0;font-size:13px;color:var(--ink-faint);font-weight:500}
-.meal-hero{margin-top:0}
+.meal-hero{margin-top:0;padding-left:12px;border-left:3px solid var(--meal-accent,var(--accent))}
+.meal-hero[data-meal="breakfast"]{--meal-accent:#d99a3a}
+.meal-hero[data-meal="lunch"]{--meal-accent:#d97a3a}
+.meal-hero[data-meal="dinner"]{--meal-accent:#8a6fc9}
 .meal-hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .meal-hero h3{font-size:17px;font-weight:700;margin:0}
 .combo-tag{flex:none;font-size:10px;font-weight:800;letter-spacing:.05em;padding:4px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);text-transform:uppercase}
@@ -1188,12 +1222,14 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wc-cell{
   display:flex;flex-direction:column;align-items:center;gap:5px;width:38px;padding:9px 0 10px;border-radius:16px;
   font:inherit;color:inherit;cursor:pointer;position:relative;
-  transition:background .15s ease,transform .12s ease;
+  background:color-mix(in srgb, var(--accent) calc(var(--load,0) * 32%), var(--bg-panel));
+  transition:background .25s ease,transform .12s ease;
 }
 .wc-cell:active{transform:scale(.94)}
 .wc-dow{font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint)}
-.wc-num{font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--ink);line-height:1;margin-top:2px}
-.wc-cnt{font-size:10px;font-weight:800;color:var(--accent-2);margin-top:3px}
+.wc-num{font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--ink);line-height:1;margin-top:2px;font-variant-numeric:tabular-nums}
+.wc-cnt{font-size:10px;font-weight:800;color:var(--accent-2);margin-top:3px;font-variant-numeric:tabular-nums}
+.wc-cell.zero{background:var(--bg-panel)}
 .wc-cell.zero .wc-cnt{color:var(--ink-faint);opacity:.55}
 .wc-cell.today:not(.sel){box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent-2) 55%, transparent)}
 /* The selected day needs to read unmistakably at a glance — a filled, glowing pill

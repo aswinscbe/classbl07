@@ -531,6 +531,7 @@ function renderHome(){
     const onlyClassIsFocus=timelineClasses.length===1&&classIdentity(timelineClasses[0])===focusPanel.dataset.focusClassId;
     daySectionEl.hidden=!state.timelineTouched&&(!timelineClasses.length||onlyClassIsFocus);
   }
+  renderDayShapeBar(timelineClasses,timelineIso);
   $("#todayProgressRail").innerHTML=timelineClasses.length?scheduleRowsHtml(timelineClasses,timelineIso,{showNext:true}):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
   const holidayBanner=$("#todayProgressRail")?.previousElementSibling;
   const holiday=HOLIDAYS[timelineIso];
@@ -681,11 +682,55 @@ function shareToWhatsApp(text){window.open(`https://wa.me/?text=${encodeURICompo
    bar, everything else sits at a consistent mid-weight with venue/session/duration
    visible. Replaces the old dayCardListHtml (Home) and the separate ruler+pt-item
    timeline (Planner) — both surfaces now render literally the same rows. */
+/* One horizontal strip showing the whole day's shape — class blocks against free gaps
+   across the waking window — so "how does today look" is answered before reading a
+   single row below it. Distinct from the week heatmap (that's day-vs-day load); this is
+   inside one day. */
+function renderDayShapeBar(classes,dayIso){
+  const el=$("#dayShapeBar");if(!el)return;
+  const WIN_START=7*60,WIN_END=21*60,WIN=WIN_END-WIN_START;
+  const active=classes.filter(c=>c.status!=="Cancelled");
+  if(!active.length){el.innerHTML="";el.hidden=true;return}
+  el.hidden=false;
+  const blocks=active.map(c=>{
+    const s=Math.max(WIN_START,minutes(c.startTime)),e=Math.min(WIN_END,minutes(c.endTime));
+    if(e<=s)return"";
+    const left=((s-WIN_START)/WIN)*100,width=((e-s)/WIN)*100;
+    const status=agendaStatus(c),tier=status==="Live"?"live":status==="Completed"?"done":"upcoming";
+    return`<span class="dsb-block ${tier}" style="left:${left}%;width:${width}%;--course:${colorFor(c.code)}" title="${esc(canonical(c.code))} ${esc(fmtRange(c.startTime,c.endTime))}"></span>`;
+  }).join("");
+  let nowMark="";
+  if(dayIso===isoToday()){
+    const nowMin=Number(istParts().hour)*60+Number(istParts().minute);
+    if(nowMin>=WIN_START&&nowMin<=WIN_END)nowMark=`<span class="dsb-now" style="left:${((nowMin-WIN_START)/WIN)*100}%"></span>`;
+  }
+  el.innerHTML=`<div class="dsb-track">${blocks}${nowMark}</div>`;
+}
 function scheduleRowsHtml(classes,dayIso,opts={}){
   const chronological=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   const now=new Date();
+  /* A leading run of already-done classes (this morning's classes, say) collapses into
+     one tappable summary strip instead of always listing every finished row — so by
+     lunchtime the list starts at what's actually left, not at 9am. Only kicks in for
+     2+ done rows in a row at the very start of the list. */
+  let leadingDone=0;
+  for(const c of chronological){
+    if(c.status==="Cancelled")break;
+    if(agendaStatus(c)!=="Completed")break;
+    leadingDone++;
+  }
+  const collapseDone=leadingDone>=2;
   let html='<div class="sched-list">',prevEnd=null;
-  chronological.forEach(c=>{
+  if(collapseDone){
+    const doneMins=chronological.slice(0,leadingDone).reduce((sum,c)=>sum+(minutes(c.endTime)-minutes(c.startTime)),0);
+    html+=`<button type="button" class="sched-done-summary">
+      <span class="sds-icon">${icon("check")}</span>
+      <span class="sds-text">${leadingDone} classes done${doneMins?` · ${esc(compactDuration(doneMins))}`:""}</span>
+      <span class="sds-chevron">${icon("chevron-right")}</span>
+    </button><div class="sched-done-block collapsed">`;
+  }
+  chronological.forEach((c,idx)=>{
+    if(collapseDone&&idx===leadingDone)html+='</div>';
     if(prevEnd!=null){
       const gap=minutes(c.startTime)-prevEnd;
       if(gap>=45)html+=`<div class="sched-gap">${icon("clock")}${esc(compactDuration(gap))} free</div>`;
@@ -722,6 +767,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
     </article>`;
     prevEnd=minutes(c.endTime);
   });
+  if(collapseDone&&leadingDone===chronological.length)html+='</div>';
   return html+'</div>';
 }
 function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){
@@ -820,9 +866,15 @@ function renderWeekPlanner(){
   const strip=$("#weekStrip");
   if(strip){
     const letters=["MON","TUE","WED","THU","FRI","SAT","SUN"];
+    const weekCounts=days.map(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length);
+    const maxLoad=Math.max(1,...weekCounts);
+    /* Load-tinted cells: each day's fill intensity reflects how busy it is relative to
+       the busiest day this week, so the strip reads as a heat-map at a glance instead of
+       every unselected cell being flat and identical regardless of load. */
     strip.innerHTML=days.map((iso,i)=>{
       const active=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled");
-      return`<button type="button" class="wc-cell ${iso===today?"today":""} ${iso===state.selectedDate?"sel":""} ${!active.length?"zero":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}">
+      const load=weekCounts[i]?Math.max(.22,weekCounts[i]/maxLoad):0;
+      return`<button type="button" class="wc-cell ${iso===today?"today":""} ${iso===state.selectedDate?"sel":""} ${!active.length?"zero":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" style="--load:${load}">
         <span class="wc-dow">${letters[i]}</span>
         <span class="wc-num">${Number(iso.slice(8))}</span>
         <span class="wc-cnt">${active.length||"–"}</span>
@@ -1197,9 +1249,14 @@ function renderBusControls(){
 
   const chips=$("#busFilterChips");
   if(chips){
-    chips.innerHTML=busQuickRoutes().map(r=>
-      `<button class="filter-chip ${state.busFrom===r.from&&state.busTo===r.to?"active":""}" data-from="${esc(r.from)}" data-to="${esc(r.to)}">${esc(r.label)}</button>`
-    ).join("");
+    /* Each saved route keeps a consistent color tag across visits (hashed from its label,
+       not just an active/inactive tint) so a recurring route is recognisable by color
+       alone once you've used it a few times. */
+    chips.innerHTML=busQuickRoutes().map(r=>{
+      let hash=0;for(let i=0;i<r.label.length;i++)hash=(hash*31+r.label.charCodeAt(i))>>>0;
+      const hue=hash%360;
+      return`<button class="filter-chip route-chip ${state.busFrom===r.from&&state.busTo===r.to?"active":""}" style="--route-hue:${hue}" data-from="${esc(r.from)}" data-to="${esc(r.to)}"><i class="route-chip-dot"></i>${esc(r.label)}</button>`;
+    }).join("");
     $$(".filter-chip",chips).forEach(button=>
       button.addEventListener("click",()=>{
         state.busFrom=button.dataset.from;state.busTo=button.dataset.to;
@@ -1341,12 +1398,12 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
 }
 
 const MESS_BADGES=[["splVeg","Spl Veg","splveg"],["fishEgg","Fish / Egg","nonveg"],["veg","Veg","veg"],["nonVeg","Non-veg","nonveg"],["dessert","Dessert","sweet"],["sweet","Sweet","sweet"]];
-function mealCardHtml(meal,label){
+function mealCardHtml(meal,label,mealKey){
   if(Array.isArray(meal)){
-    return`<article class="meal-hero"><h3>${esc(label)}</h3><div class="food-section"><div class="food-items">${meal.map(i=>`<div class="food-item">${esc(i)}</div>`).join("")}</div></div></article>`;
+    return`<article class="meal-hero" data-meal="${esc(mealKey||"")}"><h3>${esc(label)}</h3><div class="food-section"><div class="food-items">${meal.map(i=>`<div class="food-item">${esc(i)}</div>`).join("")}</div></div></article>`;
   }
   const badges=MESS_BADGES.filter(([key])=>meal[key]).map(([key,name,cls])=>`<div class="food-badge-row ${cls}"><span class="food-badge-tag">${esc(name)}</span><strong>${esc(meal[key])}</strong></div>`).join("");
-  return`<article class="meal-hero">
+  return`<article class="meal-hero" data-meal="${esc(mealKey||"")}">
     <div class="meal-hero-top"><h3>${esc(label)}</h3>${meal.combo?'<span class="combo-tag">COMBO MENU</span>':""}</div>
     ${badges?`<div class="food-badges">${badges}</div>`:""}
     <div class="food-section"><div class="food-items">${meal.items.map(i=>`<div class="food-item">${esc(i)}</div>`).join("")}</div></div>
@@ -1362,10 +1419,10 @@ function renderMessWeekGrid(){
   const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
   el.innerHTML=ds.map(d=>{
     const menu=window.CAMPUS_DATA.mess[d];
-    return`<div class="mess-week-row ${d===state.messDay?"is-today":""}"><span class="mwg-day">${d.slice(0,3).toUpperCase()}</span><span class="mwg-cell"><b>B</b>${esc(mealSummary(menu.breakfast))}</span><span class="mwg-cell"><b>L</b>${esc(mealSummary(menu.lunch))}</span><span class="mwg-cell"><b>D</b>${esc(mealSummary(menu.dinner))}</span></div>`;
+    return`<div class="mess-week-row ${d===state.messDay?"is-today":""}"><span class="mwg-day">${d.slice(0,3).toUpperCase()}</span><span class="mwg-cell"><b data-meal="breakfast">B</b>${esc(mealSummary(menu.breakfast))}</span><span class="mwg-cell"><b data-meal="lunch">L</b>${esc(mealSummary(menu.lunch))}</span><span class="mwg-cell"><b data-meal="dinner">D</b>${esc(mealSummary(menu.dinner))}</span></div>`;
   }).join("");
 }
-function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const menu=window.CAMPUS_DATA.mess[state.messDay],meal=menu[state.meal];$("#messMenu").innerHTML=meal?mealCardHtml(meal,state.meal[0].toUpperCase()+state.meal.slice(1)):"";const nowHour=Number(istParts().hour),currentMeal=nowHour<11?"breakfast":nowHour<16?"lunch":"dinner";$$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal)})}
+function renderMess(){const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];$("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""}" data-day="${d}">${d.slice(0,3).toUpperCase()}</button>`).join("");$$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));$("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);const menu=window.CAMPUS_DATA.mess[state.messDay],meal=menu[state.meal];$("#messMenu").innerHTML=meal?mealCardHtml(meal,state.meal[0].toUpperCase()+state.meal.slice(1),state.meal):"";const nowHour=Number(istParts().hour),currentMeal=nowHour<11?"breakfast":nowHour<16?"lunch":"dinner";$$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal)})}
 /* Deterministic CSS-only barcode heights, seeded off the student's name so it doesn't
    flicker on every re-render but still looks like a real ticket stub. */
 function barcodeHtml(seed){
@@ -1863,6 +1920,11 @@ function bind(){
     haptic(t.matches(".primary-button,.danger-button,.google-tasks-button")?18:10);
   },{capture:true});
   document.addEventListener("change",e=>{if(e.target.matches('input[type="checkbox"]'))haptic(16)});
+  document.addEventListener("click",e=>{
+    const summary=e.target.closest(".sched-done-summary");if(!summary)return;
+    summary.classList.toggle("open");
+    summary.nextElementSibling?.classList.toggle("collapsed");
+  });
   $("#sectionPeekToggle")?.addEventListener("click",()=>{
     const mine=state.profile.section||"A";
     setSectionView(state.peekSection?mine:(mine==="A"?"B":"A"));
@@ -2018,7 +2080,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova107",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova108",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
