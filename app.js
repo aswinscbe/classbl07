@@ -1378,7 +1378,7 @@ function renderBuses(){
   $("#nextBusTime").textContent=fmtTime(next.b.time);
   $("#nextBusMeta").textContent=next.b.staff?"Staff shuttle":isMainGateService(next.b)?"Main Gate service":"Campus shuttle";
   const gateTags=$("#nextBusGateTags");
-  if(gateTags)gateTags.innerHTML=`${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(next.b.from))}">ORIGIN TIME</span>`:""}`;
+  if(gateTags)gateTags.innerHTML=`${next.b.staff?'<span class="tag tag-staff">STAFF</span>':""}${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(next.b.from))}">ORIGIN TIME</span>`:""}`;
   const originNote=$("#nextBusOriginNote");
   if(originNote){
     if(previous){
@@ -2153,7 +2153,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova122",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova123",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
