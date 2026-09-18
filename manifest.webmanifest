@@ -20,6 +20,12 @@
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
+      "name": "Planner",
+      "short_name": "Planner",
+      "url": "./?shortcut=planner",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
       "name": "Next Bus",
       "short_name": "Bus",
       "url": "./?shortcut=bus",

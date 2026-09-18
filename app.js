@@ -398,6 +398,7 @@ function applyShortcutParams(){
   const params=new URLSearchParams(location.search),target=params.get("shortcut");
   if(!target)return;
   if(target==="today")showPage("home");
+  else if(target==="planner")showPage("calendar");
   else if(target==="bus"){showPage("campus");openCampusTab("bus")}
   else if(target==="mess"){showPage("campus");openCampusTab("mess")}
   history.replaceState(null,"",location.pathname);
@@ -914,7 +915,29 @@ function renderWeekPlanner(){
        bind the swipe listener once or it stacks a new one on every call. */
     if(!strip.dataset.swipeBound){strip.dataset.swipeBound="1";bindSwipeGesture(strip,direction=>shiftRailWeek(direction==="left"?1:-1),{ignore:"a,input,select,textarea",threshold:46})}
   }
-  renderDayFocus(state.selectedDate||today);
+  const weekView=$("#toggleWeekView");
+  if(weekView)weekView.classList.toggle("active",!!state.plannerWeekView);
+  dayFocusEl.hidden=!!state.plannerWeekView;
+  const glanceEl=$("#weekGlanceView");
+  if(glanceEl)glanceEl.hidden=!state.plannerWeekView;
+  if(state.plannerWeekView)renderWeekGlance(days);
+  else renderDayFocus(state.selectedDate||today);
+}
+/* All 7 days in one scroll instead of one at a time — same "week at a glance"
+   pattern Mess already uses. Days with nothing on them collapse to a single
+   muted line instead of a full empty-state block so a light week stays short. */
+function renderWeekGlance(days){
+  const el=$("#weekGlanceView");if(!el)return;
+  const today=isoToday();
+  el.innerHTML=days.map(iso=>{
+    let dayClasses=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    if(state.calendarHighlight)dayClasses=dayClasses.filter(c=>canonical(c.code)===state.calendarHighlight);
+    const active=dayClasses.filter(c=>c.status!=="Cancelled");
+    const exam=examOn(iso);
+    const header=`<div class="wg-day-head ${iso===today?"is-today":""}"><span>${esc(fmtDate(iso,{weekday:"long",day:"numeric",month:"short"}))}</span>${iso===today?'<b class="wc-today-badge">TODAY</b>':""}${active.length?`<small>${active.length} ${active.length===1?"class":"classes"}</small>`:""}</div>`;
+    if(!dayClasses.length&&!exam)return`${header}<p class="wg-free">Free day</p>`;
+    return`${header}${scheduleRowsHtml(dayClasses,iso)}`;
+  }).join("");
 }
 /* Single-day focus: replaces the old accordion. One day's shape at a time — a time
    ruler with exact boundary labels, finished classes collapsed into a thin "earlier"
@@ -1193,6 +1216,51 @@ function bindSwipeGesture(el,onSwipe,{ignore="input,select,textarea,button,a",th
   el.addEventListener("touchend",end);
   el.addEventListener("mousedown",start);
   el.addEventListener("mouseup",end);
+}
+
+/* Pull-to-refresh on Home — only arms when the page is scrolled to the very top
+   (so it never fights normal scrolling), tracks the vertical drag with resistance
+   past a threshold, and triggers the same syncSchedule(true) the header refresh
+   button already uses. Ignored once a horizontal drag is clearly what's happening,
+   so it doesn't compete with the hero card's day-swipe gesture. */
+function bindPullToRefresh(){
+  const indicator=$("#pullRefreshIndicator");if(!indicator)return;
+  const MAX_PULL=70,THRESHOLD=52;
+  let sy=0,sx=0,dragging=false,pulled=0,refreshing=false;
+  const isHome=()=>$("#homePage")?.classList.contains("active");
+  document.addEventListener("touchstart",e=>{
+    if(!isHome()||refreshing||window.scrollY>0){dragging=false;return}
+    const p=e.touches[0];sy=p.clientY;sx=p.clientX;dragging=true;pulled=0;
+  },{passive:true});
+  document.addEventListener("touchmove",e=>{
+    if(!dragging)return;
+    const p=e.touches[0],dy=p.clientY-sy,dx=p.clientX-sx;
+    if(Math.abs(dx)>Math.abs(dy)){dragging=false;indicator.classList.remove("pulling","ready");return}
+    if(dy<=0)return;
+    pulled=Math.min(MAX_PULL,dy*0.5);
+    indicator.style.setProperty("--pull-y",`${pulled}px`);
+    indicator.style.transform=`translate(-50%,${pulled}px)`;
+    indicator.classList.add("pulling");
+    indicator.classList.toggle("ready",pulled>=THRESHOLD*0.7);
+  },{passive:true});
+  document.addEventListener("touchend",async()=>{
+    if(!dragging)return;dragging=false;
+    if(pulled>=THRESHOLD*0.7&&!refreshing){
+      refreshing=true;
+      indicator.style.setProperty("--pull-y","32px");
+      indicator.style.transform="translate(-50%,32px)";
+      indicator.classList.add("spinning");
+      haptic(14);
+      await syncSchedule(true);
+      indicator.classList.remove("spinning","pulling","ready");
+      indicator.style.transform="translate(-50%,0)";
+      refreshing=false;
+    }else{
+      indicator.classList.remove("pulling","ready");
+      indicator.style.transform="translate(-50%,0)";
+    }
+    pulled=0;
+  });
 }
 
 /* Electives onboarding */
@@ -2014,6 +2082,7 @@ function bind(){
     const delta=direction==="left"?1:-1;
     setTimelineOffset((state.timelineOffset||0)+delta,delta>0?"forward":"backward");
   },{ignore:"input,select,textarea,a,button"});
+  bindPullToRefresh();
   $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);
   $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();closeNotifications();showToast("Notifications marked as read")});
   $("#clearNotifications")?.addEventListener("click",()=>{
@@ -2036,6 +2105,15 @@ function bind(){
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerTab(b.dataset.plannerTab)));
   $$(".subtab[data-profile-tab]").forEach(b=>b.addEventListener("click",()=>{$$(".subtab[data-profile-tab]").forEach(x=>x.classList.toggle("active",x===b));$$(".profile-view").forEach(v=>v.classList.toggle("active",v.dataset.profileView===b.dataset.profileTab))}));
   $("#prevMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()-1,1);renderCalendar()});$("#nextMonth").addEventListener("click",()=>{state.calendarMonth=new Date(state.calendarMonth.getFullYear(),state.calendarMonth.getMonth()+1,1);renderCalendar()});$("#todayButton").addEventListener("click",()=>{state.selectedDate=isoToday();state.calendarMonth=new Date();state.calendarMonth.setDate(1);state.railStart=mondayIso(state.selectedDate);renderCalendar()});
+$("#calendarTitleJump")?.addEventListener("click",()=>{
+  const input=$("#monthJumpInput");if(!input)return;
+  input.value=`${state.calendarMonth.getFullYear()}-${String(state.calendarMonth.getMonth()+1).padStart(2,"0")}`;
+  if(input.showPicker)input.showPicker();else input.focus();
+});
+$("#monthJumpInput")?.addEventListener("change",e=>{
+  const[y,m]=e.target.value.split("-").map(Number);if(!y||!m)return;
+  state.calendarMonth=new Date(y,m-1,1);renderCalendar();
+});
   $("#openMonthPicker")?.addEventListener("click",()=>{renderCalendar();$("#monthPickerDialog").showModal()});
   $("#jumpToTodayPill")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#jumpToTodayButton")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
@@ -2100,6 +2178,7 @@ function bind(){
     if(hero&&hero.dataset.focusClassId){const c=state.classes.find(x=>classIdentity(x)===hero.dataset.focusClassId);if(c)openClassSheet(c)}
   });
   $("#toggleCourseFilter")?.addEventListener("click",()=>{state.courseFilterOpen=!state.courseFilterOpen;renderCalendar()});
+  $("#toggleWeekView")?.addEventListener("click",()=>{state.plannerWeekView=!state.plannerWeekView;renderCalendar()});
   $("#weekScanPrev")?.addEventListener("click",()=>shiftRailWeek(-1));
   $("#weekScanNext")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
@@ -2153,7 +2232,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova123",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova124",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
