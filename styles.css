@@ -40,59 +40,68 @@
   --radius-md:14px;
   --radius-sm:10px;
   --font:"Satoshi",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  --font-display:"Satoshi",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  /* A genuine display companion to Satoshi (same foundry/CDN, built as a display
+     pairing) instead of reusing the body face at a heavier weight — the two were
+     visually identical before this, so nothing in the app had real typographic
+     contrast. Falls back to Satoshi/system stack if it fails to load. */
+  --font-display:"Clash Display","Satoshi",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 
 :root:not([data-theme="light"]){
   color-scheme:dark;
 }
+/* Was a cool blue-gray (#e9edf3) with navy-tinted shadows and a blue accent that
+   didn't match the dark theme's plum identity at all — read as a generic SaaS
+   dashboard rather than a premium companion to the dark theme. Now a warm paper
+   background, warm-tinted soft shadows, and the accent stays in the plum family
+   (just deepened for contrast) so light mode feels like the same product. */
 :root[data-theme="light"]{
-  --bg:#e9edf3;
+  --bg:#f6f4f1;
   --bg-elevated:#ffffff;
-  --bg-panel:#f4f6f9;
+  --bg-panel:#efebe5;
   --bg-raised:#ffffff;
-  --ink:#161a20;
-  --ink-muted:#565f6c;
-  --ink-faint:#828b98;
-  --accent:#3d5aa8;
-  --accent-2:#324a8c;
-  --accent-soft:rgba(61,90,168,.16);
+  --ink:#1c1a22;
+  --ink-muted:#5c5766;
+  --ink-faint:#8b8593;
+  --accent:#4630a6;
+  --accent-2:#885930;
+  --accent-soft:rgba(70,48,166,.14);
   --live:#2e6b4a;
   --live-soft:rgba(46,107,74,.15);
   --amber:#93611f;
   --amber-soft:rgba(147,97,31,.16);
   --danger:#a63d3d;
   --danger-soft:rgba(166,61,61,.14);
-  --border:#cfd7e2;
-  --border-strong:#b6c0cf;
-  --shadow-lg:0 22px 48px -28px rgba(20,30,50,.28);
-  --shadow-md:0 10px 22px -16px rgba(20,30,50,.22);
-  --shadow-sm:0 5px 12px -9px rgba(20,30,50,.18);
+  --border:#e4ddd2;
+  --border-strong:#cec2b0;
+  --shadow-lg:0 24px 52px -30px rgba(60,40,20,.16);
+  --shadow-md:0 14px 28px -18px rgba(60,40,20,.13);
+  --shadow-sm:0 6px 14px -10px rgba(60,40,20,.11);
   color-scheme:light;
 }
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]):not([data-theme="light"]){
-    --bg:#e9edf3;
+    --bg:#f6f4f1;
     --bg-elevated:#ffffff;
-    --bg-panel:#f4f6f9;
+    --bg-panel:#efebe5;
     --bg-raised:#ffffff;
-    --ink:#161a20;
-    --ink-muted:#565f6c;
-    --ink-faint:#828b98;
-    --accent:#3d5aa8;
-    --accent-2:#324a8c;
-    --accent-soft:rgba(61,90,168,.16);
+    --ink:#1c1a22;
+    --ink-muted:#5c5766;
+    --ink-faint:#8b8593;
+    --accent:#4630a6;
+    --accent-2:#885930;
+    --accent-soft:rgba(70,48,166,.14);
     --live:#2e6b4a;
     --live-soft:rgba(46,107,74,.15);
     --amber:#93611f;
     --amber-soft:rgba(147,97,31,.16);
     --danger:#a63d3d;
     --danger-soft:rgba(166,61,61,.14);
-    --border:#cfd7e2;
-    --border-strong:#b6c0cf;
-    --shadow-lg:0 22px 48px -28px rgba(20,30,50,.28);
-    --shadow-md:0 10px 22px -16px rgba(20,30,50,.22);
-    --shadow-sm:0 5px 12px -9px rgba(20,30,50,.18);
+    --border:#e4ddd2;
+    --border-strong:#cec2b0;
+    --shadow-lg:0 24px 52px -30px rgba(60,40,20,.16);
+    --shadow-md:0 14px 28px -18px rgba(60,40,20,.13);
+    --shadow-sm:0 6px 14px -10px rgba(60,40,20,.11);
     color-scheme:light;
   }
 }
@@ -171,7 +180,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 
 /* ============ App shell / layout ============ */
 .app-shell{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
-.page-wrap{flex:1;max-width:1180px;width:100%;margin:0 auto;padding:16px 16px 110px}
+.page-wrap{flex:1;max-width:1180px;width:100%;margin:0 auto;padding:18px 18px 110px}
 .page{display:none;position:relative}
 /* Pull-to-refresh: a small indicator pinned above Home's content, translated down
    by the drag distance while pulling (with resistance), spinning while an actual
@@ -272,15 +281,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:var(--bg-elevated);color:var(--ink);position:relative;border:1px solid var(--border);
 }
 .icon-button svg{width:18px;height:18px}
-/* Topbar icon buttons get a glassier, more tactile treatment than dialog/utility
-   icon-buttons elsewhere — a subtle press glow instead of a flat filled square. */
+/* Ghost icon buttons in the topbar — ditched the uniform glass-square treatment
+   (four identical bordered boxes read as generic toolbar clutter); no border/fill
+   until pressed, so the row reads as icons first, not four repeated tiles. */
 .top-actions .icon-button{
-  background:color-mix(in srgb, var(--ink) 6%, transparent);
-  border-color:color-mix(in srgb, var(--ink) 10%, transparent);
-  transition:background .15s ease,transform .12s ease,box-shadow .2s ease;
+  background:transparent;border-color:transparent;color:var(--ink-muted);
+  transition:background .15s ease,color .15s ease,transform .12s ease;
 }
-@media (hover:hover){.top-actions .icon-button:hover{background:color-mix(in srgb, var(--accent) 14%, transparent);border-color:color-mix(in srgb, var(--accent) 30%, transparent)}}
-.top-actions .icon-button:active{box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent)}
+@media (hover:hover){.top-actions .icon-button:hover{background:color-mix(in srgb, var(--ink) 7%, transparent);color:var(--ink)}}
+.top-actions .icon-button:active{background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)}
+.top-actions .refresh-button{color:var(--ink)}
 .icon-button:active{transform:scale(.94)}
 #themeToggle span{display:inline-flex}
 #themeToggle span.icon-morph{animation:icon-morph .32s cubic-bezier(.34,1.56,.64,1)}
@@ -299,13 +309,17 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* A live clock instead of a static page label — the "alive" detail a premium bar
    earns its glass treatment with. */
 .topbar-clock{
-  font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;color:var(--ink-muted);
+  display:none;font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;color:var(--ink-muted);
   letter-spacing:-.01em;margin-right:2px;white-space:nowrap;
 }
+/* The device already shows the time in its own status bar — repeating it in-app
+   only earns its place once there's a wider desktop bar with room to spare. */
+@media (min-width:900px){.topbar-clock{display:inline}}
 .sync-pill{
-  display:none;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;
-  background:var(--bg-elevated);border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--ink-muted);
+  display:none;align-items:center;gap:7px;padding:0;border-radius:99px;
+  background:none;border:0;font-size:13px;font-weight:600;color:var(--ink-muted);
 }
+.sync-pill span{display:none}
 .sync-pill i{width:7px;height:7px;border-radius:50%;background:var(--ink-faint)}
 .sync-pill.syncing i{background:var(--amber);animation:pulse 1s infinite}
 .sync-pill.ok i{background:var(--live)}
@@ -357,8 +371,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:var(--bg-elevated);
   border-radius:var(--radius-lg);
   border:1px solid var(--border);
-  padding:18px;
-  margin-top:14px;
+  padding:22px;
+  margin-top:18px;
   box-shadow:var(--shadow-md);
 }
 .panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -417,7 +431,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   --hero-chip-bg:var(--bg-panel);
   --hero-chip-bg-hover:color-mix(in srgb, var(--ink) 10%, transparent);
   --hero-bar-fill:var(--accent);
-  padding:20px;border-radius:var(--radius-xl);
+  padding:24px;border-radius:var(--radius-xl);
   background:linear-gradient(165deg, var(--bg-elevated) 0%, var(--bg-panel) 60%, var(--bg-elevated) 100%);
   color:var(--ink);
   box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
@@ -736,7 +750,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:linear-gradient(90deg, var(--bg-panel) 22%, var(--bg-elevated) 50%, var(--bg-panel) 78%);
   background-size:250% 100%;animation:shimmer-sweep 1.3s ease-in-out infinite;
 }
-.rail-section-label{margin:16px 0 8px;font-size:12px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
+.rail-section-label{margin:22px 0 10px;font-size:12px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em}
 .rail-section-label:first-child{margin-top:0}
 .week-digest{margin:-4px 0 10px;font-size:13px;font-weight:600;color:var(--ink-muted)}
 
@@ -745,7 +759,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    colour doing any work. */
 .term-overview-card{
   --on-grad:var(--ink);--on-grad-muted:var(--ink-muted);--on-grad-line:var(--border);
-  display:block;width:100%;margin-top:14px;background:var(--bg-elevated);color:var(--ink);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;
+  display:block;width:100%;margin-top:18px;background:var(--bg-elevated);color:var(--ink);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;
   box-shadow:var(--shadow-md);
   position:relative;overflow:hidden;
 }
@@ -773,7 +787,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .term-overview-strip i.has-exam{outline:1.5px solid color-mix(in srgb, var(--on-grad) 55%, transparent);outline-offset:1px}
 
 .week-heatmap{
-  display:flex;align-items:flex-end;justify-content:space-between;gap:5px;padding:16px 14px 14px;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:5px;padding:20px 16px 16px;
   border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-elevated);box-shadow:var(--shadow-md);
 }
 .wk-bar-col{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
@@ -1237,7 +1251,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    grid). Prev/next arrows flank the date, every day-cell below follows the same
    order top to bottom: weekday, date, class count — never swapped. */
 .week-card{
-  margin-top:14px;border-radius:22px;padding:18px 16px 16px;position:relative;
+  margin-top:18px;border-radius:22px;padding:22px 20px 18px;position:relative;
   background:var(--bg-elevated);
   border:1px solid var(--border);
   box-shadow:var(--shadow-md);

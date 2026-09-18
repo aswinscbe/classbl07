@@ -120,7 +120,10 @@ function renderThemeToggleIcon(theme){
   setTimeout(()=>span.classList.remove("icon-morph"),320);
 }
 const ACCENT_PRESETS={
-  plum:{name:"Plum Bronze",dark:{accent:"#9884f0",accent2:"#c98a52"},light:{accent:"#4a68b8",accent2:"#3d55a0"},grad:"linear-gradient(135deg,#1c1526 0%,#3a2a4d 55%,#a9714a 100%)",glow:"#7a5438"},
+  /* Light variant used to swap to a blue family entirely (#4a68b8), so "Plum
+     Bronze" wasn't plum in light mode at all — same hue family as dark, just
+     deepened/desaturated enough for AA contrast on a white surface. */
+  plum:{name:"Plum Bronze",dark:{accent:"#9884f0",accent2:"#c98a52"},light:{accent:"#4630a6",accent2:"#885930"},grad:"linear-gradient(135deg,#1c1526 0%,#3a2a4d 55%,#a9714a 100%)",glow:"#7a5438"},
   teal:{name:"Ocean Teal",dark:{accent:"#4fa3b0",accent2:"#4fb08a"},light:{accent:"#2f7a8c",accent2:"#2f8c68"},grad:"linear-gradient(135deg,#0e2530 0%,#155066 55%,#2f8c68 100%)",glow:"#155066"},
   crimson:{name:"Crimson Ember",dark:{accent:"#c15a6e",accent2:"#d98a4f"},light:{accent:"#a83f52",accent2:"#a5673f"},grad:"linear-gradient(135deg,#2a1114 0%,#5e2a35 55%,#a5673f 100%)",glow:"#5e2a35"},
   indigo:{name:"Indigo Slate",dark:{accent:"#6a7bc9",accent2:"#4fb0a0"},light:{accent:"#4a5aa8",accent2:"#2f8c7e"},grad:"linear-gradient(135deg,#151a35 0%,#2a3566 55%,#2f8c7e 100%)",glow:"#2a3566"},
@@ -211,7 +214,7 @@ async function syncSchedule(force=false){
   if(!force&&Date.now()-_lastSyncAt<30000)return;
   _syncInFlight=true;
   const pill=$("#syncPill"),refreshBtn=$("#refreshButton");
-  if(pill){pill.className="sync-pill syncing";pill.innerHTML="<i></i><span>Checking</span>"}
+  if(pill){pill.className="sync-pill syncing";pill.innerHTML="<i></i><span>Checking</span>";pill.title="Checking for schedule updates"}
   if(refreshBtn){refreshBtn.dataset.state="syncing";refreshBtn.setAttribute("aria-busy","true")}
   try{
     const u=new URL(API);u.searchParams.set("section",state.profile.section||"A");u.searchParams.set("electives",(state.profile.electives||[]).join(","));u.searchParams.set("includeCancelled","true");if(force)u.searchParams.set("_",Date.now());
@@ -220,11 +223,11 @@ async function syncSchedule(force=false){
     if(changes.length){state.notifications=[...changes,...state.notifications].slice(0,40);save(KEYS.notifications,state.notifications)}
     state.all=d.classes||[];state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();
     _lastSyncAt=Date.now();
-    if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Updated now</span>"}
+    if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Updated now</span>";pill.title="Schedule updated just now"}
   }catch(e){
     const c=load(KEYS.cache,null);
     if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
-    if(pill){pill.className="sync-pill error";pill.innerHTML="<i></i><span>Offline</span>"}
+    if(pill){pill.className="sync-pill error";pill.innerHTML="<i></i><span>Offline</span>";pill.title="Offline — showing last saved schedule"}
     console.error(e);
   }finally{
     _syncInFlight=false;
@@ -2232,7 +2235,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova124",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova125",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
