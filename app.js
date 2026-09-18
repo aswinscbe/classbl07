@@ -1245,7 +1245,7 @@ function routeStops(bus){
 }
 
 function isMainGateService(bus){return bus.from==="Main Gate"||bus.to==="Main Gate"}
-const BUS_STOPS=["C&D Housing","Phase V Campus","PGP Auditorium","Main Gate"];
+const BUS_STOPS=["C&D Housing","Phase V Campus","PGP Auditorium","Main Gate","Arjuna Statue"];
 function serviceSupports(bus,from,to){
   const stops=routeStops(bus);
   const fromIndex=stops.indexOf(from);
@@ -1376,7 +1376,7 @@ function renderBuses(){
   }
 
   $("#nextBusTime").textContent=fmtTime(next.b.time);
-  $("#nextBusMeta").textContent=isMainGateService(next.b)?"Main Gate service":"Campus shuttle";
+  $("#nextBusMeta").textContent=next.b.staff?"Staff shuttle":isMainGateService(next.b)?"Main Gate service":"Campus shuttle";
   const gateTags=$("#nextBusGateTags");
   if(gateTags)gateTags.innerHTML=`${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(next.b.from))}">ORIGIN TIME</span>`:""}`;
   const originNote=$("#nextBusOriginNote");
@@ -1436,6 +1436,7 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
   const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),elapsed=!isNext&&busDate(bus)<now;
   const badges=[
     isNext?'<span class="tag tag-next">NEXT</span>':"",
+    bus.staff?'<span class="tag tag-staff">STAFF</span>':"",
     mainGate?'<span class="tag tag-gate">MAIN GATE</span>':"",
     last?'<span class="tag tag-last">LAST BUS</span>':"",
     bus.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(bus.from))}">ORIGIN TIME</span>`:""
@@ -2152,7 +2153,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova121",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova122",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
