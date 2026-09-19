@@ -732,17 +732,73 @@ function imageTableRowsForDay(iso){
   });
   return rows;
 }
+const IMG_ROW_H=32,IMG_EMPTY_ROW_H=30,IMG_DAY_HEADER_H=30,IMG_DAY_SPACING=14;
+function imageBlockHeight(db){
+  let h=IMG_DAY_HEADER_H;
+  db.rows.forEach(r=>h+=(r.type==="empty"?IMG_EMPTY_ROW_H:IMG_ROW_H));
+  return h+IMG_DAY_SPACING;
+}
+function drawImageDayColumn(ctx,dayBlocks,x,colWidth,timeColW,yStart){
+  let y=yStart;
+  dayBlocks.forEach(db=>{
+    ctx.fillStyle="#1c1a22";
+    ctx.font="700 14px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+    ctx.fillText(fmtDate(db.iso,{weekday:"long",day:"numeric",month:"short"}),x,y+15);
+    y+=IMG_DAY_HEADER_H;
+    ctx.strokeStyle="#d8d2c5";ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+colWidth,y);ctx.stroke();
+    db.rows.forEach(r=>{
+      const h=r.type==="empty"?IMG_EMPTY_ROW_H:IMG_ROW_H;
+      if(r.type==="class"){
+        const c=r.c;
+        ctx.fillStyle=colorFor(c.code);
+        ctx.beginPath();ctx.arc(x+6,y+h/2,4,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle="#1c1a22";
+        ctx.font="700 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+        ctx.fillText(fmtRange(c.startTime,c.endTime),x+16,y+h/2+4);
+        ctx.font="600 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+        ctx.fillText(`${canonical(c.code)} · ${c.course}`,x+timeColW,y+h/2+4);
+        ctx.fillStyle="#8b8398";
+        ctx.font="600 10px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+        ctx.textAlign="right";
+        ctx.fillText(venueOf(c),x+colWidth,y+h/2+4);
+        ctx.textAlign="left";
+      }else if(r.type==="free"){
+        ctx.fillStyle="#a89c85";
+        ctx.font="600 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+        ctx.fillText(`${fmtTime(minsToTimeStr(r.start))}–${fmtTime(minsToTimeStr(r.end))}`,x+16,y+h/2+4);
+        ctx.font="italic 600 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+        ctx.fillText("Free slot",x+timeColW,y+h/2+4);
+      }else{
+        ctx.fillStyle="#a89c85";
+        ctx.font="italic 600 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+        ctx.fillText("Free day — no classes",x+16,y+h/2+4);
+      }
+      y+=h;
+      ctx.strokeStyle="#ece7db";ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+colWidth,y);ctx.stroke();
+    });
+    y+=IMG_DAY_SPACING;
+  });
+}
 /* Plain-text share is unreadable at a glance and has no way to show empty slots as
    empty. A literal table — one row per time block, exact start–end times, "Free"
    rows for the gaps — is the compact, spreadsheet-familiar format that was asked
-   for, in place of the earlier calendar-grid drawing. */
+   for. A multi-day share (a week) splits into two side-by-side day columns instead
+   of one long vertical run, roughly halving the image height. */
 function buildScheduleImage(days,title){
-  const scale=2,width=660,marginX=24,contentWidth=width-marginX*2,timeColW=158;
-  const rowH=32,emptyRowH=30,dayHeaderH=30,daySpacing=14;
+  const scale=2,marginX=24,colGap=28,timeColW=118;
   const dayBlocks=days.map(iso=>({iso,rows:imageTableRowsForDay(iso)}));
-  let height=88;
-  dayBlocks.forEach(db=>{height+=dayHeaderH+db.rows.length*rowH+daySpacing});
-  height+=16;
+  const twoCol=dayBlocks.length>2;
+  const colWidth=twoCol?370:560;
+  const split=Math.ceil(dayBlocks.length/2);
+  const leftDays=twoCol?dayBlocks.slice(0,split):dayBlocks;
+  const rightDays=twoCol?dayBlocks.slice(split):[];
+  const leftHeight=leftDays.reduce((sum,db)=>sum+imageBlockHeight(db),0);
+  const rightHeight=rightDays.reduce((sum,db)=>sum+imageBlockHeight(db),0);
+  const marginTop=88;
+  const width=marginX*2+colWidth*(twoCol?2:1)+(twoCol?colGap:0);
+  const height=marginTop+Math.max(leftHeight,rightHeight)+16;
   const canvas=document.createElement("canvas");
   canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);
   const ctx=canvas.getContext("2d");
@@ -755,47 +811,8 @@ function buildScheduleImage(days,title){
   ctx.font="600 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
   ctx.fillText("BL07 · IIM Kozhikode",marginX,50);
 
-  let y=88;
-  dayBlocks.forEach(db=>{
-    ctx.fillStyle="#1c1a22";
-    ctx.font="700 14px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-    ctx.fillText(fmtDate(db.iso,{weekday:"long",day:"numeric",month:"short"}),marginX,y+15);
-    y+=dayHeaderH;
-    ctx.strokeStyle="#d8d2c5";ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(marginX,y);ctx.lineTo(marginX+contentWidth,y);ctx.stroke();
-    db.rows.forEach(r=>{
-      const h=r.type==="empty"?emptyRowH:rowH;
-      if(r.type==="class"){
-        const c=r.c;
-        ctx.fillStyle=colorFor(c.code);
-        ctx.beginPath();ctx.arc(marginX+6,y+h/2,4,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle="#1c1a22";
-        ctx.font="700 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.fillText(fmtRange(c.startTime,c.endTime),marginX+18,y+h/2+4);
-        ctx.font="600 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.fillText(`${canonical(c.code)} · ${c.course}`,marginX+timeColW,y+h/2+4);
-        ctx.fillStyle="#8b8398";
-        ctx.font="600 10px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.textAlign="right";
-        ctx.fillText(venueOf(c),marginX+contentWidth,y+h/2+4);
-        ctx.textAlign="left";
-      }else if(r.type==="free"){
-        ctx.fillStyle="#a89c85";
-        ctx.font="600 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.fillText(`${fmtTime(minsToTimeStr(r.start))}–${fmtTime(minsToTimeStr(r.end))}`,marginX+18,y+h/2+4);
-        ctx.font="italic 600 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.fillText("Free slot",marginX+timeColW,y+h/2+4);
-      }else{
-        ctx.fillStyle="#a89c85";
-        ctx.font="italic 600 13px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.fillText("Free day — no classes scheduled",marginX+18,y+h/2+4);
-      }
-      y+=h;
-      ctx.strokeStyle="#ece7db";ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(marginX,y);ctx.lineTo(marginX+contentWidth,y);ctx.stroke();
-    });
-    y+=daySpacing;
-  });
+  drawImageDayColumn(ctx,leftDays,marginX,colWidth,timeColW,marginTop);
+  if(twoCol)drawImageDayColumn(ctx,rightDays,marginX+colWidth+colGap,colWidth,timeColW,marginTop);
   return canvas;
 }
 function downloadScheduleImage(days,title,filename){
@@ -2364,7 +2381,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova131",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova132",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
