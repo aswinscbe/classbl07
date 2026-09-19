@@ -700,7 +700,21 @@ function shareWeekText(startIso){
   }).join("\n\n");
   return`${header}\n\n${body}\n\nSent from BL07 Planner`;
 }
-function shareToWhatsApp(text){window.open(`https://wa.me/?text=${encodeURIComponent(text)}`,"_blank")}
+/* Native share sheet when available (lets the person pick WhatsApp, Notes, copy, etc.
+   themselves) — falling back to a straight clipboard copy on desktop/unsupported browsers,
+   since a hardcoded wa.me link locked everyone into one destination app. */
+async function shareScheduleText(text,title="Schedule"){
+  if(navigator.share){
+    try{await navigator.share({title,text});return}
+    catch(e){if(e?.name==="AbortError")return}
+  }
+  try{
+    await navigator.clipboard.writeText(text);
+    showToast("Schedule copied to clipboard");
+  }catch(e){
+    showToast("Couldn't copy — try again");
+  }
+}
 
 /* One row of labelled boxes, one per class in order, each sized to fit its own code —
    a free gap of 45+ minutes between two classes gets its own hollow "free" box in the
@@ -2143,9 +2157,9 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
     const nwLabel=$("#shareNextWeekLabel");if(nwLabel)nwLabel.textContent=`${fmtDate(nextDays[0],{day:"numeric",month:"short"})} – ${fmtDate(nextDays[6],{day:"numeric",month:"short"})}`;
     $("#shareScheduleDialog").showModal();
   });
-  $("#shareTodayOption")?.addEventListener("click",()=>{shareToWhatsApp(shareDayText(isoToday()));closeDialog($("#shareScheduleDialog"))});
-  $("#shareWeekOption")?.addEventListener("click",()=>{shareToWhatsApp(shareWeekText(mondayIso(isoToday())));closeDialog($("#shareScheduleDialog"))});
-  $("#shareNextWeekOption")?.addEventListener("click",()=>{shareToWhatsApp(shareWeekText(nextMondayIso(isoToday())));closeDialog($("#shareScheduleDialog"))});
+  $("#shareTodayOption")?.addEventListener("click",()=>{shareScheduleText(shareDayText(isoToday()),"Today's schedule");closeDialog($("#shareScheduleDialog"))});
+  $("#shareWeekOption")?.addEventListener("click",()=>{shareScheduleText(shareWeekText(mondayIso(isoToday())),"This week's schedule");closeDialog($("#shareScheduleDialog"))});
+  $("#shareNextWeekOption")?.addEventListener("click",()=>{shareScheduleText(shareWeekText(nextMondayIso(isoToday())),"Next week's schedule");closeDialog($("#shareScheduleDialog"))});
   bindDismissibleDialog($("#shareScheduleDialog"));
   $("#closeMonthPicker")?.addEventListener("click",()=>closeDialog($("#monthPickerDialog")));
   $("#monthPickerDialog")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeDialog(e.currentTarget)});
@@ -2253,7 +2267,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova127",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova128",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
