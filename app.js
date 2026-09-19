@@ -552,7 +552,7 @@ function renderHome(){
     daySectionEl.hidden=!state.timelineTouched&&(!timelineClasses.length||onlyClassIsFocus);
   }
   renderDayShapeBar(timelineClasses,timelineIso);
-  $("#todayProgressRail").innerHTML=timelineClasses.length?scheduleRowsHtml(timelineClasses,timelineIso,{showNext:true}):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
+  $("#todayProgressRail").innerHTML=timelineClasses.length?scheduleRowsHtml(timelineClasses,timelineIso,{showNext:true,heroClassId:focusPanel.dataset.focusClassId||""}):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
   const holidayBanner=$("#todayProgressRail")?.previousElementSibling;
   const holiday=HOLIDAYS[timelineIso];
   $$(".timeline-holiday-banner").forEach(n=>n.remove());
@@ -570,18 +570,8 @@ function renderHome(){
   const termPct=termAll.length?Math.round(termDone/termAll.length*100):0,termWeeksLeft=Math.max(0,Math.ceil((termEnd-now)/(7*24*3600000)));
   animateCount($("#termProgressPct"),termPct,"%");
   $("#termHomeRingFill")?.style.setProperty("--pct",termPct);
-  const termBar=$("#termProgressBar");
-  if(termBar){
-    if(!state._termBarAnimated){
-      state._termBarAnimated=true;termBar.style.width="0%";
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{termBar.style.width=`${termPct}%`}));
-    }else termBar.style.width=`${termPct}%`;
-  }
   animateCount($("#termDone"),termDone);animateCount($("#termLeft"),termLeft);animateCount($("#termWeeksLeft"),termWeeksLeft);
   renderTermOverviewStrip();renderWeekDigest();renderHomeLegend();
-  const termTotalMs=termEnd-termStart,sep1=new Date("2026-09-01T00:00:00+05:30");
-  const sepTick=$("#termTickSep");
-  if(sepTick)sepTick.style.left=`${Math.max(0,Math.min(100,((sep1-termStart)/termTotalMs)*100))}%`;
   /* Week bar chart — count above, bar height by load, day letter below. A vertical
      bar reads "how busy is this day" faster than a same-size square with a number
      in it, and matches the muted single-hue premium direction (today's bar is the
@@ -597,7 +587,11 @@ function renderHome(){
       dayCounts.push({iso,count:active.length,hasCancelled,hasExam:!!examOn(iso),hasTask:state.tasks.some(t=>!t.completed&&t.date===iso)});
     }
     const maxCount=Math.max(1,...dayCounts.map(d=>d.count));
-    const MAX_BAR=64;
+    /* A light week used to render as a tall box holding one bar and six dashes. The
+       chart's ceiling now follows how many days actually carry anything, so a quiet
+       week takes the vertical space a quiet week deserves. */
+    const busyDays=dayCounts.filter(d=>d.count).length;
+    const MAX_BAR=busyDays<=2?34:busyDays<=4?48:64;
     heatEl.innerHTML=dayCounts.map((d,i)=>{
       const isToday=d.iso===isoToday();
       const h=d.count?Math.round(Math.max(.18,d.count/maxCount)*MAX_BAR):4;
@@ -921,6 +915,19 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
     const meta=[venueOf(c),c.faculty,compactDuration(dur)].filter(Boolean);
     if(tier==="live")meta.push(`ends in ${tagCountdown((dateTime(c,"endTime")-now)/60000)}`);
     if(c.tentative)meta.push("timing not confirmed");
+    /* On Home the hero card directly above already spells out the live class in full —
+       code, title, time, room, faculty, countdown. Repeating it as the next row made the
+       eye read the same thing twice, so there it collapses to a thin position marker.
+       The Planner has no hero, so it keeps the full row. */
+    if(tier==="live"&&opts.heroClassId&&classIdentity(c)===opts.heroClassId){
+      html+=`<div class="sched-now-marker" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
+        <span class="snm-dot"></span>
+        <span class="snm-text">Now · ${esc(canonical(c.code))}</span>
+        <span class="snm-rule"></span>
+      </div>`;
+      prevEnd=minutes(c.endTime);
+      return;
+    }
     html+=`<article class="sched-row ${tier}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
       <div class="sr-time"><b>${esc(h12)}</b><small>${esc((ap||"").toUpperCase())}</small><span class="sr-time-end">${esc(fmtTime(c.endTime))}</span></div>
       <div class="sr-accent"></div>
@@ -2384,6 +2391,11 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   });
   $("#toggleCourseFilter")?.addEventListener("click",()=>{state.courseFilterOpen=!state.courseFilterOpen;renderCalendar()});
   $("#toggleWeekView")?.addEventListener("click",()=>{state.plannerWeekView=!state.plannerWeekView;renderCalendar()});
+  $("#toggleMoreTools")?.addEventListener("click",e=>{
+    const row=$("#agendaOverflowRow"),open=row.hidden;
+    row.hidden=!open;
+    e.currentTarget.setAttribute("aria-expanded",String(open));
+  });
   $("#weekScanPrev")?.addEventListener("click",()=>shiftRailWeek(-1));
   $("#weekScanNext")?.addEventListener("click",()=>shiftRailWeek(1));
   $("#closeTermHeatmap")?.addEventListener("click",()=>closeDialog($("#termHeatmapDialog")));
@@ -2437,7 +2449,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova134",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova135",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
