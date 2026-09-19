@@ -1611,6 +1611,12 @@ dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
   margin:6px 2px -2px;font-size:11px;font-weight:800;letter-spacing:.05em;
   text-transform:uppercase;color:var(--ink-faint);
 }
+.share-range-chips{display:flex;flex-wrap:wrap;gap:8px}
+.share-date-input{
+  width:100%;padding:11px 13px;border-radius:12px;background:var(--bg-panel);
+  border:1px solid var(--border);color:var(--ink);font:inherit;font-weight:600;
+}
+.share-range-summary{margin:-4px 2px 0;font-size:12px;font-weight:600;color:var(--ink-faint)}
 
 
 /* ============ Ledger dialog (Tasks & Notes) ============ */

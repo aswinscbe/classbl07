@@ -678,14 +678,22 @@ function nextOccurrenceOf(c){
   const future=state.classes.filter(x=>x.status!=="Cancelled"&&canonical(x.code)===canonical(c.code)&&dateTime(x,"startTime")>dateTime(c,"endTime")).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
   return future[0]||null;
 }
+function examsForDay(iso){
+  const exam=examOn(iso);
+  if(!exam)return[];
+  return Object.entries(exam.slots).map(([slot,entry])=>({slot,...entry}));
+}
 /* WhatsApp share — plain text built client-side, handed to wa.me's share intent so
    the person can pick who to send it to themselves; nothing is sent automatically
    and no phone number or server is involved. */
 function shareDayText(iso){
   const classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  const exams=examsForDay(iso);
   const header=`📅 *${fmtDate(iso,{weekday:"long",day:"numeric",month:"long"})}*`;
-  if(!classes.length)return`${header}\n\nFree day — no classes scheduled.`;
-  const lines=classes.map(c=>`*${fmtRange(c.startTime,c.endTime)}*\n${canonical(c.code)} · ${c.course}\n${venueOf(c)}`);
+  const examLines=exams.map(e=>`📝 *${EXAM_SLOT_LABELS[e.slot]} EXAM*\n${e.code} · ${e.subject}`);
+  const classLines=classes.map(c=>`*${fmtRange(c.startTime,c.endTime)}*\n${canonical(c.code)} · ${c.course}\n${venueOf(c)}`);
+  const lines=[...examLines,...classLines];
+  if(!lines.length)return`${header}\n\nFree day — no classes scheduled.`;
   return`${header}\n\n${lines.join("\n\n")}`;
 }
 function shareWeekText(startIso){
@@ -693,9 +701,12 @@ function shareWeekText(startIso){
   const header=`🗓️ *Week of ${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}*`;
   const body=days.map(iso=>{
     const classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+    const exams=examsForDay(iso);
     const dayHeader=`*${fmtDate(iso,{weekday:"long",day:"numeric",month:"short"})}*`;
-    if(!classes.length)return`${dayHeader}\nFree day`;
-    const rows=classes.map(c=>`${fmtRange(c.startTime,c.endTime)} — ${canonical(c.code)}: ${c.course} (${venueOf(c)})`);
+    const examRows=exams.map(e=>`📝 ${EXAM_SLOT_LABELS[e.slot]} EXAM — ${e.code}: ${e.subject}`);
+    const classRows=classes.map(c=>`${fmtRange(c.startTime,c.endTime)} — ${canonical(c.code)}: ${c.course} (${venueOf(c)})`);
+    const rows=[...examRows,...classRows];
+    if(!rows.length)return`${dayHeader}\nFree day`;
     return`${dayHeader}\n${rows.join("\n")}`;
   }).join("\n\n");
   return`${header}\n\n${body}\n\nSent from BL07 Planner`;
@@ -737,14 +748,16 @@ function fmtHourLabel(mins){
    to fit even a narrow 7-day column) rather than hiding it when space is tight. */
 function buildScheduleImage(days,title){
   const scale=2;
-  const dayBlocks=days.map(iso=>({iso,classes:state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime))}));
+  const dayBlocks=days.map(iso=>({iso,classes:state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)),exams:examsForDay(iso)}));
   const allClasses=dayBlocks.flatMap(d=>d.classes);
   let rangeStart=7*60,rangeEnd=18*60;
   allClasses.forEach(c=>{
     rangeStart=Math.min(rangeStart,Math.floor(minutes(c.startTime)/60)*60);
     rangeEnd=Math.max(rangeEnd,Math.ceil(minutes(c.endTime)/60)*60);
   });
-  const hourHeight=52,gutter=52,marginX=20,marginTop=78,headerH=34,footerH=16;
+  const hasAnyExam=dayBlocks.some(db=>db.exams.length);
+  const examRowH=hasAnyExam?32:0;
+  const hourHeight=52,gutter=52,marginX=20,marginTop=78,headerH=34+examRowH,footerH=16;
   const colWidth=Math.min(220,Math.max(96,660/dayBlocks.length));
   const gridWidth=colWidth*dayBlocks.length;
   const gridHeight=((rangeEnd-rangeStart)/60)*hourHeight;
@@ -769,11 +782,22 @@ function buildScheduleImage(days,title){
     ctx.fillStyle="#1c1a22";
     ctx.font="700 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
     ctx.textAlign="center";
-    ctx.fillText(fmtDate(db.iso,{weekday:"short"}).toUpperCase(),x+colWidth/2,gridY-16);
+    ctx.fillText(fmtDate(db.iso,{weekday:"short"}).toUpperCase(),x+colWidth/2,gridY-examRowH-16);
     ctx.fillStyle="#8b8398";
     ctx.font="600 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-    ctx.fillText(fmtDate(db.iso,{day:"numeric",month:"short"}),x+colWidth/2,gridY-3);
+    ctx.fillText(fmtDate(db.iso,{day:"numeric",month:"short"}),x+colWidth/2,gridY-3-examRowH);
     ctx.textAlign="left";
+    if(db.exams.length){
+      const first=db.exams[0],bw=colWidth-6,bx=x+3,by=gridY-examRowH+4,bh=examRowH-8;
+      ctx.fillStyle="#a63d3d";
+      roundRectPath(ctx,bx,by,bw,bh,6);ctx.fill();
+      ctx.fillStyle="#ffffff";
+      ctx.font="700 9px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+      ctx.textAlign="center";
+      const label=`EXAM · ${first.code}${db.exams.length>1?` +${db.exams.length-1}`:""}`;
+      ctx.fillText(label,bx+bw/2,by+bh/2+3);
+      ctx.textAlign="left";
+    }
   });
   /* Hour gridlines + gutter labels */
   ctx.strokeStyle="#e9e3d8";ctx.lineWidth=1;
@@ -2265,19 +2289,47 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#openMonthPicker")?.addEventListener("click",()=>{renderCalendar();$("#monthPickerDialog").showModal()});
   $("#jumpToTodayPill")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#jumpToTodayButton")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
+  const shareRangeState={type:"today",date:isoToday()};
+  function shareRangeContext(){
+    if(shareRangeState.type==="week"){const mon=mondayIso(isoToday()),days=weekDaysFrom(mon);return{days,title:"This Week's Schedule",label:mon}}
+    if(shareRangeState.type==="nextWeek"){const mon=nextMondayIso(isoToday()),days=weekDaysFrom(mon);return{days,title:"Next Week's Schedule",label:mon}}
+    if(shareRangeState.type==="day"){const iso=shareRangeState.date||isoToday();return{days:[iso],title:`${fmtDate(iso,{weekday:"long",day:"numeric",month:"short"})} Schedule`,label:iso}}
+    const today=isoToday();return{days:[today],title:"Today's Schedule",label:today};
+  }
+  function refreshShareRangeSummary(){
+    const ctx=shareRangeContext();
+    const summary=$("#shareRangeSummary");
+    if(summary)summary.textContent=ctx.days.length>1?`${fmtDate(ctx.days[0],{day:"numeric",month:"short"})} – ${fmtDate(ctx.days[ctx.days.length-1],{day:"numeric",month:"short"})}`:fmtDate(ctx.days[0],{weekday:"long",day:"numeric",month:"long"});
+  }
   $("#shareScheduleButton")?.addEventListener("click",()=>{
-    const today=isoToday(),mon=mondayIso(today),days=weekDaysFrom(mon),nextMon=nextMondayIso(today),nextDays=weekDaysFrom(nextMon);
-    const dLabel=$("#shareTodayLabel");if(dLabel)dLabel.textContent=fmtDate(today,{weekday:"long",day:"numeric",month:"short"});
-    const wLabel=$("#shareWeekLabel");if(wLabel)wLabel.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
-    const nwLabel=$("#shareNextWeekLabel");if(nwLabel)nwLabel.textContent=`${fmtDate(nextDays[0],{day:"numeric",month:"short"})} – ${fmtDate(nextDays[6],{day:"numeric",month:"short"})}`;
+    shareRangeState.type="today";shareRangeState.date=isoToday();
+    $$("#shareRangeChips .filter-chip").forEach(c=>c.classList.toggle("active",c.dataset.range==="today"));
+    const dateInput=$("#sharePickDate");if(dateInput){dateInput.hidden=true;dateInput.value=isoToday()}
+    refreshShareRangeSummary();
     $("#shareScheduleDialog").showModal();
   });
-  $("#shareTodayOption")?.addEventListener("click",()=>{shareScheduleText(shareDayText(isoToday()),"Today's schedule");closeDialog($("#shareScheduleDialog"))});
-  $("#shareWeekOption")?.addEventListener("click",()=>{shareScheduleText(shareWeekText(mondayIso(isoToday())),"This week's schedule");closeDialog($("#shareScheduleDialog"))});
-  $("#shareNextWeekOption")?.addEventListener("click",()=>{shareScheduleText(shareWeekText(nextMondayIso(isoToday())),"Next week's schedule");closeDialog($("#shareScheduleDialog"))});
-  $("#downloadTodayImageOption")?.addEventListener("click",()=>{const t=isoToday();downloadScheduleImage([t],"Today's Schedule",`bl07-schedule-${t}.png`);closeDialog($("#shareScheduleDialog"))});
-  $("#downloadWeekImageOption")?.addEventListener("click",()=>{const mon=mondayIso(isoToday());downloadScheduleImage(weekDaysFrom(mon),"This Week's Schedule",`bl07-schedule-week-${mon}.png`);closeDialog($("#shareScheduleDialog"))});
-  $("#downloadNextWeekImageOption")?.addEventListener("click",()=>{const mon=nextMondayIso(isoToday());downloadScheduleImage(weekDaysFrom(mon),"Next Week's Schedule",`bl07-schedule-week-${mon}.png`);closeDialog($("#shareScheduleDialog"))});
+  $("#shareRangeChips")?.addEventListener("click",e=>{
+    const chip=e.target.closest("[data-range]");if(!chip)return;
+    $$("#shareRangeChips .filter-chip").forEach(c=>c.classList.toggle("active",c===chip));
+    shareRangeState.type=chip.dataset.range;
+    const dateInput=$("#sharePickDate");
+    if(shareRangeState.type==="day"){
+      if(dateInput){dateInput.hidden=false;dateInput.value=shareRangeState.date||isoToday();dateInput.focus()}
+    }else if(dateInput)dateInput.hidden=true;
+    refreshShareRangeSummary();
+  });
+  $("#sharePickDate")?.addEventListener("change",e=>{shareRangeState.date=e.target.value||isoToday();refreshShareRangeSummary()});
+  $("#shareAsTextOption")?.addEventListener("click",()=>{
+    const ctx=shareRangeContext();
+    const text=ctx.days.length===1?shareDayText(ctx.days[0]):shareWeekText(ctx.days[0]);
+    shareScheduleText(text,ctx.title);
+    closeDialog($("#shareScheduleDialog"));
+  });
+  $("#downloadImageOption")?.addEventListener("click",()=>{
+    const ctx=shareRangeContext();
+    downloadScheduleImage(ctx.days,ctx.title,`bl07-schedule-${ctx.label}.png`);
+    closeDialog($("#shareScheduleDialog"));
+  });
   bindDismissibleDialog($("#shareScheduleDialog"));
   $("#closeMonthPicker")?.addEventListener("click",()=>closeDialog($("#monthPickerDialog")));
   $("#monthPickerDialog")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeDialog(e.currentTarget)});
@@ -2385,7 +2437,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova133",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova134",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
