@@ -55,6 +55,7 @@ function istParts(date=new Date()){const parts=new Intl.DateTimeFormat("en-CA",{
 function isoToday(){const p=istParts();return`${p.year}-${p.month}-${p.day}`}
 function weekdayKey(d=new Date()){return istParts(d).weekday.toLowerCase()}
 function minutes(t){const[h,m]=String(t||"00:00").split(":").map(Number);return h*60+m}
+function minsToTimeStr(m){return `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`}
 function dateTime(c,w="startTime"){return new Date(`${c.dateIso}T${c[w]||c[w==="startTime"?"start":"end"]}:00+05:30`)}
 function fmtTime(t){const[h,m]=t.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit"}).format(new Date(2026,0,1,h,m))}
 function fmtRange(a,b){return`${fmtTime(a)}–${fmtTime(b)}`}
@@ -106,7 +107,8 @@ flame:'<path d="M12 2c1 3-2 4-2 7a3 3 0 0 0 6 0c0-1-.5-2-1-2 2 1 3 3 3 5a6 6 0 0
 trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5a3 3 0 0 0 3 4M16 5h3a3 3 0 0 1-3 4"/><path d="M12 13v3M9 20h6M10 16.5h4v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2Z"/>',
 share:'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.3 10.7 7.4-4.4M8.3 13.3l7.4 4.4"/>',
 download:'<path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 19h16"/>',
-grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'
+grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.9-3.9"/>'
 };return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
 function renderIcons(){$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
 function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#1c1712":"#efe7d8";applyAccent();renderThemeToggleIcon(t)}
@@ -571,7 +573,7 @@ function renderHome(){
   animateCount($("#termProgressPct"),termPct,"%");
   $("#termHomeRingFill")?.style.setProperty("--pct",termPct);
   animateCount($("#termDone"),termDone);animateCount($("#termLeft"),termLeft);animateCount($("#termWeeksLeft"),termWeeksLeft);
-  renderTermOverviewStrip();renderWeekDigest();renderHomeLegend();
+  renderTermOverviewStrip();renderWeekDigest();renderHomeLegend();renderTodayStrips();
   /* Week bar chart — count above, bar height by load, day letter below. A vertical
      bar reads "how busy is this day" faster than a same-size square with a number
      in it, and matches the muted single-hue premium direction (today's bar is the
@@ -671,6 +673,130 @@ function renderTermHeatmap(){
 function nextOccurrenceOf(c){
   const future=state.classes.filter(x=>x.status!=="Cancelled"&&canonical(x.code)===canonical(c.code)&&dateTime(x,"startTime")>dateTime(c,"endTime")).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
   return future[0]||null;
+}
+/* One search over everything the app already holds — classes (by code, title, room or
+   faculty), exams, tasks and notes. Until now search existed only inside the Tasks &
+   Notes drawer, so "which room is DBST" or "when's my next CV class" had no answer
+   short of scrolling the planner. Upcoming items rank above past ones; within each
+   group, nearest first. */
+function appSearchResults(query){
+  const q=String(query||"").trim().toLowerCase();
+  if(q.length<2)return[];
+  const today=isoToday(),out=[];
+  state.classes.forEach(c=>{
+    const hay=`${canonical(c.code)} ${c.course||""} ${venueOf(c)} ${c.faculty||""}`.toLowerCase();
+    if(!hay.includes(q))return;
+    out.push({
+      kind:"class",past:c.dateIso<today,sort:c.dateIso+c.startTime,
+      code:canonical(c.code),title:c.course||canonical(c.code),
+      meta:`${fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"})} · ${fmtRange(c.startTime,c.endTime)} · ${venueOf(c)}`,
+      color:colorFor(c.code),iso:c.dateIso
+    });
+  });
+  (window.EXAM_DATA||[]).forEach(exam=>{
+    Object.entries(exam.slots).forEach(([slot,entry])=>{
+      const hay=`${entry.code} ${entry.subject} exam`.toLowerCase();
+      if(!hay.includes(q))return;
+      out.push({
+        kind:"exam",past:exam.date<today,sort:exam.date,
+        code:entry.code,title:entry.subject,
+        meta:`Exam · ${fmtDate(exam.date,{weekday:"short",day:"numeric",month:"short"})} · ${EXAM_SLOT_LABELS[slot]}`,
+        color:colorFor(entry.code),iso:exam.date
+      });
+    });
+  });
+  state.tasks.forEach(t=>{
+    if(!`${t.title||""} ${t.course||""}`.toLowerCase().includes(q))return;
+    out.push({
+      kind:"task",past:!!t.completed,sort:t.date||"9999",
+      code:canonical(t.course||"")||"TASK",title:t.title,
+      meta:t.date?`Task · due ${fmtDate(t.date,{day:"numeric",month:"short"})}`:"Task",
+      color:colorFor(t.course||"")
+    });
+  });
+  state.notes.forEach(n=>{
+    if(!`${n.title||""} ${n.body||""} ${n.course||""}`.toLowerCase().includes(q))return;
+    out.push({kind:"note",past:false,sort:"0",code:canonical(n.course||"")||"NOTE",title:n.title,meta:"Note",color:colorFor(n.course||"")});
+  });
+  return out.sort((a,b)=>(a.past-b.past)||(a.past?b.sort.localeCompare(a.sort):a.sort.localeCompare(b.sort))).slice(0,30);
+}
+function renderAppSearch(){
+  const list=$("#appSearchResults");if(!list)return;
+  const q=$("#appSearchInput")?.value||"";
+  if(q.trim().length<2){
+    list.innerHTML=`<div class="search-hint">Try a course code, a room, a faculty name or a task.</div>`;
+    return;
+  }
+  const results=appSearchResults(q);
+  if(!results.length){
+    list.innerHTML=`<div class="empty-state"><span class="empty-state-icon">${icon("search")}</span><p>Nothing found</p><small>No class, exam, task or note matches “${esc(q.trim())}”.</small></div>`;
+    return;
+  }
+  list.innerHTML=results.map((r,i)=>`<button type="button" class="search-result ${r.past?"is-past":""}" data-idx="${i}" style="--course:${r.color}">
+    <span class="sr-chip">${esc(r.code)}</span>
+    <span class="search-result-text"><strong>${esc(r.title)}</strong><small>${esc(r.meta)}</small></span>
+    <span class="search-result-go">${icon("chevron-right")}</span>
+  </button>`).join("");
+  $$(".search-result",list).forEach(btn=>btn.addEventListener("click",()=>{
+    const r=results[Number(btn.dataset.idx)];
+    closeDialog($("#searchDialog"));
+    if(r.kind==="class"&&r.iso)openCalendarPage(r.iso);
+    else if(r.kind==="exam")openPlannerTab("exams");
+    else{renderLedger();$("#ledgerDialog").showModal()}
+  }));
+}
+function openAppSearch(){
+  const dialog=$("#searchDialog"),input=$("#appSearchInput");
+  if(!dialog)return;
+  if(input)input.value="";
+  renderAppSearch();
+  dialog.showModal();
+  requestAnimationFrame(()=>input?.focus());
+}
+/* Two facts people check constantly and previously had to go looking for: how much
+   clear time is left today, and what the mess is serving. Both are already in memory,
+   so they cost a row on Home rather than a tab switch. */
+function renderTodayStrips(){
+  const freeEl=$("#freeBlockStrip"),messEl=$("#messStrip");
+  if(freeEl){
+    const block=longestFreeBlock(isoToday(),true);
+    if(block){
+      freeEl.hidden=false;
+      freeEl.innerHTML=`<span class="ts-icon">${icon("clock")}</span><span class="ts-text"><strong>${esc(compactDuration(block.mins))} free</strong><small>${esc(fmtTime(minsToTimeStr(block.from)))} – ${esc(fmtTime(minsToTimeStr(block.to)))}</small></span>`;
+    }else freeEl.hidden=true;
+  }
+  if(messEl){
+    const nowHour=Number(istParts().hour),mealKey=nowHour<11?"breakfast":nowHour<16?"lunch":"dinner";
+    const menu=window.CAMPUS_DATA?.mess?.[weekdayKey()];
+    const meal=menu&&menu[mealKey];
+    if(meal){
+      /* Lead with the dish people actually scan for, not the first item in the list. */
+      const highlight=Array.isArray(meal)
+        ?meal.slice(0,2).join(", ")
+        :meal.nonVeg||meal.veg||meal.splVeg||meal.fishEgg||meal.dessert||meal.sweet||(meal.items||[]).slice(0,2).join(", ");
+      messEl.hidden=false;
+      messEl.innerHTML=`<span class="ts-icon">${icon("meal")}</span><span class="ts-text"><strong>${esc(highlight||"Menu posted")}</strong><small>${mealKey[0].toUpperCase()+mealKey.slice(1)}</small></span>`;
+    }else messEl.hidden=true;
+  }
+}
+/* The biggest uninterrupted stretch between a day's classes. The app already computed
+   gaps in three places (the day-shape bar, the schedule rows, the share image) without
+   ever answering the question people actually ask of them — "how much clear time have
+   I got?". `fromNow` trims the search to what's still ahead, for today's readout. */
+function longestFreeBlock(iso,fromNow){
+  const classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  if(classes.length<2)return null;
+  const nowMins=fromNow?Number(istParts().hour)*60+Number(istParts().minute):-1;
+  let best=null;
+  for(let i=1;i<classes.length;i++){
+    const start=minutes(classes[i-1].endTime),end=minutes(classes[i].startTime);
+    if(end-start<45)continue;
+    if(fromNow&&end<=nowMins)continue;
+    const from=fromNow?Math.max(start,nowMins):start;
+    if(end-from<45)continue;
+    if(!best||end-from>best.mins)best={from,to:end,mins:end-from};
+  }
+  return best;
 }
 function examsForDay(iso){
   const exam=examOn(iso);
@@ -1098,7 +1224,12 @@ function renderWeekGlance(days){
     if(state.calendarHighlight)dayClasses=dayClasses.filter(c=>canonical(c.code)===state.calendarHighlight);
     const active=dayClasses.filter(c=>c.status!=="Cancelled");
     const exam=examOn(iso);
-    const header=`<div class="wg-day-head ${iso===today?"is-today":""}"><span>${esc(fmtDate(iso,{weekday:"long",day:"numeric",month:"short"}))}</span>${iso===today?'<b class="wc-today-badge">TODAY</b>':""}${active.length?`<small>${active.length} ${active.length===1?"class":"classes"}</small>`:""}</div>`;
+    /* The week view is where you look for room to put something, so each day carries
+       its biggest clear stretch alongside the class count. */
+    const free=longestFreeBlock(iso,false);
+    const count=active.length?`${active.length} ${active.length===1?"class":"classes"}`:"";
+    const summary=[count,free?`${compactDuration(free.mins)} free`:""].filter(Boolean).join(" · ");
+    const header=`<div class="wg-day-head ${iso===today?"is-today":""}"><span>${esc(fmtDate(iso,{weekday:"long",day:"numeric",month:"short"}))}</span>${iso===today?'<b class="wc-today-badge">TODAY</b>':""}${summary?`<small>${esc(summary)}</small>`:""}</div>`;
     if(!dayClasses.length&&!exam)return`${header}<p class="wg-free">Free day</p>`;
     return`${header}${scheduleRowsHtml(dayClasses,iso)}`;
   }).join("");
@@ -1575,6 +1706,31 @@ function scheduleLeavingSoonAlert(departTime){
   if(delay<=0||delay>2*3600000)return;
   _leavingSoonTimer=setTimeout(()=>{new Notification("Leaving soon",{body:`Bus to ${busStopLabel(state.busTo)} departs in 10 minutes.`})},delay);
 }
+/* The app already knows when the next class starts and where, and it already knows the
+   timetable — but the board never joined the two, so "which bus still gets me there"
+   was a sum the rider did in their head. This names the last service on the selected
+   route that arrives before the class begins. */
+function renderBusClassCatch(withTimes,now){
+  const el=$("#busClassCatch");if(!el)return;
+  const next=state.classes
+    .filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>now)
+    .sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
+  /* Only useful while the class is close enough that today's board still applies. */
+  if(!next||next.dateIso!==isoToday()){el.hidden=true;return}
+  const startsAt=dateTime(next,"startTime");
+  const arrivals=withTimes
+    .map(item=>({b:item.b,depart:item.d,arrive:busDateForStop(item.b,state.busTo)}))
+    .filter(item=>item.depart>now&&item.arrive<=startsAt);
+  const code=canonical(next.code),classTime=fmtTime(next.startTime);
+  if(!arrivals.length){
+    el.hidden=false;el.classList.add("is-missed");
+    el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>No bus makes ${esc(code)} at ${esc(classTime)}</strong><small>Nothing on this route arrives in time</small></span>`;
+    return;
+  }
+  const last=arrivals[arrivals.length-1];
+  el.hidden=false;el.classList.remove("is-missed");
+  el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>Last bus for ${esc(code)} — ${esc(fmtTime(last.b.time))}</strong><small>Arrives ~${esc(fmtTime(minsToTimeStr(last.arrive.getHours()*60+last.arrive.getMinutes())))} · class at ${esc(classTime)}</small></span>`;
+}
 function renderBuses(){
   const upcomingList=$("#upcomingBuses"),fullList=$("#fullBusList");
   if(!upcomingList||!fullList)return;
@@ -1669,6 +1825,7 @@ function renderBuses(){
     toggle.hidden=!earlier.length;
     toggle.textContent=fullList.classList.contains("collapsed")?`Show ${earlier.length} earlier`:"Hide earlier";
   }
+  renderBusClassCatch(withTimes,now);
   scheduleLeavingSoonAlert(next.d);
 }
 
@@ -2347,6 +2504,12 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
     openCalendarPage(next.dateIso);
     requestAnimationFrame(()=>{const card=$(`.sched-row[data-class-id="${CSS.escape(classIdentity(next))}"]`);if(card)card.scrollIntoView({behavior:"smooth",block:"center"})});
   });
+  $("#messStrip")?.addEventListener("click",()=>{showPage("campus");openCampusTab("mess")});
+  $("#freeBlockStrip")?.addEventListener("click",()=>showPage("calendar"));
+  $("#searchButton")?.addEventListener("click",openAppSearch);
+  $("#closeSearchDialog")?.addEventListener("click",()=>closeDialog($("#searchDialog")));
+  $("#appSearchInput")?.addEventListener("input",renderAppSearch);
+  bindDismissibleDialog($("#searchDialog"));
   $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
@@ -2417,7 +2580,7 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),section:segValue("#profileSectionSeg","A"),electives:[...(state.profile.electives||[])],theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);state.peekSection=null;state.peekAll=null;applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
-$("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week at a glance"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
+$("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="/"){e.preventDefault();openAppSearch()}else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
 }
@@ -2449,7 +2612,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova135",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova136",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
