@@ -1315,6 +1315,21 @@ function routeStops(bus){
   return stops;
 }
 
+/* The timetable only records one departure time per bus — its origin stop. A rider
+   boarding further down the route (e.g. Phase V on a Main Gate service) shouldn't see
+   that bus as "gone" the moment its origin time passes; it hasn't reached them yet.
+   Estimated minutes-per-hop, since the source data has no real intermediate timings. */
+function stopOffsetMinutes(bus,stop){
+  const stops=routeStops(bus),idx=stops.indexOf(stop);
+  if(idx<=0)return 0;
+  const hopMinutes=stops.length===4?[10,5,5]:[5,5];
+  let total=0;
+  for(let i=0;i<idx;i++)total+=hopMinutes[i]??5;
+  return total;
+}
+function busDateForStop(bus,stop,tomorrow=false){
+  return new Date(busDate(bus,tomorrow).getTime()+stopOffsetMinutes(bus,stop)*60000);
+}
 function isMainGateService(bus){return bus.from==="Main Gate"||bus.to==="Main Gate"}
 const BUS_STOPS=["C&D Housing","Phase V Campus","PGP Auditorium","Main Gate","Arjuna Statue"];
 function serviceSupports(bus,from,to){
@@ -1424,10 +1439,10 @@ function renderBuses(){
     return;
   }
 
-  const withTimes=services.map(b=>({b,d:busDate(b)})).sort((a,b)=>a.d-b.d);
+  const withTimes=services.map(b=>({b,d:busDateForStop(b,state.busFrom)})).sort((a,b)=>a.d-b.d);
   let next=withTimes.find(item=>item.d>now);
   const nextDay=!next;
-  if(!next)next=services.map(b=>({b,d:busDate(b,true)})).sort((a,b)=>a.d-b.d)[0];
+  if(!next)next=services.map(b=>({b,d:busDateForStop(b,state.busFrom,true)})).sort((a,b)=>a.d-b.d)[0];
   const nextKey=`${next.b.time}|${next.b.from}|${next.b.to}`;
 
   /* Previous departure from the rider's actual boarding stop, any destination — not just
@@ -1504,7 +1519,7 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
   const isNext=nextKey===key;
   /* On a board already filtered to one route, "last" means the last departure the rider
      can catch — not the last of each separate origin, which showed several LAST badges. */
-  const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),elapsed=!isNext&&busDate(bus)<now;
+  const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),elapsed=!isNext&&busDateForStop(bus,state.busFrom)<now;
   const badges=[
     isNext?'<span class="tag tag-next">NEXT</span>':"",
     bus.staff?'<span class="tag tag-staff">STAFF</span>':"",
@@ -2235,7 +2250,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260916-nova125",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova126",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
