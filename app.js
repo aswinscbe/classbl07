@@ -725,97 +725,97 @@ function roundRectPath(ctx,x,y,w,h,r){
   ctx.arcTo(x,y,x+w,y,r);
   ctx.closePath();
 }
-/* Rows for one day, same shape as the day-shape bar: classes in order, with any 45+
-   minute gap between two of them turned into its own "free" row so the image actually
-   shows empty time instead of just the classes — the whole point of an image over the
-   plain-text share, which had no way to represent a gap. */
-function imageRowsForDay(iso){
-  const classes=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
-  if(!classes.length)return[{type:"empty"}];
-  const rows=[];let prevEnd=null;
-  classes.forEach(c=>{
-    if(prevEnd!=null){
-      const gap=minutes(c.startTime)-prevEnd;
-      if(gap>=45)rows.push({type:"free",mins:gap});
-    }
-    rows.push({type:"class",c});
-    prevEnd=minutes(c.endTime);
-  });
-  return rows;
+function fmtHourLabel(mins){
+  const h=Math.floor(mins/60),ampm=h<12||h===24?"AM":"PM";
+  let h12=h%12;if(h12===0)h12=12;
+  return mins%60===0?`${h12} ${ampm}`:`${h12}:${String(mins%60).padStart(2,"0")} ${ampm}`;
 }
 /* Plain-text share is unreadable at a glance and has no way to show empty slots as
-   empty — an image, attached to an email, does both. Drawn on a canvas rather than
-   captured from the live DOM so it stays a clean, theme-independent light card
-   regardless of what mode the app is currently in. */
+   empty. A calendar-style grid — days as columns, hours as rows — reads compact and
+   familiar (the same shape as a Google Calendar/Sheets week view), and free time
+   just falls out of the layout as blank grid space instead of needing its own label. */
 function buildScheduleImage(days,title){
-  const scale=2,width=720,marginX=28,contentWidth=width-marginX*2;
-  const rowH=54,freeRowH=40,emptyRowH=32,dayHeaderH=36,daySpacing=18,rowGap=8;
-  const dayBlocks=days.map(iso=>({iso,rows:imageRowsForDay(iso)}));
-  let height=96;
-  dayBlocks.forEach(db=>{
-    height+=dayHeaderH;
-    db.rows.forEach(r=>{height+=(r.type==="class"?rowH:r.type==="free"?freeRowH:emptyRowH)+rowGap});
-    height+=daySpacing;
+  const scale=2;
+  const dayBlocks=days.map(iso=>({iso,classes:state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime))}));
+  const allClasses=dayBlocks.flatMap(d=>d.classes);
+  let rangeStart=7*60,rangeEnd=18*60;
+  allClasses.forEach(c=>{
+    rangeStart=Math.min(rangeStart,Math.floor(minutes(c.startTime)/60)*60);
+    rangeEnd=Math.max(rangeEnd,Math.ceil(minutes(c.endTime)/60)*60);
   });
-  height+=20;
+  const hourHeight=44,gutter=52,marginX=20,marginTop=78,headerH=34,footerH=16;
+  const colWidth=Math.min(220,Math.max(90,620/dayBlocks.length));
+  const gridWidth=colWidth*dayBlocks.length;
+  const showTimeText=colWidth>=110;
+  const gridHeight=((rangeEnd-rangeStart)/60)*hourHeight;
+  const width=gutter+gridWidth+marginX*2;
+  const height=marginTop+headerH+gridHeight+footerH;
   const canvas=document.createElement("canvas");
   canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);
   const ctx=canvas.getContext("2d");
   ctx.scale(scale,scale);
   ctx.fillStyle="#faf8f4";ctx.fillRect(0,0,width,height);
   ctx.fillStyle="#1c1a22";
-  ctx.font="700 21px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-  ctx.fillText(title,marginX,42);
+  ctx.font="700 19px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+  ctx.fillText(title,marginX,32);
   ctx.fillStyle="#8b8398";
-  ctx.font="600 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-  ctx.fillText("BL07 · IIM Kozhikode",marginX,62);
-  let y=88;
-  dayBlocks.forEach(db=>{
+  ctx.font="600 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+  ctx.fillText("BL07 · IIM Kozhikode",marginX,50);
+
+  const gridX=marginX+gutter,gridY=marginTop+headerH;
+  /* Day headers */
+  dayBlocks.forEach((db,i)=>{
+    const x=gridX+i*colWidth;
     ctx.fillStyle="#1c1a22";
-    ctx.font="700 15px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-    ctx.fillText(fmtDate(db.iso,{weekday:"long",day:"numeric",month:"short"}),marginX,y+16);
-    y+=dayHeaderH;
-    db.rows.forEach(r=>{
-      if(r.type==="class"){
-        const c=r.c,h=rowH-8;
-        ctx.fillStyle="#ffffff";
-        roundRectPath(ctx,marginX,y,contentWidth,h,10);ctx.fill();
-        ctx.strokeStyle="#e9e3d8";ctx.lineWidth=1;
-        roundRectPath(ctx,marginX,y,contentWidth,h,10);ctx.stroke();
-        ctx.fillStyle=colorFor(c.code);
-        roundRectPath(ctx,marginX,y,4,h,2);ctx.fill();
-        ctx.fillStyle="#1c1a22";
-        ctx.font="700 13px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.fillText(fmtRange(c.startTime,c.endTime),marginX+18,y+20);
-        ctx.font="600 13px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.fillText(`${canonical(c.code)} · ${c.course}`,marginX+18,y+38);
-        ctx.fillStyle="#8b8398";
-        ctx.font="600 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.textAlign="right";
-        ctx.fillText(venueOf(c),marginX+contentWidth-14,y+h/2+4);
-        ctx.textAlign="left";
-        y+=rowH;
-      }else if(r.type==="free"){
-        const h=freeRowH-8;
-        ctx.save();
-        ctx.strokeStyle="#d6cfc0";ctx.setLineDash([4,4]);
-        roundRectPath(ctx,marginX,y,contentWidth,h,10);ctx.stroke();
-        ctx.restore();
-        ctx.fillStyle="#a89c85";
-        ctx.font="600 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.textAlign="center";
-        ctx.fillText(`${compactDuration(r.mins)} free`,marginX+contentWidth/2,y+h/2+4);
-        ctx.textAlign="left";
-        y+=freeRowH;
-      }else{
-        ctx.fillStyle="#a89c85";
-        ctx.font="italic 600 13px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
-        ctx.fillText("Free day — no classes scheduled",marginX,y+18);
-        y+=emptyRowH;
+    ctx.font="700 12px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText(fmtDate(db.iso,{weekday:"short"}).toUpperCase(),x+colWidth/2,gridY-16);
+    ctx.fillStyle="#8b8398";
+    ctx.font="600 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+    ctx.fillText(fmtDate(db.iso,{day:"numeric",month:"short"}),x+colWidth/2,gridY-3);
+    ctx.textAlign="left";
+  });
+  /* Hour gridlines + gutter labels */
+  ctx.strokeStyle="#e9e3d8";ctx.lineWidth=1;
+  for(let m=rangeStart;m<=rangeEnd;m+=60){
+    const y=gridY+((m-rangeStart)/60)*hourHeight;
+    ctx.beginPath();ctx.moveTo(gridX,y);ctx.lineTo(gridX+gridWidth,y);ctx.stroke();
+    ctx.fillStyle="#8b8398";
+    ctx.font="600 10px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+    ctx.textAlign="right";
+    ctx.fillText(fmtHourLabel(m),gridX-10,y+3);
+    ctx.textAlign="left";
+  }
+  /* Column separators */
+  for(let i=0;i<=dayBlocks.length;i++){
+    const x=gridX+i*colWidth;
+    ctx.beginPath();ctx.moveTo(x,gridY);ctx.lineTo(x,gridY+gridHeight);ctx.stroke();
+  }
+  /* Class blocks, positioned and sized by actual time within the range */
+  dayBlocks.forEach((db,i)=>{
+    const x=gridX+i*colWidth+3,w=colWidth-6;
+    db.classes.forEach(c=>{
+      const startM=Math.max(rangeStart,minutes(c.startTime)),endM=Math.min(rangeEnd,minutes(c.endTime));
+      const y=gridY+((startM-rangeStart)/60)*hourHeight,h=Math.max(20,((endM-startM)/60)*hourHeight);
+      ctx.fillStyle=colorFor(c.code);
+      roundRectPath(ctx,x,y+1,w,h-2,6);ctx.fill();
+      ctx.fillStyle="#ffffff";
+      ctx.font="700 11px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+      ctx.fillText(canonical(c.code),x+7,y+16);
+      if(showTimeText&&h>34){
+        ctx.font="600 9px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+        ctx.globalAlpha=.85;
+        ctx.fillText(fmtRange(c.startTime,c.endTime),x+7,y+29);
+        ctx.globalAlpha=1;
       }
-      y+=rowGap;
     });
-    y+=daySpacing;
+    if(!db.classes.length){
+      ctx.fillStyle="#a89c85";
+      ctx.font="italic 600 10px -apple-system,Segoe UI,Roboto,Arial,sans-serif";
+      ctx.textAlign="center";
+      ctx.fillText("Free",gridX+i*colWidth+colWidth/2,gridY+gridHeight/2);
+      ctx.textAlign="left";
+    }
   });
   return canvas;
 }
@@ -2385,7 +2385,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova129",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova130",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
