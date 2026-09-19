@@ -858,6 +858,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
   if(courseFilterBtn)courseFilterBtn.classList.toggle("active",!!state.courseFilterOpen||!!state.calendarHighlight);
   const toggleCompletedBtn=$("#toggleCompletedButton");if(toggleCompletedBtn){toggleCompletedBtn.textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;toggleCompletedBtn.hidden=!hiddenCompletedCount&&!state.agendaShowCompleted;}const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;const legendEl=$("#calendarLegend");if(legendEl)legendEl.innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");if(legendEl)legendEl.onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};const courseRow=$("#agendaCourseRow");if(courseRow){const dayCourses=[...new Set(weekAll.filter(c=>c.status!=="Cancelled").map(c=>canonical(c.code)))];if(state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight))dayCourses.push(state.calendarHighlight);const showCourseChips=dayCourses.length>1||!!state.calendarHighlight;courseRow.innerHTML=showCourseChips?dayCourses.map(c=>`<button type="button" class="filter-chip ${c===state.calendarHighlight?"active":""}" data-course="${esc(c)}" style="--course:${colorFor(c)}">${esc(c)}</button>`).join(""):"";courseRow.hidden=!showCourseChips||!state.courseFilterOpen;courseRow.onclick=e=>{const btn=e.target.closest("[data-course]");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()}}renderWeekPlanner()}
 function mondayIso(iso){const d=new Date(`${iso}T12:00:00+05:30`);d.setDate(d.getDate()-((d.getDay()+6)%7));return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
+function nextMondayIso(iso){const d=new Date(`${mondayIso(iso)}T12:00:00+05:30`);d.setDate(d.getDate()+7);return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
 function shiftRailWeek(delta){const d=new Date(`${state.railStart||mondayIso(state.selectedDate)}T12:00:00+05:30`);d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderCalendar()}
 /* The planner is one accordion week: seven day rows always on screen, the selected day
    opened in place. There is no day/week mode, because the week is the frame and the day
@@ -2136,13 +2137,15 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#jumpToTodayPill")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#jumpToTodayButton")?.addEventListener("click",()=>{state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);renderCalendar()});
   $("#shareScheduleButton")?.addEventListener("click",()=>{
-    const today=isoToday(),mon=mondayIso(today),days=weekDaysFrom(mon);
+    const today=isoToday(),mon=mondayIso(today),days=weekDaysFrom(mon),nextMon=nextMondayIso(today),nextDays=weekDaysFrom(nextMon);
     const dLabel=$("#shareTodayLabel");if(dLabel)dLabel.textContent=fmtDate(today,{weekday:"long",day:"numeric",month:"short"});
     const wLabel=$("#shareWeekLabel");if(wLabel)wLabel.textContent=`${fmtDate(days[0],{day:"numeric",month:"short"})} – ${fmtDate(days[6],{day:"numeric",month:"short"})}`;
+    const nwLabel=$("#shareNextWeekLabel");if(nwLabel)nwLabel.textContent=`${fmtDate(nextDays[0],{day:"numeric",month:"short"})} – ${fmtDate(nextDays[6],{day:"numeric",month:"short"})}`;
     $("#shareScheduleDialog").showModal();
   });
   $("#shareTodayOption")?.addEventListener("click",()=>{shareToWhatsApp(shareDayText(isoToday()));closeDialog($("#shareScheduleDialog"))});
   $("#shareWeekOption")?.addEventListener("click",()=>{shareToWhatsApp(shareWeekText(mondayIso(isoToday())));closeDialog($("#shareScheduleDialog"))});
+  $("#shareNextWeekOption")?.addEventListener("click",()=>{shareToWhatsApp(shareWeekText(nextMondayIso(isoToday())));closeDialog($("#shareScheduleDialog"))});
   bindDismissibleDialog($("#shareScheduleDialog"));
   $("#closeMonthPicker")?.addEventListener("click",()=>closeDialog($("#monthPickerDialog")));
   $("#monthPickerDialog")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeDialog(e.currentTarget)});
@@ -2250,7 +2253,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova126",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova127",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
