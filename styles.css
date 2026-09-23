@@ -110,7 +110,7 @@
    plain global rule beats chasing every individual number display by hand. */
 .sr-time b,.wc-num,.wc-cnt,.next-bus-time,.countdown-copy strong,.wk-dot-col .sq,
 #termProgressPct,#dateOrbitDay,#progressSummary,.count-chip,.tag,.mwg-cell,
-.calendar-day-number,.cd-cnt,.termRingDays,#termRingDays{
+.calendar-day-number,.termRingDays,#termRingDays{
   font-variant-numeric:tabular-nums;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -502,6 +502,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-live-progress{margin-top:12px;height:4px;border-radius:99px;background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, var(--on-grad-line))}
 .hero-live-progress span{display:block;height:100%;border-radius:inherit;background:var(--focus-course,var(--accent));transition:width 30s linear;box-shadow:0 0 6px -1px color-mix(in srgb, var(--focus-course,var(--accent)) 55%, transparent)}
 .hero-pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+/* One derived sentence about the day — what to do next, or what the day's shape is. */
+.hero-insight{
+  display:flex;align-items:center;gap:7px;margin:12px 0 0;
+  font-size:13px;font-weight:700;color:var(--focus-course,var(--live));
+}
+.hero-insight[hidden]{display:none}
+.hero-insight svg{width:15px;height:15px;flex:none}
 /* Pills are rebuilt from scratch on every render (the countdown ticks every 30s), so a
    fresh mount-in animation on each one gives the changing numbers a bit of life instead
    of a flat swap — independent of the bigger .hero-enter entrance animation above. */
@@ -712,9 +719,15 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sched-row.cancelled .sr-accent{background:var(--danger) !important}
 .sched-row.cancelled .sr-code{background:color-mix(in srgb, var(--danger) 16%, transparent);color:var(--danger)}
 .day-shape-bar{margin:2px 0 12px}
-.dsb-row{display:flex;flex-wrap:wrap;gap:6px}
+/* One row, no wrapping: widths carry the meaning, so the boxes must share a single
+   line for the proportions to be readable. */
+.dsb-row{display:flex;flex-wrap:nowrap;gap:5px;align-items:stretch}
+.dsb-box,.dsb-gap{
+  flex:var(--grow,1) 1 0;min-width:0;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
 .dsb-box{
-  font-size:11px;font-weight:800;letter-spacing:.02em;padding:5px 9px;border-radius:9px;
+  font-size:11px;font-weight:800;letter-spacing:.02em;padding:6px 4px;border-radius:9px;
   background:color-mix(in srgb, var(--course,var(--accent)) 20%, var(--bg-panel));
   color:color-mix(in srgb, var(--course,var(--accent)) 88%, var(--ink) 12%);
   border:1px solid color-mix(in srgb, var(--course,var(--accent)) 32%, transparent);
@@ -725,7 +738,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:0 0 0 3px color-mix(in srgb, var(--course,var(--accent)) 28%, transparent);
 }
 .dsb-gap{
-  font-size:11px;font-weight:600;padding:5px 9px;border-radius:9px;
+  font-size:10px;font-weight:600;padding:6px 4px;border-radius:9px;
   color:var(--ink-faint);border:1px dashed var(--border-strong);background:transparent;
 }
 .sched-done-summary{
@@ -784,6 +797,20 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   position:relative;overflow:hidden;
 }
 .term-overview-card>*{position:relative}
+/* Exam season: the card reorders itself so the countdown leads and the percentage
+   steps back. Same contents, different priority. */
+.term-overview-card.is-exam-season{display:flex;flex-direction:column;border-color:color-mix(in srgb, var(--danger) 34%, var(--border))}
+.term-overview-card.is-exam-season .exam-strip{
+  order:-1;margin-top:0;margin-bottom:14px;padding:13px 15px;
+  background:color-mix(in srgb, var(--danger) 12%, var(--bg-elevated));
+  border-color:color-mix(in srgb, var(--danger) 34%, transparent);
+}
+.term-overview-card.is-exam-season .exam-strip-code,
+.term-overview-card.is-exam-season .exam-strip-days{color:var(--danger)}
+.term-overview-card.is-exam-season .exam-strip-code{background:color-mix(in srgb, var(--danger) 16%, transparent)}
+.term-overview-card.is-exam-season .exam-strip-days{font-size:15px}
+.term-overview-card.is-exam-season .term-progress-head{opacity:.78}
+.term-overview-card.is-exam-season #termOverline{color:var(--danger)}
 .term-progress-head{display:flex;align-items:center;gap:16px;width:100%;font:inherit;background:none;border:0;padding:0;margin:0;text-align:left;color:inherit;cursor:pointer}
 .term-progress-chevron{flex:none;color:var(--ink-faint);align-self:center}
 .term-progress-chevron svg{width:16px;height:16px}
@@ -809,10 +836,14 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wk-bar-col{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
 .wb-count{font-size:11px;font-weight:800;color:var(--ink-muted);font-variant-numeric:tabular-nums}
 .wb-bar{
-  position:relative;width:16px;border-radius:6px 6px 2px 2px;
+  position:relative;width:16px;border-radius:6px 6px 2px 2px;overflow:hidden;
+  display:flex;flex-direction:column-reverse;gap:1px;
   background:color-mix(in srgb, var(--accent) 50%, var(--bg-panel));
   transition:height .4s cubic-bezier(.22,1,.36,1);
 }
+/* One segment per class, in that course's colour — the bar reads as the day's
+   composition rather than just its height. */
+.wb-seg{display:block;width:100%;background:var(--course);font-style:normal;min-height:3px}
 .wk-bar-col.is-today .wb-bar{background:var(--accent)}
 .wk-bar-col.is-today .wb-count{color:var(--accent)}
 .wk-bar-col.zero .wb-bar{background:var(--bg-panel)}
@@ -1453,7 +1484,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .calendar-day.weekend .calendar-day-number{color:var(--ink-muted)}
 .calendar-day.outside{opacity:.22}
-.calendar-day.outside .cd-mark,.calendar-day.outside .cd-cnt{display:none}
+.calendar-day.outside .cd-mark,.calendar-day.outside .cd-dots{display:none}
 /* Today gets a warm outline ring with a soft glow behind it; the selected day gets
    a filled, glowing gradient pill — two visibly different treatments so they never
    get confused with each other even when the same date is both. */
@@ -1463,17 +1494,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:radial-gradient(circle,color-mix(in srgb, var(--accent-2) 25%, transparent),transparent 70%);
 }
 .calendar-day.selected .calendar-day-number{
-  background:radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--accent) 65%, #fff 20%), var(--accent) 75%);
+  background:var(--accent);
   color:#fff;font-weight:800;box-shadow:0 4px 14px -4px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 .calendar-day.selected .calendar-day-number::after{
   content:"";position:absolute;inset:-8px;border-radius:50%;z-index:-1;
   background:radial-gradient(circle,color-mix(in srgb, var(--accent) 45%, transparent),transparent 70%);
 }
-.cd-cnt{
-  font-size:10px;font-weight:800;line-height:1;background:color-mix(in srgb, currentColor 16%, var(--bg-panel));
-  border-radius:99px;padding:1.5px 6px;min-width:14px;text-align:center;
-}
+.cd-dots{display:flex;align-items:center;justify-content:center;gap:2.5px;line-height:1}
+.cd-dots i{width:5px;height:5px;border-radius:50%;background:var(--course);font-style:normal;flex:none}
+.cd-dots b{font-size:9px;font-weight:800;color:var(--ink-faint);line-height:1}
 .cd-mark{height:3px;width:14px;border-radius:99px;flex:none;background:color-mix(in srgb, var(--amber) 65%, transparent)}
 .cd-mark.cd-task{background:var(--amber);width:5px;height:5px;border-radius:50%;position:absolute;bottom:3px;right:8px}
 /* Exams are a ring around the date, not a mark that could be mistaken for a class
@@ -1530,6 +1560,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .term-ring circle{fill:none;stroke-width:5}
 .term-ring .ring-track{stroke:var(--accent-soft)}
 .term-ring .ring-fill{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:163.4;stroke-dashoffset:calc(163.4 - (163.4 * var(--pct,0) / 100));transition:stroke-dashoffset .5s ease}
+/* Butt caps, not round — round ends would overlap the neighbouring course's arc. */
+.term-ring .ring-seg{stroke-linecap:butt;transition:stroke-dasharray .5s ease}
 .term-ring b{position:relative;font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--accent)}
 .term-ring-meta{display:flex;flex-direction:column;min-width:0}
 .term-ring-meta strong{font-size:15px;font-weight:700}
@@ -1667,24 +1699,6 @@ dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
 .ledger-add-buttons{display:flex;gap:10px}
 .search-input{padding:11px 14px;border-radius:11px;border:1px solid var(--border);background:var(--bg-panel);color:var(--ink);font-size:15px;font-weight:500}
 .search-input:focus{outline:none;border-color:var(--accent)}
-.search-dialog-card{width:min(520px,92vw)}
-.search-results{display:flex;flex-direction:column;gap:6px;max-height:min(58vh,440px);overflow-y:auto;margin-top:2px}
-.search-hint{padding:18px 4px;font-size:13px;font-weight:600;color:var(--ink-faint);text-align:center}
-.search-result{
-  display:flex;align-items:center;gap:11px;width:100%;padding:10px 12px;border-radius:12px;
-  background:var(--bg-panel);border:1px solid var(--border);color:var(--ink);text-align:left;cursor:pointer;
-}
-.search-result:active{transform:scale(.99)}
-.search-result.is-past{opacity:.55}
-.search-result .sr-chip{
-  flex:none;padding:3px 8px;border-radius:7px;font-size:10px;font-weight:800;letter-spacing:.03em;
-  background:color-mix(in srgb, var(--course) 18%, transparent);color:var(--course);
-}
-.search-result-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.search-result-text strong{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.search-result-text small{font-size:11.5px;font-weight:600;color:var(--ink-faint)}
-.search-result-go{flex:none;color:var(--ink-faint)}
-.search-result-go svg{width:15px;height:15px}
 .filter-row{display:flex;gap:8px}
 .filter{flex:1;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:9px 8px;font-size:13px;font-weight:700;color:var(--ink-muted)}
 .filter.active{background:var(--accent-soft);color:var(--accent);border-color:transparent}
@@ -1840,7 +1854,21 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:7px;
 
 /* ============ Home course legend ============ */
 .home-legend{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
-.home-legend .legend-item{background:var(--bg-elevated);border-color:var(--border)}
+.home-legend .legend-item{
+  position:relative;overflow:hidden;background:var(--bg-elevated);border-color:var(--border);
+}
+/* A fill behind each chip showing how far through that course you are — the legend
+   stops being a colour key and starts reporting progress in the same footprint. */
+.home-legend .legend-item::before{
+  content:"";position:absolute;inset:0 auto 0 0;width:var(--done,0%);
+  background:color-mix(in srgb, var(--course,var(--accent)) 16%, transparent);
+  pointer-events:none;
+}
+.home-legend .legend-item>*{position:relative}
+.home-legend .legend-item b{
+  position:relative;margin-left:2px;font-size:10.5px;font-weight:800;
+  color:var(--ink-faint);font-variant-numeric:tabular-nums;
+}
 
 /* ============ Notification day grouping ============ */
 .notification-day-heading{margin:16px 0 6px;font-size:11px;font-weight:800;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em}

@@ -107,8 +107,7 @@ flame:'<path d="M12 2c1 3-2 4-2 7a3 3 0 0 0 6 0c0-1-.5-2-1-2 2 1 3 3 3 5a6 6 0 0
 trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5a3 3 0 0 0 3 4M16 5h3a3 3 0 0 1-3 4"/><path d="M12 13v3M9 20h6M10 16.5h4v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2Z"/>',
 share:'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.3 10.7 7.4-4.4M8.3 13.3l7.4 4.4"/>',
 download:'<path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 19h16"/>',
-grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
-search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.9-3.9"/>'
+grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'
 };return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p[name]||""}</svg>`}
 function renderIcons(){$$("[data-icon]").forEach(el=>{el.innerHTML=icon(el.dataset.icon)})}
 function applyTheme(){const pref=state.profile.theme||"system",t=pref==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):pref;document.documentElement.dataset.theme=t;$('meta[name="theme-color"]').content=t==="dark"?"#1c1712":"#efe7d8";applyAccent();renderThemeToggleIcon(t)}
@@ -303,6 +302,15 @@ function renderExamCard(){
   $("#examCardDays").textContent=daysLeft===0?"Today":daysLeft===1?"Tomorrow":`${daysLeft}d`;
   card.title=`${fmtDate(exam.date,{weekday:"long",day:"numeric",month:"long"})} · ${EXAM_SLOT_LABELS[firstSlot]}${Object.keys(exam.slots).length>1?` +${Object.keys(exam.slots).length-1} more`:""}`;
   card.onclick=()=>openPlannerTab("exams");
+  /* Once exams are close, "how much of the term is done" stops being the question.
+     The card keeps its contents but reorders and relabels itself, so the exam rises to
+     the top and the percentage steps back. */
+  const examSeason=daysLeft>=0&&daysLeft<=10;
+  card.closest(".term-overview-card")?.classList.toggle("is-exam-season",examSeason);
+  const overline=$("#termOverline");
+  if(overline)overline.textContent=examSeason
+    ?`EXAMS · ${daysLeft===0?"TODAY":daysLeft===1?"TOMORROW":`${daysLeft} DAYS`}`
+    :"TERM III · PROGRESS";
 }
 function renderWeekDigest(){
   const el=$("#weekDigest");if(!el)return;
@@ -322,7 +330,15 @@ function renderHomeLegend(){
   const monday=new Date(`${mondayIso(isoToday())}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
   const used=[...new Set(state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).map(c=>canonical(c.code)))];
   if(!used.length){el.innerHTML="";return}
-  el.innerHTML=used.map(c=>`<span class="legend-item" style="--course:${colorFor(c)}"><i></i>${esc(c)}</span>`).join("");
+  /* The legend was a colour key and nothing more. Each course already has an ordered
+     session list, so the same row can carry how far through that course you are. */
+  const now=new Date();
+  el.innerHTML=used.map(c=>{
+    const sessions=subjectSessions(c),total=sessions.length;
+    const done=sessions.filter(s=>dateTime(s,"endTime")<now).length;
+    const pct=total?Math.round(done/total*100):0;
+    return`<span class="legend-item" style="--course:${colorFor(c)};--done:${pct}%"><i></i>${esc(c)}${total?`<b>${done}/${total}</b>`:""}</span>`;
+  }).join("");
 }
 function renderTermOverviewStrip(){
   const el=$("#termOverviewStrip");if(!el)return;
@@ -420,6 +436,38 @@ function renderLedgerBadge(){
   badge.textContent=dueCount>9?"9+":String(dueCount);
 }
 function heroPill(html,tone=""){return`<span class="hero-pill ${tone}">${html}</span>`}
+/* A count ("3 classes") describes a day far worse than its shape does. This reads the
+   remaining run of the day and says the one thing worth knowing about it. */
+function dayCharacterLine(iso,now){
+  const list=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
+  if(list.length<2)return"";
+  const upcoming=list.filter(c=>dateTime(c,"endTime")>now);
+  if(!upcoming.length)return`Day's done — ${list.length} classes`;
+  if(upcoming.length===1)return"Last class of the day";
+  let i=0,runEnd=minutes(upcoming[0].endTime);
+  while(i+1<upcoming.length&&minutes(upcoming[i+1].startTime)-runEnd<45){i++;runEnd=minutes(upcoming[i].endTime)}
+  if(i>0)return`Back-to-back until ${fmtTime(minsToTimeStr(runEnd))}`;
+  const gap=minutes(upcoming[1].startTime)-minutes(upcoming[0].endTime);
+  if(gap>=45)return`Then clear until ${fmtTime(upcoming[1].startTime)}`;
+  return"";
+}
+/* The bus board can say which service still makes your next class, but the hero is
+   where that gets read in time to act on it. Leave-by wins the line when it applies;
+   otherwise the day's shape does. */
+function renderHeroInsight(iso,now){
+  const el=$("#heroInsight");if(!el)return;
+  let text="";
+  if(iso===isoToday()){
+    const next=nextClassToday(now),ride=next?lastBusForClass(next,now):null;
+    if(ride)text=`${icon("bus")}Leave by ${esc(fmtTime(ride.b.time))} to make ${esc(canonical(next.code))}`;
+  }
+  if(!text){
+    const character=dayCharacterLine(iso,now);
+    if(character)text=`${icon("clock")}${esc(character)}`;
+  }
+  el.hidden=!text;
+  el.innerHTML=text;
+}
 function fitHeroTime(){
   const el=$("#focusRange");if(!el)return;
   el.style.fontSize="";
@@ -495,10 +543,16 @@ function renderHome(){
     if(shown.tentative)pills.push(heroPill("Timing not confirmed","warn"));
     pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
     if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`));
+    /* "Session 1/1" told you nothing about where the course is going. Saying how many
+       meetings of this course are still to come is the part worth knowing. */
     const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
-    if(heroSessionN)pills.push(heroPill(`Session ${heroSessionN}/${heroSessionTotal}`));
+    if(heroSessionN){
+      const leftAfter=Math.max(0,heroSessionTotal-heroSessionN);
+      pills.push(heroPill(`Session ${heroSessionN} of ${heroSessionTotal}${leftAfter?` · ${leftAfter} left`:" · last one"}`));
+    }
     if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`))
     $("#heroPills").innerHTML=pills.join("");
+    renderHeroInsight(shown.dateIso,now);
     const dayLabel=shown.dateIso===today?"Today":isTomorrow?"Tomorrow":fmtDate(shown.dateIso,{weekday:"short",day:"numeric",month:"short"});
     const isFutureDay=shown.dateIso!==today;
     const dayCountEl=$("#heroDayCount");
@@ -529,6 +583,7 @@ function renderHome(){
     rangeEl.hidden=!future;
     if(future)rangeEl.textContent=`Next: ${canonical(future.code)} · ${future.dateIso===tomorrowIso()?"tomorrow":fmtDate(future.dateIso,{weekday:"short",day:"numeric",month:"short"})}, ${fmtTime(future.startTime)}`;
     $("#heroPills").innerHTML="";
+    const insightEl=$("#heroInsight");if(insightEl)insightEl.hidden=true;
     $("#heroDayCount").hidden=true;
   }
   fitHeroTime();
@@ -571,7 +626,27 @@ function renderHome(){
   const termDone=termAll.filter(c=>dateTime(c,"endTime")<now).length,termLeft=Math.max(0,termAll.length-termDone);
   const termPct=termAll.length?Math.round(termDone/termAll.length*100):0,termWeeksLeft=Math.max(0,Math.ceil((termEnd-now)/(7*24*3600000)));
   animateCount($("#termProgressPct"),termPct,"%");
-  $("#termHomeRingFill")?.style.setProperty("--pct",termPct);
+  /* One aggregate arc said 33% but not 33% of what. The filled portion is now built
+     from one sub-arc per course, sized by how many of that course's sessions are done,
+     so the same circle shows which courses are carrying the progress. */
+  const segEl=$("#termRingSegments");
+  if(segEl){
+    const C=2*Math.PI*26;
+    const byCourse=new Map();
+    termAll.forEach(c=>{
+      const code=canonical(c.code),entry=byCourse.get(code)||{done:0};
+      if(dateTime(c,"endTime")<now)entry.done++;
+      byCourse.set(code,entry);
+    });
+    let cursor=0;
+    segEl.innerHTML=[...byCourse.entries()].filter(([,v])=>v.done>0).map(([code,v])=>{
+      const len=(v.done/termAll.length)*C;
+      /* A hairline between neighbouring arcs so two similar hues stay distinguishable. */
+      const drawn=Math.max(0,len-1.5),offset=-cursor;
+      cursor+=len;
+      return`<circle class="ring-seg" cx="32" cy="32" r="26" stroke="${colorFor(code)}" stroke-dasharray="${drawn} ${C-drawn}" stroke-dashoffset="${offset}"><title>${esc(code)}</title></circle>`;
+    }).join("");
+  }
   animateCount($("#termDone"),termDone);animateCount($("#termLeft"),termLeft);animateCount($("#termWeeksLeft"),termWeeksLeft);
   renderTermOverviewStrip();renderWeekDigest();renderHomeLegend();renderTodayStrips();
   /* Week bar chart — count above, bar height by load, day letter below. A vertical
@@ -586,7 +661,8 @@ function renderHome(){
       const d=new Date(monday);d.setDate(monday.getDate()+i);
       const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
       const dayClasses=state.classes.filter(c=>c.dateIso===iso),active=dayClasses.filter(c=>c.status!=="Cancelled"),hasCancelled=dayClasses.some(c=>c.status==="Cancelled");
-      dayCounts.push({iso,count:active.length,hasCancelled,hasExam:!!examOn(iso),hasTask:state.tasks.some(t=>!t.completed&&t.date===iso)});
+      const codes=active.sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)).map(c=>canonical(c.code));
+      dayCounts.push({iso,count:active.length,codes,hasCancelled,hasExam:!!examOn(iso),hasTask:state.tasks.some(t=>!t.completed&&t.date===iso)});
     }
     const maxCount=Math.max(1,...dayCounts.map(d=>d.count));
     /* A light week used to render as a tall box holding one bar and six dashes. The
@@ -598,9 +674,13 @@ function renderHome(){
       const isToday=d.iso===isoToday();
       const h=d.count?Math.round(Math.max(.18,d.count/maxCount)*MAX_BAR):4;
       const marks=`${d.hasExam?'<i class="wk-bar-mark exam"></i>':""}${d.hasTask?'<i class="wk-bar-mark task"></i>':""}`;
+      /* A solid bar only ever said "how much". Splitting it into one course-coloured
+         segment per class makes the same bar say what the day is made of, read against
+         the legend directly below it. */
+      const segments=d.codes.map(code=>`<i class="wb-seg" style="--course:${colorFor(code)};flex:1" title="${esc(code)}"></i>`).join("");
       return`<div class="wk-bar-col ${isToday?"is-today":""} ${!d.count?"zero":""} ${d.hasCancelled&&!d.count?"has-cancelled":""}">
         <span class="wb-count">${d.count||"–"}</span>
-        <span class="wb-bar" style="height:${h}px">${marks}</span>
+        <span class="wb-bar" style="height:${h}px">${segments}${marks}</span>
         <small>${dayLetters[i]}</small>
       </div>`;
     }).join("");
@@ -673,85 +753,6 @@ function renderTermHeatmap(){
 function nextOccurrenceOf(c){
   const future=state.classes.filter(x=>x.status!=="Cancelled"&&canonical(x.code)===canonical(c.code)&&dateTime(x,"startTime")>dateTime(c,"endTime")).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
   return future[0]||null;
-}
-/* One search over everything the app already holds — classes (by code, title, room or
-   faculty), exams, tasks and notes. Until now search existed only inside the Tasks &
-   Notes drawer, so "which room is DBST" or "when's my next CV class" had no answer
-   short of scrolling the planner. Upcoming items rank above past ones; within each
-   group, nearest first. */
-function appSearchResults(query){
-  const q=String(query||"").trim().toLowerCase();
-  if(q.length<2)return[];
-  const today=isoToday(),out=[];
-  state.classes.forEach(c=>{
-    const hay=`${canonical(c.code)} ${c.course||""} ${venueOf(c)} ${c.faculty||""}`.toLowerCase();
-    if(!hay.includes(q))return;
-    out.push({
-      kind:"class",past:c.dateIso<today,sort:c.dateIso+c.startTime,
-      code:canonical(c.code),title:c.course||canonical(c.code),
-      meta:`${fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"})} · ${fmtRange(c.startTime,c.endTime)} · ${venueOf(c)}`,
-      color:colorFor(c.code),iso:c.dateIso
-    });
-  });
-  (window.EXAM_DATA||[]).forEach(exam=>{
-    Object.entries(exam.slots).forEach(([slot,entry])=>{
-      const hay=`${entry.code} ${entry.subject} exam`.toLowerCase();
-      if(!hay.includes(q))return;
-      out.push({
-        kind:"exam",past:exam.date<today,sort:exam.date,
-        code:entry.code,title:entry.subject,
-        meta:`Exam · ${fmtDate(exam.date,{weekday:"short",day:"numeric",month:"short"})} · ${EXAM_SLOT_LABELS[slot]}`,
-        color:colorFor(entry.code),iso:exam.date
-      });
-    });
-  });
-  state.tasks.forEach(t=>{
-    if(!`${t.title||""} ${t.course||""}`.toLowerCase().includes(q))return;
-    out.push({
-      kind:"task",past:!!t.completed,sort:t.date||"9999",
-      code:canonical(t.course||"")||"TASK",title:t.title,
-      meta:t.date?`Task · due ${fmtDate(t.date,{day:"numeric",month:"short"})}`:"Task",
-      color:colorFor(t.course||"")
-    });
-  });
-  state.notes.forEach(n=>{
-    if(!`${n.title||""} ${n.body||""} ${n.course||""}`.toLowerCase().includes(q))return;
-    out.push({kind:"note",past:false,sort:"0",code:canonical(n.course||"")||"NOTE",title:n.title,meta:"Note",color:colorFor(n.course||"")});
-  });
-  return out.sort((a,b)=>(a.past-b.past)||(a.past?b.sort.localeCompare(a.sort):a.sort.localeCompare(b.sort))).slice(0,30);
-}
-function renderAppSearch(){
-  const list=$("#appSearchResults");if(!list)return;
-  const q=$("#appSearchInput")?.value||"";
-  if(q.trim().length<2){
-    list.innerHTML=`<div class="search-hint">Try a course code, a room, a faculty name or a task.</div>`;
-    return;
-  }
-  const results=appSearchResults(q);
-  if(!results.length){
-    list.innerHTML=`<div class="empty-state"><span class="empty-state-icon">${icon("search")}</span><p>Nothing found</p><small>No class, exam, task or note matches “${esc(q.trim())}”.</small></div>`;
-    return;
-  }
-  list.innerHTML=results.map((r,i)=>`<button type="button" class="search-result ${r.past?"is-past":""}" data-idx="${i}" style="--course:${r.color}">
-    <span class="sr-chip">${esc(r.code)}</span>
-    <span class="search-result-text"><strong>${esc(r.title)}</strong><small>${esc(r.meta)}</small></span>
-    <span class="search-result-go">${icon("chevron-right")}</span>
-  </button>`).join("");
-  $$(".search-result",list).forEach(btn=>btn.addEventListener("click",()=>{
-    const r=results[Number(btn.dataset.idx)];
-    closeDialog($("#searchDialog"));
-    if(r.kind==="class"&&r.iso)openCalendarPage(r.iso);
-    else if(r.kind==="exam")openPlannerTab("exams");
-    else{renderLedger();$("#ledgerDialog").showModal()}
-  }));
-}
-function openAppSearch(){
-  const dialog=$("#searchDialog"),input=$("#appSearchInput");
-  if(!dialog)return;
-  if(input)input.value="";
-  renderAppSearch();
-  dialog.showModal();
-  requestAnimationFrame(()=>input?.focus());
 }
 /* Two facts people check constantly and previously had to go looking for: how much
    clear time is left today, and what the mess is serving. Both are already in memory,
@@ -984,14 +985,20 @@ function renderDayShapeBar(classes,dayIso){
   const active=classes.filter(c=>c.status!=="Cancelled").sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   if(!active.length){el.innerHTML="";el.hidden=true;return}
   el.hidden=false;
+  /* Boxes used to be sized by how long their course code was, so a 30-minute slot and
+     a 3-hour block looked identical — the "shape" of the day was fiction. Each box and
+     gap now takes width in proportion to the time it actually occupies. */
   let html="",prevEnd=null;
+  const spanStart=minutes(active[0].startTime),spanEnd=minutes(active[active.length-1].endTime);
+  const totalMins=Math.max(1,spanEnd-spanStart);
   active.forEach(c=>{
     if(prevEnd!=null){
       const gap=minutes(c.startTime)-prevEnd;
-      if(gap>=45)html+=`<span class="dsb-gap">${esc(compactDuration(gap))} free</span>`;
+      if(gap>=45)html+=`<span class="dsb-gap" style="--grow:${gap/totalMins}">${esc(compactDuration(gap))} free</span>`;
     }
     const status=agendaStatus(c),tier=status==="Live"?"live":status==="Completed"?"done":"upcoming";
-    html+=`<span class="dsb-box ${tier}" style="--course:${colorFor(c.code)}" title="${esc(canonical(c.code))} ${esc(fmtRange(c.startTime,c.endTime))}">${esc(canonical(c.code))}</span>`;
+    const dur=Math.max(1,minutes(c.endTime)-minutes(c.startTime));
+    html+=`<span class="dsb-box ${tier}" style="--course:${colorFor(c.code)};--grow:${dur/totalMins}" title="${esc(canonical(c.code))} ${esc(fmtRange(c.startTime,c.endTime))} · ${esc(compactDuration(dur))}">${esc(canonical(c.code))}</span>`;
     prevEnd=minutes(c.endTime);
   });
   el.innerHTML=`<div class="dsb-row">${html}</div>`;
@@ -1106,7 +1113,12 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
         iso===isoToday()?"today":"",iso===state.selectedDate?"selected":"",dimmed?"dimmed":"",
         exam?"has-exam":"",holiday?"has-holiday":""].filter(Boolean).join(" ");
       const density=active.length?Math.max(.15,active.length/monthMaxLoad):0;
-      const dayDot=active.length?`<span class="cd-cnt" style="color:${colorFor(active[0].code)}">${active.length}</span>`:"";
+      /* A single count tinted by whichever course happened to be first said nothing
+         about the day's mix. One dot per distinct course scans a whole month for
+         "where does CV cluster" without opening a single day. */
+      const dayDot=dayCourses.length
+        ?`<span class="cd-dots">${dayCourses.slice(0,3).map(code=>`<i style="--course:${colorFor(code)}"></i>`).join("")}${dayCourses.length>3?'<b>+</b>':""}</span>`
+        :"";
       const holidayMark=!active.length&&holiday?'<span class="cd-mark cd-holiday" aria-hidden="true"></span>':"";
       const taskMark=hasTask?'<span class="cd-mark cd-task" aria-hidden="true"></span>':"";
       return`<button class="${cls}" data-date="${iso}" style="--density:${density}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
@@ -1135,7 +1147,9 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
     b.addEventListener("mouseleave",hideCalendarTooltip);
   });
   const keyEl=$("#monthKey");
-  if(keyEl)keyEl.innerHTML='<span class="mk-item"><i class="mk-swatch mk-classes"></i>Class day</span><span class="mk-item"><i class="mk-swatch mk-exam"></i>Exam day</span><span class="mk-item"><i class="mk-swatch mk-holiday"></i>Holiday</span>';
+  /* Dots are per-course now, so the key says what a dot means rather than implying
+     one generic "class day" colour. */
+  if(keyEl)keyEl.innerHTML='<span class="mk-item"><i class="mk-swatch mk-classes"></i>One dot per course</span><span class="mk-item"><i class="mk-swatch mk-exam"></i>Exam day</span><span class="mk-item"><i class="mk-swatch mk-holiday"></i>Holiday</span>';
   $("#toggleCompletedButton")?.classList.toggle("active",!!state.agendaShowCompleted);
   const weekIsos=weekDaysFrom(state.railStart||mondayIso(state.selectedDate||isoToday()));
   const weekAll=weekIsos.flatMap(iso=>state.classes.filter(c=>c.dateIso===iso));
@@ -1710,24 +1724,36 @@ function scheduleLeavingSoonAlert(departTime){
    timetable — but the board never joined the two, so "which bus still gets me there"
    was a sum the rider did in their head. This names the last service on the selected
    route that arrives before the class begins. */
-function renderBusClassCatch(withTimes,now){
-  const el=$("#busClassCatch");if(!el)return;
+function nextClassToday(now){
   const next=state.classes
     .filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>now)
     .sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
+  return next&&next.dateIso===isoToday()?next:null;
+}
+/* Shared by the bus board and the Home hero so both answer "which bus still gets me
+   there" from the same arithmetic. */
+function lastBusForClass(cls,now){
+  if(!cls)return null;
+  const startsAt=dateTime(cls,"startTime");
+  const options=(window.CAMPUS_DATA?.bus||[])
+    .filter(bus=>serviceSupports(bus,state.busFrom,state.busTo))
+    .map(b=>({b,depart:busDateForStop(b,state.busFrom),arrive:busDateForStop(b,state.busTo)}))
+    .filter(o=>o.depart>now&&o.arrive<=startsAt)
+    .sort((a,b)=>a.depart-b.depart);
+  return options.length?options[options.length-1]:null;
+}
+function renderBusClassCatch(now){
+  const el=$("#busClassCatch");if(!el)return;
+  const next=nextClassToday(now);
   /* Only useful while the class is close enough that today's board still applies. */
-  if(!next||next.dateIso!==isoToday()){el.hidden=true;return}
-  const startsAt=dateTime(next,"startTime");
-  const arrivals=withTimes
-    .map(item=>({b:item.b,depart:item.d,arrive:busDateForStop(item.b,state.busTo)}))
-    .filter(item=>item.depart>now&&item.arrive<=startsAt);
+  if(!next){el.hidden=true;return}
+  const last=lastBusForClass(next,now);
   const code=canonical(next.code),classTime=fmtTime(next.startTime);
-  if(!arrivals.length){
+  if(!last){
     el.hidden=false;el.classList.add("is-missed");
     el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>No bus makes ${esc(code)} at ${esc(classTime)}</strong><small>Nothing on this route arrives in time</small></span>`;
     return;
   }
-  const last=arrivals[arrivals.length-1];
   el.hidden=false;el.classList.remove("is-missed");
   el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>Last bus for ${esc(code)} — ${esc(fmtTime(last.b.time))}</strong><small>Arrives ~${esc(fmtTime(minsToTimeStr(last.arrive.getHours()*60+last.arrive.getMinutes())))} · class at ${esc(classTime)}</small></span>`;
 }
@@ -1825,7 +1851,7 @@ function renderBuses(){
     toggle.hidden=!earlier.length;
     toggle.textContent=fullList.classList.contains("collapsed")?`Show ${earlier.length} earlier`:"Hide earlier";
   }
-  renderBusClassCatch(withTimes,now);
+  renderBusClassCatch(now);
   scheduleLeavingSoonAlert(next.d);
 }
 
@@ -2506,10 +2532,6 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   });
   $("#messStrip")?.addEventListener("click",()=>{showPage("campus");openCampusTab("mess")});
   $("#freeBlockStrip")?.addEventListener("click",()=>showPage("calendar"));
-  $("#searchButton")?.addEventListener("click",openAppSearch);
-  $("#closeSearchDialog")?.addEventListener("click",()=>closeDialog($("#searchDialog")));
-  $("#appSearchInput")?.addEventListener("input",renderAppSearch);
-  bindDismissibleDialog($("#searchDialog"));
   $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
@@ -2580,7 +2602,7 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),section:segValue("#profileSectionSeg","A"),electives:[...(state.profile.electives||[])],theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);state.peekSection=null;state.peekAll=null;applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
-$("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="/"){e.preventDefault();openAppSearch()}else if(e.key==="?")$("#shortcutDialog").showModal()});
+$("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
 }
@@ -2612,7 +2634,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260919-nova136",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260923-nova137",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
