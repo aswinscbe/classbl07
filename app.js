@@ -11,7 +11,13 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
    original set (S=70%, L=58%) read as a rainbow of candy colours once every
    other surface in the app got muted; these keep the same hues (so existing
    course associations don't shift) at lower saturation and deeper lightness. */
-const COURSE_COLORS={SM:"#4589ba",DBST:"#4553ba",AIB:"#6c45ba",OS:"#a345ba",CV:"#ba459b",PM:"#ba4564",POM:"#ba5a45",CB:"#ba9145",SBM:"#919c3a",NWW:"#659c3a",MAAS:"#3a9c3d",ACC:"#3a9c69",IS:"#45bab4",IBEU:"#9e6447",SUST:"#427e8a"};
+/* Course colour is load-bearing now — week-bar segments, month dots, term-ring arcs
+   and legend chips all encode it, often at 5px. The previous set walked the hue wheel
+   at one fixed lightness, which put four near-identical greens and three near-identical
+   blues in play; at dot size hue alone doesn't separate, lightness does. Each hue now
+   also sits at its own value, and every colour stays dark enough to carry white text
+   where these are used as fills. */
+const COURSE_COLORS={SM:"#4a90d9",DBST:"#3b4ea8",AIB:"#7c5cd6",OS:"#a855c7",CV:"#d1479b",PM:"#c2415c",POM:"#d4632f",CB:"#c8961a",SBM:"#8a9b2e",NWW:"#4fa54f",MAAS:"#1f7a4d",ACC:"#2fb896",IS:"#35b8c4",IBEU:"#8c6239",SUST:"#5b7f99"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
 const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,peekSection:null,peekAll:null};
@@ -2634,7 +2640,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260923-nova137",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260924-nova138",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
