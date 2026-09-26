@@ -1598,7 +1598,11 @@ function openOnboardingManually(){
   dialog.showModal();
 }
 
+/* Student services now carry their real stop sequence, so there is nothing to infer.
+   The hardcoded expansions below remain only for the staff timetable, which is
+   transcribed from a noticeboard photo and still stores a from/via/to triple. */
 function routeStops(bus){
+  if(bus.stops?.length)return bus.stops.map(s=>s.name);
   const from=bus.from;
   const to=bus.to;
 
@@ -1609,10 +1613,6 @@ function routeStops(bus){
   if(from==="PGP Auditorium"&&to==="C&D Housing"){
     return["PGP Auditorium","Phase V Campus","C&D Housing"];
   }
-
-  // Main Gate services pass through both C&D Housing and Phase V.
-  // The source timetable stores only one intermediate stop, so the
-  // complete travelled route is expanded here.
   if(from==="Main Gate"&&to==="PGP Auditorium"){
     return["Main Gate","C&D Housing","Phase V Campus","PGP Auditorium"];
   }
@@ -1634,6 +1634,10 @@ function routeStops(bus){
 function stopOffsetMinutes(bus,stop){
   const stops=routeStops(bus),idx=stops.indexOf(stop);
   if(idx<=0)return 0;
+  /* The official sheet prints a clock time against some intermediate stops. Where it
+     does, use it rather than an estimate — 12 of the 41 student trips are exact. */
+  const printed=bus.stops?.[idx]?.at;
+  if(printed)return Math.max(0,minutes(printed)-minutes(bus.time));
   const hopMinutes=stops.length===4?[10,5,5]:[5,5];
   let total=0;
   for(let i=0;i<idx;i++)total+=hopMinutes[i]??5;
@@ -2640,7 +2644,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260924-nova139",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260926-nova140",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
