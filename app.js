@@ -151,16 +151,16 @@ function applyAccent(){
    When peekSection is set, Core classes are sourced from the separately-fetched
    peekAll instead of the normal state.all, everything else is untouched. Every
    existing filteredClasses() call site picks this up automatically. */
+/* Term III is over, so the synced class feed and the elective selection no longer
+   feed the app — the International Immersion module is the whole schedule now.
+   The synced data is only ignored here, not deleted: nothing else was ripped out,
+   so restoring the term is a matter of putting `core`/`rest` back in this list. */
 function filteredClasses(){
-  const selected=new Set((state.profile.electives||[]).map(canonical));
   const activeSection=state.peekSection||state.profile.section;
-  const coreSource=state.peekSection?(state.peekAll||[]):state.all;
-  const core=coreSource.filter(c=>c.type==="Core"&&(activeSection==="A"?c.section==="A":c.section==="B"));
-  const rest=state.all.filter(c=>c.type==="General"||(c.type!=="Core"&&selected.has(canonical(c.baseCode||c.code))));
-  /* Local overlay, same pattern as HOLIDAYS/EXAM_DATA — not part of the synced
-     Term III feed, so it survives every sync instead of getting wiped by it. */
-  const immersion=(window.IMMERSION_CLASSES||[]).filter(c=>c.section===activeSection);
-  return[...core,...rest,...immersion].sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
+  return(window.IMMERSION_CLASSES||[])
+    .filter(c=>c.section===activeSection)
+    .slice()
+    .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
 }
 async function fetchSectionClasses(section){
   const u=new URL(API);u.searchParams.set("section",section);u.searchParams.set("electives","");u.searchParams.set("includeCancelled","true");
@@ -200,6 +200,9 @@ function wasRecentlyAdded(c){
   return c.status==="Added"||addedFill||state.notifications.some(n=>n.type==="added"&&n.classId===classIdentity(c));
 }
 function relativeSyncText(){
+  /* Nothing is being fetched while the term feed is off, so "waiting for the first
+     schedule check" would sit there for ever. Name what is actually on screen. */
+  if(!SYNC_ENABLED)return"International Immersion · Barcelona";
   const stamp=_lastSyncAt||new Date(state.lastUpdated||0).getTime();
   if(!stamp)return"Waiting for the first schedule check";
   const mins=Math.max(0,Math.floor((Date.now()-stamp)/60000));
@@ -216,7 +219,20 @@ function compareSnapshots(oldList,newList){
   return out.slice(0,12)
 }
 let _syncInFlight=false,_lastSyncAt=0;
+/* The term feed is switched off now that Term III has ended. Left in place rather
+   than deleted, because the immersion module may yet be published through the same
+   sheet — flip SYNC_ENABLED back on and the whole path works again. While it is off
+   nothing refetches, so the term's classes cannot quietly repopulate the cache. */
+const SYNC_ENABLED=false;
 async function syncSchedule(force=false){
+  if(!SYNC_ENABLED){
+    state.scheduleLoading=false;
+    const pill=$("#syncPill");
+    if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Immersion schedule</span>";pill.title="Showing the International Immersion schedule"}
+    state.classes=filteredClasses();
+    renderAll();
+    return;
+  }
   if(_syncInFlight)return;
   if(!force&&Date.now()-_lastSyncAt<30000)return;
   _syncInFlight=true;
@@ -295,10 +311,22 @@ function openCalendarPage(iso){
     renderCalendar();
   }
 }
+/* The Exams tab is gone with Term III, so the term card no longer promotes exams:
+   its countdown used to navigate to that tab, and its "EXAMS · n DAYS" label now
+   contradicts the immersion progress the ring reports. exam-data.js is untouched
+   and the calendar still marks exam days, so flipping this back restores it. */
+const EXAM_CARD_ENABLED=false;
 function renderExamCard(){
   const card=$("#examCard");if(!card)return;
-  const exam=nextExam();
-  if(!exam){card.hidden=true;return}
+  const exam=EXAM_CARD_ENABLED?nextExam():null;
+  if(!exam){
+    card.hidden=true;
+    /* No upcoming exam: clear the season styling and restore the default label,
+       which the early return used to skip — leaving "EXAMS · n DAYS" stuck on. */
+    card.closest(".term-overview-card")?.classList.remove("is-exam-season");
+    const ol=$("#termOverline");if(ol)ol.textContent="IMMERSION · PROGRESS";
+    return;
+  }
   card.hidden=false;
   const firstSlot=Object.keys(exam.slots)[0],entry=exam.slots[firstSlot];
   const daysLeft=examDaysLeft(exam.date);
@@ -307,7 +335,7 @@ function renderExamCard(){
   $("#examCardTitle").textContent=entry.subject;
   $("#examCardDays").textContent=daysLeft===0?"Today":daysLeft===1?"Tomorrow":`${daysLeft}d`;
   card.title=`${fmtDate(exam.date,{weekday:"long",day:"numeric",month:"long"})} · ${EXAM_SLOT_LABELS[firstSlot]}${Object.keys(exam.slots).length>1?` +${Object.keys(exam.slots).length-1} more`:""}`;
-  card.onclick=()=>openPlannerTab("exams");
+  card.onclick=()=>openPlannerTab("calendar");
   /* Once exams are close, "how much of the term is done" stops being the question.
      The card keeps its contents but reorders and relabels itself, so the exam rises to
      the top and the percentage steps back. */
@@ -316,7 +344,7 @@ function renderExamCard(){
   const overline=$("#termOverline");
   if(overline)overline.textContent=examSeason
     ?`EXAMS · ${daysLeft===0?"TODAY":daysLeft===1?"TOMORROW":`${daysLeft} DAYS`}`
-    :"TERM III · PROGRESS";
+    :"IMMERSION · PROGRESS";
 }
 function renderWeekDigest(){
   const el=$("#weekDigest");if(!el)return;
@@ -626,8 +654,9 @@ function renderHome(){
   const hoursLabel=totalMins?` · ${totalMins>=60?`${Math.floor(totalMins/60)}h${totalMins%60?` ${totalMins%60}m`:""}`:`${totalMins}m`}`:"";
   $("#progressSummary").textContent=(timelineIso===today?`${completed} / ${activeTimelineClasses.length}`:`${activeTimelineClasses.length} ${activeTimelineClasses.length===1?"class":"classes"}`)+hoursLabel;
   const monday=new Date(`${mondayIso(today)}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
-  /* Term-wide progress — classes completed/remaining and weeks left across the full term window. */
-  const termStart=new Date("2026-08-03T00:00:00+05:30"),termEnd=new Date("2026-09-30T23:59:59+05:30");
+  /* Progress across the immersion module now that Term III has closed — same ring,
+     same per-course arcs, measuring the two Barcelona weeks instead. */
+  const termStart=new Date("2026-10-05T00:00:00+05:30"),termEnd=new Date("2026-10-16T23:59:59+05:30");
   const termAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=termStart&&dateTime(c,"startTime")<=termEnd);
   const termDone=termAll.filter(c=>dateTime(c,"endTime")<now).length,termLeft=Math.max(0,termAll.length-termDone);
   const termPct=termAll.length?Math.round(termDone/termAll.length*100):0,termWeeksLeft=Math.max(0,Math.ceil((termEnd-now)/(7*24*3600000)));
@@ -2644,7 +2673,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova141",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova142",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
