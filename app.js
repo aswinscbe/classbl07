@@ -604,9 +604,45 @@ function renderHome(){
   const hoursLabel=totalMins?` · ${totalMins>=60?`${Math.floor(totalMins/60)}h${totalMins%60?` ${totalMins%60}m`:""}`:`${totalMins}m`}`:"";
   $("#progressSummary").textContent=(timelineIso===today?`${completed} / ${activeTimelineClasses.length}`:`${activeTimelineClasses.length} ${activeTimelineClasses.length===1?"class":"classes"}`)+hoursLabel;
   const monday=new Date(`${mondayIso(today)}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
-  /* The term/immersion progress card has been removed from Home, so nothing
-     computes a ring here any more. renderTermOverviewStrip() below is kept: it
-     also feeds the term-overview dialog, which guards on its own element. */
+  /* Immersion progress: the same ring, built from one sub-arc per course so the
+     circle shows which of the two courses is carrying it. Reports days rather
+     than weeks — "2 weeks to go" is a poor unit for a ten-day module. */
+  const immStart=new Date("2026-10-05T00:00:00+05:30"),immEnd=new Date("2026-10-16T23:59:59+05:30");
+  const immAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=immStart&&dateTime(c,"startTime")<=immEnd);
+  const immDone=immAll.filter(c=>dateTime(c,"endTime")<now).length,immLeft=Math.max(0,immAll.length-immDone);
+  const immPct=immAll.length?Math.round(immDone/immAll.length*100):0;
+  animateCount($("#termProgressPct"),immPct,"%");
+  animateCount($("#termDone"),immDone);animateCount($("#termLeft"),immLeft);
+  const subEl=$("#termProgressSub");
+  if(subEl){
+    const dayMs=86400000;
+    const daysToStart=Math.ceil((immStart-now)/dayMs),daysToEnd=Math.ceil((immEnd-now)/dayMs);
+    /* Sessions left decides "complete", not the calendar — the closing evening of
+       the 16th otherwise reads "1 day to go" with nothing left to attend. */
+    subEl.innerHTML=daysToStart>0
+      ?`Starts in <strong>${daysToStart}</strong> ${daysToStart===1?"day":"days"}`
+      :!immLeft?"Module complete"
+      :daysToEnd<=1?"Final day"
+      :`<strong>${daysToEnd}</strong> days to go`;
+  }
+  const segEl=$("#termRingSegments");
+  if(segEl){
+    const C=2*Math.PI*26;
+    const byCourse=new Map();
+    immAll.forEach(c=>{
+      const code=canonical(c.code),entry=byCourse.get(code)||{done:0};
+      if(dateTime(c,"endTime")<now)entry.done++;
+      byCourse.set(code,entry);
+    });
+    let cursor=0;
+    segEl.innerHTML=[...byCourse.entries()].filter(([,v])=>v.done>0).map(([code,v])=>{
+      const len=(v.done/immAll.length)*C;
+      /* A hairline between neighbouring arcs so two similar hues stay distinguishable. */
+      const drawn=Math.max(0,len-1.5),offset=-cursor;
+      cursor+=len;
+      return`<circle class="ring-seg" cx="32" cy="32" r="26" stroke="${colorFor(code)}" stroke-dasharray="${drawn} ${C-drawn}" stroke-dashoffset="${offset}"><title>${esc(code)}</title></circle>`;
+    }).join("");
+  }
   renderWeekDigest();renderHomeLegend();renderTodayStrips();
   /* Week bar chart — count above, bar height by load, day letter below. A vertical
      bar reads "how busy is this day" faster than a same-size square with a number
@@ -2541,7 +2577,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova143",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova144",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
