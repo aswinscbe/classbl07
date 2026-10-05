@@ -20,6 +20,25 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
 const COURSE_COLORS={SM:"#4a90d9",DBST:"#3b4ea8",AIB:"#7c5cd6",OS:"#a855c7",CV:"#d1479b",PM:"#c2415c",POM:"#d4632f",CB:"#c8961a",SBM:"#8a9b2e",NWW:"#4fa54f",MAAS:"#1f7a4d",ACC:"#2fb896",IS:"#35b8c4",IBEU:"#8c6239",SUST:"#5b7f99"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 window.BL07_HOLIDAYS=HOLIDAYS;
+/* The programme runs in Barcelona, so the app keeps Barcelona time. Dates were
+   pinned to Asia/Kolkata throughout, which meant "today" rolled over at 20:30
+   local — every evening of the module showed tomorrow's schedule. */
+const APP_TZ="Europe/Madrid";
+/* Resolved per date rather than hardcoded: Spain is CEST (+02:00) during the
+   module and CET (+01:00) once the clocks change on 25 October. */
+function tzOffsetMinutes(date){
+  const p=new Intl.DateTimeFormat("en-US",{timeZone:APP_TZ,timeZoneName:"longOffset"}).formatToParts(date).find(x=>x.type==="timeZoneName");
+  const m=/GMT([+-])(\d{2}):?(\d{2})?/.exec(p?p.value:"");
+  if(!m)return 0;
+  const mins=Number(m[2])*60+Number(m[3]||0);
+  return m[1]==="-"?-mins:mins;
+}
+/* A real instant for a wall-clock time in Barcelona. Guess as UTC, then shift by
+   the zone's offset at that instant. */
+function zoned(iso,hhmm="12:00"){
+  const guess=new Date(`${iso}T${hhmm}:00Z`);
+  return new Date(guess.getTime()-tzOffsetMinutes(guess)*60000);
+}
 const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,peekSection:null,peekAll:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -57,27 +76,27 @@ function updateOfflineBanner(reconnected){
     el.hidden=false;el.classList.remove("reconnected");el.querySelector("span:last-child").textContent="You're offline — showing your last saved schedule.";
   }
 }
-function istParts(date=new Date()){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23",weekday:"long"}).formatToParts(date);return Object.fromEntries(parts.map(p=>[p.type,p.value]))}
+function istParts(date=new Date()){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23",weekday:"long"}).formatToParts(date);return Object.fromEntries(parts.map(p=>[p.type,p.value]))}
 function isoToday(){const p=istParts();return`${p.year}-${p.month}-${p.day}`}
 function weekdayKey(d=new Date()){return istParts(d).weekday.toLowerCase()}
 function minutes(t){const[h,m]=String(t||"00:00").split(":").map(Number);return h*60+m}
 function minsToTimeStr(m){return `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`}
-function dateTime(c,w="startTime"){return new Date(`${c.dateIso}T${c[w]||c[w==="startTime"?"start":"end"]}:00+05:30`)}
+function dateTime(c,w="startTime"){return zoned(c.dateIso,c[w]||c[w==="startTime"?"start":"end"])}
 function fmtTime(t){const[h,m]=t.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit"}).format(new Date(2026,0,1,h,m))}
 function fmtRange(a,b){return`${fmtTime(a)}–${fmtTime(b)}`}
 function updateTopbarClock(){
   const el=$("#topbarClock");if(!el)return;
-  el.textContent=new Intl.DateTimeFormat("en-IN",{timeZone:"Asia/Kolkata",hour:"numeric",minute:"2-digit"}).format(new Date());
+  el.textContent=new Intl.DateTimeFormat("en-IN",{timeZone:APP_TZ,hour:"numeric",minute:"2-digit"}).format(new Date());
 }
 /* 24h digits for the split-flap hero (independent of the localized fmtTime above) */
-function fmtDate(iso,o={weekday:"long",day:"numeric",month:"short"}){return new Intl.DateTimeFormat("en-IN",o).format(new Date(`${iso}T12:00:00+05:30`))}
+function fmtDate(iso,o={weekday:"long",day:"numeric",month:"short"}){return new Intl.DateTimeFormat("en-IN",{...o,timeZone:APP_TZ}).format(zoned(iso,"12:00"))}
 const EXAM_SLOT_LABELS={forenoon:"Forenoon",afternoon:"Afternoon",evening:"Evening"};
 function examOn(iso){return(window.EXAM_DATA||[]).find(e=>e.date===iso)}
 function nextExam(){
   const today=isoToday(),list=(window.EXAM_DATA||[]).filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date));
   return list[0]||null;
 }
-function examDaysLeft(iso){const now=new Date(`${isoToday()}T00:00:00+05:30`),target=new Date(`${iso}T00:00:00+05:30`);return Math.round((target-now)/86400000)}
+function examDaysLeft(iso){const now=zoned(isoToday(),"00:00"),target=zoned(iso,"00:00");return Math.round((target-now)/86400000)}
 function subjectSessions(code){const want=canonical(code);return state.all.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===want).sort((a,b)=>dateTime(a)-dateTime(b))}
 function subjectSessionOrdinal(c){if(c.status==="Cancelled"||c.type==="General")return null;const list=subjectSessions(c.code);const i=list.findIndex(x=>classIdentity(x)===classIdentity(c));return i<0?null:i+1}
 function initials(n){return String(n||"ST").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
@@ -188,8 +207,8 @@ async function setSectionView(target){
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
 function classKey(c){return`${classIdentity(c)}|${c.endTime||""}|${venueOf(c)}`}
 function classIdentity(c){return`${c.dateIso}|${c.startTime}|${canonical(c.code)}`}
-function tomorrowIso(){const d=new Date(`${isoToday()}T12:00:00+05:30`);d.setDate(d.getDate()+1);return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
-function isoForDayOffset(n){const d=new Date(`${isoToday()}T12:00:00+05:30`);d.setDate(d.getDate()+n);return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
+function tomorrowIso(){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+1);return new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
+function isoForDayOffset(n){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+n);return new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
 function isClassCompleted(c){
   if(c.status==="Cancelled")return false;
   return Date.now()>=dateTime(c,"endTime").getTime();
@@ -305,7 +324,7 @@ function openCalendarPage(iso){
   openPlannerTab("calendar");
   if(iso){
     state.selectedDate=iso;
-    const d=new Date(`${iso}T12:00:00+05:30`);
+    const d=zoned(iso,"12:00");
     state.calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);
     state.railStart=mondayIso(iso);
     renderCalendar();
@@ -318,8 +337,8 @@ function openCalendarPage(iso){
 const EXAM_CARD_ENABLED=false;
 function renderWeekDigest(){
   const el=$("#weekDigest");if(!el)return;
-  const monday=new Date(`${mondayIso(isoToday())}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
-  const mondayIsoStr=mondayIso(isoToday()),nextMondayIsoStr=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(nextMonday);
+  const monday=zoned(mondayIso(isoToday()),"00:00"),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
+  const mondayIsoStr=mondayIso(isoToday()),nextMondayIsoStr=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ}).format(nextMonday);
   const weekClasses=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;
   const weekTasks=state.tasks.filter(t=>!t.completed&&t.date&&t.date>=mondayIsoStr&&t.date<nextMondayIsoStr).length;
   const weekExams=(window.EXAM_DATA||[]).filter(e=>e.date>=mondayIsoStr&&e.date<nextMondayIsoStr).length;
@@ -331,7 +350,7 @@ function renderWeekDigest(){
 }
 function renderHomeLegend(){
   const el=$("#homeLegend");if(!el)return;
-  const monday=new Date(`${mondayIso(isoToday())}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
+  const monday=zoned(mondayIso(isoToday()),"00:00"),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
   const used=[...new Set(state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).map(c=>canonical(c.code)))];
   if(!used.length){el.innerHTML="";return}
   /* The legend was a colour key and nothing more. Each course already has an ordered
@@ -390,11 +409,11 @@ function renderExamsPage(){
 }
 function renderDateStrip(){
   const el=$("#dateStrip");if(!el)return;
-  const today=new Date(`${isoToday()}T12:00:00+05:30`),monday=new Date(today);monday.setDate(today.getDate()-((today.getDay()+6)%7));
+  const today=zoned(isoToday(),"12:00"),monday=new Date(today);monday.setDate(today.getDate()-((today.getDay()+6)%7));
   const labels=["MON","TUE","WED","THU","FRI","SAT","SUN"];let html="";
   for(let i=0;i<7;i++){
     const d=new Date(monday);d.setDate(monday.getDate()+i);
-    const iso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);
+    const iso=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d);
     const isToday=iso===isoToday(),count=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length;
     html+=`<button class="date-pill ${isToday?"today":""}" data-date="${iso}"><span class="dow">${labels[i]}</span><span class="dnum">${d.getDate()}</span>${count?'<i class="dot"></i>':""}</button>`;
   }
@@ -575,7 +594,7 @@ function renderHome(){
      classes once today is done) so the card never has its header on one day and its list
      on another — until the reader browses days themselves, which takes over. */
   if(!state.timelineTouched){
-    const dayDiff=Math.round((new Date(`${shownDayIso}T12:00:00+05:30`)-new Date(`${today}T12:00:00+05:30`))/86400000);
+    const dayDiff=Math.round((zoned(shownDayIso,"12:00")-zoned(today,"12:00"))/86400000);
     state.timelineOffset=Math.max(0,Math.min(6,dayDiff||0));
   }
   const timelineOffset=state.timelineOffset||0,timelineIso=isoForDayOffset(timelineOffset),timelineClasses=state.classes.filter(c=>c.dateIso===timelineIso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
@@ -603,11 +622,11 @@ function renderHome(){
   const totalMins=activeTimelineClasses.reduce((sum,c)=>sum+(minutes(c.endTime)-minutes(c.startTime)),0);
   const hoursLabel=totalMins?` · ${totalMins>=60?`${Math.floor(totalMins/60)}h${totalMins%60?` ${totalMins%60}m`:""}`:`${totalMins}m`}`:"";
   $("#progressSummary").textContent=(timelineIso===today?`${completed} / ${activeTimelineClasses.length}`:`${activeTimelineClasses.length} ${activeTimelineClasses.length===1?"class":"classes"}`)+hoursLabel;
-  const monday=new Date(`${mondayIso(today)}T00:00:00+05:30`),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
+  const monday=zoned(mondayIso(today),"00:00"),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
   /* Immersion progress: the same ring, built from one sub-arc per course so the
      circle shows which of the two courses is carrying it. Reports days rather
      than weeks — "2 weeks to go" is a poor unit for a ten-day module. */
-  const immStart=new Date("2026-10-05T00:00:00+05:30"),immEnd=new Date("2026-10-16T23:59:59+05:30");
+  const immStart=zoned("2026-10-05","00:00"),immEnd=zoned("2026-10-16","23:59");
   const immAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=immStart&&dateTime(c,"startTime")<=immEnd);
   const immDone=immAll.filter(c=>dateTime(c,"endTime")<now).length,immLeft=Math.max(0,immAll.length-immDone);
   const immPct=immAll.length?Math.round(immDone/immAll.length*100):0;
@@ -1058,7 +1077,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
   /* A quiet background tint per day, scaled to how busy the month gets, plus a mark for
      exam/deadline days — so a month reads as a density map before a single day is opened,
      instead of every day looking the same until you dig into the count number. */
-  const inMonthCounts=monthIsos.filter(iso=>new Date(`${iso}T12:00:00+05:30`).getMonth()===m)
+  const inMonthCounts=monthIsos.filter(iso=>zoned(iso,"12:00").getMonth()===m)
     .map(iso=>state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length);
   const monthMaxLoad=Math.max(1,...inMonthCounts);
   let html="";
@@ -1066,7 +1085,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
     const rowIsos=monthIsos.slice(w*7,w*7+7);
     const rowInWeek=mondayIso(rowIsos[0])===shownWeek;
     const cells=rowIsos.map(iso=>{
-      const day=new Date(`${iso}T12:00:00+05:30`);
+      const day=zoned(iso,"12:00");
       const active=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled");
       const isWeekend=day.getDay()===0||day.getDay()===6;
       const dayCourses=[...new Set(active.map(c=>canonical(c.code)))];
@@ -1102,7 +1121,7 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
     b.addEventListener("click",()=>{
       /* A month is scanned to pick a week to work in, so a tap lands you in that week. */
       state.selectedDate=b.dataset.date;state.railStart=mondayIso(b.dataset.date);
-      const dd=new Date(`${b.dataset.date}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
+      const dd=zoned(b.dataset.date,"12:00");state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
       renderCalendar();
       closeDialog($("#monthPickerDialog"));
       requestAnimationFrame(()=>requestAnimationFrame(flashDayFocus));
@@ -1121,16 +1140,16 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
   const courseFilterBtn=$("#toggleCourseFilter");
   if(courseFilterBtn)courseFilterBtn.classList.toggle("active",!!state.courseFilterOpen||!!state.calendarHighlight);
   const toggleCompletedBtn=$("#toggleCompletedButton");if(toggleCompletedBtn){toggleCompletedBtn.textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;toggleCompletedBtn.hidden=!hiddenCompletedCount&&!state.agendaShowCompleted;}const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;const legendEl=$("#calendarLegend");if(legendEl)legendEl.innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");if(legendEl)legendEl.onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};const courseRow=$("#agendaCourseRow");if(courseRow){const dayCourses=[...new Set(weekAll.filter(c=>c.status!=="Cancelled").map(c=>canonical(c.code)))];if(state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight))dayCourses.push(state.calendarHighlight);const showCourseChips=dayCourses.length>1||!!state.calendarHighlight;courseRow.innerHTML=showCourseChips?dayCourses.map(c=>`<button type="button" class="filter-chip ${c===state.calendarHighlight?"active":""}" data-course="${esc(c)}" style="--course:${colorFor(c)}">${esc(c)}</button>`).join(""):"";courseRow.hidden=!showCourseChips||!state.courseFilterOpen;courseRow.onclick=e=>{const btn=e.target.closest("[data-course]");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()}}renderWeekPlanner()}
-function mondayIso(iso){const d=new Date(`${iso}T12:00:00+05:30`);d.setDate(d.getDate()-((d.getDay()+6)%7));return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
-function nextMondayIso(iso){const d=new Date(`${mondayIso(iso)}T12:00:00+05:30`);d.setDate(d.getDate()+7);return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
-function shiftRailWeek(delta){const d=new Date(`${state.railStart||mondayIso(state.selectedDate)}T12:00:00+05:30`);d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderCalendar()}
+function mondayIso(iso){const d=zoned(iso,"12:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
+function nextMondayIso(iso){const d=zoned(mondayIso(iso),"12:00");d.setDate(d.getDate()+7);return new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
+function shiftRailWeek(delta){const d=zoned(state.railStart||mondayIso(state.selectedDate),"12:00");d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderCalendar()}
 /* The planner is one accordion week: seven day rows always on screen, the selected day
    opened in place. There is no day/week mode, because the week is the frame and the day
    is the detail inside it — the old layout answered "what does my week look like" twice,
    once with a date rail and once with a separate week card. */
 function weekDaysFrom(startIso){
-  const start=new Date(`${startIso}T12:00:00+05:30`),out=[];
-  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);out.push(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(d))}
+  const start=zoned(startIso,"12:00"),out=[];
+  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);out.push(new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d))}
   return out;
 }
 function flashDayFocus(){
@@ -1176,7 +1195,7 @@ function renderWeekPlanner(){
     $$(".wc-cell",strip).forEach(b=>b.addEventListener("click",()=>{
       const iso=b.dataset.date;
       state.selectedDate=iso;
-      const dd=new Date(`${iso}T12:00:00+05:30`);state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
+      const dd=zoned(iso,"12:00");state.calendarMonth=new Date(dd.getFullYear(),dd.getMonth(),1);
       renderCalendar();
     }));
     /* strip is a persistent node re-filled via innerHTML on every render, not replaced —
@@ -1258,8 +1277,8 @@ function renderDayFocus(iso){
   if(!el.dataset.swipeBound){el.dataset.swipeBound="1";bindSwipeGesture(el,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46})}
 }
 function shiftSelectedDate(delta){
-  const day=new Date(`${state.selectedDate}T12:00:00+05:30`);day.setDate(day.getDate()+delta);
-  state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(day);
+  const day=zoned(state.selectedDate,"12:00");day.setDate(day.getDate()+delta);
+  state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(day);
   state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);
   state.railStart=mondayIso(state.selectedDate);
   renderCalendar();
@@ -1877,7 +1896,7 @@ function renderMessWeekGrid(){
 function renderMess(){
   const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
   const nowHour=Number(istParts().hour),currentMeal=nowHour<11?"breakfast":nowHour<16?"lunch":"dinner";
-  const todayIso=isoToday(),todayDow=(new Date(`${todayIso}T12:00:00+05:30`).getDay()+6)%7,todayDayName=ds[todayDow];
+  const todayIso=isoToday(),todayDow=(zoned(todayIso,"12:00").getDay()+6)%7,todayDayName=ds[todayDow];
   /* Today's pill picks up the current meal's accent hue instead of a generic active
      tint, so "which day am I on" and "what's serving right now" read off the same row. */
   $("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""} ${d===todayDayName?"is-today":""}" data-day="${d}" ${d===todayDayName?`data-meal="${currentMeal}"`:""}>${d.slice(0,3).toUpperCase()}</button>`).join("");
@@ -1934,7 +1953,7 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
    100% complete" for ever. */
 function renderTermRing(){
   const fill=$("#termRingFill");if(!fill)return;
-  const termStart=new Date("2026-10-05T00:00:00+05:30"),termEnd=new Date("2026-10-16T23:59:59+05:30"),now=new Date();
+  const termStart=zoned("2026-10-05","00:00"),termEnd=zoned("2026-10-16","23:59"),now=new Date();
   const totalMs=termEnd-termStart,elapsedMs=Math.max(0,Math.min(totalMs,now-termStart));
   const pct=totalMs>0?Math.round(elapsedMs/totalMs*100):0,daysLeft=Math.max(0,Math.ceil((termEnd-now)/86400000));
   fill.style.setProperty("--pct",pct);
@@ -1981,7 +2000,7 @@ function renderProfileInsight(){
   const active=state.classes.filter(c=>c.status!=="Cancelled");
   if(!active.length){el.hidden=true;return}
   const counts=[0,0,0,0,0,0,0];
-  active.forEach(c=>{counts[new Date(`${c.dateIso}T12:00:00+05:30`).getDay()]++});
+  active.forEach(c=>{counts[zoned(c.dateIso,"12:00").getDay()]++});
   const names=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   let maxI=0;for(let i=1;i<7;i++)if(counts[i]>counts[maxI])maxI=i;
   if(!counts[maxI]){el.hidden=true;return}
@@ -2032,7 +2051,7 @@ function renderNotifications(){
   if(!state.notifications.length){$("#notificationList").innerHTML='<div class="empty-state"><span class="empty-state-icon">'+icon("bell")+'</span><p>No schedule updates</p><small>We’ll let you know when something changes.</small></div>';return}
   let html="",lastDay=null;
   state.notifications.forEach(n=>{
-    const dayIso=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date(n.createdAt));
+    const dayIso=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ}).format(new Date(n.createdAt));
     if(dayIso!==lastDay){html+=`<p class="notification-day-heading">${esc(notificationDayLabel(dayIso))}</p>`;lastDay=dayIso}
     html+=notificationItemHtml(n);
   });
@@ -2577,7 +2596,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova144",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova145",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
