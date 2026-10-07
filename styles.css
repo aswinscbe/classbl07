@@ -88,7 +88,7 @@
      designed: everything lived inside one narrow band. Two display steps above it
      give the hero numeral and the greeting somewhere to go. */
   --text-2xl:30px;
-  --text-3xl:clamp(38px,11vw,46px);
+  --text-3xl:clamp(28px,7.5vw,34px);
   /* Three line-height roles instead of seven ad-hoc ratios, so baselines line up
      between neighbouring elements. */
   --lh-flat:1;
@@ -242,7 +242,14 @@ h3,b,strong{font-family:inherit}
 .panel .overline::before,.hero-card .overline::before,.panel-compact .overline::before{display:none}
 /* Fraunces at 600 rather than 800: a serif gets its presence from contrast and size,
    not from weight, and the heavy optical sizes go muddy at headline scale. */
-h1{font-size:var(--text-3xl);line-height:1.05;letter-spacing:-.02em;font-weight:600;margin:0 0 6px}
+h1{font-size:var(--text-3xl);line-height:1.12;letter-spacing:-.018em;font-weight:600;margin:0 0 6px}
+/* Fraunces carries a live optical-size axis, and the browser's automatic mapping ties
+   it to the font size in points — so a 34px headline lands around opsz 26, which is
+   still a text cut. Asking for the display end gives the headline the finer hairlines
+   and tighter fit the face was drawn to have at that size; the small numerals keep the
+   automatic mapping, where the sturdier text cut is the right one. */
+h1,.hero-time,.course-card h3{font-variation-settings:"opsz" 144}
+html{font-optical-sizing:auto}
 h2{letter-spacing:-.015em;font-weight:600}
 h2{font-size:22px;line-height:var(--lh-snug);font-weight:800;margin:0}
 .subtitle{margin:0;color:var(--ink-muted);font-size:var(--text-md);font-weight:500}
@@ -314,13 +321,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .page.active{display:block;animation:fade-in .28s cubic-bezier(.22,1,.36,1)}
 @keyframes fade-in{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
 
-.hero-enter .hero-status-row,.hero-enter .hero-cancel-flag,.hero-enter .hero-course-line,.hero-enter .hero-time-row,.hero-enter .hero-pills,.hero-enter .hero-day-strip,.hero-enter .hero-day-section{animation:hero-child-in .45s cubic-bezier(.22,1,.36,1) both}
+.hero-enter .hero-status-row,.hero-enter .hero-cancel-flag,.hero-enter .hero-course-line,.hero-enter .hero-time-row,.hero-enter .hero-pills,.hero-enter .hero-day-strip{animation:hero-child-in .45s cubic-bezier(.22,1,.36,1) both}
 .hero-enter .hero-cancel-flag{animation-delay:.03s}
 .hero-enter .hero-course-line{animation-delay:.05s}
 .hero-enter .hero-time-row{animation-delay:.1s}
 .hero-enter .hero-pills{animation-delay:.15s}
 .hero-enter .hero-day-strip{animation-delay:.19s}
-.hero-enter .hero-day-section{animation-delay:.19s}
+
 @keyframes hero-child-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 .hero-enter .hero-pills .hero-pill{animation:hero-pill-in .4s cubic-bezier(.22,1,.36,1) both}
 .hero-enter .hero-pills .hero-pill:nth-child(1){animation-delay:.16s}
@@ -743,7 +750,16 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* A recessed panel rather than a plain top-border section — reads as a distinct
    "today, in full" module tucked inside the hero instead of content just continuing
    past a divider line, matching the rest of the app's panel language. */
-.hero-day-section{margin-top:16px;padding:14px;border-radius:var(--radius-md);background:var(--bg-panel);border:1px solid var(--border)}
+/* Lifted out of the hero card. It had been a panel nested inside a panel, which made
+   the hero ~1000px tall and meant the one card the page is built around was mostly
+   somebody else's content. As its own surface it reads as "the day" sitting under
+   "right now", and the hero finally looks like a hero. */
+.hero-day-section.day-panel{
+  margin-top:14px;padding:18px;border-radius:var(--radius-lg);
+  background:var(--bg-elevated);border:1px solid transparent;
+  box-shadow:var(--shadow-md), var(--edge-light);
+}
+:root[data-theme="light"] .hero-day-section.day-panel{border-color:var(--border)}
 .hero-day-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
 .hero-day-nav{display:flex;align-items:center;gap:1px;flex:none}
 .hero-day-arrow{
@@ -2344,3 +2360,54 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 }
 .fac-count{font-size:var(--text-xs);font-weight:600;color:var(--ink-faint)}
 .fac-next{margin:8px 0 0;font-size:var(--text-sm);font-weight:500;color:var(--ink-muted)}
+
+/* ============ Page header ============
+   Four pages, four slightly different header blocks. One pattern now: tick, overline,
+   serif title, hairline. The rule is what makes a heading feel like the top of a
+   printed page rather than the first item in a stack. */
+.page-heading{padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.page-heading h1{margin-bottom:2px}
+.page-heading .subtitle{margin-top:6px}
+
+/* ============ Place, in the surfaces ============ */
+
+/* The skyline was drawn for the empty state and then only ever seen on a blank day.
+   As a watermark along the foot of the hero it is on screen every time the app opens,
+   at an opacity where you register it rather than read it — the card sits on the city
+   the module is in. Masked to fade upward so it never competes with the chips above. */
+.hero-card{isolation:isolate}
+.hero-card::before{
+  content:"";position:absolute;left:0;right:0;bottom:-1px;height:92px;z-index:0;
+  pointer-events:none;opacity:.055;
+  background:center bottom / auto 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 52' fill='none' stroke='%23ffffff' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 51h158'/%3E%3Cpath d='M46 51V27l7-18 7 18v24M53 9V4'/%3E%3Cpath d='M62 51V22l8-20 8 20v29'/%3E%3Cpath d='M80 51V26l7-17 7 17v25'/%3E%3Cpath d='M96 51V31l6-14 6 14v20'/%3E%3Cpath d='M49 33h8M65 28h10M83 32h8M99 37h6'/%3E%3Cpath d='M14 51V38h12v13M18 42h4M14 38l6-5 6 5'/%3E%3Cpath d='M118 51V35h16v16M123 40h2M128 40h2M123 45h2M128 45h2'/%3E%3Cpath d='M140 51V41h10v10M144 45h2'/%3E%3C/svg%3E");
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 65%);
+  mask-image:linear-gradient(180deg,transparent,#000 65%);
+}
+:root[data-theme="light"] .hero-card::before{
+  opacity:.1;
+  filter:invert(1);
+}
+
+/* The date chip was a filled accent square — the loudest thing in the header and
+   saying the least. An outlined block with a rule between the figure and the month
+   reads as a date stamp, which is what it is. */
+.date-orbit{
+  width:52px;height:52px;border-radius:var(--radius-sm);
+  background:transparent;color:var(--ink);
+  border:1px solid var(--border-strong);gap:0;
+}
+.date-orbit span{
+  font-family:var(--font-display);font-size:var(--text-xl);font-weight:600;
+  line-height:var(--lh-flat);font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+}
+.date-orbit small{
+  margin-top:3px;padding-top:3px;font-size:9.5px;color:var(--ink-faint);
+  border-top:1px solid var(--border);width:24px;text-align:center;
+}
+
+/* Meal hues were the last of the old palette left standing — a violet dinner against
+   an ink-blue ground was the only violet in the app. Dawn, midday and dusk instead. */
+.mwg-cell b[data-meal="breakfast"],.day-pill.is-today[data-meal="breakfast"],.mess-now-line[data-meal="breakfast"]{--meal-accent:#e0a94a;color:#e0a94a}
+.mwg-cell b[data-meal="lunch"],.day-pill.is-today[data-meal="lunch"],.mess-now-line[data-meal="lunch"]{--meal-accent:#d4764a;color:#d4764a}
+.mwg-cell b[data-meal="dinner"],.day-pill.is-today[data-meal="dinner"],.mess-now-line[data-meal="dinner"]{--meal-accent:#5b86c4;color:#5b86c4}
+.day-pill.is-today[data-meal],.mess-now-line[data-meal]{color:inherit}
