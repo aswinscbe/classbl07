@@ -695,7 +695,7 @@ function renderHome(){
     focusPanel.classList.toggle("has-focus",true);
     $("#focusPulse").style.display=isNow?"":"none";
     $("#focusEmptyIcon").hidden=true;
-    $("#focusKicker").textContent=isNow?"IN PROGRESS":onBreak?"ON A BREAK":isToday?"UPCOMING":"NEXT UP";
+    $("#focusKicker").textContent=isNow?"In progress":onBreak?"On a break":isToday?"Upcoming":"Next up";
     $("#focusCode").hidden=false;$("#focusCode").textContent=canonical(shown.code);$("#focusTitle").textContent=shown.course;
     $("#focusRange").hidden=false;$("#focusRange").innerHTML=fmtRangeRich(shown.startTime,shown.endTime);
     const dayList=scheduled.filter(c=>c.dateIso===shown.dateIso),posIndex=dayList.indexOf(shown),nextInDay=dayList[posIndex+1];
@@ -746,7 +746,7 @@ function renderHome(){
     $("#heroRing").hidden=true;
     if($("#heroLiveProgress"))$("#heroLiveProgress").hidden=true;
     $("#focusPulse").style.display="none";
-    $("#focusKicker").textContent=todays.length?"ALL DONE TODAY":"ALL CLEAR";
+    $("#focusKicker").textContent=todays.length?"All done today":"All clear";
     if(todays.length&&!state._confettiFiredToday){state._confettiFiredToday=true;fireConfetti()}
     $("#focusCode").hidden=true;
     const emptyIcon=$("#focusEmptyIcon");if(emptyIcon){emptyIcon.hidden=false;emptyIcon.innerHTML=icon(todays.length?"check":"moon")}
@@ -2926,7 +2926,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova151",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova152",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

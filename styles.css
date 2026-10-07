@@ -10,6 +10,12 @@
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 @font-face{
+  font-family:"Fraunces";
+  src:url("fonts/fraunces-italic-latin.woff2") format("woff2");
+  font-weight:400 600;font-style:italic;font-display:swap;
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
   font-family:"Jakarta";
   src:url("fonts/jakarta-latin.woff2") format("woff2");
   font-weight:400 800;font-style:normal;font-display:swap;
@@ -89,6 +95,15 @@
      give the hero numeral and the greeting somewhere to go. */
   --text-2xl:30px;
   --text-3xl:clamp(28px,7.5vw,34px);
+
+  /* Weight was running on instinct: 85 rules at 800 and 85 at 700, used
+     interchangeably, which is no hierarchy at all. Four roles, and 800 is reserved
+     for uppercase micro-labels where the extra weight is paying for the small size
+     and the open tracking rather than signalling importance. */
+  --w-body:500;
+  --w-strong:600;
+  --w-bold:700;
+  --w-label:800;
   /* Three line-height roles instead of seven ad-hoc ratios, so baselines line up
      between neighbouring elements. */
   --lh-flat:1;
@@ -251,7 +266,7 @@ h1{font-size:var(--text-3xl);line-height:1.12;letter-spacing:-.018em;font-weight
 h1,.hero-time,.course-card h3{font-variation-settings:"opsz" 144}
 html{font-optical-sizing:auto}
 h2{letter-spacing:-.015em;font-weight:600}
-h2{font-size:22px;line-height:var(--lh-snug);font-weight:800;margin:0}
+h2{font-size:22px;line-height:var(--lh-snug);font-weight:700;margin:0}
 .subtitle{margin:0;color:var(--ink-muted);font-size:var(--text-md);font-weight:500}
 .empty-state{
   padding:32px 20px;text-align:center;color:var(--ink-muted);font-size:var(--text-md);font-weight:500;
@@ -408,7 +423,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .notification-button:has(b:not([hidden])){box-shadow:0 0 0 1px var(--border), 0 0 10px -4px color-mix(in srgb, var(--danger) 30%, transparent)}
 .notification-button b,#ledgerButton b{
   position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:var(--radius-pill);
-  background:var(--danger);color:#fff;font-size:var(--text-xs);font-weight:800;display:grid;place-items:center;
+  background:var(--danger);color:#fff;font-size:var(--text-xs);font-weight:700;display:grid;place-items:center;
   border:2px solid var(--bg-elevated);box-shadow:0 0 0 1px color-mix(in srgb, var(--danger) 45%, transparent), 0 0 4px color-mix(in srgb, var(--danger) 32%, transparent);
 }
 .notification-button b.pop{animation:badge-pop .45s cubic-bezier(.34,1.56,.64,1)}
@@ -502,7 +517,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .page-heading{margin-bottom:4px}
 .count-chip{
   padding:6px 12px;border-radius:var(--radius-pill);background:var(--accent-soft);color:var(--accent);
-  font-size:var(--text-sm);font-weight:800;white-space:nowrap;
+  font-size:var(--text-sm);font-weight:700;white-space:nowrap;
 }
 
 .primary-button{
@@ -536,7 +551,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   width:50px;height:50px;border-radius:var(--radius-md);background:var(--accent-soft);color:var(--accent);flex:none;
 }
-.date-orbit span{font-size:var(--text-lg);font-weight:800;line-height:var(--lh-flat)}
+.date-orbit span{font-size:var(--text-lg);font-weight:700;line-height:var(--lh-flat)}
 .date-orbit small{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label)}
 
 .home-layout{margin-top:16px;display:flex;flex-direction:column;gap:0}
@@ -579,14 +594,19 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   color:#241a04;font-size:var(--text-sm);font-weight:700;
 }
 .hero-date-ribbon svg{width:15px;height:15px;flex:none}
-.hero-date-ribbon b{font-weight:800}
+.hero-date-ribbon b{font-weight:700}
 .hero-card.is-future .hero-status-row{display:none}
 .hero-status-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .hero-status-right{display:flex;align-items:center;gap:8px}
-.hero-day-count{display:inline-flex;align-items:center;font-size:var(--text-sm);font-weight:800;letter-spacing:var(--track-normal);color:var(--on-grad-muted);white-space:nowrap;background:var(--hero-chip-bg);padding:5px 10px;border-radius:var(--radius-pill)}
+.hero-day-count{display:inline-flex;align-items:center;font-size:var(--text-sm);font-weight:700;letter-spacing:var(--track-normal);color:var(--on-grad-muted);white-space:nowrap;background:var(--hero-chip-bg);padding:5px 10px;border-radius:var(--radius-pill)}
+/* Was "IN PROGRESS" in tracked-out caps — the loudest thing on the card and the
+   least worth shouting. Sentence case in the italic serif: the card speaking rather
+   than a system label. */
 .hero-status{
-  display:inline-flex;align-items:center;gap:6px;font-size:var(--text-sm);font-weight:700;letter-spacing:var(--track-label);
-  padding:5px 10px;border-radius:var(--radius-pill);background:var(--hero-chip-bg);color:var(--on-grad-muted);white-space:nowrap;
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--font-display);font-style:italic;font-size:var(--text-md);font-weight:var(--w-strong);
+  letter-spacing:var(--track-normal);
+  padding:5px 12px;border-radius:var(--radius-pill);background:var(--hero-chip-bg);color:var(--on-grad-muted);white-space:nowrap;
 }
 .hero-status i{width:6px;height:6px;border-radius:50%;background:var(--live)}
 .hero-card.is-live .hero-status{color:var(--live)}
@@ -605,7 +625,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .hero-cancel-flag svg{width:14px;height:14px;flex:none}
 .hero-course-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;margin-top:16px}
-.hero-code{display:inline-flex;align-items:center;line-height:var(--lh-flat);font-size:var(--text-sm);font-weight:800;padding:5px 9px;border-radius:var(--radius-xs);background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent));box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent)}
+.hero-code{display:inline-flex;align-items:center;line-height:var(--lh-flat);font-size:var(--text-sm);font-weight:700;padding:5px 9px;border-radius:var(--radius-xs);background:color-mix(in srgb, var(--focus-course,var(--accent)) 16%, transparent);color:var(--focus-course,var(--accent));box-shadow:inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent)}
 /* flex:1 1 auto + min-width:0 lets a long course name actually wrap/shrink inside
    the flex row instead of overflowing it — a flex item's default min-width:auto
    refuses to shrink below its unwrapped content width, and since .hero-card clips
@@ -689,7 +709,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .exam-hero-tag{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);text-transform:uppercase;color:var(--on-grad-muted)}
 .exam-hero-course{display:flex;align-items:baseline;gap:8px;margin-top:4px;flex-wrap:wrap}
 .exam-hero-code{
-  display:inline-flex;align-items:center;line-height:var(--lh-flat);font-size:var(--text-xs);font-weight:800;padding:4px 8px;border-radius:var(--radius-xs);flex:none;
+  display:inline-flex;align-items:center;line-height:var(--lh-flat);font-size:var(--text-xs);font-weight:700;padding:4px 8px;border-radius:var(--radius-xs);flex:none;
   background:color-mix(in srgb, var(--course,var(--accent-2)) 30%, transparent);color:#fff;
 }
 .exam-hero h2{font-size:var(--text-md);font-weight:700;line-height:var(--lh-snug);margin:0;color:var(--on-grad);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
@@ -703,7 +723,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .exam-day-group.past{opacity:.5}
 .exam-day-head{display:flex;align-items:baseline;gap:9px;margin-bottom:10px}
 .exam-day-dow{font-size:var(--text-sm);font-weight:800;letter-spacing:var(--track-label);text-transform:uppercase;color:var(--accent-2)}
-.exam-day-head h3{font-size:20px;font-weight:800;margin:0;flex:1;letter-spacing:var(--track-tight)}
+.exam-day-head h3{font-size:20px;font-weight:700;margin:0;flex:1;letter-spacing:var(--track-tight)}
 .exam-day-count{font-size:var(--text-sm);font-weight:600;color:var(--ink-faint)}
 .exam-slot-card{
   display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;padding:12px 14px;border-radius:var(--radius-md);
@@ -714,7 +734,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   width:100%;
 }
 .exam-slot-code{
-  flex:none;font-size:var(--text-xs);font-weight:800;padding:3px 7px;border-radius:var(--radius-xs);
+  flex:none;font-size:var(--text-xs);font-weight:700;padding:3px 7px;border-radius:var(--radius-xs);
   background:color-mix(in srgb, var(--course,var(--accent)) 20%, transparent);color:var(--course,var(--accent));
 }
 .exam-slot-card strong{font-size:var(--text-md);font-weight:600;flex:1;min-width:0}
@@ -731,7 +751,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .exam-strip:active{transform:scale(.98)}
 .exam-strip-code{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--accent-2);background:color-mix(in srgb, var(--accent-2) 16%, transparent);padding:3px 7px;border-radius:var(--radius-pill);flex-shrink:0}
 .exam-strip-title{flex:1;min-width:0;font-size:var(--text-md);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.exam-strip-days{font-size:var(--text-sm);font-weight:800;color:var(--accent-2);flex-shrink:0}
+.exam-strip-days{font-size:var(--text-sm);font-weight:700;color:var(--accent-2);flex-shrink:0}
 
 .silent-update-strip{
   display:flex;align-items:center;gap:12px;margin-top:12px;padding:14px 16px;
@@ -823,18 +843,18 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sr-accent{width:3px;border-radius:2px;flex:none;align-self:stretch;background:var(--course,var(--accent))}
 .sr-body{flex:1;min-width:0;padding-top:1px}
 .sr-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;row-gap:4px}
-.sr-code{font-size:var(--text-xs);font-weight:800;padding:2.5px 7px;border-radius:var(--radius-xs);line-height:var(--lh-flat);flex:none;background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);color:var(--course,var(--accent))}
+.sr-code{font-size:var(--text-xs);font-weight:700;padding:2.5px 7px;border-radius:var(--radius-xs);line-height:var(--lh-flat);flex:none;background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);color:var(--course,var(--accent))}
 .sr-subj{font-size:var(--text-md);font-weight:700;color:var(--ink)}
-.sr-sess{font-size:var(--text-xs);font-weight:800;color:var(--ink-faint);background:var(--bg-panel);padding:2.5px 7px;border-radius:var(--radius-pill);flex:none}
-.sr-live-pill{font-size:var(--text-xs);font-weight:800;background:var(--live);color:#04150c;padding:2.5px 8px;border-radius:var(--radius-pill);flex:none}
-.sr-cancel-pill{font-size:var(--text-xs);font-weight:800;background:color-mix(in srgb, var(--danger) 20%, transparent);color:var(--danger);padding:2.5px 8px;border-radius:var(--radius-pill);flex:none}
+.sr-sess{font-size:var(--text-xs);font-weight:700;color:var(--ink-faint);background:var(--bg-panel);padding:2.5px 7px;border-radius:var(--radius-pill);flex:none}
+.sr-live-pill{font-size:var(--text-xs);font-weight:700;background:var(--live);color:#04150c;padding:2.5px 8px;border-radius:var(--radius-pill);flex:none}
+.sr-cancel-pill{font-size:var(--text-xs);font-weight:700;background:color-mix(in srgb, var(--danger) 20%, transparent);color:var(--danger);padding:2.5px 8px;border-radius:var(--radius-pill);flex:none}
 .sr-tbc-pill{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);background:var(--amber-soft);color:var(--amber);padding:2.5px 7px;border-radius:var(--radius-pill);flex:none}
 /* Room and professor were the tail of a dot-joined string; as chips they are the
    first thing the eye lands on in the row body, which is the order you need them in. */
 .sr-chips{display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap}
 .room-chip{
   display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 6px;border-radius:var(--radius-pill);
-  font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-tight);font-variant-numeric:tabular-nums;
+  font-size:var(--text-xs);font-weight:700;letter-spacing:var(--track-tight);font-variant-numeric:tabular-nums;
   background:color-mix(in srgb, var(--ink) 7%, transparent);color:var(--ink-muted);
   border:1px solid var(--border);
 }
@@ -845,7 +865,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .fac-chip i{
   flex:none;width:20px;height:20px;border-radius:50%;
   display:inline-flex;align-items:center;justify-content:center;
-  font-size:9.5px;font-weight:800;font-style:normal;letter-spacing:0;line-height:1;
+  font-size:9.5px;font-weight:700;font-style:normal;letter-spacing:0;line-height:1;
   color:#fff;background:hsl(var(--fac-hue,260) 42% 44%);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
 }
@@ -999,9 +1019,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .term-progress-copy{min-width:0;flex:1}
 .term-progress-copy .overline{color:var(--ink-faint)}
 .term-progress-line{margin:5px 0 0;font-size:var(--text-md);font-weight:700;color:var(--ink)}
-.term-progress-line strong{font-weight:800}
+.term-progress-line strong{font-weight:700}
 .term-progress-sub{margin:2px 0 0;font-size:var(--text-sm);font-weight:600;color:var(--ink-muted)}
-.term-progress-sub strong{font-weight:800;color:var(--ink)}
+.term-progress-sub strong{font-weight:700;color:var(--ink)}
 #termHomeRing{width:70px;height:70px;flex:none}
 #termHomeRing b{font-size:var(--text-lg)}
 .term-overview-strip{display:flex;gap:3px;margin-top:11px}
@@ -1022,7 +1042,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:var(--border);opacity:.7;pointer-events:none;
 }
 .wk-bar-col{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
-.wb-count{font-size:var(--text-xs);font-weight:800;color:var(--ink-muted);font-variant-numeric:tabular-nums}
+.wb-count{font-size:var(--text-xs);font-weight:700;color:var(--ink-muted);font-variant-numeric:tabular-nums}
 .wb-bar{
   position:relative;width:16px;border-radius:6px 6px 2px 2px;overflow:hidden;
   display:flex;flex-direction:column-reverse;gap:1px;
@@ -1048,7 +1068,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wk-bar-col.is-today .wb-count{color:var(--accent)}
 .wk-bar-col.zero .wb-bar{background:var(--bg-panel)}
 .wk-bar-col.has-cancelled .wb-bar{background:var(--danger-soft)}
-.wk-bar-col small{font-size:var(--text-xs);font-weight:800;color:var(--ink-faint)}
+.wk-bar-col small{font-size:var(--text-xs);font-weight:700;color:var(--ink-faint)}
 .wk-bar-col.is-today small{color:var(--accent)}
 .wk-bar-mark{position:absolute;top:-6px;width:5px;height:5px;border-radius:50%;border:1.5px solid var(--bg-elevated)}
 .wk-bar-mark.exam{right:-2px;background:var(--danger)}
@@ -1172,9 +1192,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .next-bus-card h2{font-size:var(--text-lg);font-weight:700;margin-top:6px;color:var(--on-grad-muted)}
 .next-bus-card p#nextBusMeta{margin:2px 0 0;font-size:var(--text-sm);color:var(--on-grad-muted);font-weight:500;opacity:.8}
 .next-bus-origin-note{margin:8px 0 0;padding:9px 11px;border-radius:var(--radius-sm);background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 8%, transparent));font-size:var(--text-md);color:var(--on-grad-muted);font-weight:600;line-height:var(--lh-body)}
-.next-bus-origin-note b{color:var(--on-grad);font-weight:800}
+.next-bus-origin-note b{color:var(--on-grad);font-weight:700}
 .next-bus-origin-note .passed{opacity:.75;font-variant-numeric:tabular-nums}
-.next-bus-origin-note .upcoming{color:var(--on-grad);font-weight:800;font-variant-numeric:tabular-nums}
+.next-bus-origin-note .upcoming{color:var(--on-grad);font-weight:700;font-variant-numeric:tabular-nums}
 .bus-class-catch{
   display:flex;align-items:center;gap:10px;width:100%;margin-top:8px;padding:10px 12px;
   border-radius:var(--radius-md);text-align:left;cursor:pointer;
@@ -1190,7 +1210,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .bus-class-catch.is-missed .bcc-icon{color:var(--danger)}
 .bcc-icon svg{width:17px;height:17px}
 .bcc-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
-.bcc-text strong{font-size:var(--text-sm);font-weight:800;color:var(--on-grad,var(--ink))}
+.bcc-text strong{font-size:var(--text-sm);font-weight:700;color:var(--on-grad,var(--ink))}
 .bcc-text small{font-size:var(--text-xs);font-weight:600;color:var(--on-grad-muted,var(--ink-faint))}
 /* A real mini route line instead of a wrapping list of stop names — your
    boarding stop lit up like "you are here", the rest of the stops laid out
@@ -1206,7 +1226,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 @media(prefers-reduced-motion: reduce){.next-bus-card.is-urgent .route-map-stop:last-child{animation:none}}
 .route-map-labels{display:flex;justify-content:space-between;gap:6px;margin-top:7px}
 .route-map-labels span{font-size:var(--text-xs);font-weight:700;color:var(--on-grad-muted);letter-spacing:var(--track-tight);max-width:38%}
-.route-map-labels span.is-origin{color:var(--live);font-weight:800}
+.route-map-labels span.is-origin{color:var(--live);font-weight:700}
 .route-map-labels span:last-child{text-align:right}
 .countdown-box{
   margin-top:16px;padding-top:14px;border-top:1px solid var(--on-grad-line);
@@ -1277,9 +1297,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .mess-week-grid{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .mess-week-row{display:grid;grid-template-columns:44px repeat(3,1fr);gap:10px;align-items:start;padding:10px 12px;border-radius:var(--radius-md);background:var(--bg-panel);border:1px solid var(--border)}
 .mess-week-row.is-today{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 8%, var(--bg-panel))}
-.mwg-day{font-size:var(--text-sm);font-weight:800;color:var(--ink-muted)}
+.mwg-day{font-size:var(--text-sm);font-weight:700;color:var(--ink-muted)}
 .mwg-cell{font-size:var(--text-sm);color:var(--ink);line-height:var(--lh-body)}
-.mwg-cell b{color:var(--accent);margin-right:5px;font-weight:800}
+.mwg-cell b{color:var(--accent);margin-right:5px;font-weight:700}
 .mwg-cell b[data-meal="breakfast"]{color:#d99a3a}
 .mwg-cell b[data-meal="lunch"]{color:#d97a3a}
 .mwg-cell b[data-meal="dinner"]{color:#8a6fc9}
@@ -1377,7 +1397,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .identity-hero-main,.identity-hero-term{position:relative;z-index:1;display:flex;align-items:center;gap:14px}
 .avatar-disc{
   width:56px;height:56px;border-radius:50%;background:var(--hero-chip-bg);flex:none;
-  display:grid;place-items:center;color:var(--on-grad);font-weight:800;font-size:20px;
+  display:grid;place-items:center;color:var(--on-grad);font-weight:700;font-size:20px;
   border:2px solid var(--on-grad-line);
 }
 .avatar-disc.section-b{background:var(--hero-chip-bg);color:var(--on-grad)}
@@ -1416,7 +1436,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .profile-stats-row>.panel{margin-top:0}
 .workload-chart{display:flex;flex-direction:column;gap:8px;margin-top:2px}
 .workload-row{display:flex;align-items:center;gap:9px;font-size:var(--text-sm)}
-.workload-row .wl-code{flex:none;width:44px;font-weight:800;color:var(--course,var(--accent))}
+.workload-row .wl-code{flex:none;width:44px;font-weight:700;color:var(--course,var(--accent))}
 .workload-row .wl-track{flex:1;height:7px;border-radius:var(--radius-pill);background:var(--bg-panel);overflow:hidden}
 .workload-row .wl-track span{display:block;height:100%;border-radius:inherit;background:var(--course,var(--accent))}
 .workload-row .wl-hours{flex:none;font-weight:700;color:var(--ink-muted);min-width:34px;text-align:right}
@@ -1431,7 +1451,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .accent-preview-tag{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint)}
 .accent-preview strong{
-  font-size:var(--text-sm);font-weight:800;color:var(--accent);
+  font-size:var(--text-sm);font-weight:700;color:var(--accent);
   padding:4px 10px;border-radius:var(--radius-pill);background:var(--accent-soft);
 }
 
@@ -1531,7 +1551,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-arrow svg{width:15px;height:15px}
 .week-arrow:active{transform:scale(.88);background:var(--accent-soft);color:var(--accent);border-color:transparent}
 .week-card-mid{flex:1;text-align:center;font:inherit;background:none;border:0;cursor:pointer;min-width:0}
-.week-card-date{display:block;font-size:var(--text-lg);font-weight:800;color:var(--ink);letter-spacing:var(--track-tight)}
+.week-card-date{display:block;font-size:var(--text-lg);font-weight:700;color:var(--ink);letter-spacing:var(--track-tight)}
 .week-card-sub{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:2px;font-size:var(--text-sm);color:var(--ink-faint);font-weight:600}
 .wc-today-badge{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:#fff;background:var(--accent);border-radius:var(--radius-pill);padding:2.5px 7px}
 
@@ -1548,7 +1568,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .wc-cell:active{transform:scale(.94)}
 .wc-dow{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint)}
 .wc-num{font-family:var(--font-display);font-size:var(--text-md);font-weight:700;color:var(--ink);line-height:var(--lh-flat);margin-top:1px;font-variant-numeric:tabular-nums}
-.wc-cnt{font-size:var(--text-xs);font-weight:800;color:var(--accent-2);margin-top:1px;font-variant-numeric:tabular-nums}
+.wc-cnt{font-size:var(--text-xs);font-weight:700;color:var(--accent-2);margin-top:1px;font-variant-numeric:tabular-nums}
 .wc-cell.zero{background:var(--bg-panel)}
 .wc-cell.zero .wc-cnt{color:var(--ink-faint);opacity:.55}
 .wc-cell.today:not(.sel){box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent-2) 55%, transparent)}
@@ -1587,7 +1607,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-glance{margin-top:16px;display:flex;flex-direction:column;gap:6px}
 .wg-day-head{display:flex;align-items:center;gap:8px;padding-top:14px;margin-top:2px;border-top:1px solid var(--border)}
 .week-glance>.wg-day-head:first-child{padding-top:0;margin-top:0;border-top:0}
-.wg-day-head span{font-size:var(--text-md);font-weight:800;color:var(--ink)}
+.wg-day-head span{font-size:var(--text-md);font-weight:700;color:var(--ink)}
 .wg-day-head small{font-size:var(--text-sm);font-weight:600;color:var(--ink-faint);margin-left:auto}
 .wg-free{margin:2px 0 4px;font-size:var(--text-sm);font-weight:600;color:var(--ink-faint)}
 
@@ -1688,14 +1708,14 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* Today gets a warm outline ring with a soft glow behind it; the selected day gets
    a filled, glowing gradient pill — two visibly different treatments so they never
    get confused with each other even when the same date is both. */
-.calendar-day.today .calendar-day-number{box-shadow:inset 0 0 0 1.5px var(--accent-2);color:var(--accent-2);font-weight:800}
+.calendar-day.today .calendar-day-number{box-shadow:inset 0 0 0 1.5px var(--accent-2);color:var(--accent-2);font-weight:700}
 .calendar-day.today .calendar-day-number::before{
   content:"";position:absolute;inset:-4px;border-radius:50%;z-index:-1;
   background:radial-gradient(circle,color-mix(in srgb, var(--accent-2) 25%, transparent),transparent 70%);
 }
 .calendar-day.selected .calendar-day-number{
   background:var(--accent);
-  color:#fff;font-weight:800;box-shadow:0 4px 14px -4px color-mix(in srgb, var(--accent) 65%, transparent);
+  color:#fff;font-weight:700;box-shadow:0 4px 14px -4px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 .calendar-day.selected .calendar-day-number::after{
   content:"";position:absolute;inset:-8px;border-radius:50%;z-index:-1;
@@ -1703,7 +1723,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .cd-dots{display:flex;align-items:center;justify-content:center;gap:2.5px;line-height:var(--lh-flat)}
 .cd-dots i{width:5px;height:5px;border-radius:50%;background:var(--course);font-style:normal;flex:none}
-.cd-dots b{font-size:var(--text-xs);font-weight:800;color:var(--ink-faint);line-height:var(--lh-flat)}
+.cd-dots b{font-size:var(--text-xs);font-weight:700;color:var(--ink-faint);line-height:var(--lh-flat)}
 .cd-mark{height:3px;width:14px;border-radius:var(--radius-pill);flex:none;background:color-mix(in srgb, var(--amber) 65%, transparent)}
 .cd-mark.cd-task{background:var(--amber);width:5px;height:5px;border-radius:50%;position:absolute;bottom:3px;right:8px}
 /* Exams are a ring around the date, not a mark that could be mistaken for a class
@@ -1738,7 +1758,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   padding:3px 7px;border-radius:var(--radius-pill);background:color-mix(in srgb, var(--accent-2) 18%, transparent);
 }
 .agenda-exam-card .agenda-exam-code{
-  flex:none;font-size:var(--text-xs);font-weight:800;padding:3px 7px;border-radius:var(--radius-xs);
+  flex:none;font-size:var(--text-xs);font-weight:700;padding:3px 7px;border-radius:var(--radius-xs);
   background:color-mix(in srgb, var(--course,var(--accent)) 20%, transparent);color:var(--course,var(--accent));
 }
 .agenda-exam-card strong{font-size:var(--text-md);font-weight:600}
@@ -1772,7 +1792,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .session-ring circle{fill:none;stroke-width:4}
 .session-ring .ring-track{stroke:color-mix(in srgb, var(--course,var(--accent)) 14%, transparent)}
 .session-ring .ring-fill{stroke:var(--course,var(--accent));stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:calc(100 - (100 * var(--pct,0) / 100));transition:stroke-dashoffset .4s ease}
-.session-ring b{position:relative;font-size:var(--text-sm);font-weight:800;color:var(--course,var(--accent))}
+.session-ring b{position:relative;font-size:var(--text-sm);font-weight:700;color:var(--course,var(--accent))}
 .session-ring-meta{display:flex;flex-direction:column;min-width:0}
 .session-ring-meta strong{font-size:var(--text-sm);font-weight:700}
 .session-ring-meta span{font-size:var(--text-xs);color:var(--ink-muted);font-weight:600}
@@ -1923,14 +1943,14 @@ dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
 .ledgerrow .txt.done{text-decoration:line-through;color:var(--ink-faint)}
 .ledger-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .ledger-tag{
-  font-size:var(--text-xs);font-weight:800;padding:2.5px 7px;border-radius:var(--radius-xs);
+  font-size:var(--text-xs);font-weight:700;padding:2.5px 7px;border-radius:var(--radius-xs);
   background:color-mix(in srgb, var(--course,var(--accent)) 16%, transparent);
   color:color-mix(in srgb, var(--course,var(--accent)) 85%, var(--ink) 15%);
 }
 .ledger-date{font-size:var(--text-xs);font-weight:700;color:var(--ink-faint)}
-.ledger-date.today{color:var(--accent);font-weight:800}
+.ledger-date.today{color:var(--accent);font-weight:700}
 .ledger-date.soon{color:var(--ink-muted)}
-.ledger-date.overdue{color:var(--danger);font-weight:800}
+.ledger-date.overdue{color:var(--danger);font-weight:700}
 .ledger-snippet{font-size:var(--text-sm);color:var(--ink-faint);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
 .ledger-del{background:none;border:0;color:var(--ink-faint);padding:4px;flex:none;border-radius:var(--radius-xs)}
 .ledger-del svg{width:14px;height:14px}
@@ -1991,7 +2011,7 @@ dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
 @media (min-width:640px){.class-action-sheet{border-radius:var(--radius-xl)}}
 .sheet-handle{width:40px;height:4px;border-radius:var(--radius-pill);background:var(--border-strong);margin:0 auto 14px}
 .class-action-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
-.sheet-code{font-size:var(--text-sm);font-weight:800;color:var(--accent)}
+.sheet-code{font-size:var(--text-sm);font-weight:700;color:var(--accent)}
 .class-action-head h2{font-size:var(--text-lg);margin-top:3px}
 .class-action-head p{margin:3px 0 0;font-size:var(--text-sm);color:var(--ink-muted);font-weight:500}
 .class-action-grid{display:flex;flex-direction:column;gap:9px;margin-top:16px}
@@ -2025,7 +2045,7 @@ dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
 .term-heatmap-row .label{min-width:96px;font-size:var(--text-sm);font-weight:700;color:var(--ink-muted)}
 .term-heatmap-row .bar-track{flex:1;height:8px;border-radius:var(--radius-pill);background:var(--bg-panel);overflow:hidden}
 .term-heatmap-row .bar-track span{display:block;height:100%;border-radius:inherit;background:var(--accent)}
-.term-heatmap-row .count{min-width:20px;text-align:right;font-size:var(--text-sm);font-weight:800}
+.term-heatmap-row .count{min-width:20px;text-align:right;font-size:var(--text-sm);font-weight:700}
 
 /* ============ Shortcuts ============ */
 .shortcut-card{max-width:400px}
@@ -2066,7 +2086,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 }
 .home-legend .legend-item>*{position:relative}
 .home-legend .legend-item b{
-  position:relative;margin-left:2px;font-size:var(--text-xs);font-weight:800;
+  position:relative;margin-left:2px;font-size:var(--text-xs);font-weight:700;
   color:var(--ink-faint);font-variant-numeric:tabular-nums;
 }
 
@@ -2094,7 +2114,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .panel-compact .panel-heading h2{font-size:var(--text-md)}
 .panel-compact .overline{margin-bottom:2px;font-size:var(--text-xs)}
 .fb-time{color:var(--ink-muted);font-weight:600}
-.fb-dur{font-weight:800;color:var(--accent);flex:none;font-size:var(--text-sm)}
+.fb-dur{font-weight:700;color:var(--accent);flex:none;font-size:var(--text-sm)}
 
 .exam-strip,.term-progress-head{transition:transform .15s ease,box-shadow .15s ease}
 @media (hover:hover){
@@ -2133,7 +2153,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 }
 .tc-tag svg{width:12px;height:12px}
 .tc-dur{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint);font-variant-numeric:tabular-nums}
-.trip-card h3{margin:9px 0 0;font-size:var(--text-md);font-weight:800;line-height:var(--lh-snug);color:var(--ink)}
+.trip-card h3{margin:9px 0 0;font-size:var(--text-md);font-weight:700;line-height:var(--lh-snug);color:var(--ink)}
 /* Depart, the venue on the line between, return — the shape of a journey, so it
    reads as one even before the times are read. */
 .tc-leg{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
@@ -2161,7 +2181,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .free-run-card header{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .frc-tag{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--accent-2)}
 .frc-len{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint);font-variant-numeric:tabular-nums}
-.free-run-card h3{margin:8px 0 0;font-size:var(--text-md);font-weight:800;line-height:var(--lh-snug);color:var(--ink)}
+.free-run-card h3{margin:8px 0 0;font-size:var(--text-md);font-weight:700;line-height:var(--lh-snug);color:var(--ink)}
 .frc-span{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
 .frc-end{display:flex;flex-direction:column;gap:2px;flex:none;max-width:40%}
 .frc-to{align-items:flex-end;text-align:right}
@@ -2345,7 +2365,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .fac-avatar{
   flex:none;width:44px;height:44px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--font);font-size:var(--text-md);font-weight:800;letter-spacing:0;
+  font-family:var(--font);font-size:var(--text-md);font-weight:700;letter-spacing:0;
   color:#fff;background:hsl(var(--fac-hue,260) 42% 44%);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
 }
@@ -2411,3 +2431,33 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .mwg-cell b[data-meal="lunch"],.day-pill.is-today[data-meal="lunch"],.mess-now-line[data-meal="lunch"]{--meal-accent:#d4764a;color:#d4764a}
 .mwg-cell b[data-meal="dinner"],.day-pill.is-today[data-meal="dinner"],.mess-now-line[data-meal="dinner"]{--meal-accent:#5b86c4;color:#5b86c4}
 .day-pill.is-today[data-meal],.mess-now-line[data-meal]{color:inherit}
+
+/* ============ The italic voice ============
+   Fraunces italic carries the lines that comment on the schedule rather than state
+   it — the context line under the greeting, the card's read on the day, what comes
+   next for a professor, and the copy under an empty state. Four places, all of them
+   asides, which is the one job an italic should have in an interface. */
+.home-sync-text,.hero-insight,.fac-next,.empty-state small,.frc-sub,.tc-note{
+  font-family:var(--font-display);font-style:italic;font-weight:var(--w-body);
+  letter-spacing:var(--track-normal);
+}
+.home-sync-text{font-size:var(--text-md);color:var(--ink-faint)}
+.hero-insight{font-size:var(--text-md)}
+.fac-next,.frc-sub,.tc-note{font-size:var(--text-md)}
+.empty-state small{font-size:var(--text-md)}
+
+/* A person's name is the one string in the app that is genuinely editorial, and a
+   serif is what names are set in. */
+.fac-body strong,.fac-chip b{font-family:var(--font-display);font-weight:var(--w-strong);letter-spacing:var(--track-normal)}
+.fac-body strong{font-size:var(--text-lg)}
+
+/* Uppercase was doing too much. These three are short phrases, not codes: set in
+   sentence case they stop competing with the labels that have earned their caps. */
+.sr-kind-pill,.tc-tag,.frc-tag{text-transform:none;letter-spacing:var(--track-tight)}
+.sr-kind-pill{font-size:var(--text-xs);font-weight:var(--w-bold)}
+.tc-tag,.frc-tag{font-size:var(--text-sm);font-weight:var(--w-bold)}
+
+/* Serif headlines want tighter leading than the sans they replaced; body copy wants
+   a touch more than it had. */
+h1,h2,.course-card h3,.hero-card h2#focusTitle{line-height:1.14}
+.sr-subj,.cc-topics li span{line-height:1.45}
