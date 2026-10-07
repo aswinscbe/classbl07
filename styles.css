@@ -104,6 +104,20 @@
   --w-strong:600;
   --w-bold:700;
   --w-label:800;
+
+  /* Motion was nine durations deep — .12 .15 .2 .22 .25 .28 .3 .35 .4 .5 — every one
+     of them on the browser's default `ease`, which is a symmetric curve. Symmetric
+     easing is why interface motion reads as mechanical: real things leave quickly and
+     arrive slowly. Four durations, three curves, and the decelerating one is the
+     default because almost everything here is something arriving. */
+  --dur-xs:120ms;
+  --dur-sm:200ms;
+  --dur-md:320ms;
+  --dur-lg:520ms;
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --ease-in-out:cubic-bezier(.65,0,.35,1);
+  /* Overshoots slightly: for a press releasing, or a badge popping in. */
+  --ease-spring:cubic-bezier(.34,1.46,.64,1);
   /* Three line-height roles instead of seven ad-hoc ratios, so baselines line up
      between neighbouring elements. */
   --lh-flat:1;
@@ -218,9 +232,9 @@ body{
   min-height:100vh;
   min-height:100dvh;
   overscroll-behavior-y:none;
-  transition:background-color .35s ease,color .35s ease;
+  transition:background-color var(--dur-md) var(--ease-out),color var(--dur-md) var(--ease-out);
 }
-.theme-transition,.theme-transition *{transition:background-color .3s ease,border-color .3s ease,color .3s ease !important}
+.theme-transition,.theme-transition *{transition:background-color var(--dur-md) var(--ease-out),border-color var(--dur-md) var(--ease-out),color var(--dur-md) var(--ease-out) !important}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 a{color:inherit;text-decoration:none}
@@ -311,7 +325,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   position:absolute;top:-44px;left:50%;transform:translate(-50%,0) rotate(0deg);width:34px;height:34px;
   border-radius:50%;background:var(--bg-elevated);border:1px solid var(--border);box-shadow:var(--shadow-sm);
   display:flex;align-items:center;justify-content:center;color:var(--ink-muted);opacity:0;
-  transition:opacity .15s ease;pointer-events:none;z-index:5;
+  transition:opacity var(--dur-sm) var(--ease-out);pointer-events:none;z-index:5;
 }
 .pull-refresh svg{width:16px;height:16px}
 .pull-refresh.pulling{opacity:1}
@@ -323,11 +337,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   position:absolute;top:-48px;left:50%;margin-left:-18px;
   width:36px;height:36px;border-radius:50%;background:var(--bg-elevated);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-md);
-  transform:translateY(var(--pull,0px));transition:transform .25s ease,opacity .25s ease;z-index:5;
+  transform:translateY(var(--pull,0px));transition:transform var(--dur-md) var(--ease-out),opacity var(--dur-md) var(--ease-out);z-index:5;
   opacity:var(--pull-ratio,0);pointer-events:none;
 }
 .ptr-indicator.loading{opacity:1}
-.ptr-spinner{width:18px;height:18px;color:var(--ink-muted);display:flex;transition:transform .15s ease,color .15s ease}
+.ptr-spinner{width:18px;height:18px;color:var(--ink-muted);display:flex;transition:transform var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out)}
 .ptr-spinner svg{width:100%;height:100%}
 .ptr-indicator.ready .ptr-spinner{color:var(--accent);transform:rotate(180deg)}
 .ptr-indicator.loading{transition:none}
@@ -350,7 +364,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-enter .hero-pills .hero-pill:nth-child(3){animation-delay:.26s}
 .hero-enter .hero-pills .hero-pill:nth-child(4){animation-delay:.31s}
 @keyframes hero-pill-in{from{opacity:0;transform:translateY(5px) scale(.92)}to{opacity:1;transform:none}}
-.hero-pill.accent{transition:background .3s ease}
+.hero-pill.accent{transition:background var(--dur-md) var(--ease-out)}
 .hero-card.is-urgent .hero-pill.accent{animation:urgent-pill-pulse 1.1s ease-in-out infinite}
 @keyframes urgent-pill-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--amber) 0%, transparent)}50%{box-shadow:0 0 0 4px color-mix(in srgb, var(--amber) 25%, transparent)}}
 @media(prefers-reduced-motion: reduce){.hero-card.is-urgent .hero-pill.accent{animation:none}}
@@ -358,7 +372,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .desktop-nav{position:relative}
 .desktop-nav-indicator{position:absolute;top:0;left:0;height:100%;border-radius:var(--radius-sm);background:var(--accent-soft);z-index:0;transition:transform .3s cubic-bezier(.34,1.1,.64,1),width .3s cubic-bezier(.34,1.1,.64,1);pointer-events:none;opacity:0}
 .desktop-nav-indicator.ready{opacity:1}
-.desktop-nav-item{position:relative;z-index:1;transition:color .2s ease}
+.desktop-nav-item{position:relative;z-index:1;transition:color var(--dur-sm) var(--ease-out)}
 .desktop-nav-item.active{background:none;color:var(--accent)}
 
 /* ============ Topbar — glass bar, gradient hairline, contextual page label ============ */
@@ -373,7 +387,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .topbar::after{
   content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
   background:linear-gradient(90deg,transparent,color-mix(in srgb, var(--accent) 45%, transparent) 20%,color-mix(in srgb, var(--accent-2) 45%, transparent) 55%,transparent 85%);
-  opacity:.35;transition:opacity .25s ease;
+  opacity:.35;transition:opacity var(--dur-md) var(--ease-out);
 }
 .topbar.is-scrolled::after{opacity:.9}
 .topbar.is-scrolled{background:color-mix(in srgb, var(--bg) 92%, transparent);box-shadow:0 8px 24px -12px rgba(0,0,0,.4)}
@@ -384,7 +398,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .brand-copy{display:flex;flex-direction:column;line-height:var(--lh-snug);text-align:left}
 .brand-copy strong{font-family:var(--font-display);font-size:var(--text-md);font-weight:700;letter-spacing:var(--track-tight)}
-.brand-copy small{font-size:var(--text-xs);font-weight:700;letter-spacing:var(--track-label);color:var(--ink-faint);transition:opacity .15s ease}
+.brand-copy small{font-size:var(--text-xs);font-weight:700;letter-spacing:var(--track-label);color:var(--ink-faint);transition:opacity var(--dur-sm) var(--ease-out)}
 .desktop-nav{display:none;gap:2px;margin-right:auto;margin-left:20px}
 .desktop-nav-item{
   display:flex;align-items:center;gap:8px;
@@ -408,7 +422,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    until pressed, so the row reads as icons first, not four repeated tiles. */
 .top-actions .icon-button{
   background:transparent;border-color:transparent;color:var(--ink-muted);
-  transition:background .15s ease,color .15s ease,transform .12s ease;
+  transition:background var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out),transform var(--dur-xs) var(--ease-spring);
 }
 @media (hover:hover){.top-actions .icon-button:hover{background:color-mix(in srgb, var(--ink) 7%, transparent);color:var(--ink)}}
 .top-actions .icon-button:active{background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)}
@@ -419,7 +433,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 @keyframes icon-morph{0%{transform:rotate(-90deg) scale(.5);opacity:0}100%{transform:rotate(0) scale(1);opacity:1}}
 .icon-button-lg{width:46px;height:46px;border-radius:var(--radius-md)}
 .icon-button-lg svg{width:22px;height:22px}
-.notification-button{transition:box-shadow .3s ease}
+.notification-button{transition:box-shadow var(--dur-md) var(--ease-out)}
 .notification-button:has(b:not([hidden])){box-shadow:0 0 0 1px var(--border), 0 0 10px -4px color-mix(in srgb, var(--danger) 30%, transparent)}
 .notification-button b,#ledgerButton b{
   position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:var(--radius-pill);
@@ -475,7 +489,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .bottom-nav-indicator{
   position:absolute;top:6px;bottom:6px;left:0;border-radius:var(--radius-md);
   background:var(--accent-soft);z-index:0;opacity:0;
-  transition:transform .3s cubic-bezier(.34,1.1,.64,1),width .3s cubic-bezier(.34,1.1,.64,1),opacity .2s ease;
+  transition:transform .3s cubic-bezier(.34,1.1,.64,1),width .3s cubic-bezier(.34,1.1,.64,1),opacity var(--dur-sm) var(--ease-out);
 }
 .bottom-nav-indicator.ready{opacity:1}
 .nav-item{
@@ -483,7 +497,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0;
   background:none;border:0;color:var(--ink-muted);padding:6px 4px;border-radius:var(--radius-md);
   font-size:var(--text-xs);font-weight:700;white-space:nowrap;
-  transition:color .2s ease;
+  transition:color var(--dur-sm) var(--ease-out);
 }
 .nav-item svg{width:20px;height:20px}
 .nav-item.active{color:var(--accent-2)}
@@ -524,7 +538,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:var(--accent);color:#fff;border:0;border-radius:var(--radius-md);
   padding:12px 18px;font-size:var(--text-md);font-weight:700;
   box-shadow:0 3px 12px -4px color-mix(in srgb, var(--accent) 32%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
-  transition:transform .12s ease, box-shadow .2s ease;
+  transition:transform var(--dur-xs) var(--ease-spring), box-shadow var(--dur-sm) var(--ease-out);
 }
 @media (hover:hover){
   .primary-button:hover{box-shadow:0 4px 16px -4px color-mix(in srgb, var(--accent) 40%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent)}
@@ -575,7 +589,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
   border:1px solid var(--border);
   position:relative;overflow:hidden;
-  transition:background .4s ease, border-color .4s ease, box-shadow .4s ease;
+  transition:background var(--dur-lg) var(--ease-out), border-color var(--dur-lg) var(--ease-out), box-shadow var(--dur-lg) var(--ease-out);
 }
 .hero-card::after{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;mix-blend-mode:overlay;
@@ -699,7 +713,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
     radial-gradient(circle at -10% 110%, color-mix(in srgb, var(--accent-2) 10%, transparent) 0%, transparent 50%);
 }
 .exam-hero>*{position:relative;z-index:1}
-.exam-hero.is-imminent{animation:exam-glow 2.2s ease-in-out infinite}
+.exam-hero.is-imminent{animation:exam-glow 2var(--dur-sm) var(--ease-out)-in-out infinite}
 @keyframes exam-glow{
   0%,100%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 28px -12px color-mix(in srgb, var(--course,var(--danger)) 24%, transparent), 0 0 0 1px color-mix(in srgb, var(--course,var(--danger)) 15%, transparent)}
   50%{box-shadow:var(--shadow-md), inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 3%, transparent), 0 0 38px -8px color-mix(in srgb, var(--course,var(--danger)) 34%, transparent), 0 0 0 1px color-mix(in srgb, var(--course,var(--danger)) 32%, transparent)}
@@ -746,7 +760,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin-top:12px;padding:11px 14px;border-radius:var(--radius-md);
   background:color-mix(in srgb, var(--accent-2) 10%, var(--bg-elevated));
   border:1px solid color-mix(in srgb, var(--accent-2) 28%, var(--border));font:inherit;color:var(--ink);
-  box-shadow:var(--shadow-sm);transition:transform .12s ease;
+  box-shadow:var(--shadow-sm);transition:transform var(--dur-xs) var(--ease-spring);
 }
 .exam-strip:active{transform:scale(.98)}
 .exam-strip-code{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--accent-2);background:color-mix(in srgb, var(--accent-2) 16%, transparent);padding:3px 7px;border-radius:var(--radius-pill);flex-shrink:0}
@@ -785,7 +799,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .hero-day-arrow{
   width:28px;height:28px;border-radius:var(--radius-xs);border:0;background:transparent;color:var(--on-grad-muted);
   display:grid;place-items:center;cursor:pointer;flex:none;padding:0;
-  transition:background .15s ease,color .15s ease,opacity .15s ease,transform .12s ease;
+  transition:background var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out),opacity var(--dur-sm) var(--ease-out),transform var(--dur-xs) var(--ease-spring);
 }
 .hero-day-arrow svg{width:15px;height:15px}
 .hero-day-arrow:disabled{opacity:.22;cursor:default}
@@ -831,7 +845,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .snm-rule{flex:1;height:1px;background:linear-gradient(90deg,color-mix(in srgb, var(--course,var(--live)) 40%, transparent),transparent)}
 .sched-gap svg{width:12px;height:12px;flex:none}
 
-.sched-row{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s ease,transform .12s ease}
+.sched-row{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background var(--dur-sm) var(--ease-out),transform var(--dur-xs) var(--ease-spring)}
 .sched-row:last-child{border-bottom:0}
 .sched-row:active{transform:scale(.99)}
 /* Wide enough for "– 3:30 pm" on one line at the 11px label size. */
@@ -938,7 +952,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sds-icon{width:20px;height:20px;flex:none;border-radius:var(--radius-pill);display:grid;place-items:center;background:var(--live-soft);color:var(--live)}
 .sds-icon svg{width:12px;height:12px}
 .sds-text{flex:1;font-size:var(--text-sm);font-weight:700}
-.sds-chevron{width:16px;height:16px;flex:none;color:var(--ink-faint);transition:transform .2s ease}
+.sds-chevron{width:16px;height:16px;flex:none;color:var(--ink-faint);transition:transform var(--dur-sm) var(--ease-out)}
 .sds-chevron svg{width:16px;height:16px}
 .sched-done-summary.open .sds-chevron{transform:rotate(90deg)}
 .sched-done-block{display:contents}
@@ -956,7 +970,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .is-loading::after{
   content:"";position:absolute;inset:0;border-radius:inherit;
   background:linear-gradient(90deg, var(--bg-panel) 22%, var(--bg-elevated) 50%, var(--bg-panel) 78%);
-  background-size:250% 100%;animation:shimmer-sweep 1.3s ease-in-out infinite;
+  background-size:250% 100%;animation:shimmer-sweep 1var(--dur-md) var(--ease-out)-in-out infinite;
 }
 /* Two at-a-glance facts side by side, sized so the pair costs one row, not two. */
 .today-strips{display:flex;gap:8px;margin-top:14px}
@@ -1098,7 +1112,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:flex;align-items:center;justify-content:center;gap:8px;flex:1;min-width:0;
   background:none;border:0;color:var(--ink-muted);cursor:pointer;
   padding:11px 16px;border-radius:var(--radius-sm);font-size:var(--text-md);font-weight:700;letter-spacing:var(--track-tight);
-  transition:background .2s ease,color .2s ease,box-shadow .2s ease;
+  transition:background var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out),box-shadow var(--dur-sm) var(--ease-out);
 }
 .subtab svg{width:17px;height:17px}
 .subtab.active{
@@ -1109,11 +1123,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 @media (hover:hover){.month-open-button:hover{border-color:color-mix(in srgb, var(--accent) 45%, var(--border))}}
 @media (max-width:379px){.month-open-button span:last-child{display:none}.month-open-button{padding:0 14px}}
 .campus-view{display:none}
-.campus-view.active{display:block;animation:fade-in .15s ease}
+.campus-view.active{display:block;animation:fade-in var(--dur-sm) var(--ease-out)}
 .planner-view{display:none}
-.planner-view.active{display:block;animation:fade-in .15s ease}
+.planner-view.active{display:block;animation:fade-in var(--dur-sm) var(--ease-out)}
 .profile-view{display:none}
-.profile-view.active{display:block;animation:fade-in .15s ease}
+.profile-view.active{display:block;animation:fade-in var(--dur-sm) var(--ease-out)}
 
 /* ============ Campus / Bus ============ */
 .route-planner{margin-top:14px;padding:18px}
@@ -1149,7 +1163,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:var(--bg-elevated);border:1px solid var(--border-strong);border-radius:var(--radius-pill);padding:9px 15px;
   font-size:var(--text-sm);font-weight:700;color:var(--ink);white-space:nowrap;flex:none;cursor:pointer;
   display:inline-flex;align-items:center;gap:7px;box-shadow:var(--shadow-sm);
-  transition:transform .12s ease,border-color .2s ease,background .2s ease;
+  transition:transform var(--dur-xs) var(--ease-spring),border-color var(--dur-sm) var(--ease-out),background var(--dur-sm) var(--ease-out);
 }
 .filter-chip svg{width:14px;height:14px;color:var(--accent)}
 @media (hover:hover){.filter-chip:hover{border-color:color-mix(in srgb, var(--accent) 45%, var(--border-strong))}}
@@ -1218,10 +1232,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .route-map{display:flex;align-items:center;margin-top:14px}
 .route-map-seg{flex:1;height:2px;min-width:10px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb, var(--accent) 40%, transparent))}
 .route-map-stop{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);flex:none}
-.route-map-stop.is-origin{width:12px;height:12px;background:var(--live);box-shadow:0 0 0 5px color-mix(in srgb, var(--live) 22%, transparent);animation:route-origin-pulse 2.4s ease-in-out infinite}
+.route-map-stop.is-origin{width:12px;height:12px;background:var(--live);box-shadow:0 0 0 5px color-mix(in srgb, var(--live) 22%, transparent);animation:route-origin-pulse 2var(--dur-lg) var(--ease-out)-in-out infinite}
 @keyframes route-origin-pulse{0%,100%{box-shadow:0 0 0 5px color-mix(in srgb, var(--live) 22%, transparent)}50%{box-shadow:0 0 0 7px color-mix(in srgb, var(--live) 14%, transparent)}}
 @media(prefers-reduced-motion: reduce){.route-map-stop.is-origin{animation:none}}
-.next-bus-card.is-urgent .route-map-stop:last-child{background:var(--amber);box-shadow:0 0 0 4px color-mix(in srgb, var(--amber) 22%, transparent);animation:empty-icon-breathe 1.4s ease-in-out infinite}
+.next-bus-card.is-urgent .route-map-stop:last-child{background:var(--amber);box-shadow:0 0 0 4px color-mix(in srgb, var(--amber) 22%, transparent);animation:empty-icon-breathe 1var(--dur-lg) var(--ease-out)-in-out infinite}
 .next-bus-card.is-urgent .leaving-soon-toggle{border-color:var(--amber)}
 @media(prefers-reduced-motion: reduce){.next-bus-card.is-urgent .route-map-stop:last-child{animation:none}}
 .route-map-labels{display:flex;justify-content:space-between;gap:6px;margin-top:7px}
@@ -1241,10 +1255,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .countdown-ring .ring-fill{
   stroke:var(--accent-2);stroke-linecap:round;
   stroke-dasharray:113;stroke-dashoffset:calc(113 - (113 * var(--pct,0) / 100));
-  transition:stroke-dashoffset .4s ease;
+  transition:stroke-dashoffset var(--dur-lg) var(--ease-out);
   filter:drop-shadow(0 0 3px color-mix(in srgb, var(--accent-2) 55%, transparent));
 }
-.countdown-ring.urgent{animation:countdown-glow 1.3s ease-in-out infinite;border-radius:50%}
+.countdown-ring.urgent{animation:countdown-glow 1var(--dur-md) var(--ease-out)-in-out infinite;border-radius:50%}
 .countdown-ring.urgent .ring-fill{stroke:var(--danger)}
 @keyframes countdown-glow{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 6px color-mix(in srgb, var(--danger) 65%, transparent))}}
 @media(prefers-reduced-motion: reduce){.countdown-ring.urgent{animation:none}}
@@ -1262,7 +1276,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:var(--radius-md);
   border:1px solid var(--border);background:var(--bg-panel);margin-bottom:6px;
   box-shadow:0 2px 8px rgba(0,0,0,.1);
-  transition:background .2s ease,border-color .2s ease,box-shadow .2s ease;
+  transition:background var(--dur-sm) var(--ease-out),border-color var(--dur-sm) var(--ease-out),box-shadow var(--dur-sm) var(--ease-out);
 }
 .board-row-avatar{width:34px;height:34px;border-radius:var(--radius-sm);flex:none;display:grid;place-items:center}
 .board-row-avatar svg{width:17px;height:17px}
@@ -1447,7 +1461,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   margin-top:4px;padding:12px 14px;border-radius:var(--radius-md);
   background:var(--bg-panel);border:1px solid var(--border);color:var(--ink);
   display:flex;align-items:center;justify-content:space-between;
-  transition:border-color .3s ease;
+  transition:border-color var(--dur-md) var(--ease-out);
 }
 .accent-preview-tag{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint)}
 .accent-preview strong{
@@ -1464,7 +1478,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .seg-opt{
   flex:1;min-width:0;background:none;border:0;padding:9px 8px;border-radius:var(--radius-xs);
   font:inherit;font-size:var(--text-sm);font-weight:700;color:var(--ink-muted);cursor:pointer;
-  transition:background .2s ease,color .2s ease;
+  transition:background var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out);
 }
 .seg-opt.active{background:var(--bg-elevated);color:var(--accent);box-shadow:var(--shadow-sm)}
 /* One button reads as an action; the mirrored A/B slider read as the section setting
@@ -1482,11 +1496,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .accent-reset-button{
   background:none;border:0;padding:0;font:inherit;font-size:var(--text-sm);font-weight:600;
   color:var(--ink-faint);cursor:pointer;text-decoration:underline;text-underline-offset:2px;
-  transition:color .15s ease;
+  transition:color var(--dur-sm) var(--ease-out);
 }
 .accent-reset-button:hover{color:var(--ink-muted)}
 .accent-swatches{display:flex;gap:10px}
-.accent-swatch{width:32px;height:32px;border-radius:50%;border:2px solid transparent;background:var(--swatch);cursor:pointer;padding:0;position:relative;box-shadow:0 2px 6px -2px rgba(0,0,0,.3);transition:transform .2s ease}
+.accent-swatch{width:32px;height:32px;border-radius:50%;border:2px solid transparent;background:var(--swatch);cursor:pointer;padding:0;position:relative;box-shadow:0 2px 6px -2px rgba(0,0,0,.3);transition:transform var(--dur-sm) var(--ease-out)}
 .accent-swatch.active{border-color:var(--ink);box-shadow:0 0 10px -1px var(--swatch), 0 2px 6px -2px rgba(0,0,0,.3)}
 .accent-swatch.active::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1.5px solid var(--swatch)}
 .accent-swatch.just-picked{animation:swatch-pop .35s cubic-bezier(.34,1.56,.64,1)}
@@ -1546,7 +1560,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .week-arrow{
   width:32px;height:32px;border-radius:50%;flex:none;
   background:color-mix(in srgb, var(--ink) 6%, transparent);border:1px solid var(--border-strong);color:var(--ink-muted);
-  transition:background .15s ease,color .15s ease,border-color .15s ease,transform .12s ease;
+  transition:background var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out),border-color var(--dur-sm) var(--ease-out),transform var(--dur-xs) var(--ease-spring);
 }
 .week-arrow svg{width:15px;height:15px}
 .week-arrow:active{transform:scale(.88);background:var(--accent-soft);color:var(--accent);border-color:transparent}
@@ -1563,7 +1577,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   border:1px solid var(--border);
   font:inherit;color:inherit;cursor:pointer;position:relative;
   background:color-mix(in srgb, var(--accent) calc(var(--load,0) * 32%), var(--bg-panel));
-  transition:background .25s ease,transform .12s ease;
+  transition:background var(--dur-md) var(--ease-out),transform var(--dur-xs) var(--ease-spring);
 }
 .wc-cell:active{transform:scale(.94)}
 .wc-dow{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint)}
@@ -1671,7 +1685,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:inline-flex;align-items:center;gap:6px;justify-content:center;
   background:linear-gradient(135deg,var(--accent),color-mix(in srgb, var(--accent) 70%, #7a63e0));
   color:#fff;border:0;border-radius:var(--radius-pill);padding:7px 15px;font-size:var(--text-sm);font-weight:700;
-  cursor:pointer;transition:transform .12s ease;box-shadow:0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  cursor:pointer;transition:transform var(--dur-xs) var(--ease-spring);box-shadow:0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .today-button:active{transform:scale(.96)}
 .weekday-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin:0 2px 10px;padding:0 2px}
@@ -1681,7 +1695,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .month-week{
   display:grid;grid-template-columns:repeat(7,1fr);gap:2px;
   padding:2px;border-radius:var(--radius-md);border:1px solid transparent;
-  transition:background .25s ease,border-color .25s ease;
+  transition:background var(--dur-md) var(--ease-out),border-color var(--dur-md) var(--ease-out);
 }
 /* The week you are working in, banded as one continuous row rather than seven
    separately tinted squares with gaps knocking holes in the band. */
@@ -1694,7 +1708,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   background:color-mix(in srgb, var(--accent) calc(var(--density,0) * 16%), transparent);
   color:var(--ink);position:relative;cursor:pointer;padding:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  transition:transform .15s ease,background .2s ease;
+  transition:transform var(--dur-sm) var(--ease-out),background var(--dur-sm) var(--ease-out);
 }
 .calendar-day:active{transform:scale(.9)}
 @media (hover:hover){.calendar-day:hover{background:color-mix(in srgb, var(--ink) 7%, transparent)}}
@@ -1736,7 +1750,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .legend-item{
   display:flex;align-items:center;gap:6px;font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);
   background:none;border:1px solid transparent;border-radius:var(--radius-pill);padding:4px 9px 4px 7px;cursor:pointer;
-  transition:transform .12s ease,background .15s ease;
+  transition:transform var(--dur-xs) var(--ease-spring),background var(--dur-sm) var(--ease-out);
 }
 .legend-item i{width:7px;height:7px;border-radius:50%;background:var(--course,var(--accent));flex:none}
 .legend-item:hover{background:var(--bg-panel)}
@@ -1767,7 +1781,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   padding:8px 16px;font-size:var(--text-sm);font-weight:600;
   background:var(--danger-soft);color:var(--danger);
   border-bottom:1px solid color-mix(in srgb, var(--danger) 25%, transparent);
-  animation:offline-drop .28s ease;
+  animation:offline-drop var(--dur-md) var(--ease-out);
 }
 .offline-dot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex:none;animation:pulse 1.8s ease-in-out infinite}
 @keyframes offline-drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
@@ -1779,9 +1793,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .term-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .term-ring circle{fill:none;stroke-width:5}
 .term-ring .ring-track{stroke:var(--accent-soft)}
-.term-ring .ring-fill{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:163.4;stroke-dashoffset:calc(163.4 - (163.4 * var(--pct,0) / 100));transition:stroke-dashoffset .5s ease}
+.term-ring .ring-fill{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:163.4;stroke-dashoffset:calc(163.4 - (163.4 * var(--pct,0) / 100));transition:stroke-dashoffset var(--dur-lg) var(--ease-out)}
 /* Butt caps, not round — round ends would overlap the neighbouring course's arc. */
-.term-ring .ring-seg{stroke-linecap:butt;transition:stroke-dasharray .5s ease}
+.term-ring .ring-seg{stroke-linecap:butt;transition:stroke-dasharray var(--dur-lg) var(--ease-out)}
 .term-ring b{position:relative;font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--accent)}
 .term-ring-meta{display:flex;flex-direction:column;min-width:0}
 .term-ring-meta strong{font-size:var(--text-md);font-weight:700}
@@ -1791,7 +1805,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .session-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .session-ring circle{fill:none;stroke-width:4}
 .session-ring .ring-track{stroke:color-mix(in srgb, var(--course,var(--accent)) 14%, transparent)}
-.session-ring .ring-fill{stroke:var(--course,var(--accent));stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:calc(100 - (100 * var(--pct,0) / 100));transition:stroke-dashoffset .4s ease}
+.session-ring .ring-fill{stroke:var(--course,var(--accent));stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:calc(100 - (100 * var(--pct,0) / 100));transition:stroke-dashoffset var(--dur-lg) var(--ease-out)}
 .session-ring b{position:relative;font-size:var(--text-sm);font-weight:700;color:var(--course,var(--accent))}
 .session-ring-meta{display:flex;flex-direction:column;min-width:0}
 .session-ring-meta strong{font-size:var(--text-sm);font-weight:700}
@@ -1811,7 +1825,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .task-item div{flex:1;min-width:0}
 .task-item strong{font-size:var(--text-md);font-weight:700}
 .task-item.completed strong{text-decoration:line-through;color:var(--ink-faint)}
-.task-item.task-completing strong{text-decoration:line-through;text-decoration-color:transparent;animation:task-strike .28s ease forwards;color:var(--ink-faint);transition:color .28s ease}
+.task-item.task-completing strong{text-decoration:line-through;text-decoration-color:transparent;animation:task-strike var(--dur-md) var(--ease-out) forwards;color:var(--ink-faint);transition:color var(--dur-md) var(--ease-out)}
 .task-item.task-completing input[type="checkbox"]{animation:task-check-pop .28s cubic-bezier(.34,1.56,.64,1)}
 @keyframes task-strike{from{text-decoration-color:transparent}to{text-decoration-color:currentColor}}
 @keyframes task-check-pop{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
@@ -1830,7 +1844,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .notification-drawer.open .notification-backdrop{opacity:1}
 .notification-panel{
   position:absolute;top:0;right:0;bottom:0;width:min(400px,92vw);background:var(--bg);
-  padding:18px;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease;
+  padding:18px;display:flex;flex-direction:column;transform:translateX(100%);transition:transform var(--dur-sm) var(--ease-out);
   box-shadow:-16px 0 40px -20px rgba(0,0,0,.4);border-left:1px solid var(--border);
 }
 .notification-drawer.open .notification-panel{transform:none}
@@ -1862,10 +1876,10 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* ============ Dialogs (generic) ============ */
 dialog{border:0;padding:0;background:transparent;color:inherit;max-width:min(520px,92vw);width:100%;overflow:visible}
 dialog::backdrop{background:rgba(10,8,4,.55);backdrop-filter:blur(2px)}
-dialog[open]{animation:dialog-in .26s cubic-bezier(.22,1,.36,1)}
-dialog[open]::backdrop{animation:fade-in-backdrop .26s ease}
-dialog.closing{animation:dialog-out .16s cubic-bezier(.4,0,1,1) forwards}
-dialog.closing::backdrop{animation:fade-out-backdrop .16s ease forwards}
+dialog[open]{animation:dialog-in var(--dur-md) var(--ease-spring)}
+dialog[open]::backdrop{animation:fade-in-backdrop var(--dur-md) var(--ease-out)}
+dialog.closing{animation:dialog-out var(--dur-sm) cubic-bezier(.4,0,1,1) forwards}
+dialog.closing::backdrop{animation:fade-out-backdrop var(--dur-sm) var(--ease-out) forwards}
 @keyframes dialog-in{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
 @keyframes dialog-out{from{opacity:1;transform:none}to{opacity:0;transform:scale(.97) translateY(6px)}}
 @keyframes fade-in-backdrop{from{opacity:0}to{opacity:1}}
@@ -2058,7 +2072,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
   position:fixed;left:50%;bottom:104px;transform:translate(-50%,16px);z-index:80;
   background:var(--bg-raised);color:var(--ink);border:1px solid var(--border);padding:13px 18px;border-radius:var(--radius-md);
   font-size:var(--text-md);font-weight:600;opacity:0;pointer-events:none;box-shadow:var(--shadow-lg);
-  transition:transform .2s ease,opacity .2s ease;
+  transition:transform var(--dur-sm) var(--ease-out),opacity var(--dur-sm) var(--ease-out);
 }
 .app-toast.show{opacity:1;transform:translate(-50%,0)}
 @media (min-width:900px){.app-toast{bottom:28px}}
@@ -2116,7 +2130,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .fb-time{color:var(--ink-muted);font-weight:600}
 .fb-dur{font-weight:700;color:var(--accent);flex:none;font-size:var(--text-sm)}
 
-.exam-strip,.term-progress-head{transition:transform .15s ease,box-shadow .15s ease}
+.exam-strip,.term-progress-head{transition:transform var(--dur-sm) var(--ease-out),box-shadow var(--dur-sm) var(--ease-out)}
 @media (hover:hover){
   .exam-strip:hover,.term-progress-head:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 }
@@ -2262,7 +2276,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
   content:"";position:absolute;top:-40%;right:-25%;width:75%;height:110%;
   pointer-events:none;z-index:0;
   background:radial-gradient(closest-side,color-mix(in srgb, var(--focus-course,var(--accent)) 26%, transparent),transparent 70%);
-  opacity:.5;transition:opacity .5s ease,background .5s ease;
+  opacity:.5;transition:opacity var(--dur-lg) var(--ease-out),background var(--dur-lg) var(--ease-out);
 }
 .hero-card.has-focus::after{opacity:.75}
 .hero-card > *{position:relative;z-index:1}
@@ -2284,7 +2298,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .trip-card,.next-bus-card,.week-heatmap,.term-overview-card{box-shadow:var(--shadow-sm), var(--edge-light)}
 .trip-card:active{transform:scale(.99)}
 .free-run-card:active{transform:scale(.995)}
-.trip-card,.free-run-card{transition:transform .12s ease}
+.trip-card,.free-run-card{transition:transform var(--dur-xs) var(--ease-spring)}
 
 /* ============ Space instead of lines ============
    The app separated nearly everything with a border. Borders are the cheap way to
@@ -2461,3 +2475,134 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
    a touch more than it had. */
 h1,h2,.course-card h3,.hero-card h2#focusTitle{line-height:1.14}
 .sr-subj,.cc-topics li span{line-height:1.45}
+
+/* ============ Motion ============ */
+
+/* View transitions. The default cross-fade is already better than a hard swap; this
+   adds a short directional slide so moving away from Home reads as going forward and
+   coming back reads as returning. Scoped tight — 240ms and 10px — because a tab
+   change people make fifty times a day must never feel like it is being performed. */
+@media (prefers-reduced-motion: no-preference){
+  ::view-transition-old(root){animation:vt-out 180ms var(--ease-in-out) both}
+  ::view-transition-new(root){animation:vt-in 240ms var(--ease-out) both}
+  :root[data-vt="back"] ::view-transition-old(root){animation:vt-out-back 180ms var(--ease-in-out) both}
+  :root[data-vt="back"] ::view-transition-new(root){animation:vt-in-back 240ms var(--ease-out) both}
+}
+@keyframes vt-out{to{opacity:0;transform:translateX(-10px)}}
+@keyframes vt-in{from{opacity:0;transform:translateX(10px)}}
+@keyframes vt-out-back{to{opacity:0;transform:translateX(10px)}}
+@keyframes vt-in-back{from{opacity:0;transform:translateX(-10px)}}
+
+/* Cards arriving. This started as a scroll-driven reveal and went through two
+   versions before landing here, both of which I removed for the same reason: anything
+   that keeps content hidden until the scroll position moves renders blank cards in a
+   screenshot, a print, or on a page short enough never to be scrolled — and this app
+   has a share-as-image feature, so its screens get captured constantly.
+
+   So the entrance is time-based and tied to the page becoming active, not to scroll.
+   It always runs to completion, which means a card can never be left invisible by an
+   event that did not arrive. Staggered, capped at six steps so a long page fills in
+   rather than queueing. */
+@media (prefers-reduced-motion: no-preference){
+  .page.page-enter > * > * > .panel,
+  .page.page-enter .course-card,
+  .page.page-enter .fac-card,
+  .page.page-enter .free-run-card,
+  .page.page-enter .week-heatmap,
+  .page.page-enter .hero-day-section.day-panel,
+  .page.page-enter > .panel{
+    animation:card-in var(--dur-lg) var(--ease-out) both;
+  }
+  .page.page-enter .course-card:nth-child(n+2),
+  .page.page-enter .fac-card:nth-child(n+2){animation-delay:60ms}
+  .page.page-enter .course-card:nth-child(n+3),
+  .page.page-enter .fac-card:nth-child(n+3){animation-delay:120ms}
+  .page.page-enter .fac-card:nth-child(n+4){animation-delay:180ms}
+  .page.page-enter .fac-card:nth-child(n+5){animation-delay:240ms}
+  .page.page-enter .fac-card:nth-child(n+6){animation-delay:300ms}
+}
+@keyframes card-in{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+
+/* A live session gets a slow pulse on its ring rather than a static arc — the one
+   place in the app where something is genuinely happening while you watch. 4s, which
+   is slow enough to read as breathing rather than blinking. */
+@media (prefers-reduced-motion: no-preference){
+  .hero-card.is-live .hero-ring::after{
+    content:"";position:absolute;inset:-6px;border-radius:50%;pointer-events:none;
+    border:1px solid var(--focus-course,var(--live));
+    animation:ring-breathe 4s var(--ease-in-out) infinite;
+  }
+  @keyframes ring-breathe{0%,100%{opacity:.35;transform:scale(.94)}50%{opacity:0;transform:scale(1.12)}}
+  .sr-row-live .snm-dot,.sched-now-marker .snm-dot{animation:dot-breathe 4s var(--ease-in-out) infinite}
+  @keyframes dot-breathe{0%,100%{box-shadow:0 0 0 3px color-mix(in srgb, var(--course,var(--live)) 22%, transparent)}50%{box-shadow:0 0 0 7px color-mix(in srgb, var(--course,var(--live)) 0%, transparent)}}
+}
+
+/* One light pass across the hero when it enters or changes session. A specular sweep
+   is the cheapest way to make a flat surface read as a material, and once per state
+   change is rare enough that it stays a detail rather than an effect. */
+.hero-card.hero-enter::after{animation:hero-sheen var(--dur-lg) var(--ease-out) 1}
+@keyframes hero-sheen{
+  0%{background-position:-60% 0}
+  100%{background-position:160% 0}
+}
+.hero-card.hero-enter{
+  background-image:
+    linear-gradient(105deg,transparent 42%,color-mix(in srgb, #fff 7%, transparent) 50%,transparent 58%),
+    linear-gradient(165deg, var(--bg-elevated) 0%, var(--bg-panel) 60%, var(--bg-elevated) 100%);
+  background-size:220% 100%, 100% 100%;
+  animation:hero-sheen 900ms var(--ease-out) 1;
+}
+@media(prefers-reduced-motion: reduce){.hero-card.hero-enter{animation:none;background-image:none}}
+
+/* ============ Loading ============
+   "Loading your schedule" as a sentence is a developer telling you to wait. Blocks in
+   the shape of the thing that is coming say the same and are over before you read
+   them. */
+.skeleton{
+  position:relative;overflow:hidden;border-radius:var(--radius-xs);
+  background:color-mix(in srgb, var(--ink) 8%, transparent);color:transparent !important;
+}
+.skeleton::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb, var(--ink) 7%, transparent),transparent);
+  animation:skeleton-sweep 1.4s var(--ease-in-out) infinite;
+}
+@media(prefers-reduced-motion: reduce){.skeleton::after{animation:none}}
+@keyframes skeleton-sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.is-loading .hero-code,.is-loading #focusTitle,.is-loading #focusRange{
+  position:relative;overflow:hidden;border-radius:var(--radius-xs);
+  background:color-mix(in srgb, var(--ink) 8%, transparent);color:transparent !important;
+}
+.is-loading .hero-code{min-width:64px}
+.is-loading #focusTitle{min-height:1.2em;width:80%}
+.is-loading #focusRange{min-height:1.1em;width:58%}
+.is-loading .hero-pills,.is-loading .hero-insight{opacity:0}
+
+/* ============ Touch finish ============ */
+
+/* Mobile browsers paint a grey rectangle over anything tappable on touch. Every press
+   state in this app is already drawn deliberately; the default flash lands on top of
+   them and is the single most common reason a careful web UI feels like a web page. */
+html{-webkit-tap-highlight-color:transparent}
+/* Headings and figures are not selectable content, and a stray long-press selection
+   mid-scroll is the other tell. Body copy, notes and anything a person might want to
+   copy stay selectable. */
+h1,h2,h3,.overline,.rail-section-label,.hero-time,.sr-time,.wc-cell,.nav-item,.subtab,
+.filter-chip,.cc-code,.fac-avatar,.dsb-box,.dsb-gap,.date-orbit,.topbar-clock{
+  -webkit-user-select:none;user-select:none;
+}
+/* Momentum scrolling and no rubber-band chaining out of scrollable rails. */
+.week-strip,.dsb-row,.sched-list,.filter-chips{overscroll-behavior-x:contain}
+
+/* The backdrop blurs the app behind a sheet rather than only darkening it, which is
+   what makes a modal read as a layer above the interface instead of a box drawn on
+   top of it. */
+dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:blur(3px) saturate(.9)}
+
+/* Icons were set at 20px app-wide regardless of the text beside them, so a 20px glyph
+   sat next to an 11px label on one row and an 18px heading on another. Sized to their
+   context, with the stroke scaled to match so the weight reads constant. */
+.filter-chip svg,.subtab svg,.today-strip svg,.share-option-icon svg{width:16px;height:16px}
+.overline svg,.frc-tag svg,.sr-meta svg{width:13px;height:13px}
+[data-icon] svg,.nav-item svg{stroke-width:1.75}
+.hero-pill svg{width:13px;height:13px;stroke-width:2}

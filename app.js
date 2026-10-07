@@ -367,12 +367,34 @@ function scheduleIdleSync(){
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
+/* Plays the card entrance on whichever page just became active. Time-based rather
+   than scroll-based on purpose — see the note by @keyframes card-in. The class is
+   removed once the animation has had time to finish so it can replay on the next
+   visit, and because leaving `animation-fill-mode: both` applied indefinitely would
+   pin the cards to the animation's end state and fight any later transition. */
+function playCardEntrance(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  const page=$(".page.active");if(!page)return;
+  page.classList.remove("page-enter");
+  void page.offsetWidth;
+  page.classList.add("page-enter");
+  clearTimeout(playCardEntrance.t);
+  playCardEntrance.t=setTimeout(()=>page.classList.remove("page-enter"),1100);
+}
 function playHeroEntrance(){
   const el=$("#focusPanel");if(!el)return;
   el.classList.remove("hero-enter");
   void el.offsetWidth;
   el.classList.add("hero-enter");
+  /* The sheen is a one-shot; leaving the class on would re-run it on the next
+     reflow and leave the gradient layered over the card in between. */
+  clearTimeout(playHeroEntrance.t);
+  playHeroEntrance.t=setTimeout(()=>el.classList.remove("hero-enter"),950);
 }
+/* Skeletons stay up until the first render has real classes to show. The hero marks
+   itself loading on boot and clears the moment it has a session or an empty state to
+   report, so the blocks are only ever on screen while there is genuinely nothing. */
+function setHeroLoading(on){$("#focusPanel")?.classList.toggle("is-loading",!!on)}
 function positionNavIndicator(){
   const nav=$(".desktop-nav"),active=$(".desktop-nav-item.active",nav);
   let ind=$("#desktopNavIndicator");
@@ -393,12 +415,26 @@ function positionNavIndicator(){
   requestAnimationFrame(()=>bind.classList.add("ready"));
 }
 const PAGE_LABELS={home:"Home",calendar:"Planner",campus:"Campus",profile:"Profile"};
-function showPage(n){if(n==="home"){state.timelineOffset=0;state.timelineTouched=false}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1)}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){renderCalendar();renderExamsPage()}positionNavIndicator();const label=$("#topbarPageLabel");if(label)label.textContent=PAGE_LABELS[n]||"Home"}
+/* The page swap is wrapped in a View Transition where the browser has one, which
+   lets it cross-fade the old and new frames for us — the thing that separates a tab
+   change that feels like an app from one that feels like a page reload. Everything
+   inside the callback is the swap exactly as it was, so a browser without the API
+   (and anyone who has asked for reduced motion) simply runs it directly. */
+function showPage(n){
+  const run=()=>applyPageSwap(n);
+  if(document.startViewTransition&&!matchMedia("(prefers-reduced-motion: reduce)").matches){
+    document.documentElement.dataset.vt=n==="home"?"back":"forward";
+    document.startViewTransition(run);
+  }else run();
+}
+function applyPageSwap(n){
+  requestAnimationFrame(playCardEntrance);if(n==="home"){state.timelineOffset=0;state.timelineTouched=false}if(n==="calendar"){state.selectedDate=isoToday();state.railStart=mondayIso(state.selectedDate);state.calendarMonth=new Date();state.calendarMonth.setDate(1)}$$(".page").forEach(p=>p.classList.toggle("active",p.dataset.page===n));$$("[data-page-target]").forEach(b=>b.classList.toggle("active",b.dataset.pageTarget===n));scrollTo({top:0,behavior:"auto"});if(n==="home"){renderHome();playHeroEntrance()}if(n==="campus")renderCampus();if(n==="calendar"){renderCalendar();renderExamsPage()}positionNavIndicator();const label=$("#topbarPageLabel");if(label)label.textContent=PAGE_LABELS[n]||"Home"}
 function setPlannerTab(tab){
   $$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===tab));
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
   if(tab==="courses")renderCourseOverview();
   if(tab==="faculty")renderFacultyDirectory();
+  requestAnimationFrame(playCardEntrance);
 }
 
 /* Both of the views below are derived entirely from the schedule already in state —
@@ -658,6 +694,7 @@ function tagCountdown(totalMins){
   return m>=60?`${Math.floor(m/60)}h${m%60?` ${m%60}m`:""}`:`${m}m`;
 }
 function renderHome(){
+  setHeroLoading(!state.classes.length);
   $("#focusPanel")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $("#weekHeatmap")?.classList.toggle("is-loading",!!state.scheduleLoading);
   $("#todayProgressRail")?.classList.toggle("is-loading",!!state.scheduleLoading);
@@ -2924,9 +2961,10 @@ async function init(){
   updateTopbarClock();
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
+  requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova152",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova155",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
