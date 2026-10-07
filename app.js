@@ -17,7 +17,7 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
    blues in play; at dot size hue alone doesn't separate, lightness does. Each hue now
    also sits at its own value, and every colour stays dark enough to carry white text
    where these are used as fills. */
-const COURSE_COLORS={SM:"#4a90d9",DBST:"#3b4ea8",AIB:"#7c5cd6",OS:"#a855c7",CV:"#d1479b",PM:"#c2415c",POM:"#d4632f",CB:"#c8961a",SBM:"#8a9b2e",NWW:"#4fa54f",MAAS:"#1f7a4d",ACC:"#2fb896",IS:"#35b8c4",IBEU:"#8c6239",SUST:"#5b7f99"};
+const COURSE_COLORS={SM:"#4a90d9",DBST:"#3b4ea8",AIB:"#7c5cd6",OS:"#a855c7",CV:"#d1479b",PM:"#c2415c",POM:"#d4632f",CB:"#c8961a",SBM:"#8a9b2e",NWW:"#4fa54f",MAAS:"#1f7a4d",ACC:"#2fb896",IS:"#35b8c4",IBEU:"#d09a4a",SUST:"#4fb3a5"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 /* Course colour stopped carrying information when the term feed became the immersion
    module: two codes, one per week, so a colour said only what the week already said.
@@ -26,12 +26,14 @@ const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
    week-strip kind bar) key off kind. The aggregate widgets that genuinely group by
    course (term ring, course legend, month dots) keep course colour: there the code is
    printed next to the mark, so the two systems never have to be told apart. */
+/* Retuned for the ink-blue ground: the old set was built against an aubergine
+   background and against a violet accent, both of which are gone. */
 const SESSION_KINDS={
-  lecture:{label:"Lecture",color:"#6b5bd6"},
-  project:{label:"Team project",color:"#2fa37a"},
-  guest:{label:"Guest session",color:"#c2823a"},
-  visit:{label:"Offsite",color:"#c2415c"},
-  ceremony:{label:"Programme",color:"#5b7f99"}
+  lecture:{label:"Lecture",color:"#5b9fe3"},
+  project:{label:"Team project",color:"#2fa882"},
+  guest:{label:"Guest session",color:"#b586e0"},
+  visit:{label:"Offsite",color:"#e0624f"},
+  ceremony:{label:"Programme",color:"#8e97ad"}
 };
 /* Matched against the session title, most specific first: "Team Project Introduction"
    has to land on project rather than on the ceremony rule for "Introduction". */
@@ -134,6 +136,12 @@ function minsToTimeStr(m){return `${String(Math.floor(m/60)).padStart(2,"0")}:${
 function dateTime(c,w="startTime"){return zoned(c.dateIso,c[w]||c[w==="startTime"?"start":"end"])}
 function fmtTime(t){const[h,m]=t.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit"}).format(new Date(2026,0,1,h,m))}
 function fmtRange(a,b){return`${fmtTime(a)}–${fmtTime(b)}`}
+/* The hero sets the range as display-sized figures, so the am/pm has to come down to
+   a label — at 30px "9:30 am" is mostly the word. Returns markup, not text. */
+function fmtRangeRich(a,b){
+  const part=t=>{const[fig,ap]=fmtTime(t).split(/\s+(?=[ap]m)/i);return`${esc(fig)}${ap?`<small>${esc(ap)}</small>`:""}`};
+  return`${part(a)}<em>\u2013</em>${part(b)}`;
+}
 /* Home time, kept alongside Barcelona time. Everything in the app is now on
    Europe/Madrid, which is right but leaves you doing the 3.5-hour subtraction in your
    head every time you want to call home. */
@@ -219,18 +227,19 @@ function renderThemeToggleIcon(theme){
   span.innerHTML=icon(wantIcon);
   setTimeout(()=>span.classList.remove("icon-morph"),320);
 }
+/* These are applied to the document at runtime and therefore override whatever the
+   stylesheet declares for --accent — which is why changing the palette in CSS alone
+   did nothing until this list changed too. "Barcelona" is the default: streetlight
+   amber against the ink-blue ground, terracotta second. A saved preset that no longer
+   exists (everyone currently on "plum") falls through to it. */
 const ACCENT_PRESETS={
-  /* Light variant used to swap to a blue family entirely (#4a68b8), so "Plum
-     Bronze" wasn't plum in light mode at all — same hue family as dark, just
-     deepened/desaturated enough for AA contrast on a white surface. */
-  plum:{name:"Plum Bronze",dark:{accent:"#9884f0",accent2:"#c98a52"},light:{accent:"#4630a6",accent2:"#885930"},grad:"linear-gradient(135deg,#1c1526 0%,#3a2a4d 55%,#a9714a 100%)",glow:"#7a5438"},
-  teal:{name:"Ocean Teal",dark:{accent:"#4fa3b0",accent2:"#4fb08a"},light:{accent:"#2f7a8c",accent2:"#2f8c68"},grad:"linear-gradient(135deg,#0e2530 0%,#155066 55%,#2f8c68 100%)",glow:"#155066"},
+  barcelona:{name:"Barcelona Night",dark:{accent:"#e9a73e",accent2:"#d2694c"},light:{accent:"#a8641a",accent2:"#b04a2c"},grad:"linear-gradient(135deg,#0f1622 0%,#1d2b3f 55%,#b4603c 100%)",glow:"#b4603c"},
+  gaudi:{name:"Gaud\u00ed Mosaic",dark:{accent:"#4fb3a5",accent2:"#e0855c"},light:{accent:"#2f7f74",accent2:"#b35b36"},grad:"linear-gradient(135deg,#0d1f22 0%,#195550 55%,#c26a42 100%)",glow:"#195550"},
   crimson:{name:"Crimson Ember",dark:{accent:"#c15a6e",accent2:"#d98a4f"},light:{accent:"#a83f52",accent2:"#a5673f"},grad:"linear-gradient(135deg,#2a1114 0%,#5e2a35 55%,#a5673f 100%)",glow:"#5e2a35"},
   indigo:{name:"Indigo Slate",dark:{accent:"#6a7bc9",accent2:"#4fb0a0"},light:{accent:"#4a5aa8",accent2:"#2f8c7e"},grad:"linear-gradient(135deg,#151a35 0%,#2a3566 55%,#2f8c7e 100%)",glow:"#2a3566"},
   forest:{name:"Forest Emerald",dark:{accent:"#5a9c6a",accent2:"#c9a04f"},light:{accent:"#3f8250",accent2:"#a5823f"},grad:"linear-gradient(135deg,#11291a 0%,#2a5e38 55%,#a5823f 100%)",glow:"#2a5e38"}
-};
-function applyAccent(){
-  const preset=ACCENT_PRESETS[state.profile.accent]||ACCENT_PRESETS.plum;
+};function applyAccent(){
+  const preset=ACCENT_PRESETS[state.profile.accent]||ACCENT_PRESETS.barcelona;
   const theme=document.documentElement.dataset.theme==="light"?"light":"dark",tone=preset[theme];
   const root=document.documentElement.style;
   root.setProperty("--accent",tone.accent);
@@ -388,6 +397,87 @@ function showPage(n){if(n==="home"){state.timelineOffset=0;state.timelineTouched
 function setPlannerTab(tab){
   $$(".subtab[data-planner-tab]").forEach(b=>b.classList.toggle("active",b.dataset.plannerTab===tab));
   $$(".planner-view").forEach(v=>v.classList.toggle("active",v.dataset.plannerView===tab));
+  if(tab==="courses")renderCourseOverview();
+  if(tab==="faculty")renderFacultyDirectory();
+}
+
+/* Both of the views below are derived entirely from the schedule already in state —
+   no new data, no second source to keep in step with it. The schedule answers "what is
+   on at 11:30"; these answer "what am I actually taking" and "who is teaching me",
+   which until now could only be got by scrolling two weeks of rows. */
+function courseGroups(){
+  const by=new Map();
+  state.classes.filter(c=>c.status!=="Cancelled").forEach(c=>{
+    const code=canonical(c.code),g=by.get(code)||{code,sessions:[]};
+    g.sessions.push(c);by.set(code,g);
+  });
+  return[...by.values()].map(g=>{
+    g.sessions.sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime));
+    const now=new Date();
+    g.done=g.sessions.filter(c=>dateTime(c,"endTime")<now).length;
+    g.mins=g.sessions.reduce((t,c)=>t+(minutes(c.endTime)-minutes(c.startTime)),0);
+    g.faculty=[...new Set(g.sessions.map(c=>c.faculty).filter(Boolean))];
+    g.from=g.sessions[0].dateIso;g.to=g.sessions[g.sessions.length-1].dateIso;
+    /* Distinct session titles, in the order they are first taught — a course is really
+       a list of topics, and the repeated two-block days collapse to one line each. */
+    const seen=new Set();
+    g.topics=g.sessions.filter(c=>{const k=c.course;if(seen.has(k))return false;seen.add(k);return true});
+    return g;
+  }).sort((a,b)=>a.from.localeCompare(b.from));
+}
+function renderCourseOverview(){
+  const el=$("#courseOverview");if(!el)return;
+  const groups=courseGroups();
+  if(!groups.length){el.innerHTML=`<div class="empty-state empty-state-bcn">${BCN_SKYLINE}<p>No courses yet</p><small>The schedule has not loaded.</small></div>`;return}
+  const now=new Date();
+  el.innerHTML=groups.map(g=>{
+    const pct=g.sessions.length?Math.round(g.done/g.sessions.length*100):0;
+    const live=g.sessions.some(c=>dateTime(c,"startTime")<=now&&dateTime(c,"endTime")>now);
+    return`<article class="course-card ${live?"live":""}" style="--course:${colorFor(g.code)}">
+      <header>
+        <span class="cc-code">${esc(g.code)}</span>
+        ${live?'<span class="cc-live">NOW</span>':`<span class="cc-pct">${pct}%</span>`}
+      </header>
+      <h3>${esc(COURSE_TITLES[g.code]||g.sessions[0].course)}</h3>
+      <p class="cc-meta">${esc(fmtDate(g.from,{day:"numeric",month:"short"}))} \u2013 ${esc(fmtDate(g.to,{day:"numeric",month:"short"}))}<span class="sep">\u00b7</span>${g.sessions.length} sessions<span class="sep">\u00b7</span>${esc(compactDuration(g.mins))}</p>
+      <div class="cc-bar"><span style="width:${pct}%"></span></div>
+      <ul class="cc-topics">${g.topics.map(c=>{
+        const past=dateTime(c,"endTime")<now;
+        return`<li class="${past?"done":""}"><i style="--course:${kindColorFor(c)}"></i><span>${esc(c.course)}</span><b>${esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric"}))}</b></li>`;
+      }).join("")}</ul>
+      ${g.faculty.length?`<div class="cc-faculty">${g.faculty.map(facultyChip).join("")}</div>`:""}
+    </article>`;
+  }).join("");
+}
+/* The guide gives each week a course title that no session row carries. */
+const COURSE_TITLES={IBEU:"International Business, a European Perspective",SUST:"Sustainability"};
+
+function renderFacultyDirectory(){
+  const el=$("#facultyDirectory");if(!el)return;
+  const by=new Map();
+  state.classes.filter(c=>c.status!=="Cancelled"&&c.faculty).forEach(c=>{
+    const k=c.faculty,e=by.get(k)||{name:k,sessions:[]};
+    e.sessions.push(c);by.set(k,e);
+  });
+  const people=[...by.values()].map(p=>{
+    p.sessions.sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime));
+    p.mins=p.sessions.reduce((t,c)=>t+(minutes(c.endTime)-minutes(c.startTime)),0);
+    p.next=p.sessions.find(c=>dateTime(c,"startTime")>new Date());
+    p.courses=[...new Set(p.sessions.map(c=>canonical(c.code)))];
+    return p;
+  }).sort((a,b)=>a.sessions[0].dateIso.localeCompare(b.sessions[0].dateIso));
+  if(!people.length){el.innerHTML=`<div class="empty-state empty-state-bcn">${BCN_SKYLINE}<p>No faculty listed</p><small>Sessions have not loaded yet.</small></div>`;return}
+  el.innerHTML=`<p class="rail-section-label">${people.length} teaching this module</p>`+people.map(p=>`
+    <article class="fac-card" style="--fac-hue:${monogramHue(p.name)}">
+      <span class="fac-avatar">${esc(initialsOf(p.name))}</span>
+      <div class="fac-body">
+        <strong>${esc(shortFaculty(p.name))}</strong>
+        <p class="fac-meta">${p.courses.map(c=>`<span class="fac-course" style="--course:${colorFor(c)}">${esc(c)}</span>`).join("")}<span class="fac-count">${p.sessions.length} session${p.sessions.length===1?"":"s"} \u00b7 ${esc(compactDuration(p.mins))}</span></p>
+        <p class="fac-next">${p.next
+          ?`Next \u2014 ${esc(fmtDate(p.next.dateIso,{weekday:"long",day:"numeric",month:"short"}))}, ${esc(fmtTime(p.next.startTime))}`
+          :"All sessions complete"}</p>
+      </div>
+    </article>`).join("");
 }
 function openPlannerTab(tab){showPage("calendar");setPlannerTab(tab);scrollTo({top:0,behavior:"auto"})}
 /* showPage("calendar") (called by openPlannerTab below) always resets
@@ -607,7 +697,7 @@ function renderHome(){
     $("#focusEmptyIcon").hidden=true;
     $("#focusKicker").textContent=isNow?"IN PROGRESS":onBreak?"ON A BREAK":isToday?"UPCOMING":"NEXT UP";
     $("#focusCode").hidden=false;$("#focusCode").textContent=canonical(shown.code);$("#focusTitle").textContent=shown.course;
-    $("#focusRange").hidden=false;$("#focusRange").textContent=fmtRange(shown.startTime,shown.endTime);
+    $("#focusRange").hidden=false;$("#focusRange").innerHTML=fmtRangeRich(shown.startTime,shown.endTime);
     const dayList=scheduled.filter(c=>c.dateIso===shown.dateIso),posIndex=dayList.indexOf(shown),nextInDay=dayList[posIndex+1];
     const ring=$("#heroRing"),liveProgress=$("#heroLiveProgress");
     if(isNow){
@@ -1140,6 +1230,54 @@ function staggerClass(el,key){
   return" stagger";
 }
 const rowsKey=(dayIso,classes)=>`${dayIso}|${classes.map(c=>classIdentity(c)+agendaStatus(c)).join(",")}`;
+/* An .ics file for the selected range. Every phone and desktop calendar reads this
+   format, so "put the module in my calendar" needs no account, no sync and no server
+   — the file is built in the page and handed to the download. Times are written as
+   floating local times (no Z, no TZID): the sessions are in Barcelona and a floating
+   time shows as written wherever the calendar is, which is what a traveller wants
+   from a timetable. */
+function icsEscape(t){return String(t||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n")}
+/* RFC 5545 caps a content line at 75 octets; folded continuation lines start with a
+   single space. Long session titles go well past that. */
+function icsFold(line){
+  if(line.length<=73)return line;
+  const out=[];let rest=line;
+  out.push(rest.slice(0,73));rest=rest.slice(73);
+  while(rest.length>72){out.push(" "+rest.slice(0,72));rest=rest.slice(72)}
+  if(rest)out.push(" "+rest);
+  return out.join("\r\n");
+}
+function icsStamp(iso,hhmm){return`${iso.replace(/-/g,"")}T${String(hhmm||"00:00").replace(":","")}00`}
+function buildIcs(days){
+  const wanted=new Set(days);
+  const list=state.classes.filter(c=>wanted.has(c.dateIso)&&c.status!=="Cancelled")
+    .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime));
+  const now=new Date().toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
+  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//BL07//Immersion Planner//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:BL07 International Immersion"];
+  list.forEach((c,i)=>{
+    const desc=[c.faculty,kindOf(c).label,c.notes].filter(Boolean).join(" \u00b7 ");
+    lines.push("BEGIN:VEVENT",
+      `UID:${c.dateIso}-${String(c.startTime).replace(":","")}-${i}@bl07`,
+      `DTSTAMP:${now}`,
+      `DTSTART:${icsStamp(c.dateIso,c.startTime)}`,
+      `DTEND:${icsStamp(c.dateIso,c.endTime)}`,
+      icsFold(`SUMMARY:${icsEscape(`${canonical(c.code)} \u00b7 ${c.course}`)}`),
+      icsFold(`LOCATION:${icsEscape(venueOf(c))}`));
+    if(desc)lines.push(icsFold(`DESCRIPTION:${icsEscape(desc)}`));
+    lines.push("END:VEVENT");
+  });
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+function downloadIcs(days,filename){
+  const text=buildIcs(days);
+  if(!/BEGIN:VEVENT/.test(text)){showToast("Nothing scheduled in that range");return}
+  const blob=new Blob([text],{type:"text/calendar;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  showToast("Calendar file downloaded");
+}
 function scheduleRowsHtml(classes,dayIso,opts={}){
   const chronological=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   const now=new Date();
@@ -2150,7 +2288,7 @@ function renderTermRing(){
 }
 function renderAccentSwatches(){
   const el=$("#accentSwatches");if(!el)return;
-  const current=state.profile.accent||"plum";
+  const current=state.profile.accent||"barcelona";
   el.innerHTML=Object.entries(ACCENT_PRESETS).map(([key,preset])=>
     `<button type="button" class="accent-swatch ${key===current?"active":""}" data-accent="${key}" style="--swatch:${preset.dark.accent}" aria-label="${esc(preset.name)}" title="${esc(preset.name)}"></button>`
   ).join("");
@@ -2597,7 +2735,7 @@ function bind(){
   $("#profileThemeSeg")?.addEventListener("click",e=>{const b=e.target.closest("[data-value]");if(!b)return;setSegValue("#profileThemeSeg",b.dataset.value)});
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
   $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$(`.accent-swatch[data-accent="${b.dataset.accent}"]`);if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
-  $("#resetAccentButton")?.addEventListener("click",()=>{state.profile.accent="plum";save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$('.accent-swatch[data-accent="plum"]');if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
+  $("#resetAccentButton")?.addEventListener("click",()=>{state.profile.accent="barcelona";save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$('.accent-swatch[data-accent="barcelona"]');if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
   $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
   $("#timelinePrevDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)-1,"backward"));
   $("#timelineNextDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)+1,"forward"));
@@ -2679,6 +2817,11 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#downloadImageOption")?.addEventListener("click",()=>{
     const ctx=shareRangeContext();
     downloadScheduleImage(ctx.days,ctx.title,`bl07-schedule-${ctx.label}.png`);
+    closeDialog($("#shareScheduleDialog"));
+  });
+  $("#downloadIcsOption")?.addEventListener("click",()=>{
+    const ctx=shareRangeContext();
+    downloadIcs(ctx.days,`bl07-${ctx.label}.ics`);
     closeDialog($("#shareScheduleDialog"));
   });
   bindDismissibleDialog($("#shareScheduleDialog"));
@@ -2783,7 +2926,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova147",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova148",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

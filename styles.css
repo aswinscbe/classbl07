@@ -1,3 +1,20 @@
+/* Self-hosted, latin subset, one variable file each. Both faces used to come from a
+   CDN — Google for the display face, Fontshare for Satoshi — which meant that on a
+   slow, captive or filtered network the app silently fell back to system sans and
+   every bit of type work in it evaporated. 94KB total, served from the same origin as
+   everything else, so it either all loads or nothing does. */
+@font-face{
+  font-family:"Fraunces";
+  src:url("fonts/fraunces-latin.woff2") format("woff2");
+  font-weight:400 700;font-style:normal;font-display:swap;
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:"Jakarta";
+  src:url("fonts/jakarta-latin.woff2") format("woff2");
+  font-weight:400 800;font-style:normal;font-display:swap;
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
 /* ==========================================================================
    BL07 Term 3 Planner — "Plum Copper"
    Jewel-toned premium palette: aubergine/plum ground, plum-to-bronze gradient
@@ -9,28 +26,28 @@
      separated aubergine/plum ground so surfaces actually lift off each
      other, plus a warmer plum-to-bronze accent pairing instead of the
      previous flat blue-gray. */
-  --bg:#131019;
-  --bg-elevated:#221c2c;
-  --bg-panel:#1a1522;
-  --bg-raised:#2c2438;
-  --ink:#f4f1f8;
-  --ink-muted:#aca3bd;
-  --ink-faint:#7a7290;
-  --accent:#9884f0;
-  --accent-2:#c98a52;
-  --accent-soft:rgba(152,132,240,.18);
-  --live:#5fb98c;
-  --live-soft:rgba(95,185,140,.16);
-  --amber:#d9a54c;
-  --amber-soft:rgba(217,165,76,.16);
-  --danger:#e2726f;
-  --danger-soft:rgba(226,114,111,.16);
-  --border:#332c40;
-  --border-strong:#473d58;
-  --shadow-lg:0 24px 52px -22px rgba(0,0,0,.65);
-  --shadow-md:0 14px 30px -16px rgba(0,0,0,.55);
-  --shadow-sm:0 7px 16px -10px rgba(0,0,0,.5);
-  --grad:linear-gradient(135deg,#1c1526 0%,#3a2a4d 55%,#a9714a 100%);
+  --bg:#0a0e16;
+  --bg-elevated:#172030;
+  --bg-panel:#111925;
+  --bg-raised:#1f2b3d;
+  --ink:#f1f5fb;
+  --ink-muted:#9aa8bf;
+  --ink-faint:#6c7b94;
+  --accent:#e9a73e;
+  --accent-2:#d2694c;
+  --accent-soft:rgba(233,167,62,.18);
+  --live:#3fbe8a;
+  --live-soft:rgba(63,190,138,.16);
+  --amber:#e5c05a;
+  --amber-soft:rgba(229,192,90,.16);
+  --danger:#e2645f;
+  --danger-soft:rgba(226,100,95,.16);
+  --border:#222d3f;
+  --border-strong:#33415a;
+  --shadow-lg:0 1px 2px rgba(0,0,0,.4), 0 24px 52px -22px rgba(0,0,0,.65);
+  --shadow-md:0 1px 2px rgba(0,0,0,.34), 0 14px 30px -16px rgba(0,0,0,.55);
+  --shadow-sm:0 1px 1px rgba(0,0,0,.28), 0 7px 16px -10px rgba(0,0,0,.5);
+  --grad:linear-gradient(135deg,#0f1622 0%,#1d2b3f 55%,#b4603c 100%);
   /* One lit surface per screen — the term card on Home, the next-bus card on Campus,
      the identity card on Profile. Gradients everywhere read as noise; exactly one per
      screen reads as deliberate. Tinted over the card background rather than a full
@@ -39,9 +56,9 @@
     color-mix(in srgb, var(--accent) 16%, var(--bg-elevated)) 0%,
     var(--bg-elevated) 58%,
     color-mix(in srgb, var(--accent-2) 14%, var(--bg-elevated)) 100%);
-  --grad-glow:rgba(120,84,60,.4);
-  --on-grad:#f4f1f8;
-  --on-grad-muted:#cabfdc;
+  --grad-glow:rgba(180,96,60,.4);
+  --on-grad:#f1f5fb;
+  --on-grad-muted:#c3cede;
   --on-grad-line:rgba(255,255,255,.13);
   --radius-xl:20px;
   --radius-lg:16px;
@@ -49,12 +66,12 @@
   --radius-sm:10px;
   --radius-xs:8px;
   --radius-pill:99px;
-  --font:"Satoshi",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  /* Lexend for display: wide apertures and open counters keep the big numerals
-     (a hero time, a countdown) legible and approachable, where Clash Display ran
-     tight and editorial. Satoshi stays for body, where it beats Lexend at 11-13px.
-     Falls back to Satoshi/system stack if it fails to load. */
-  --font-display:"Lexend","Satoshi",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font:"Jakarta",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  /* A high-contrast serif on the headlines against a grotesque body — the pairing that
+     separates a designed interface from a tidy one. Fraunces is kept to the greeting,
+     the big numerals and section titles: three or four places per screen. Everywhere
+     else is Jakarta, which beats any serif at 11-13px. */
+  --font-display:"Fraunces",Georgia,"Times New Roman",serif;
 
   /* Type scale — six steps. Sizes were previously picked ad hoc per rule
      (11/11.5/12/13/13.5/14/15px), which is most of the difference between a page
@@ -67,6 +84,11 @@
   --text-md:15px;
   --text-lg:18px;
   --text-xl:22px;
+  /* The scale used to stop at 22px, which is why the app read as neat rather than
+     designed: everything lived inside one narrow band. Two display steps above it
+     give the hero numeral and the greeting somewhere to go. */
+  --text-2xl:30px;
+  --text-3xl:clamp(38px,11vw,46px);
   /* Three line-height roles instead of seven ad-hoc ratios, so baselines line up
      between neighbouring elements. */
   --lh-flat:1;
@@ -97,52 +119,52 @@
    background, warm-tinted soft shadows, and the accent stays in the plum family
    (just deepened for contrast) so light mode feels like the same product. */
 :root[data-theme="light"]{
-  --bg:#f6f4f1;
-  --bg-elevated:#ffffff;
-  --bg-panel:#efebe5;
-  --bg-raised:#ffffff;
-  --ink:#1c1a22;
-  --ink-muted:#5c5766;
-  --ink-faint:#8b8593;
-  --accent:#4630a6;
-  --accent-2:#885930;
-  --accent-soft:rgba(70,48,166,.14);
-  --live:#2e6b4a;
-  --live-soft:rgba(46,107,74,.15);
-  --amber:#93611f;
-  --amber-soft:rgba(147,97,31,.16);
-  --danger:#a63d3d;
-  --danger-soft:rgba(166,61,61,.14);
-  --border:#e4ddd2;
-  --border-strong:#cec2b0;
-  --shadow-lg:0 24px 52px -30px rgba(60,40,20,.16);
-  --shadow-md:0 14px 28px -18px rgba(60,40,20,.13);
-  --shadow-sm:0 6px 14px -10px rgba(60,40,20,.11);
+  --bg:#f7f3ea;
+  --bg-elevated:#fffdf7;
+  --bg-panel:#efe9dc;
+  --bg-raised:#fffdf7;
+  --ink:#1e1a14;
+  --ink-muted:#5e564a;
+  --ink-faint:#8a8275;
+  --accent:#a8641a;
+  --accent-2:#b04a2c;
+  --accent-soft:rgba(168,100,26,.15);
+  --live:#26684d;
+  --live-soft:rgba(38,104,77,.15);
+  --amber:#8a6a16;
+  --amber-soft:rgba(138,106,22,.16);
+  --danger:#a83c34;
+  --danger-soft:rgba(168,60,52,.14);
+  --border:#e6ddc9;
+  --border-strong:#d0c3a8;
+  --shadow-lg:0 1px 2px rgba(60,40,20,.08), 0 24px 52px -30px rgba(60,40,20,.16);
+  --shadow-md:0 1px 2px rgba(60,40,20,.07), 0 14px 28px -18px rgba(60,40,20,.13);
+  --shadow-sm:0 1px 1px rgba(60,40,20,.06), 0 6px 14px -10px rgba(60,40,20,.11);
   color-scheme:light;
 }
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]):not([data-theme="light"]){
-    --bg:#f6f4f1;
-    --bg-elevated:#ffffff;
-    --bg-panel:#efebe5;
-    --bg-raised:#ffffff;
-    --ink:#1c1a22;
-    --ink-muted:#5c5766;
-    --ink-faint:#8b8593;
-    --accent:#4630a6;
-    --accent-2:#885930;
-    --accent-soft:rgba(70,48,166,.14);
-    --live:#2e6b4a;
-    --live-soft:rgba(46,107,74,.15);
-    --amber:#93611f;
-    --amber-soft:rgba(147,97,31,.16);
-    --danger:#a63d3d;
-    --danger-soft:rgba(166,61,61,.14);
-    --border:#e4ddd2;
-    --border-strong:#cec2b0;
-    --shadow-lg:0 24px 52px -30px rgba(60,40,20,.16);
-    --shadow-md:0 14px 28px -18px rgba(60,40,20,.13);
-    --shadow-sm:0 6px 14px -10px rgba(60,40,20,.11);
+    --bg:#f7f3ea;
+    --bg-elevated:#fffdf7;
+    --bg-panel:#efe9dc;
+    --bg-raised:#fffdf7;
+    --ink:#1e1a14;
+    --ink-muted:#5e564a;
+    --ink-faint:#8a8275;
+    --accent:#a8641a;
+    --accent-2:#b04a2c;
+    --accent-soft:rgba(168,100,26,.15);
+    --live:#26684d;
+    --live-soft:rgba(38,104,77,.15);
+    --amber:#8a6a16;
+    --amber-soft:rgba(138,106,22,.16);
+    --danger:#a83c34;
+    --danger-soft:rgba(168,60,52,.14);
+    --border:#e6ddc9;
+    --border-strong:#d0c3a8;
+    --shadow-lg:0 1px 2px rgba(60,40,20,.08), 0 24px 52px -30px rgba(60,40,20,.16);
+    --shadow-md:0 1px 2px rgba(60,40,20,.07), 0 14px 28px -18px rgba(60,40,20,.13);
+    --shadow-sm:0 1px 1px rgba(60,40,20,.06), 0 6px 14px -10px rgba(60,40,20,.11);
     color-scheme:light;
   }
 }
@@ -218,7 +240,10 @@ h3,b,strong{font-family:inherit}
 }
 /* Inside a card the heading is already framed by the card, so the tick is noise. */
 .panel .overline::before,.hero-card .overline::before,.panel-compact .overline::before{display:none}
-h1{font-size:clamp(28px,6vw,34px);line-height:var(--lh-snug);letter-spacing:var(--track-display);font-weight:800;margin:0 0 4px}
+/* Fraunces at 600 rather than 800: a serif gets its presence from contrast and size,
+   not from weight, and the heavy optical sizes go muddy at headline scale. */
+h1{font-size:var(--text-3xl);line-height:1.05;letter-spacing:-.02em;font-weight:600;margin:0 0 6px}
+h2{letter-spacing:-.015em;font-weight:600}
 h2{font-size:22px;line-height:var(--lh-snug);font-weight:800;margin:0}
 .subtitle{margin:0;color:var(--ink-muted);font-size:var(--text-md);font-weight:500}
 .empty-state{
@@ -578,12 +603,20 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    the flex row instead of overflowing it — a flex item's default min-width:auto
    refuses to shrink below its unwrapped content width, and since .hero-card clips
    overflow, that meant a long name silently got cut off at the card's edge. */
-.hero-card h2#focusTitle{font-size:22px;font-weight:700;line-height:var(--lh-snug);margin:0;color:var(--on-grad);letter-spacing:var(--track-display);flex:1 1 auto;min-width:0}
+.hero-card h2#focusTitle{font-family:var(--font-display);font-size:var(--text-xl);font-weight:600;line-height:var(--lh-snug);margin:0;color:var(--on-grad);letter-spacing:var(--track-display);flex:1 1 auto;min-width:0}
 .hero-time-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
 /* Time and title read at the same size, but time carries more weight and a
    faint glow — it's the thing your eyes should land on first, without the
    two elements looking mismatched in scale. */
-.hero-time{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:var(--track-display);line-height:var(--lh-flat);color:var(--on-grad);white-space:nowrap;min-width:0;text-shadow:0 0 20px color-mix(in srgb, var(--on-grad) 35%, transparent)}
+/* The class time was set at 22px — the same size as the title above it — so the one
+   number you look at the card for had no more weight than the words around it. It is
+   now the loudest thing on the screen, with the am/pm dropped to a small label so the
+   figures themselves carry the line. */
+.hero-time{
+  font-family:var(--font-display);font-size:var(--text-2xl);font-weight:700;
+  letter-spacing:var(--track-display);line-height:var(--lh-flat);color:var(--on-grad);
+  white-space:nowrap;min-width:0;font-variant-numeric:tabular-nums;
+}
 .hero-ring{position:relative;width:36px;height:36px;flex:none}
 .hero-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .hero-ring circle{fill:none;stroke-width:3.5}
@@ -655,7 +688,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .exam-hero h2{font-size:var(--text-md);font-weight:700;line-height:var(--lh-snug);margin:0;color:var(--on-grad);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .exam-hero-meta{margin:4px 0 0;font-size:var(--text-md);color:var(--on-grad-muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .exam-hero-side{display:flex;align-items:center;gap:8px;flex:none}
-.exam-hero-side b{font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--on-grad);white-space:nowrap}
+.exam-hero-side b{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--on-grad);white-space:nowrap}
 .exam-hero-prep{background:var(--hero-chip-bg);color:var(--on-grad);border-color:transparent}
 .exam-hero-prep:hover{background:var(--hero-chip-bg-hover)}
 
@@ -723,7 +756,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 @media (hover:hover){.hero-day-arrow:hover:not(:disabled){background:var(--hero-chip-bg);color:var(--on-grad)}}
 .hero-day-arrow:active:not(:disabled){transform:scale(.9)}
 .hero-day-label{
-  font-family:var(--font-display);font-size:var(--text-md);font-weight:800;letter-spacing:var(--track-tight);
+  font-family:var(--font-display);font-size:var(--text-md);font-weight:700;letter-spacing:var(--track-tight);
   color:var(--on-grad);min-width:96px;text-align:center;
 }
 .hero-day-chip{
@@ -767,7 +800,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sched-row:active{transform:scale(.99)}
 /* Wide enough for "– 3:30 pm" on one line at the 11px label size. */
 .sr-time{width:58px;flex:none;text-align:right;padding-top:1px}
-.sr-time b{display:block;font-family:var(--font-display);font-size:var(--text-md);font-weight:800;color:var(--ink);line-height:var(--lh-flat);font-variant-numeric:tabular-nums}
+.sr-time b{display:block;font-family:var(--font-display);font-size:var(--text-md);font-weight:700;color:var(--ink);line-height:var(--lh-flat);font-variant-numeric:tabular-nums}
 .sr-time small{display:block;font-size:var(--text-xs);font-weight:700;color:var(--ink-faint);text-transform:uppercase;margin-top:3px}
 .sr-time-end{display:block;font-size:var(--text-xs);font-weight:600;color:var(--ink-faint);margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .sr-time-end::before{content:"– "}
@@ -1028,7 +1061,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .subtab{
   display:flex;align-items:center;justify-content:center;gap:8px;flex:1;min-width:0;
   background:none;border:0;color:var(--ink-muted);cursor:pointer;
-  padding:11px 16px;border-radius:var(--radius-sm);font-family:var(--font-display);font-size:var(--text-md);font-weight:700;letter-spacing:var(--track-tight);
+  padding:11px 16px;border-radius:var(--radius-sm);font-size:var(--text-md);font-weight:700;letter-spacing:var(--track-tight);
   transition:background .2s ease,color .2s ease,box-shadow .2s ease;
 }
 .subtab svg{width:17px;height:17px}
@@ -1119,7 +1152,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .leaving-soon-toggle.active{background:var(--amber);color:#1a1200;border-color:transparent}
 /* The departure time is the one number you actually came here for — it gets more
    presence than the route name/service label sitting right below it. */
-.next-bus-time{font-family:var(--font-display);font-size:24px;font-weight:800;letter-spacing:var(--track-display);color:var(--on-grad);font-variant-numeric:tabular-nums}
+.next-bus-time{font-family:var(--font-display);font-size:24px;font-weight:700;letter-spacing:var(--track-display);color:var(--on-grad);font-variant-numeric:tabular-nums}
 .next-bus-card h2{font-size:var(--text-lg);font-weight:700;margin-top:6px;color:var(--on-grad-muted)}
 .next-bus-card p#nextBusMeta{margin:2px 0 0;font-size:var(--text-sm);color:var(--on-grad-muted);font-weight:500;opacity:.8}
 .next-bus-origin-note{margin:8px 0 0;padding:9px 11px;border-radius:var(--radius-sm);background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 8%, transparent));font-size:var(--text-md);color:var(--on-grad-muted);font-weight:600;line-height:var(--lh-body)}
@@ -1164,7 +1197,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:flex;align-items:center;gap:12px;
 }
 .countdown-copy span{display:block;font-size:var(--text-sm);font-weight:700;color:var(--on-grad-muted);text-transform:uppercase;letter-spacing:var(--track-label)}
-.countdown-copy strong{display:block;margin-top:1px;font-family:var(--font-display);font-size:19px;font-weight:800;letter-spacing:var(--track-display);color:var(--on-grad);font-variant-numeric:tabular-nums}
+.countdown-copy strong{display:block;margin-top:1px;font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:var(--track-display);color:var(--on-grad);font-variant-numeric:tabular-nums}
 .countdown-ring{width:40px;height:40px;flex:none}
 .countdown-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .countdown-ring circle{fill:none;stroke-width:3.5}
@@ -1200,7 +1233,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .board-row.is-maingate .board-row-avatar{background:color-mix(in srgb, var(--amber) 20%, transparent);color:var(--amber)}
 .board-row.is-shuttle .board-row-avatar{background:color-mix(in srgb, var(--accent) 20%, transparent);color:var(--accent)}
 .board-row .t{
-  flex:none;font-family:var(--font-display);font-size:var(--text-md);font-weight:800;letter-spacing:var(--track-display);
+  flex:none;font-family:var(--font-display);font-size:var(--text-md);font-weight:700;letter-spacing:var(--track-display);
   font-variant-numeric:tabular-nums;color:var(--ink);
 }
 .board-row .r{flex:1;min-width:0}
@@ -1498,7 +1531,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .wc-cell:active{transform:scale(.94)}
 .wc-dow{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint)}
-.wc-num{font-family:var(--font-display);font-size:var(--text-md);font-weight:800;color:var(--ink);line-height:var(--lh-flat);margin-top:1px;font-variant-numeric:tabular-nums}
+.wc-num{font-family:var(--font-display);font-size:var(--text-md);font-weight:700;color:var(--ink);line-height:var(--lh-flat);margin-top:1px;font-variant-numeric:tabular-nums}
 .wc-cnt{font-size:var(--text-xs);font-weight:800;color:var(--accent-2);margin-top:1px;font-variant-numeric:tabular-nums}
 .wc-cell.zero{background:var(--bg-panel)}
 .wc-cell.zero .wc-cnt{color:var(--ink-faint);opacity:.55}
@@ -1713,7 +1746,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .term-ring .ring-fill{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:163.4;stroke-dashoffset:calc(163.4 - (163.4 * var(--pct,0) / 100));transition:stroke-dashoffset .5s ease}
 /* Butt caps, not round — round ends would overlap the neighbouring course's arc. */
 .term-ring .ring-seg{stroke-linecap:butt;transition:stroke-dasharray .5s ease}
-.term-ring b{position:relative;font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--accent)}
+.term-ring b{position:relative;font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--accent)}
 .term-ring-meta{display:flex;flex-direction:column;min-width:0}
 .term-ring-meta strong{font-size:var(--text-md);font-weight:700}
 .term-ring-meta span{font-size:var(--text-sm);color:var(--ink-muted);font-weight:600;margin-top:2px}
@@ -1775,7 +1808,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .notification-chip{
   flex:none;width:36px;height:36px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;
   background:color-mix(in srgb, var(--course,var(--accent)) 20%, transparent);color:var(--course,var(--accent));
-  font-family:var(--font-display);font-size:var(--text-xs);font-weight:700;letter-spacing:var(--track-display);
+  font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);
 }
 .notification-body{flex:1;min-width:0}
 .notification-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -2090,7 +2123,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .tc-leg{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
 .tc-stop{display:flex;flex-direction:column;gap:2px;flex:none;max-width:38%}
 .tc-stop-end{align-items:flex-end;text-align:right}
-.tc-stop b{font-family:var(--font-display);font-size:var(--text-lg);font-weight:800;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:var(--track-display)}
+.tc-stop b{font-family:var(--font-display);font-size:var(--text-lg);font-weight:700;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:var(--track-display)}
 .tc-stop small{font-size:var(--text-xs);font-weight:600;color:var(--ink-faint);line-height:var(--lh-snug)}
 .tc-line{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;padding-top:9px}
 .tc-line i{
@@ -2116,7 +2149,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .frc-span{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
 .frc-end{display:flex;flex-direction:column;gap:2px;flex:none;max-width:40%}
 .frc-to{align-items:flex-end;text-align:right}
-.frc-end b{font-family:var(--font-display);font-size:var(--text-md);font-weight:800;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums}
+.frc-end b{font-family:var(--font-display);font-size:var(--text-md);font-weight:700;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums}
 .frc-end small{font-size:var(--text-xs);font-weight:600;color:var(--ink-faint)}
 .frc-bar{flex:1;min-width:0;display:flex;align-items:center;padding-top:7px}
 .frc-bar i{
@@ -2216,3 +2249,98 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .trip-card:active{transform:scale(.99)}
 .free-run-card:active{transform:scale(.995)}
 .trip-card,.free-run-card{transition:transform .12s ease}
+
+/* ============ Space instead of lines ============
+   The app separated nearly everything with a border. Borders are the cheap way to
+   divide a layout and they are why a screen full of them reads as assembled rather
+   than composed; space does the same job and leaves the surface quiet. Panels keep
+   their shadow and edge light, which is enough to say "this is a card", and give
+   back the border in exchange for room. */
+.panel{border-color:transparent;padding:24px 22px;margin-top:22px}
+:root[data-theme="light"] .panel{border-color:var(--border)}
+.week-heatmap{border-color:transparent;padding:22px 16px 16px}
+:root[data-theme="light"] .week-heatmap{border-color:var(--border)}
+
+/* am/pm as a label beside the figures, and the dash set apart from both. */
+.hero-time small{
+  font-family:var(--font);font-size:var(--text-sm);font-weight:700;
+  letter-spacing:var(--track-label);text-transform:uppercase;
+  margin-left:3px;color:var(--on-grad-muted);vertical-align:.42em;
+}
+.hero-time em{font-style:normal;margin:0 2px;color:var(--on-grad-muted);font-weight:400}
+
+/* The topbar was the only glass in the app, which made it look like a one-off rather
+   than a material the app is built from. */
+.bottom-nav{
+  background:color-mix(in srgb, var(--bg-elevated) 76%, transparent);
+  backdrop-filter:blur(20px) saturate(1.4);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);
+}
+.dialog-card{
+  backdrop-filter:blur(20px) saturate(1.3);
+  -webkit-backdrop-filter:blur(20px) saturate(1.3);
+}
+
+/* Fraunces has real tabular figures and needs them switched on explicitly; without
+   this every countdown jitters as the digits change width. */
+.hero-time,.wc-num,.tc-stop b,.frc-end b,#termProgressPct,.next-bus-time{font-variant-numeric:tabular-nums}
+
+/* ============ Courses and Faculty ============ */
+.course-card{
+  margin:14px 0;padding:20px;border-radius:var(--radius-lg);
+  background:var(--bg-elevated);box-shadow:var(--shadow-md), var(--edge-light);
+  border:1px solid transparent;
+}
+:root[data-theme="light"] .course-card{border-color:var(--border)}
+.course-card.live{box-shadow:var(--shadow-md), var(--edge-light), 0 0 0 1.5px color-mix(in srgb, var(--course) 45%, transparent)}
+.course-card header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cc-code{
+  padding:4px 10px;border-radius:var(--radius-xs);
+  font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);
+  background:color-mix(in srgb, var(--course) 18%, transparent);color:var(--course);
+}
+.cc-pct{font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;color:var(--ink-muted);font-variant-numeric:tabular-nums}
+.cc-live{padding:4px 10px;border-radius:var(--radius-pill);background:var(--live);color:#06130d;font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label)}
+.course-card h3{
+  margin:12px 0 0;font-family:var(--font-display);font-size:var(--text-xl);font-weight:600;
+  line-height:var(--lh-snug);letter-spacing:-.015em;color:var(--ink);
+}
+.cc-meta{margin:6px 0 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:var(--text-sm);font-weight:500;color:var(--ink-faint)}
+.cc-meta .sep{opacity:.4}
+.cc-bar{height:3px;border-radius:3px;background:color-mix(in srgb, var(--ink) 9%, transparent);margin:14px 0 0;overflow:hidden}
+.cc-bar span{display:block;height:100%;border-radius:3px;background:var(--course);transition:width .5s cubic-bezier(.22,1,.36,1)}
+/* The topic list is the course itself — one line per distinct session title, dotted in
+   that session's kind colour, struck back once it has been taught. */
+.cc-topics{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+.cc-topics li{display:flex;align-items:baseline;gap:9px;font-size:var(--text-sm);font-weight:600;color:var(--ink)}
+.cc-topics li i{flex:none;width:6px;height:6px;border-radius:50%;background:var(--course);transform:translateY(-1px)}
+.cc-topics li span{flex:1;min-width:0;line-height:var(--lh-snug)}
+.cc-topics li b{flex:none;font-size:var(--text-xs);font-weight:700;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.cc-topics li.done{color:var(--ink-faint)}
+.cc-topics li.done i{opacity:.4}
+.cc-faculty{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+
+.fac-card{
+  display:flex;align-items:flex-start;gap:14px;margin:10px 0;padding:16px;
+  border-radius:var(--radius-lg);background:var(--bg-elevated);
+  box-shadow:var(--shadow-sm), var(--edge-light);border:1px solid transparent;
+}
+:root[data-theme="light"] .fac-card{border-color:var(--border)}
+.fac-avatar{
+  flex:none;width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font);font-size:var(--text-md);font-weight:800;letter-spacing:0;
+  color:#fff;background:hsl(var(--fac-hue,260) 42% 44%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
+}
+:root[data-theme="light"] .fac-avatar{background:hsl(var(--fac-hue,260) 44% 40%)}
+.fac-body{flex:1;min-width:0}
+.fac-body strong{display:block;font-size:var(--text-md);font-weight:700;color:var(--ink);line-height:var(--lh-snug)}
+.fac-meta{margin:6px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fac-course{
+  padding:2px 8px;border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:800;
+  letter-spacing:var(--track-label);
+  background:color-mix(in srgb, var(--course) 16%, transparent);color:var(--course);
+}
+.fac-count{font-size:var(--text-xs);font-weight:600;color:var(--ink-faint)}
+.fac-next{margin:8px 0 0;font-size:var(--text-sm);font-weight:500;color:var(--ink-muted)}
