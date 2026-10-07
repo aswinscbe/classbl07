@@ -4,9 +4,9 @@
    every bit of type work in it evaporated. 94KB total, served from the same origin as
    everything else, so it either all loads or nothing does. */
 @font-face{
-  font-family:"Fraunces";
-  src:url("fonts/fraunces-latin.woff2") format("woff2");
-  font-weight:400 700;font-style:normal;font-display:swap;
+  font-family:"Lexend";
+  src:url("fonts/lexend-latin.woff2") format("woff2");
+  font-weight:400 800;font-style:normal;font-display:swap;
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 @font-face{
@@ -66,12 +66,12 @@
   --radius-sm:10px;
   --radius-xs:8px;
   --radius-pill:99px;
-  --font:"Jakarta",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  /* A high-contrast serif on the headlines against a grotesque body — the pairing that
-     separates a designed interface from a tidy one. Fraunces is kept to the greeting,
-     the big numerals and section titles: three or four places per screen. Everywhere
-     else is Jakarta, which beats any serif at 11-13px. */
-  --font-display:"Fraunces",Georgia,"Times New Roman",serif;
+  --font:"Satoshi","Jakarta",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  /* Lexend for display, Satoshi for body — the pairing the app had before the serif.
+     Lexend is self-hosted; Satoshi has no source but its CDN, so Jakarta sits behind it
+     locally and catches the fall when that CDN is slow or blocked, instead of dropping
+     all the way to system sans. */
+  --font-display:"Lexend","Jakarta",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 
   /* Type scale — six steps. Sizes were previously picked ad hoc per rule
      (11/11.5/12/13/13.5/14/15px), which is most of the difference between a page
@@ -240,17 +240,9 @@ h3,b,strong{font-family:inherit}
 }
 /* Inside a card the heading is already framed by the card, so the tick is noise. */
 .panel .overline::before,.hero-card .overline::before,.panel-compact .overline::before{display:none}
-/* Fraunces at 600 rather than 800: a serif gets its presence from contrast and size,
-   not from weight, and the heavy optical sizes go muddy at headline scale. */
-h1{font-size:var(--text-3xl);line-height:1.12;letter-spacing:-.018em;font-weight:600;margin:0 0 6px}
-/* Fraunces carries a live optical-size axis, and the browser's automatic mapping ties
-   it to the font size in points — so a 34px headline lands around opsz 26, which is
-   still a text cut. Asking for the display end gives the headline the finer hairlines
-   and tighter fit the face was drawn to have at that size; the small numerals keep the
-   automatic mapping, where the sturdier text cut is the right one. */
-h1,.hero-time,.course-card h3{font-variation-settings:"opsz" 144}
-html{font-optical-sizing:auto}
-h2{letter-spacing:-.015em;font-weight:600}
+h1{font-size:var(--text-3xl);line-height:var(--lh-snug);letter-spacing:var(--track-display);font-weight:800;margin:0 0 6px}
+
+h2{letter-spacing:var(--track-display);font-weight:800}
 h2{font-size:22px;line-height:var(--lh-snug);font-weight:800;margin:0}
 .subtitle{margin:0;color:var(--ink-muted);font-size:var(--text-md);font-weight:500}
 .empty-state{
@@ -368,7 +360,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent), 0 2px 10px -3px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 .brand-copy{display:flex;flex-direction:column;line-height:var(--lh-snug);text-align:left}
-.brand-copy strong{font-family:var(--font-display);font-size:var(--text-md);font-weight:700;letter-spacing:var(--track-tight)}
+.brand-copy strong{font-family:var(--font-display);font-size:var(--text-md);font-weight:800;letter-spacing:var(--track-tight)}
 .brand-copy small{font-size:var(--text-xs);font-weight:700;letter-spacing:var(--track-label);color:var(--ink-faint);transition:opacity .15s ease}
 .desktop-nav{display:none;gap:2px;margin-right:auto;margin-left:20px}
 .desktop-nav-item{
@@ -610,7 +602,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    the flex row instead of overflowing it — a flex item's default min-width:auto
    refuses to shrink below its unwrapped content width, and since .hero-card clips
    overflow, that meant a long name silently got cut off at the card's edge. */
-.hero-card h2#focusTitle{font-family:var(--font-display);font-size:var(--text-xl);font-weight:600;line-height:var(--lh-snug);margin:0;color:var(--on-grad);letter-spacing:var(--track-display);flex:1 1 auto;min-width:0}
+.hero-card h2#focusTitle{font-family:var(--font-display);font-size:var(--text-xl);font-weight:700;line-height:var(--lh-snug);margin:0;color:var(--on-grad);letter-spacing:var(--track-display);flex:1 1 auto;min-width:0}
 .hero-time-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
 /* Time and title read at the same size, but time carries more weight and a
    faint glow — it's the thing your eyes should land on first, without the
@@ -620,7 +612,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    now the loudest thing on the screen, with the am/pm dropped to a small label so the
    figures themselves carry the line. */
 .hero-time{
-  font-family:var(--font-display);font-size:var(--text-2xl);font-weight:700;
+  font-family:var(--font-display);font-size:var(--text-2xl);font-weight:800;
   letter-spacing:var(--track-display);line-height:var(--lh-flat);color:var(--on-grad);
   white-space:nowrap;min-width:0;font-variant-numeric:tabular-nums;
 }
@@ -695,7 +687,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .exam-hero h2{font-size:var(--text-md);font-weight:700;line-height:var(--lh-snug);margin:0;color:var(--on-grad);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .exam-hero-meta{margin:4px 0 0;font-size:var(--text-md);color:var(--on-grad-muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .exam-hero-side{display:flex;align-items:center;gap:8px;flex:none}
-.exam-hero-side b{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--on-grad);white-space:nowrap}
+.exam-hero-side b{font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--on-grad);white-space:nowrap}
 .exam-hero-prep{background:var(--hero-chip-bg);color:var(--on-grad);border-color:transparent}
 .exam-hero-prep:hover{background:var(--hero-chip-bg-hover)}
 
@@ -772,7 +764,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 @media (hover:hover){.hero-day-arrow:hover:not(:disabled){background:var(--hero-chip-bg);color:var(--on-grad)}}
 .hero-day-arrow:active:not(:disabled){transform:scale(.9)}
 .hero-day-label{
-  font-family:var(--font-display);font-size:var(--text-md);font-weight:700;letter-spacing:var(--track-tight);
+  font-family:var(--font-display);font-size:var(--text-md);font-weight:800;letter-spacing:var(--track-tight);
   color:var(--on-grad);min-width:96px;text-align:center;
 }
 .hero-day-chip{
@@ -816,7 +808,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sched-row:active{transform:scale(.99)}
 /* Wide enough for "– 3:30 pm" on one line at the 11px label size. */
 .sr-time{width:58px;flex:none;text-align:right;padding-top:1px}
-.sr-time b{display:block;font-family:var(--font-display);font-size:var(--text-md);font-weight:700;color:var(--ink);line-height:var(--lh-flat);font-variant-numeric:tabular-nums}
+.sr-time b{display:block;font-family:var(--font-display);font-size:var(--text-md);font-weight:800;color:var(--ink);line-height:var(--lh-flat);font-variant-numeric:tabular-nums}
 .sr-time small{display:block;font-size:var(--text-xs);font-weight:700;color:var(--ink-faint);text-transform:uppercase;margin-top:3px}
 .sr-time-end{display:block;font-size:var(--text-xs);font-weight:600;color:var(--ink-faint);margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .sr-time-end::before{content:"– "}
@@ -1168,7 +1160,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .leaving-soon-toggle.active{background:var(--amber);color:#1a1200;border-color:transparent}
 /* The departure time is the one number you actually came here for — it gets more
    presence than the route name/service label sitting right below it. */
-.next-bus-time{font-family:var(--font-display);font-size:24px;font-weight:700;letter-spacing:var(--track-display);color:var(--on-grad);font-variant-numeric:tabular-nums}
+.next-bus-time{font-family:var(--font-display);font-size:24px;font-weight:800;letter-spacing:var(--track-display);color:var(--on-grad);font-variant-numeric:tabular-nums}
 .next-bus-card h2{font-size:var(--text-lg);font-weight:700;margin-top:6px;color:var(--on-grad-muted)}
 .next-bus-card p#nextBusMeta{margin:2px 0 0;font-size:var(--text-sm);color:var(--on-grad-muted);font-weight:500;opacity:.8}
 .next-bus-origin-note{margin:8px 0 0;padding:9px 11px;border-radius:var(--radius-sm);background:var(--hero-chip-bg, color-mix(in srgb, var(--ink) 8%, transparent));font-size:var(--text-md);color:var(--on-grad-muted);font-weight:600;line-height:var(--lh-body)}
@@ -1213,7 +1205,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:flex;align-items:center;gap:12px;
 }
 .countdown-copy span{display:block;font-size:var(--text-sm);font-weight:700;color:var(--on-grad-muted);text-transform:uppercase;letter-spacing:var(--track-label)}
-.countdown-copy strong{display:block;margin-top:1px;font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:var(--track-display);color:var(--on-grad);font-variant-numeric:tabular-nums}
+.countdown-copy strong{display:block;margin-top:1px;font-family:var(--font-display);font-size:19px;font-weight:800;letter-spacing:var(--track-display);color:var(--on-grad);font-variant-numeric:tabular-nums}
 .countdown-ring{width:40px;height:40px;flex:none}
 .countdown-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .countdown-ring circle{fill:none;stroke-width:3.5}
@@ -1249,7 +1241,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .board-row.is-maingate .board-row-avatar{background:color-mix(in srgb, var(--amber) 20%, transparent);color:var(--amber)}
 .board-row.is-shuttle .board-row-avatar{background:color-mix(in srgb, var(--accent) 20%, transparent);color:var(--accent)}
 .board-row .t{
-  flex:none;font-family:var(--font-display);font-size:var(--text-md);font-weight:700;letter-spacing:var(--track-display);
+  flex:none;font-family:var(--font-display);font-size:var(--text-md);font-weight:800;letter-spacing:var(--track-display);
   font-variant-numeric:tabular-nums;color:var(--ink);
 }
 .board-row .r{flex:1;min-width:0}
@@ -1547,7 +1539,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .wc-cell:active{transform:scale(.94)}
 .wc-dow{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint)}
-.wc-num{font-family:var(--font-display);font-size:var(--text-md);font-weight:700;color:var(--ink);line-height:var(--lh-flat);margin-top:1px;font-variant-numeric:tabular-nums}
+.wc-num{font-family:var(--font-display);font-size:var(--text-md);font-weight:800;color:var(--ink);line-height:var(--lh-flat);margin-top:1px;font-variant-numeric:tabular-nums}
 .wc-cnt{font-size:var(--text-xs);font-weight:800;color:var(--accent-2);margin-top:1px;font-variant-numeric:tabular-nums}
 .wc-cell.zero{background:var(--bg-panel)}
 .wc-cell.zero .wc-cnt{color:var(--ink-faint);opacity:.55}
@@ -1640,7 +1632,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .calendar-title-jump:active{background:var(--bg-panel)}
 .calendar-title-jump::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--ink-faint);border-bottom:1.5px solid var(--ink-faint);transform:rotate(45deg);margin-top:-3px}
 .month-jump-input{position:absolute;inset:0;opacity:0;pointer-events:none;width:1px;height:1px}
-.calendar-head h2{font-family:var(--font-display);font-size:clamp(24px,6vw,28px);font-weight:700;letter-spacing:var(--track-tight);margin:0}
+.calendar-head h2{font-family:var(--font-display);font-size:clamp(24px,6vw,28px);font-weight:800;letter-spacing:var(--track-tight);margin:0}
 .month-key{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-top:16px;padding-top:14px;border-top:1px solid color-mix(in srgb, #fff 6%, var(--border))}
 .mk-item{display:inline-flex;align-items:center;gap:6px;font-size:var(--text-xs);font-weight:600;color:var(--ink-faint)}
 .mk-swatch{width:9px;height:9px;border-radius:50%;flex:none;background:var(--accent)}
@@ -1762,7 +1754,7 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .term-ring .ring-fill{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:163.4;stroke-dashoffset:calc(163.4 - (163.4 * var(--pct,0) / 100));transition:stroke-dashoffset .5s ease}
 /* Butt caps, not round — round ends would overlap the neighbouring course's arc. */
 .term-ring .ring-seg{stroke-linecap:butt;transition:stroke-dasharray .5s ease}
-.term-ring b{position:relative;font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--accent)}
+.term-ring b{position:relative;font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--accent)}
 .term-ring-meta{display:flex;flex-direction:column;min-width:0}
 .term-ring-meta strong{font-size:var(--text-md);font-weight:700}
 .term-ring-meta span{font-size:var(--text-sm);color:var(--ink-muted);font-weight:600;margin-top:2px}
@@ -2139,7 +2131,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .tc-leg{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
 .tc-stop{display:flex;flex-direction:column;gap:2px;flex:none;max-width:38%}
 .tc-stop-end{align-items:flex-end;text-align:right}
-.tc-stop b{font-family:var(--font-display);font-size:var(--text-lg);font-weight:700;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:var(--track-display)}
+.tc-stop b{font-family:var(--font-display);font-size:var(--text-lg);font-weight:800;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:var(--track-display)}
 .tc-stop small{font-size:var(--text-xs);font-weight:600;color:var(--ink-faint);line-height:var(--lh-snug)}
 .tc-line{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;padding-top:9px}
 .tc-line i{
@@ -2165,7 +2157,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .frc-span{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
 .frc-end{display:flex;flex-direction:column;gap:2px;flex:none;max-width:40%}
 .frc-to{align-items:flex-end;text-align:right}
-.frc-end b{font-family:var(--font-display);font-size:var(--text-md);font-weight:700;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums}
+.frc-end b{font-family:var(--font-display);font-size:var(--text-md);font-weight:800;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums}
 .frc-end small{font-size:var(--text-xs);font-weight:600;color:var(--ink-faint)}
 .frc-bar{flex:1;min-width:0;display:flex;align-items:center;padding-top:7px}
 .frc-bar i{
@@ -2297,8 +2289,8 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
   -webkit-backdrop-filter:blur(20px) saturate(1.3);
 }
 
-/* Fraunces has real tabular figures and needs them switched on explicitly; without
-   this every countdown jitters as the digits change width. */
+/* Tabular figures on everything that counts down or ticks, so the digits do not
+   change width as they change value. */
 .hero-time,.wc-num,.tc-stop b,.frc-end b,#termProgressPct,.next-bus-time{font-variant-numeric:tabular-nums}
 
 /* ============ Courses and Faculty ============ */
@@ -2315,11 +2307,11 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
   font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);
   background:color-mix(in srgb, var(--course) 18%, transparent);color:var(--course);
 }
-.cc-pct{font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;color:var(--ink-muted);font-variant-numeric:tabular-nums}
+.cc-pct{font-family:var(--font-display);font-size:var(--text-lg);font-weight:800;color:var(--ink-muted);font-variant-numeric:tabular-nums}
 .cc-live{padding:4px 10px;border-radius:var(--radius-pill);background:var(--live);color:#06130d;font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label)}
 .course-card h3{
-  margin:12px 0 0;font-family:var(--font-display);font-size:var(--text-xl);font-weight:600;
-  line-height:var(--lh-snug);letter-spacing:-.015em;color:var(--ink);
+  margin:12px 0 0;font-family:var(--font-display);font-size:var(--text-xl);font-weight:800;
+  line-height:var(--lh-snug);letter-spacing:var(--track-display);color:var(--ink);
 }
 .cc-meta{margin:6px 0 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:var(--text-sm);font-weight:500;color:var(--ink-faint)}
 .cc-meta .sep{opacity:.4}
@@ -2397,8 +2389,8 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
   border:1px solid var(--border-strong);gap:0;
 }
 .date-orbit span{
-  font-family:var(--font-display);font-size:var(--text-xl);font-weight:600;
-  line-height:var(--lh-flat);font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+  font-family:var(--font-display);font-size:var(--text-xl);font-weight:800;
+  line-height:var(--lh-flat);font-variant-numeric:tabular-nums;letter-spacing:var(--track-display);
 }
 .date-orbit small{
   margin-top:3px;padding-top:3px;font-size:9.5px;color:var(--ink-faint);

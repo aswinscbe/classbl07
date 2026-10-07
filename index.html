@@ -10,12 +10,15 @@
   <link rel="icon" href="icons/favicon-16.png" sizes="16x16" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://script.google.com">
-  <!-- Fonts are self-hosted (see fonts/ and the @font-face block at the top of
-       styles.css), so there are no font CDNs to preconnect to and nothing to fall
-       back from on a filtered network. Preloaded because they are render-blocking
-       for the headline. -->
-  <link rel="preload" href="fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+  <!-- Lexend and the body fallback are self-hosted (see fonts/ and the @font-face
+       block at the top of styles.css) and preloaded, since they are render-blocking
+       for the headline. Satoshi has no source but Fontshare, so it still loads from
+       there; the local Jakarta sits behind it in the stack and catches the fall when
+       that CDN is slow or blocked, rather than dropping to system sans. -->
+  <link rel="preload" href="fonts/lexend-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/jakarta-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap" rel="stylesheet">
   <script>
     (function(){
       try{
@@ -27,7 +30,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260928-nova149">
+  <link rel="stylesheet" href="styles.css?v=20260928-nova150">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -574,11 +577,11 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260928-nova149"></script>
-  <script src="staff-bus-data.js?v=20260928-nova149"></script>
-  <script src="exam-data.js?v=20260928-nova149"></script>
-  <script src="immersion-data.js?v=20260928-nova149"></script>
-  <script src="app.js?v=20260928-nova149"></script>
-  <script src="polish.js?v=20260928-nova149"></script>
+  <script src="campus-data.js?v=20260928-nova150"></script>
+  <script src="staff-bus-data.js?v=20260928-nova150"></script>
+  <script src="exam-data.js?v=20260928-nova150"></script>
+  <script src="immersion-data.js?v=20260928-nova150"></script>
+  <script src="app.js?v=20260928-nova150"></script>
+  <script src="polish.js?v=20260928-nova150"></script>
 </body>
 </html>
