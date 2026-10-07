@@ -52,7 +52,7 @@ window.IMMERSION_CLASSES = [
   {dateIso:"2026-10-14",startTime:"09:30",endTime:"11:00",code:"SUST",course:"Sustainable Business Models",faculty:"Prof. Alfred Vernis",venue:"Esade Barcelona · Room 0014",type:"Core",section:"A",status:"Scheduled"},
   {dateIso:"2026-10-14",startTime:"11:30",endTime:"13:00",code:"SUST",course:"Sustainable Business Models",faculty:"Prof. Alfred Vernis",venue:"Esade Barcelona · Room 0014",type:"Core",section:"A",status:"Scheduled"},
   /* Bus leaves Esade at 14:00 and returns at 20:30; the visit itself runs 15:00–20:30. */
-  {dateIso:"2026-10-14",startTime:"14:00",endTime:"20:30",code:"SUST",course:"Company Visit · Torres Winery, with wine tasting & dinner",venue:"Torres Winery · bus from Esade 14:00, returns 20:30",type:"Core",section:"A",status:"Scheduled"},
+  {dateIso:"2026-10-14",startTime:"14:00",endTime:"20:30",code:"SUST",course:"Company Visit · Torres Winery, with wine tasting & dinner",venue:"Torres Winery",type:"Core",section:"A",status:"Scheduled",transport:{from:"Esade Barcelona",depart:"14:00",back:"20:30"},notes:"Wine tasting & dinner on site"},
 
   {dateIso:"2026-10-15",startTime:"09:30",endTime:"11:00",code:"SUST",course:"Disruptive Innovation & Exponential Technologies",faculty:"Prof. Xavier Ferrás",venue:"Esade Barcelona · Room 0014",type:"Core",section:"A",status:"Scheduled"},
   {dateIso:"2026-10-15",startTime:"11:30",endTime:"13:00",code:"SUST",course:"Disruptive Innovation & Exponential Technologies",faculty:"Prof. Xavier Ferrás",venue:"Esade Barcelona · Room 0014",type:"Core",section:"A",status:"Scheduled"},

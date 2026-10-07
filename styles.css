@@ -362,12 +362,22 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* A live clock instead of a static page label — the "alive" detail a premium bar
    earns its glass treatment with. */
 .topbar-clock{
-  display:none;font-variant-numeric:tabular-nums;font-size:var(--text-md);font-weight:700;color:var(--ink-muted);
-  letter-spacing:var(--track-tight);margin-right:2px;white-space:nowrap;
+  display:none;flex-direction:column;align-items:flex-end;justify-content:center;
+  margin-right:2px;white-space:nowrap;line-height:var(--lh-flat);
 }
+/* Barcelona on top, home time underneath at label size — a glance reads the big
+   figure, and the subtraction is there when you want it. */
+.topbar-clock b{
+  font-variant-numeric:tabular-nums;font-size:var(--text-md);font-weight:700;
+  color:var(--ink-muted);letter-spacing:var(--track-tight);
+}
+.topbar-clock small{
+  font-variant-numeric:tabular-nums;font-size:var(--text-xs);font-weight:700;
+  color:var(--ink-faint);letter-spacing:var(--track-label);margin-top:2px;
+}
+@media (min-width:900px){.topbar-clock{display:flex}}
 /* The device already shows the time in its own status bar — repeating it in-app
    only earns its place once there's a wider desktop bar with room to spare. */
-@media (min-width:900px){.topbar-clock{display:inline}}
 .sync-pill{
   display:none;align-items:center;gap:7px;padding:0;border-radius:var(--radius-pill);
   background:none;border:0;font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);
@@ -712,7 +722,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    consistent mid-weight with venue/session/duration visible. */
 .timeline-added{display:inline-block;margin-left:2px;font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);text-transform:uppercase;color:var(--live)}
 .sched-list{display:flex;flex-direction:column}
-.sched-gap{display:flex;align-items:center;gap:6px;padding:7px 0 7px 73px;color:var(--ink-faint);font-size:var(--text-sm);font-weight:600}
+/* Drawn as a slot you could put something into, not as a caption between two cards:
+   a dashed rule either side of the duration, inset to the same 73px as the rows. */
+.sched-gap{display:flex;align-items:center;gap:10px;padding:9px 0 9px 73px;color:var(--ink-faint);font-size:var(--text-sm);font-weight:600}
+.sg-rule{flex:1;height:0;border-top:1px dashed var(--border-strong);min-width:8px}
+.sg-label{display:inline-flex;align-items:center;gap:5px;flex:none;padding:3px 9px;border-radius:var(--radius-pill);border:1px dashed var(--border-strong);background:var(--bg-panel)}
 /* Stands in for the live class on Home, where the hero already carries its detail. */
 .sched-now-marker{display:flex;align-items:center;gap:8px;padding:8px 0 8px 73px;cursor:pointer}
 .snm-dot{width:8px;height:8px;border-radius:50%;background:var(--course,var(--live));flex:none;box-shadow:0 0 0 3px color-mix(in srgb, var(--course,var(--live)) 22%, transparent)}
@@ -738,6 +752,31 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sr-live-pill{font-size:var(--text-xs);font-weight:800;background:var(--live);color:#04150c;padding:2.5px 8px;border-radius:var(--radius-pill);flex:none}
 .sr-cancel-pill{font-size:var(--text-xs);font-weight:800;background:color-mix(in srgb, var(--danger) 20%, transparent);color:var(--danger);padding:2.5px 8px;border-radius:var(--radius-pill);flex:none}
 .sr-tbc-pill{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);background:var(--amber-soft);color:var(--amber);padding:2.5px 7px;border-radius:var(--radius-pill);flex:none}
+/* Room and professor were the tail of a dot-joined string; as chips they are the
+   first thing the eye lands on in the row body, which is the order you need them in. */
+.sr-chips{display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap}
+.room-chip{
+  display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 6px;border-radius:var(--radius-pill);
+  font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-tight);font-variant-numeric:tabular-nums;
+  background:color-mix(in srgb, var(--ink) 7%, transparent);color:var(--ink-muted);
+  border:1px solid var(--border);
+}
+.room-chip svg{width:11px;height:11px;flex:none;opacity:.8}
+/* Hue derived from the professor's name, so the monogram is stable all module. The
+   lightness is fixed rather than taken from the hue so no chip comes out washed out. */
+.fac-chip{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%}
+.fac-chip i{
+  flex:none;width:20px;height:20px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:9.5px;font-weight:800;font-style:normal;letter-spacing:0;line-height:1;
+  color:#fff;background:hsl(var(--fac-hue,260) 42% 44%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+}
+.fac-chip b{
+  font-size:var(--text-xs);font-weight:700;color:var(--ink-muted);letter-spacing:var(--track-tight);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+:root[data-theme="light"] .fac-chip i{background:hsl(var(--fac-hue,260) 44% 40%)}
 .sr-meta{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:var(--text-sm);color:var(--ink-faint);flex-wrap:wrap}
 .sr-meta .sep{opacity:.4}
 .sr-next{margin:6px 0 0;font-size:var(--text-sm);font-weight:600;color:var(--ink-faint)}
@@ -1955,3 +1994,124 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
   .exam-strip:hover,.term-progress-head:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 }
 .exam-strip:active,.term-progress-head:active{transform:scale(.98)}
+
+/* ============ Session kind, offsite card, open stretch, axis, stagger ============
+   Course colour went decorative when the term feed became a two-code immersion
+   module. Inside a day the variable worth colouring is the kind of session, so the
+   marks below all read from --course fed by kindColorFor(). */
+.sr-kind-pill{
+  flex:none;padding:2px 7px;border-radius:var(--radius-pill);
+  font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);text-transform:uppercase;
+  background:color-mix(in srgb, var(--course,var(--accent)) 18%, transparent);
+  color:color-mix(in srgb, var(--course,var(--accent)) 85%, var(--ink) 15%);
+  border:1px solid color-mix(in srgb, var(--course,var(--accent)) 28%, transparent);
+  white-space:nowrap;
+}
+
+/* An offsite is not a taller lecture. The winery visit runs 6.5 hours and what you
+   need from it is the leg, so the card is built around depart/return rather than
+   around a body of dead height. */
+.trip-card{
+  position:relative;margin:10px 0;padding:14px;border-radius:var(--radius-lg);cursor:pointer;
+  background:color-mix(in srgb, var(--course,var(--accent)) 9%, var(--bg-elevated));
+  border:1px solid color-mix(in srgb, var(--course,var(--accent)) 26%, transparent);
+  box-shadow:var(--shadow-sm);
+}
+.trip-card.done{opacity:.5}
+.trip-card header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tc-tag{
+  display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--radius-pill);
+  font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);
+  background:var(--course,var(--accent));color:#fff;
+}
+.tc-tag svg{width:12px;height:12px}
+.tc-dur{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.trip-card h3{margin:9px 0 0;font-size:var(--text-md);font-weight:800;line-height:var(--lh-snug);color:var(--ink)}
+/* Depart, the venue on the line between, return — the shape of a journey, so it
+   reads as one even before the times are read. */
+.tc-leg{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
+.tc-stop{display:flex;flex-direction:column;gap:2px;flex:none;max-width:38%}
+.tc-stop-end{align-items:flex-end;text-align:right}
+.tc-stop b{font-family:var(--font-display);font-size:var(--text-lg);font-weight:800;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:var(--track-display)}
+.tc-stop small{font-size:var(--text-xs);font-weight:600;color:var(--ink-faint);line-height:var(--lh-snug)}
+.tc-line{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;padding-top:9px}
+.tc-line i{
+  display:block;width:100%;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,var(--course,var(--accent)),color-mix(in srgb, var(--course,var(--accent)) 35%, transparent));
+}
+.tc-line em{
+  font-style:normal;font-size:var(--text-xs);font-weight:700;color:var(--ink-muted);text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;
+}
+.tc-note{margin:10px 0 0;font-size:var(--text-sm);font-weight:500;color:var(--ink-muted)}
+
+/* The module has a 3.5-day hole in it. Drawn as a span with two ends, because the
+   useful shape of a gap is how far it reaches, not how many hours it contains. */
+.free-run-card{
+  margin:0 0 12px;padding:14px;border-radius:var(--radius-lg);
+  background:var(--bg-panel);border:1px dashed var(--border-strong);
+}
+.free-run-card header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.frc-tag{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--accent-2)}
+.frc-len{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.free-run-card h3{margin:8px 0 0;font-size:var(--text-md);font-weight:800;line-height:var(--lh-snug);color:var(--ink)}
+.frc-span{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
+.frc-end{display:flex;flex-direction:column;gap:2px;flex:none;max-width:40%}
+.frc-to{align-items:flex-end;text-align:right}
+.frc-end b{font-family:var(--font-display);font-size:var(--text-md);font-weight:800;line-height:var(--lh-flat);color:var(--ink);font-variant-numeric:tabular-nums}
+.frc-end small{font-size:var(--text-xs);font-weight:600;color:var(--ink-faint)}
+.frc-bar{flex:1;min-width:0;display:flex;align-items:center;padding-top:7px}
+.frc-bar i{
+  display:block;width:100%;height:2px;border-radius:2px;
+  background:repeating-linear-gradient(90deg,var(--border-strong) 0 5px,transparent 5px 10px);
+}
+.frc-sub{margin:10px 0 0;font-size:var(--text-sm);font-weight:500;color:var(--ink-muted)}
+
+/* An axis under the day-shape bar, and on today a needle at the current time, so the
+   proportions can be read without reaching for a tooltip. */
+.dsb-row{position:relative}
+.dsb-axis{position:relative;height:13px;margin-top:4px}
+.dsb-tick{position:absolute;left:var(--at);top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px}
+.dsb-tick i{display:block;width:1px;height:4px;background:var(--border-strong)}
+.dsb-tick b{font-size:9.5px;font-weight:700;letter-spacing:var(--track-label);color:var(--ink-faint);font-variant-numeric:tabular-nums;line-height:1}
+/* No halo and a hairline width: the needle crosses the boxes, and anything thicker
+   wipes out the course code underneath it. */
+.dsb-needle{
+  position:absolute;left:var(--at);top:-3px;bottom:-1px;width:1.5px;transform:translateX(-50%);
+  background:var(--ink);border-radius:2px;pointer-events:none;mix-blend-mode:normal;
+}
+.dsb-needle::before{
+  content:"";position:absolute;left:50%;top:-4px;width:6px;height:6px;border-radius:50%;
+  transform:translateX(-50%);background:var(--ink);
+}
+
+/* The count says how many; this says what kind, so a day of four lectures and a day
+   with an offsite in it stop looking identical in the rail. */
+.wc-kinds{display:flex;align-items:center;gap:2px;margin-top:4px;height:3px}
+.wc-kinds i{display:block;width:4px;height:3px;border-radius:2px;background:var(--course,var(--accent))}
+.wc-kinds.empty{background:none}
+.wc-cell.sel .wc-kinds i{box-shadow:inset 0 0 0 1px rgba(255,255,255,.5)}
+
+/* Rows arrive in sequence rather than all at once, so switching day reads as the list
+   filling in. Capped at a short delay so a nine-session day is not a slideshow. */
+@keyframes sched-row-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.sched-list.stagger .sched-row,
+.sched-list.stagger .trip-card{
+  animation:sched-row-in .34s cubic-bezier(.22,.9,.3,1) both;
+  /* Capped so a nine-session day fills in rather than running as a slideshow. */
+  animation-delay:calc(min(var(--i,0),8) * 34ms);
+}
+@media(prefers-reduced-motion: reduce){
+  .sched-list.stagger .sched-row,.sched-list.stagger .trip-card{animation:none}
+}
+
+/* A clear day gets Barcelona's own skyline instead of the same generic spark as an
+   empty task filter. Hairlines in the faint ink colour, so it works in both themes. */
+.empty-state-bcn{gap:8px}
+.bcn-skyline{width:168px;max-width:70%;height:auto;color:var(--ink-faint);opacity:.6;margin-bottom:2px}
+:root[data-theme="light"] .bcn-skyline{opacity:.5}
+/* The kind key sits after the course key in the same row and is quieter: the course
+   chips carry a progress fill, these are a colour and a word. */
+.legend-item.kind-key b{display:none}
+.legend-item.kind-key{opacity:.92}
+.legend-split{width:1px;height:14px;background:var(--border-strong);margin:0 2px;flex:none;align-self:center}

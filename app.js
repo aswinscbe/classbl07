@@ -19,6 +19,55 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
    where these are used as fills. */
 const COURSE_COLORS={SM:"#4a90d9",DBST:"#3b4ea8",AIB:"#7c5cd6",OS:"#a855c7",CV:"#d1479b",PM:"#c2415c",POM:"#d4632f",CB:"#c8961a",SBM:"#8a9b2e",NWW:"#4fa54f",MAAS:"#1f7a4d",ACC:"#2fb896",IS:"#35b8c4",IBEU:"#8c6239",SUST:"#5b7f99"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
+/* Course colour stopped carrying information when the term feed became the immersion
+   module: two codes, one per week, so a colour said only what the week already said.
+   What varies inside a day is the KIND of session — a lecture and a company visit ask
+   different things of you — so per-session marks (schedule rows, the day-shape bar, the
+   week-strip kind bar) key off kind. The aggregate widgets that genuinely group by
+   course (term ring, course legend, month dots) keep course colour: there the code is
+   printed next to the mark, so the two systems never have to be told apart. */
+const SESSION_KINDS={
+  lecture:{label:"Lecture",color:"#6b5bd6"},
+  project:{label:"Team project",color:"#2fa37a"},
+  guest:{label:"Guest session",color:"#c2823a"},
+  visit:{label:"Offsite",color:"#c2415c"},
+  ceremony:{label:"Programme",color:"#5b7f99"}
+};
+/* Matched against the session title, most specific first: "Team Project Introduction"
+   has to land on project rather than on the ceremony rule for "Introduction". */
+function sessionKind(c){
+  const t=String((c&&c.course)||"").toLowerCase();
+  if(/company visit|site visit|winery|factory/.test(t))return"visit";
+  if(/guest speaker|pre-placement|panel/.test(t))return"guest";
+  if(/team project|group work|presentation/.test(t))return"project";
+  if(/program(me)? (welcome|closing|opening)|welcome dinner|closing ceremony/.test(t))return"ceremony";
+  return"lecture";
+}
+const kindOf=c=>SESSION_KINDS[sessionKind(c)]||SESSION_KINDS.lecture;
+const kindColorFor=c=>kindOf(c).color;
+
+/* A professor's name is the most variable thing on a schedule row and it was plain
+   text inside a dot-joined string. As a monogram it becomes something you recognise
+   without reading, and the hue is derived from the name so it never shifts between
+   renders or between days. */
+function shortFaculty(name){return String(name||"").replace(/^\s*(prof\.|dr\.|mr\.|ms\.|mrs\.)\s*/i,"").trim()}
+function initialsOf(name){
+  const parts=shortFaculty(name).split(/\s+/).filter(Boolean);
+  if(!parts.length)return"";
+  return(parts[0][0]+(parts.length>1?parts[parts.length-1][0]:"")).toUpperCase();
+}
+function monogramHue(name){let h=0;const s=String(name||"");for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
+function facultyChip(name){
+  if(!name)return"";
+  const full=String(name);
+  return`<span class="fac-chip" style="--fac-hue:${monogramHue(full)}" title="${esc(full)}"><i>${esc(initialsOf(full))}</i><b>${esc(shortFaculty(full))}</b></span>`;
+}
+/* Room numbers were buried at the tail of "Esade Barcelona \u00b7 Room 0014", which is the
+   one part of a venue string anyone actually needs at 9:25am. */
+function roomOf(c){const m=/room\s+([\w-]+)/i.exec(venueOf(c));return m?m[1]:""}
+function venueBase(c){return venueOf(c).replace(/\s*[\u00b7,-]?\s*room\s+[\w-]+\s*/i," ").replace(/\s*\u00b7\s*$/,"").trim()}
+function roomChip(c){const r=roomOf(c);return r?`<span class="room-chip">${icon("pin")}${esc(r)}</span>`:""}
+
 window.BL07_HOLIDAYS=HOLIDAYS;
 /* The programme runs in Barcelona, so the app keeps Barcelona time. Dates were
    pinned to Asia/Kolkata throughout, which meant "today" rolled over at 20:30
@@ -78,15 +127,25 @@ function updateOfflineBanner(reconnected){
 }
 function istParts(date=new Date()){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23",weekday:"long"}).formatToParts(date);return Object.fromEntries(parts.map(p=>[p.type,p.value]))}
 function isoToday(){const p=istParts();return`${p.year}-${p.month}-${p.day}`}
+function isoFromDate(d){const p=istParts(d);return`${p.year}-${p.month}-${p.day}`}
 function weekdayKey(d=new Date()){return istParts(d).weekday.toLowerCase()}
 function minutes(t){const[h,m]=String(t||"00:00").split(":").map(Number);return h*60+m}
 function minsToTimeStr(m){return `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`}
 function dateTime(c,w="startTime"){return zoned(c.dateIso,c[w]||c[w==="startTime"?"start":"end"])}
 function fmtTime(t){const[h,m]=t.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit"}).format(new Date(2026,0,1,h,m))}
 function fmtRange(a,b){return`${fmtTime(a)}–${fmtTime(b)}`}
+/* Home time, kept alongside Barcelona time. Everything in the app is now on
+   Europe/Madrid, which is right but leaves you doing the 3.5-hour subtraction in your
+   head every time you want to call home. */
+const HOME_TZ="Asia/Kolkata",HOME_TZ_LABEL="IST";
 function updateTopbarClock(){
-  const el=$("#topbarClock");if(!el)return;
-  el.textContent=new Intl.DateTimeFormat("en-IN",{timeZone:APP_TZ,hour:"numeric",minute:"2-digit"}).format(new Date());
+  const main=$("#topbarClockMain"),alt=$("#topbarClockAlt"),now=new Date();
+  if(main)main.textContent=new Intl.DateTimeFormat("en-IN",{timeZone:APP_TZ,hour:"numeric",minute:"2-digit"}).format(now);
+  if(alt){
+    /* Hidden rather than showing the same time twice, if the app ever runs on IST again. */
+    alt.textContent=`${HOME_TZ_LABEL} ${new Intl.DateTimeFormat("en-IN",{timeZone:HOME_TZ,hour:"numeric",minute:"2-digit"}).format(now)}`;
+    alt.hidden=APP_TZ===HOME_TZ;
+  }
 }
 /* 24h digits for the split-flap hero (independent of the localized fmtTime above) */
 function fmtDate(iso,o={weekday:"long",day:"numeric",month:"short"}){return new Intl.DateTimeFormat("en-IN",{...o,timeZone:APP_TZ}).format(zoned(iso,"12:00"))}
@@ -100,6 +159,21 @@ function examDaysLeft(iso){const now=zoned(isoToday(),"00:00"),target=zoned(iso,
 function subjectSessions(code){const want=canonical(code);return state.all.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===want).sort((a,b)=>dateTime(a)-dateTime(b))}
 function subjectSessionOrdinal(c){if(c.status==="Cancelled"||c.type==="General")return null;const list=subjectSessions(c.code);const i=list.findIndex(x=>classIdentity(x)===classIdentity(c));return i<0?null:i+1}
 function initials(n){return String(n||"ST").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
+/* A clear day used to get the same generic spark as an empty task filter. Monday the
+   12th is a whole blank day in the middle of the module, so it is worth drawing: the
+   Sagrada Fam\u00edlia spires, Barcelona's own skyline, as hairlines in the faint ink
+   colour so it reads in either theme without being a picture. */
+const BCN_SKYLINE=`<svg class="bcn-skyline" viewBox="0 0 160 52" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M1 51h158"/>
+  <path d="M46 51V27l7-18 7 18v24"/><path d="M53 9V4"/>
+  <path d="M62 51V22l8-20 8 20v29"/><path d="M70 2v0"/>
+  <path d="M80 51V26l7-17 7 17v25"/>
+  <path d="M96 51V31l6-14 6 14v20"/>
+  <path d="M49 33h8M65 28h10M83 32h8M99 37h6"/>
+  <path d="M14 51V38h12v13M18 42h4M14 38l6-5 6 5"/>
+  <path d="M118 51V35h16v16M123 40h2M128 40h2M123 45h2M128 45h2"/>
+  <path d="M140 51V41h10v10M144 45h2"/>
+</svg>`;
 function icon(name){const p={
 home:'<path d="M3.5 11 12 3.5 20.5 11V20a1 1 0 0 1-1 1h-4v-6h-5v6H4.5a1 1 0 0 1-1-1Z"/>',
 calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
@@ -356,12 +430,20 @@ function renderHomeLegend(){
   /* The legend was a colour key and nothing more. Each course already has an ordered
      session list, so the same row can carry how far through that course you are. */
   const now=new Date();
-  el.innerHTML=used.map(c=>{
+  const courseKey=used.map(c=>{
     const sessions=subjectSessions(c),total=sessions.length;
     const done=sessions.filter(s=>dateTime(s,"endTime")<now).length;
     const pct=total?Math.round(done/total*100):0;
     return`<span class="legend-item" style="--course:${colorFor(c)};--done:${pct}%"><i></i>${esc(c)}${total?`<b>${done}/${total}</b>`:""}</span>`;
   }).join("");
+  /* Schedule rows and the day-shape bar are coloured by session kind now, so the key
+     under them has to name the kinds or the colours are decoration. Only the kinds
+     actually present this week are listed — most weeks that is three of the five. */
+  const kindsUsed=[...new Set(state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).map(sessionKind))];
+  const order=Object.keys(SESSION_KINDS);
+  const kindKey=kindsUsed.sort((a,b)=>order.indexOf(a)-order.indexOf(b))
+    .map(k=>`<span class="legend-item kind-key" style="--course:${SESSION_KINDS[k].color}"><i></i>${esc(SESSION_KINDS[k].label)}</span>`).join("");
+  el.innerHTML=courseKey+(courseKey&&kindKey?'<span class="legend-split" aria-hidden="true"></span>':"")+kindKey;
 }
 function renderExamsPage(){
   const list=$("#examsList"),hero=$("#examHero");
@@ -514,7 +596,7 @@ function renderHome(){
     focusPanel.classList.toggle("is-future",!isToday);
     focusPanel.classList.toggle("is-break",onBreak);
     focusPanel.classList.toggle("is-urgent",isNow&&(dateTime(shown,"endTime")-now)/60000<=10);
-    focusPanel.style.setProperty("--focus-course",colorFor(shown.code));
+    focusPanel.style.setProperty("--focus-course",kindColorFor(shown));
     focusPanel.dataset.focusDate=shown.dateIso;focusPanel.dataset.focusCourse=canonical(shown.code);
     const focusStateKey=`${classIdentity(shown)}|${isNow?"live":onBreak?"break":"upcoming"}`;
     if(focusPanel.dataset.focusStateKey&&focusPanel.dataset.focusStateKey!==focusStateKey)playHeroEntrance();
@@ -544,8 +626,11 @@ function renderHome(){
     else if(isToday){const mins=Math.max(0,Math.round((dateTime(shown,"startTime")-now)/60000));pills.push(heroPill(`In ${mins>=60?`${Math.floor(mins/60)}h ${mins%60}m`:`${mins}m`}`))}
     if(!isToday)pills.push(heroPill(`${dayList.length} ${dayList.length===1?"class":"classes"} that day`));
     if(shown.tentative)pills.push(heroPill("Timing not confirmed","warn"));
-    pills.push(heroPill(`${icon("pin")}${esc(venueOf(shown))}`));
-    if(shown.faculty)pills.push(heroPill(`${icon("profile")}${esc(shown.faculty)}`));
+    /* Room and professor use the same chips as the schedule rows, so the hero and the
+       list below it name the same things the same way. */
+    pills.push(heroPill(roomOf(shown)?`${icon("pin")}${esc(venueBase(shown))} \u00b7 Room ${esc(roomOf(shown))}`:`${icon("pin")}${esc(venueOf(shown))}`));
+    if(sessionKind(shown)!=="lecture")pills.push(heroPill(esc(kindOf(shown).label)));
+    if(shown.faculty)pills.push(heroPill(facultyChip(shown.faculty)));
     /* "Session 1/1" told you nothing about where the course is going. Saying how many
        meetings of this course are still to come is the part worth knowing. */
     const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
@@ -612,7 +697,7 @@ function renderHome(){
     daySectionEl.hidden=!state.timelineTouched&&(!timelineClasses.length||onlyClassIsFocus);
   }
   renderDayShapeBar(timelineClasses,timelineIso);
-  $("#todayProgressRail").innerHTML=timelineClasses.length?scheduleRowsHtml(timelineClasses,timelineIso,{showNext:true,heroClassId:focusPanel.dataset.focusClassId||""}):`<div class="empty-state"><span class="empty-state-icon">${icon("spark")}</span><p>Nothing scheduled</p><small>${timelineOffset===0?"Enjoy your free day.":"Nothing scheduled this day."}</small></div>`;
+  $("#todayProgressRail").innerHTML=timelineClasses.length?scheduleRowsHtml(timelineClasses,timelineIso,{showNext:true,heroClassId:focusPanel.dataset.focusClassId||"",stagger:staggerClass($("#todayProgressRail"),rowsKey(timelineIso,timelineClasses))}):`<div class="empty-state empty-state-bcn">${BCN_SKYLINE}<p>Nothing scheduled</p><small>${timelineOffset===0?"A clear day in Barcelona.":"Nothing scheduled this day."}</small></div>`;
   const holidayBanner=$("#todayProgressRail")?.previousElementSibling;
   const holiday=HOLIDAYS[timelineIso];
   $$(".timeline-holiday-banner").forEach(n=>n.remove());
@@ -762,6 +847,51 @@ function renderTodayStrips(){
     freeEl.hidden=false;
     freeEl.innerHTML=`<span class="ts-icon">${icon("clock")}</span><span class="ts-text"><strong>${esc(compactDuration(block.mins))} free</strong><small>${esc(fmtTime(minsToTimeStr(block.from)))} – ${esc(fmtTime(minsToTimeStr(block.to)))}</small></span>`;
   }else freeEl.hidden=true;
+  renderFreeRunCard();
+}
+/* The module has a 3.5-day hole in it — Friday 9 October finishes at 13:00 and nothing
+   runs again until Tuesday 13th at 09:30, with Monday 12th completely empty. The app
+   drew that as blank space, which is the one fact in the schedule most worth knowing
+   rendered as the absence of a fact. Shown only when the clear stretch ahead crosses
+   into another day; anything shorter is already covered by the free-block strip. */
+function renderFreeRunCard(){
+  const card=$("#freeRunCard");if(!card)return;
+  const now=new Date();
+  const ahead=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>now)
+    .sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"));
+  const next=ahead[0];
+  /* Where the stretch starts: the end of the last session that has already finished,
+     or simply now if nothing is running and nothing has run. */
+  const past=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"endTime")<=now)
+    .sort((a,b)=>dateTime(b,"endTime")-dateTime(a,"endTime"));
+  const live=state.classes.some(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")<=now&&dateTime(c,"endTime")>now);
+  if(!next||live){card.hidden=true;return}
+  const from=past.length&&dateTime(past[0],"endTime")>now-36e5*24?dateTime(past[0],"endTime"):now;
+  const start=from>now?from:now;
+  const mins=(dateTime(next,"startTime")-start)/60000;
+  if(mins<20*60){card.hidden=true;return}
+  card.hidden=false;
+  const toIso=next.dateIso,fromIso=isoFromDate(start);
+  const dayName=iso=>iso===isoToday()?"Today":iso===tomorrowIso()?"Tomorrow":fmtDate(iso,{weekday:"long"});
+  $("#freeRunLen").textContent=compactDuration(Math.round(mins));
+  $("#freeRunTitle").textContent=`Free until ${dayName(toIso)}, ${fmtTime(next.startTime)}`;
+  $("#freeRunFromTime").textContent=new Intl.DateTimeFormat("en-IN",{timeZone:APP_TZ,hour:"numeric",minute:"2-digit"}).format(start);
+  $("#freeRunFromDay").textContent=dayName(fromIso);
+  $("#freeRunToTime").textContent=fmtTime(next.startTime);
+  $("#freeRunToDay").textContent=dayName(toIso);
+  const blankDays=countBlankDaysBetween(fromIso,toIso);
+  $("#freeRunSub").textContent=`Next up: ${canonical(next.code)} \u00b7 ${next.course}${blankDays?` \u2014 ${blankDays} clear day${blankDays===1?"":"s"} in between`:""}`;
+}
+/* Whole calendar days between two dates with nothing scheduled on them at all. */
+function countBlankDaysBetween(fromIso,toIso){
+  let n=0,d=zoned(fromIso,"12:00");
+  for(;;){
+    d=new Date(d.getTime()+864e5);
+    const iso=isoFromDate(d);
+    if(iso>=toIso)break;
+    if(!state.classes.some(c=>c.dateIso===iso&&c.status!=="Cancelled"))n++;
+  }
+  return n;
 }
 /* The biggest uninterrupted stretch between a day's classes. The app already computed
    gaps in three places (the day-shape bar, the schedule rows, the share image) without
@@ -981,11 +1111,35 @@ function renderDayShapeBar(classes,dayIso){
     }
     const status=agendaStatus(c),tier=status==="Live"?"live":status==="Completed"?"done":"upcoming";
     const dur=Math.max(1,minutes(c.endTime)-minutes(c.startTime));
-    html+=`<span class="dsb-box ${tier}" style="--course:${colorFor(c.code)};--grow:${dur/totalMins}" title="${esc(canonical(c.code))} ${esc(fmtRange(c.startTime,c.endTime))} · ${esc(compactDuration(dur))}">${esc(canonical(c.code))}</span>`;
+    html+=`<span class="dsb-box ${tier}" style="--course:${kindColorFor(c)};--grow:${dur/totalMins}" title="${esc(canonical(c.code))} · ${esc(kindOf(c).label)} · ${esc(fmtRange(c.startTime,c.endTime))} · ${esc(compactDuration(dur))}">${esc(canonical(c.code))}</span>`;
     prevEnd=minutes(c.endTime);
   });
-  el.innerHTML=`<div class="dsb-row">${html}</div>`;
+  /* The bar was proportional but floating free of any reference, so reading it meant
+     hovering for a tooltip. Three hour ticks give it an axis, and on today a needle
+     marks where in the day you actually are. */
+  /* Even hours every two hours inside the span, rather than three fixed hours: a day
+     that runs 09:30-15:30 would otherwise get a single tick and no sense of scale. */
+  const tickHours=[];
+  for(let h=Math.ceil(spanStart/60);h*60<spanEnd;h++){if(h%2===0&&h*60>spanStart)tickHours.push(h)}
+  const ticks=tickHours.map(h=>`<span class="dsb-tick" style="--at:${((h*60-spanStart)/totalMins)*100}%"><i></i><b>${String(h).padStart(2,"0")}</b></span>`).join("");
+  let needle="";
+  if(dayIso===isoToday()){
+    const p=istParts(),nowMins=Number(p.hour)*60+Number(p.minute);
+    if(nowMins>spanStart&&nowMins<spanEnd)needle=`<span class="dsb-needle" style="--at:${((nowMins-spanStart)/totalMins)*100}%"></span>`;
+  }
+  el.innerHTML=`<div class="dsb-row">${html}${needle}</div>${ticks?`<div class="dsb-axis">${ticks}</div>`:""}`;
 }
+/* innerHTML rebuilds the whole subtree, so a CSS entry animation replays on every
+   30-second refresh tick — the rows would re-fly-in twice a minute. The stagger class
+   is therefore only added when what is being rendered has actually changed: a new day,
+   or a different set of sessions on it. */
+function staggerClass(el,key){
+  if(!el)return"";
+  if(el.dataset.staggerKey===key)return"";
+  el.dataset.staggerKey=key;
+  return" stagger";
+}
+const rowsKey=(dayIso,classes)=>`${dayIso}|${classes.map(c=>classIdentity(c)+agendaStatus(c)).join(",")}`;
 function scheduleRowsHtml(classes,dayIso,opts={}){
   const chronological=[...classes].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));
   const now=new Date();
@@ -1000,7 +1154,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
     leadingDone++;
   }
   const collapseDone=leadingDone>=2;
-  let html='<div class="sched-list">',prevEnd=null;
+  let html=`<div class="sched-list${opts.stagger||""}">`,prevEnd=null;
   if(collapseDone){
     const doneMins=chronological.slice(0,leadingDone).reduce((sum,c)=>sum+(minutes(c.endTime)-minutes(c.startTime)),0);
     html+=`<button type="button" class="sched-done-summary">
@@ -1013,7 +1167,9 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
     if(collapseDone&&idx===leadingDone)html+='</div>';
     if(prevEnd!=null){
       const gap=minutes(c.startTime)-prevEnd;
-      if(gap>=45)html+=`<div class="sched-gap">${icon("clock")}${esc(compactDuration(gap))} free</div>`;
+      /* A gap is a slot you can put something in, so it is drawn as an empty slot
+         rather than as a caption between two cards. */
+      if(gap>=45)html+=`<div class="sched-gap"><span class="sg-rule"></span><span class="sg-label">${icon("clock")}${esc(compactDuration(gap))} free</span><span class="sg-rule"></span></div>`;
     }
     const status=agendaStatus(c),cancelled=c.status==="Cancelled";
     const tier=cancelled?"cancelled":status==="Live"?"live":status==="Completed"?"done":"upcoming";
@@ -1028,7 +1184,8 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
         nextLine=`<p class="sr-next">Next ${esc(canonical(c.code))} — ${esc(label)}, ${esc(fmtTime(nxt.startTime))}</p>`;
       }
     }
-    const meta=[venueOf(c),c.faculty,compactDuration(dur)].filter(Boolean);
+    const chips=[roomChip(c),facultyChip(c.faculty)].filter(Boolean).join("");
+    const meta=[roomOf(c)?venueBase(c):venueOf(c),compactDuration(dur)].filter(Boolean);
     if(tier==="live")meta.push(`ends in ${tagCountdown((dateTime(c,"endTime")-now)/60000)}`);
     if(c.tentative)meta.push("timing not confirmed");
     /* On Home the hero card directly above already spells out the live class in full —
@@ -1036,7 +1193,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
        eye read the same thing twice, so there it collapses to a thin position marker.
        The Planner has no hero, so it keeps the full row. */
     if(tier==="live"&&opts.heroClassId&&classIdentity(c)===opts.heroClassId){
-      html+=`<div class="sched-now-marker" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
+      html+=`<div class="sched-now-marker" data-class-id="${esc(classIdentity(c))}" style="--course:${kindColorFor(c)}">
         <span class="snm-dot"></span>
         <span class="snm-text">Now · ${esc(canonical(c.code))}</span>
         <span class="snm-rule"></span>
@@ -1044,7 +1201,26 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
       prevEnd=minutes(c.endTime);
       return;
     }
-    html+=`<article class="sched-row ${tier}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
+    /* An offsite is not a taller lecture. The winery visit runs 6.5 hours and its
+       useful content is the leg — where the bus goes from, when it leaves, when it is
+       back — so it gets a wide card built around that instead of a row whose body is
+       one enormous block of dead height. */
+    if(sessionKind(c)==="visit"&&!cancelled){
+      const t=c.transport||{};
+      html+=`<article class="trip-card ${tier}" data-class-id="${esc(classIdentity(c))}" style="--course:${kindColorFor(c)};--i:${idx}">
+        <header><span class="tc-tag">${icon("bus")}OFFSITE</span><span class="tc-dur">${esc(compactDuration(dur))}</span></header>
+        <h3>${esc(String(c.course).replace(/^company visit\s*[\u00b7:-]\s*/i,""))}</h3>
+        <div class="tc-leg">
+          <span class="tc-stop"><b>${esc(fmtTime(t.depart||c.startTime))}</b><small>${esc(t.from||"Depart")}</small></span>
+          <span class="tc-line"><i></i><em>${esc(venueBase(c)||venueOf(c))}</em></span>
+          <span class="tc-stop tc-stop-end"><b>${esc(fmtTime(t.back||c.endTime))}</b><small title="${esc(t.from||"")}">Back</small></span>
+        </div>
+        ${c.notes?`<p class="tc-note">${esc(c.notes)}</p>`:""}
+      </article>`;
+      prevEnd=minutes(c.endTime);
+      return;
+    }
+    html+=`<article class="sched-row ${tier} kind-${sessionKind(c)}" data-class-id="${esc(classIdentity(c))}" style="--course:${kindColorFor(c)};--i:${idx}">
       <div class="sr-time"><b>${esc(h12)}</b><small>${esc((ap||"").toUpperCase())}</small><span class="sr-time-end">${esc(fmtTime(c.endTime))}</span></div>
       <div class="sr-accent"></div>
       <div class="sr-body">
@@ -1052,9 +1228,11 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
           <span class="sr-code">${esc(canonical(c.code))}</span>
           <span class="sr-subj">${esc(c.course)}</span>
           ${tier==="live"?'<span class="sr-live-pill">NOW</span>':cancelled?'<span class="sr-cancel-pill">CANC.</span>':sessionN?`<span class="sr-sess">${sessionN}/${sessionTotal}</span>`:""}
+          ${sessionKind(c)!=="lecture"?`<span class="sr-kind-pill">${esc(kindOf(c).label)}</span>`:""}
           ${c.tentative?'<span class="sr-tbc-pill" title="Timing not yet confirmed">TBC</span>':""}
           ${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}
         </div>
+        ${tier!=="done"&&!cancelled&&chips?`<div class="sr-chips">${chips}</div>`:""}
         ${tier!=="done"&&!cancelled?`<div class="sr-meta">${meta.map(esc).join('<span class="sep">·</span>')}</div>`:""}
         ${progress!==null?`<div class="sr-bar"><span style="width:${progress}%"></span></div>`:""}
         ${nextLine}
@@ -1186,10 +1364,14 @@ function renderWeekPlanner(){
     strip.innerHTML=days.map((iso,i)=>{
       const active=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled");
       const load=weekCounts[i]?Math.max(.22,weekCounts[i]/maxLoad):0;
+      /* The count already says how many; the bar under it says what kind, so a day of
+         four lectures and a day with an offsite in it stop looking identical. */
+      const kindBar=active.length?`<span class="wc-kinds">${[...active].sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)).map(c=>`<i style="--course:${kindColorFor(c)}" title="${esc(kindOf(c).label)}"></i>`).join("")}</span>`:'<span class="wc-kinds empty"></span>';
       return`<button type="button" class="wc-cell ${iso===today?"today":""} ${iso===state.selectedDate?"sel":""} ${!active.length?"zero":""} ${examOn(iso)?"has-exam":""}" data-date="${iso}" style="--load:${load}">
         <span class="wc-dow">${letters[i]}</span>
         <span class="wc-num">${Number(iso.slice(8))}</span>
         <span class="wc-cnt">${active.length||"–"}</span>
+        ${kindBar}
       </button>`;
     }).join("");
     $$(".wc-cell",strip).forEach(b=>b.addEventListener("click",()=>{
@@ -1254,7 +1436,7 @@ function renderDayFocus(iso){
   const listClasses=showCompleted?dayAll:dayAll.filter(c=>c.status==="Cancelled"||now<dateTime(c,"endTime"));
 
   if(!dayAll.length&&!exam){
-    timelineEl.innerHTML=`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("spark")}</span><p>Free day</p><small>No classes, tasks or notes for this date.</small></div>`;
+    timelineEl.innerHTML=`<div class="empty-state agenda-empty-rich empty-state-bcn">${BCN_SKYLINE}<p>Free day</p><small>No classes, tasks or notes for this date.</small></div>`;
   }else{
     let html="";
     if(exam){
@@ -1263,7 +1445,7 @@ function renderDayFocus(iso){
       ).join("")}</section>`;
     }
     if(listClasses.length){
-      html+=scheduleRowsHtml(listClasses,iso,{showNext:false});
+      html+=scheduleRowsHtml(listClasses,iso,{showNext:false,stagger:staggerClass(timelineEl,rowsKey(iso,listClasses))});
     }else if(dayAll.length&&!exam){
       html+=`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("check")}</span><p>All done for today</p><small>Every class on ${esc(fmtDate(iso,{weekday:"long"}))} is wrapped up.</small></div>`;
     }
@@ -1811,7 +1993,12 @@ function renderBuses(){
 
   const remaining=Math.max(0,Math.ceil((next.d-now)/60000));
   $("#nextBusCountdown").previousElementSibling.textContent=nextDay?"Leaves tomorrow in":"Leaves in";
-  $("#nextBusCountdown").textContent=remaining>=60?`${Math.floor(remaining/60)}h ${remaining%60}m`:`${remaining} min`;
+  /* Counts up to the figure rather than snapping, so a route change reads as the
+     number moving instead of the card flickering. Over an hour it is two figures and
+     an animation would be noise, so that case stays plain. */
+  const cdEl=$("#nextBusCountdown");
+  if(remaining>=60){cdEl.textContent=`${Math.floor(remaining/60)}h ${remaining%60}m`;delete cdEl.dataset.countVal}
+  else animateCount(cdEl,remaining," min");
   const ringWindow=60,pct=Math.max(0,Math.min(100,Math.round((remaining/ringWindow)*100)));
   const ring=$("#countdownRing");
   if(ring){ring.style.setProperty("--pct",nextDay?100:pct);ring.classList.toggle("urgent",!nextDay&&remaining<=10)}
@@ -2596,7 +2783,7 @@ async function init(){
   setInterval(()=>{renderHome();renderBuses()},30000);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova145",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova146",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
