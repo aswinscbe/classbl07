@@ -1493,12 +1493,27 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 }
 .selected-electives-card{display:flex;flex-direction:column;gap:9px}
 .selected-electives-card>span{font-size:var(--text-sm);font-weight:700;color:var(--ink-muted)}
-.selected-elective-chips{display:flex;flex-wrap:wrap;gap:8px}
+/* These were pills, which forced long elective titles to wrap inside a rounded shape
+   and pushed the credit count onto its own line. Six courses with real names want a
+   list: code, title, credits, each on one line and aligned down the column. */
+.selected-elective-chips{display:flex;flex-direction:column;gap:2px}
 .selected-elective-chips span{
-  display:flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);
-  padding:6px 11px;border-radius:var(--radius-pill);font-size:var(--text-sm);font-weight:600;
+  display:flex;align-items:baseline;gap:10px;padding:9px 2px;
+  border-bottom:1px solid var(--border);font-size:var(--text-sm);font-weight:var(--w-body);
 }
-.selected-elective-chips em{color:var(--ink-faint);font-size:var(--text-sm);font-style:normal;font-weight:500}
+.selected-elective-chips span:last-child{border-bottom:0}
+.selected-elective-chips b{
+  flex:none;min-width:52px;font-size:var(--text-xs);font-weight:var(--w-label);
+  letter-spacing:var(--track-label);color:var(--course,var(--accent));
+}
+.selected-elective-chips i{
+  flex:1;min-width:0;font-style:normal;font-weight:var(--w-strong);color:var(--ink);
+  line-height:var(--lh-snug);
+}
+.selected-elective-chips em{
+  flex:none;font-style:normal;font-size:var(--text-xs);font-weight:var(--w-bold);
+  color:var(--ink-faint);font-variant-numeric:tabular-nums;white-space:nowrap;
+}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
 .settings-row:last-child{border-bottom:0;padding-bottom:0}
 .settings-row:first-child{padding-top:0}
@@ -2644,3 +2659,22 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
 /* A course that has not begun reads as pending rather than as failing. */
 .cp-row.not-started .cp-code{color:var(--ink-faint)}
 .cp-row.not-started .cp-bar{opacity:.5}
+.gcal-error{display:block;margin-top:4px;font-size:var(--text-xs);font-weight:var(--w-bold);color:var(--danger);line-height:var(--lh-snug)}
+
+/* Credits read as a quiet unit, not as another coloured tag competing with the course
+   code beside it. */
+.credit-mark{
+  font-variant-numeric:tabular-nums;font-weight:var(--w-bold);
+  color:var(--ink-faint);white-space:nowrap;
+}
+.hero-pill .credit-mark{color:var(--on-grad-muted)}
+.cp-cr{
+  flex:none;min-width:30px;font-size:var(--text-xs);font-weight:var(--w-body);
+  color:var(--ink-faint);font-variant-numeric:tabular-nums;
+}
+
+/* The settings row is a flex pair and its text block had no min-width, so a long
+   status line ran out under the button instead of wrapping beside it. */
+.settings-row > div:first-child{flex:1;min-width:0}
+.settings-row > span{flex:none;display:flex;gap:8px;align-items:center}
+#gcalStatus{margin-top:6px;font-size:var(--text-sm);font-weight:var(--w-body);color:var(--ink-faint);line-height:var(--lh-snug)}

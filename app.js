@@ -108,6 +108,11 @@ const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelecto
 function haptic(ms=12){try{navigator.vibrate?.(ms)}catch(e){}}
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
 const colorFor=c=>COURSE_COLORS[canonical(c)]||"#7b8aa2";
+/* Credits belong next to the class, not filed away in a settings list: a 3-credit
+   elective is a different commitment from a 2-credit one and that is worth knowing
+   while looking at the session, not while editing a profile. */
+const creditsFor=c=>((window.TERM4_COURSES||{})[canonical(c)]||{}).credits||0;
+const creditLabel=c=>{const n=creditsFor(c);return n?`${n} cr`:""};
 const venueOf=c=>c.venue||c.room||"Venue TBA";
 function load(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
@@ -475,7 +480,7 @@ function renderCourseOverview(){
         ${live?'<span class="cc-live">NOW</span>':`<span class="cc-pct">${pct}%</span>`}
       </header>
       <h3>${esc(COURSE_TITLES[g.code]||g.sessions[0].course)}</h3>
-      <p class="cc-meta">${esc(fmtDate(g.from,{day:"numeric",month:"short"}))} \u2013 ${esc(fmtDate(g.to,{day:"numeric",month:"short"}))}<span class="sep">\u00b7</span>${g.sessions.length} sessions<span class="sep">\u00b7</span>${esc(compactDuration(g.mins))}</p>
+      <p class="cc-meta">${creditsFor(g.code)?`<span class="credit-mark">${esc(creditLabel(g.code))}</span><span class="sep">\u00b7</span>`:""}${esc(fmtDate(g.from,{day:"numeric",month:"short"}))} \u2013 ${esc(fmtDate(g.to,{day:"numeric",month:"short"}))}<span class="sep">\u00b7</span>${g.sessions.length} sessions<span class="sep">\u00b7</span>${esc(compactDuration(g.mins))}</p>
       ${g.topics.length>1?`<div class="cc-bar"><span style="width:${pct}%"></span></div>`:""}
       ${g.topics.length>1?`<ul class="cc-topics">${g.topics.map(c=>{
         const past=dateTime(c,"endTime")<now;
@@ -583,6 +588,7 @@ function renderCourseProgress(now=new Date()){
     const started=r.done>0;
     return`<div class="cp-row ${started?"":"not-started"}" style="--course:${colorFor(r.code)}">
       <span class="cp-code">${esc(r.code)}</span>
+      <span class="cp-cr">${esc(creditLabel(r.code))}</span>
       <span class="cp-bar"><i style="width:${pct}%"></i></span>
       <span class="cp-count">${r.done}<em>/${r.total}</em></span>
     </div>`;
@@ -828,6 +834,7 @@ function renderHome(){
     pills.push(heroPill(roomLabel(shown)?`${icon("pin")}${esc(venueBase(shown))} \u00b7 ${esc(roomLabel(shown))}`:`${icon("pin")}${esc(venueOf(shown))}`));
     if(sessionKind(shown)!=="lecture")pills.push(heroPill(esc(kindOf(shown).label)));
     if(shown.faculty)pills.push(heroPill(facultyChip(shown.faculty)));
+    if(creditsFor(shown.code))pills.push(heroPill(`<span class="credit-mark">${esc(creditLabel(shown.code))}</span>`));
     /* "Session 1/1" told you nothing about where the course is going. Saying how many
        meetings of this course are still to come is the part worth knowing. */
     const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
@@ -1460,7 +1467,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
       return;
     }
     const chips=[roomChip(c),facultyChip(c.faculty)].filter(Boolean).join("");
-    const meta=[roomOf(c)?venueBase(c):venueOf(c),compactDuration(dur)].filter(Boolean);
+    const meta=[roomOf(c)?venueBase(c):venueOf(c),compactDuration(dur),creditLabel(c.code)].filter(Boolean);
     if(tier==="live")meta.push(`ends in ${tagCountdown((dateTime(c,"endTime")-now)/60000)}`);
     if(c.tentative)meta.push("timing not confirmed");
     /* On Home the hero card directly above already spells out the live class in full —
@@ -2408,7 +2415,7 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
    version of the same card. */
   const chips=$("#selectedElectiveChips");
   if(chips)chips.innerHTML=courses.length
-    ?courses.map(([code,v])=>`<span title="${esc(v.title)}" style="--course:${colorFor(code)}"><b>${esc(code)}</b>${esc(v.title)}<em>${v.credits} cr</em></span>`).join("")
+    ?courses.map(([code,v])=>`<span title="${esc(v.title)}" style="--course:${colorFor(code)}"><b>${esc(code)}</b><i>${esc(v.title)}</i><em>${v.credits} cr</em></span>`).join("")
     :"<em>Schedule not loaded</em>";
   renderCalendarConnectionStatus();
   renderSessionRings();
@@ -2703,7 +2710,16 @@ async function fetchCalendarSessions(token){
     u.searchParams.set("maxResults","2500");
     if(pageToken)u.searchParams.set("pageToken",pageToken);
     const r=await fetch(u,{headers:{Authorization:`Bearer ${token}`}});
-    if(!r.ok)throw new Error(`Calendar API ${r.status}`);
+    if(!r.ok){
+      /* Google puts the actionable part in the body — "Calendar API has not been
+         used in project N before or it is disabled", "insufficient scope", and so on.
+         Swallowing it for a tidy message left nothing to act on. */
+      let detail="";
+      try{const b=await r.json();detail=(b&&b.error&&(b.error.message||b.error.status))||""}catch(e){}
+      const err=new Error(detail||`HTTP ${r.status}`);
+      err.status=r.status;err.detail=detail;
+      throw err;
+    }
     const d=await r.json();
     (d.items||[]).forEach(ev=>{const c=parseCalendarEvent(ev);if(c)out.push(c)});
     if(!d.nextPageToken)break;
@@ -2726,8 +2742,18 @@ async function refreshCalendarSchedule({silent}={}){
     if(!silent)showToast(`${sessions.length} sessions from your calendar`);
     return true;
   }catch(e){
-    /* An expired token is the common case and is not worth a scary message. */
-    if(!silent)showToast("Couldn't read your calendar — try connecting again");
+    const d=String(e&&(e.detail||e.message)||"");
+    /* 401 is an expired token and self-heals on reconnect, so it stays quiet. The
+       rest are setup problems in the Google Cloud project that no amount of retrying
+       will fix, so they are reported as they came. */
+    if(!silent){
+      if(e&&e.status===401)showToast("Calendar sign-in expired — connect again");
+      else if(/has not been used|is disabled|SERVICE_DISABLED/i.test(d))showToast("Enable the Google Calendar API for this app's Cloud project");
+      else if(/insufficient|scope|PERMISSION_DENIED|ACCESS_TOKEN_SCOPE/i.test(d))showToast("Calendar permission wasn't granted — reconnect and allow calendar access");
+      else showToast(`Calendar: ${d.slice(0,90)||"unknown error"}`);
+    }
+    const st=$("#gcalStatus");
+    if(st&&d)st.innerHTML=`<span class="gcal-error">${esc(d.slice(0,160))}</span>`;
     return false;
   }
 }
@@ -2739,7 +2765,13 @@ function connectGoogleCalendar(){
       client_id:GOOGLE_CLIENT_ID,
       scope:GOOGLE_CAL_SCOPE,
       callback:async resp=>{
-        if(resp.error){showToast("Calendar sign-in cancelled");return}
+        if(resp.error){showToast(`Calendar sign-in: ${resp.error_description||resp.error}`);return}
+        /* Consent is per-scope and can be declined while still returning a token, so
+           the granted list is the thing to check, not the presence of a token. */
+        if(resp.scope&&resp.scope.indexOf("calendar")===-1){
+          showToast("Calendar access wasn't granted — tick the calendar box when signing in");
+          return;
+        }
         localStorage.setItem(GOOGLE_CAL_TOKEN_KEY,JSON.stringify({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000}));
         await refreshCalendarSchedule();
         renderCalendarConnectionStatus();
@@ -3211,7 +3243,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova159",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova160",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
