@@ -448,8 +448,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   display:none;flex-direction:column;align-items:flex-end;justify-content:center;
   margin-right:2px;white-space:nowrap;line-height:var(--lh-flat);
 }
-/* Barcelona on top, home time underneath at label size — a glance reads the big
-   figure, and the subtraction is there when you want it. */
+/* Two lines from when the app ran on Barcelona time with India underneath. One
+   zone again, so the second line stays hidden and this is just the clock. */
 .topbar-clock b{
   font-variant-numeric:tabular-nums;font-size:var(--text-md);font-weight:700;
   color:var(--ink-muted);letter-spacing:var(--track-tight);
@@ -2246,11 +2246,11 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
   .sched-list.stagger .sched-row,.sched-list.stagger .trip-card{animation:none}
 }
 
-/* A clear day gets Barcelona's own skyline instead of the same generic spark as an
-   empty task filter. Hairlines in the faint ink colour, so it works in both themes. */
-.empty-state-bcn{gap:8px}
-.bcn-skyline{width:168px;max-width:70%;height:auto;color:var(--ink-faint);opacity:.6;margin-bottom:2px}
-:root[data-theme="light"] .bcn-skyline{opacity:.5}
+/* A clear day gets a campus mark instead of the same generic spark as an empty task
+   filter. Hairlines in the faint ink colour, so it works in both themes. */
+.empty-state-mark{gap:8px}
+.campus-mark{width:168px;max-width:70%;height:auto;color:var(--ink-faint);opacity:.6;margin-bottom:2px}
+:root[data-theme="light"] .campus-mark{opacity:.5}
 /* The kind key sits after the course key in the same row and is quieter: the course
    chips carry a progress fill, these are a colour and a word. */
 .legend-item.kind-key b{display:none}
@@ -2405,15 +2405,15 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 
 /* ============ Place, in the surfaces ============ */
 
-/* The skyline was drawn for the empty state and then only ever seen on a blank day.
-   As a watermark along the foot of the hero it is on screen every time the app opens,
-   at an opacity where you register it rather than read it — the card sits on the city
-   the module is in. Masked to fade upward so it never competes with the chips above. */
+/* The hero carries a hairline watermark of the campus along its foot, at an opacity
+   where you register it rather than read it, masked to fade upward so it never
+   competes with the chips above. The Barcelona skyline that was here belonged to the
+   immersion module. */
 .hero-card{isolation:isolate}
 .hero-card::before{
   content:"";position:absolute;left:0;right:0;bottom:-1px;height:92px;z-index:0;
   pointer-events:none;opacity:.055;
-  background:center bottom / auto 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 52' fill='none' stroke='%23ffffff' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 51h158'/%3E%3Cpath d='M46 51V27l7-18 7 18v24M53 9V4'/%3E%3Cpath d='M62 51V22l8-20 8 20v29'/%3E%3Cpath d='M80 51V26l7-17 7 17v25'/%3E%3Cpath d='M96 51V31l6-14 6 14v20'/%3E%3Cpath d='M49 33h8M65 28h10M83 32h8M99 37h6'/%3E%3Cpath d='M14 51V38h12v13M18 42h4M14 38l6-5 6 5'/%3E%3Cpath d='M118 51V35h16v16M123 40h2M128 40h2M123 45h2M128 45h2'/%3E%3Cpath d='M140 51V41h10v10M144 45h2'/%3E%3C/svg%3E");
+  background:center bottom / auto 100% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 52' fill='none' stroke='%23ffffff' stroke-width='1.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 51h158'/%3E%3Cpath d='M2 44c14-13 26-13 38 0'/%3E%3Cpath d='M26 46c16-18 32-22 48-8'/%3E%3Cpath d='M60 51V34h30v17M64 38h6M78 38h8M64 44h6M78 44h8'/%3E%3Cpath d='M75 34V26M68 30h14l-7-4z'/%3E%3Cpath d='M100 51V38h18v13M104 42h4M112 42h4'/%3E%3Cpath d='M132 51V30'/%3E%3Cpath d='M132 30c-6-3-10-1-12 3 5 1 9 0 12-3Z'/%3E%3Cpath d='M132 30c6-3 10-1 12 3-5 1-9 0-12-3Z'/%3E%3Cpath d='M132 30c-3-6-1-10 3-12 1 5 0 9-3 12Z'/%3E%3Cpath d='M132 30c3-5 7-6 11-4-3 4-7 5-11 4Z'/%3E%3C/svg%3E");
   -webkit-mask-image:linear-gradient(180deg,transparent,#000 65%);
   mask-image:linear-gradient(180deg,transparent,#000 65%);
 }
@@ -2606,3 +2606,30 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
 .overline svg,.frc-tag svg,.sr-meta svg{width:13px;height:13px}
 [data-icon] svg,.nav-item svg{stroke-width:1.75}
 .hero-pill svg{width:13px;height:13px;stroke-width:2}
+
+/* A room chip now only appears when the room is not the term's usual one, so when it
+   does appear it should look like the exception it is. */
+.room-chip.is-exception{
+  background:color-mix(in srgb, var(--amber) 18%, transparent);
+  color:var(--amber);border-color:color-mix(in srgb, var(--amber) 34%, transparent);
+}
+
+/* When every session in a course carries the same title — which is how the IIMK feed
+   publishes an elective — a topic list just repeats the heading. A tick per session
+   says the thing that actually varies: how far through the course you are, at the
+   granularity of the register the school keeps. */
+.cc-sessions{display:flex;flex-wrap:wrap;gap:4px;margin:16px 0 0}
+.cc-sessions i{
+  display:block;width:14px;height:6px;border-radius:3px;
+  background:color-mix(in srgb, var(--ink) 11%, transparent);
+  transition:background var(--dur-sm) var(--ease-out);
+}
+.cc-sessions i.done{background:var(--course)}
+.cc-sessions i.live{
+  background:var(--live);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--live) 30%, transparent);
+}
+.cc-next{
+  margin:12px 0 0;font-family:var(--font-display);font-style:italic;font-weight:var(--w-body);
+  font-size:var(--text-md);color:var(--ink-muted);letter-spacing:var(--track-normal);
+}
