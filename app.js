@@ -269,7 +269,12 @@ function filteredClasses(){
      joins the day list so it blocks time like anything else, flagged so the renderers
      can draw it as an event rather than a session — and so course counts, progress and
      the faculty directory all ignore it. */
-  return[...(window.TERM4_CLASSES||[]),...(window.TERM4_EVENTS||[])]
+  /* A connected calendar wins: it is the reader's own enrolment and it is current.
+     The compiled file is the fallback so an unconnected install still has a schedule
+     rather than an empty app. The quiz slot is appended either way — it is batch-wide
+     and does not appear as an invite. */
+  const live=calSessions();
+  return[...(live.length?live:(window.TERM4_CLASSES||[])),...(window.TERM4_EVENTS||[])]
     .slice()
     .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
 }
@@ -552,6 +557,37 @@ function renderWeekDigest(){
   el.hidden=false;
   el.textContent=parts.join(" · ")+" this week";
 }
+/* "2% of Term IV complete" is a number nobody acts on. Six electives run in parallel
+   for eleven weeks and they are nowhere near in step — FSA is two sessions in while
+   EPIS has not started and GC is a quarter done. Where you stand in each course is
+   the version of that fact you can actually use, and it is the same data the ring
+   above is already aggregating. */
+function renderCourseProgress(now=new Date()){
+  const el=$("#courseProgress");if(!el)return;
+  const by=new Map();
+  state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled").forEach(c=>{
+    const code=canonical(c.code),e=by.get(code)||{code,total:0,done:0,next:null};
+    e.total++;
+    if(dateTime(c,"endTime")<now)e.done++;
+    else if(!e.next||dateTime(c,"startTime")<dateTime(e.next,"startTime"))e.next=c;
+    by.set(code,e);
+  });
+  const rows=[...by.values()];
+  if(rows.length<2){el.innerHTML="";el.hidden=true;return}
+  el.hidden=false;
+  /* Ordered by what is live, then by how far along — the course you are furthest
+     through is the one closest to its exam. */
+  rows.sort((a,b)=>(b.done/b.total)-(a.done/a.total));
+  el.innerHTML=rows.map(r=>{
+    const pct=r.total?Math.round(r.done/r.total*100):0;
+    const started=r.done>0;
+    return`<div class="cp-row ${started?"":"not-started"}" style="--course:${colorFor(r.code)}">
+      <span class="cp-code">${esc(r.code)}</span>
+      <span class="cp-bar"><i style="width:${pct}%"></i></span>
+      <span class="cp-count">${r.done}<em>/${r.total}</em></span>
+    </div>`;
+  }).join("");
+}
 function renderHomeLegend(){
   const el=$("#homeLegend");if(!el)return;
   const monday=zoned(mondayIso(isoToday()),"00:00"),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
@@ -685,12 +721,30 @@ function renderHeroInsight(iso,now){
      module because the sum is about the campus shuttle. With Term IV finishing at
      20:15 most nights it matters more than it did — the last bus that still makes
      your next class is a thing you need before you need it, not after. */
+  /* Only worth saying if you still have to travel. Sitting in the 10:45 session and
+     being told to "leave by 11:45 for FSA" is wrong twice over — you are already
+     there, and the next session is the same course in the same room. So: no leave-by
+     while a class is running, and none when the next session follows straight on from
+     one that has already started. */
+  const inClass=state.classes.some(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")<=now&&dateTime(c,"endTime")>now);
+  const doneEarlier=state.classes.some(c=>c.status!=="Cancelled"&&c.dateIso===iso&&dateTime(c,"endTime")<=now);
   const next=nextClassToday(now);
-  const bus=next?lastBusForClass(next,now):null;
+  const bus=(!inClass&&!doneEarlier&&next)?lastBusForClass(next,now):null;
   if(bus){
     const mins=Math.max(0,Math.round((bus.depart-now)/60000));
     el.hidden=false;
     el.innerHTML=`${icon("bus")}Leave by <strong>${esc(fmtTime(bus.b.time))}</strong> for ${esc(canonical(next.code))}${mins<=90?` \u00b7 ${esc(tagCountdown(mins))}`:""}`;
+    return;
+  }
+  /* The one fact an evening-heavy term turns on: when you get your night back.
+     Classes run to 20:15 here, and "done at 8:15 pm" is what you actually plan from. */
+  const todayLeft=state.classes
+    .filter(c=>c.status!=="Cancelled"&&c.dateIso===iso&&dateTime(c,"endTime")>now)
+    .sort((a,b)=>dateTime(b,"endTime")-dateTime(a,"endTime"));
+  if(todayLeft.length&&iso===isoToday()){
+    const last=todayLeft[0],mins=Math.round((dateTime(last,"endTime")-now)/60000);
+    el.hidden=false;
+    el.innerHTML=`${icon("clock")}Done at <strong>${esc(fmtTime(last.endTime))}</strong>${mins<=180?` \u00b7 ${esc(tagCountdown(mins))} to go`:` \u00b7 ${todayLeft.length} to go`}`;
     return;
   }
   const character=dayCharacterLine(iso,now);
@@ -891,6 +945,7 @@ function renderHome(){
       return`<circle class="ring-seg" cx="32" cy="32" r="26" stroke="${colorFor(code)}" stroke-dasharray="${drawn} ${C-drawn}" stroke-dashoffset="${offset}"><title>${esc(code)}</title></circle>`;
     }).join("");
   }
+  renderCourseProgress(now);
   renderWeekDigest();renderHomeLegend();renderTodayStrips();
   /* Week bar chart — count above, bar height by load, day letter below. A vertical
      bar reads "how busy is this day" faster than a same-size square with a number
@@ -2355,6 +2410,7 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
   if(chips)chips.innerHTML=courses.length
     ?courses.map(([code,v])=>`<span title="${esc(v.title)}" style="--course:${colorFor(code)}"><b>${esc(code)}</b>${esc(v.title)}<em>${v.credits} cr</em></span>`).join("")
     :"<em>Schedule not loaded</em>";
+  renderCalendarConnectionStatus();
   renderSessionRings();
   renderAccentSwatches();
   renderTermRing();
@@ -2538,6 +2594,9 @@ function bindDismissibleDialog(dialog){
 /* ===== Google Tasks OAuth ===== */
 const GOOGLE_CLIENT_ID="326019358906-4dpbtbmnp6rm6a7m8bikcir4a2pejiot.apps.googleusercontent.com";
 const GOOGLE_TASKS_SCOPE="https://www.googleapis.com/auth/tasks";
+const GOOGLE_CAL_SCOPE="https://www.googleapis.com/auth/calendar.readonly";
+const GOOGLE_CAL_TOKEN_KEY="classbl07-nova-gcal-token-v1";
+const GOOGLE_CAL_CACHE_KEY="classbl07-nova-gcal-schedule-v1";
 const GOOGLE_TOKEN_KEY="classbl07-nova-google-token-v1";
 const GOOGLE_LIST_KEY="classbl07-nova-google-list-v1";
 const GOOGLE_NOTES_MIGRATION_KEY="classbl07-google-subject-notes-v1";
@@ -2574,6 +2633,138 @@ async function initGoogleTokenClient(){
     });
     resolve(_googleTokenClient);
   });
+}
+/* ============ Schedule from the student's own Google Calendar ============
+   The term schedule shipped as a compiled data file, which meant it was only ever
+   this one student's timetable and only correct until the programme office changed
+   something. Signing in reads the reader's own calendar instead, so the app works
+   for any classmate on first open and stays current without a rebuild.
+
+   Read-only scope, and nothing leaves the device: the events are parsed in the page,
+   filtered down to class sessions, and cached in localStorage. Everything that is not
+   a class session is discarded before anything is stored — a calendar holds a lot more
+   than lectures and none of the rest is the app's business.
+
+   The compiled file stays as the fallback, so an unconnected install still shows a
+   schedule rather than an empty app. */
+let _gcalTokenClient=null;
+function getSavedCalToken(){
+  try{
+    const o=JSON.parse(localStorage.getItem(GOOGLE_CAL_TOKEN_KEY)||"null");
+    if(o&&o.access_token&&(!o.expires_at||Date.now()<o.expires_at-60000))return o;
+  }catch(e){}
+  return null;
+}
+function loadCalCache(){try{return JSON.parse(localStorage.getItem(GOOGLE_CAL_CACHE_KEY)||"null")}catch(e){return null}}
+function calSessions(){const c=loadCalCache();return c&&Array.isArray(c.sessions)?c.sessions:[]}
+
+/* The programme office writes every invite the same way:
+     "Session No: 7 - MBGAI(A)-SJ-(CR A3)"
+   code, section, faculty initials and room, with the professor's name in the
+   description. Anything that does not match this shape is not a class and is dropped
+   on the spot. */
+const GCAL_SESSION_RE=/^Session\s*No:\s*(\d+)\s*-\s*([A-Z0-9]+)\(([A-Z])\)-([A-Z]+)-\(([^)]*)\)/i;
+function parseCalendarEvent(ev){
+  const m=GCAL_SESSION_RE.exec(String(ev.summary||"").trim());
+  if(!m)return null;
+  if(!ev.start||!ev.start.dateTime||!ev.end||!ev.end.dateTime)return null;
+  const [,sessionNo,code,section,,room]=m;
+  const startParts=istParts(new Date(ev.start.dateTime)),endParts=istParts(new Date(ev.end.dateTime));
+  const known=(window.TERM4_COURSES||{})[code.toUpperCase()]||{};
+  /* Title case the organiser's shouty "ANUBHA SHEKHAR SINHA", but keep a name the
+     term file already knows, since that one carries the full co-teacher credit. */
+  const raw=String(ev.description||"").trim();
+  const faculty=known.faculty||(raw?"Prof. "+raw.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()):"");
+  return{
+    dateIso:`${startParts.year}-${startParts.month}-${startParts.day}`,
+    startTime:`${startParts.hour}:${startParts.minute}`,
+    endTime:`${endParts.hour}:${endParts.minute}`,
+    code:code.toUpperCase(),
+    course:known.title||String(ev.organizer&&ev.organizer.displayName||code).replace(/^Term\s+\w+\s+/i,"").replace(/\s*\([A-Z]\)\s*$/,""),
+    faculty,
+    venue:`IIM Kozhikode \u00b7 ${room||"CR A3"}`,
+    room:room||"CR A3",
+    sessionNo:Number(sessionNo),
+    type:"Elective",section:section.toUpperCase(),
+    status:ev.status==="cancelled"?"Cancelled":"Scheduled"
+  };
+}
+async function fetchCalendarSessions(token){
+  const meta=window.TERM4_META||{};
+  const timeMin=new Date(`${meta.startIso||"2026-10-26"}T00:00:00+05:30`).toISOString();
+  const timeMax=new Date(`${meta.endIso||"2027-01-15"}T23:59:59+05:30`).toISOString();
+  const out=[];let pageToken="";
+  /* The API caps a page at 2500 and this term is ~120 events, but paging is cheap
+     insurance against a busier calendar. */
+  for(let guard=0;guard<10;guard++){
+    const u=new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+    u.searchParams.set("timeMin",timeMin);u.searchParams.set("timeMax",timeMax);
+    u.searchParams.set("singleEvents","true");u.searchParams.set("orderBy","startTime");
+    u.searchParams.set("maxResults","2500");
+    if(pageToken)u.searchParams.set("pageToken",pageToken);
+    const r=await fetch(u,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok)throw new Error(`Calendar API ${r.status}`);
+    const d=await r.json();
+    (d.items||[]).forEach(ev=>{const c=parseCalendarEvent(ev);if(c)out.push(c)});
+    if(!d.nextPageToken)break;
+    pageToken=d.nextPageToken;
+  }
+  /* Two calendars can carry the same session (the course calendar and the personal
+     copy of its invite), so collapse on the identity the office gives it. */
+  const seen=new Map();
+  out.forEach(c=>seen.set(`${c.code}|${c.sessionNo}|${c.dateIso}|${c.startTime}`,c));
+  return[...seen.values()].sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime));
+}
+async function refreshCalendarSchedule({silent}={}){
+  const tok=getSavedCalToken();
+  if(!tok)return false;
+  try{
+    const sessions=await fetchCalendarSessions(tok.access_token);
+    if(!sessions.length){if(!silent)showToast("No class sessions found in that calendar");return false}
+    localStorage.setItem(GOOGLE_CAL_CACHE_KEY,JSON.stringify({at:Date.now(),sessions}));
+    state.classes=filteredClasses();renderAll();
+    if(!silent)showToast(`${sessions.length} sessions from your calendar`);
+    return true;
+  }catch(e){
+    /* An expired token is the common case and is not worth a scary message. */
+    if(!silent)showToast("Couldn't read your calendar — try connecting again");
+    return false;
+  }
+}
+function connectGoogleCalendar(){
+  try{
+    if(!window.google||!window.google.accounts||!window.google.accounts.oauth2)
+      {showToast("Google sign-in isn't available right now");return}
+    const client=window.google.accounts.oauth2.initTokenClient({
+      client_id:GOOGLE_CLIENT_ID,
+      scope:GOOGLE_CAL_SCOPE,
+      callback:async resp=>{
+        if(resp.error){showToast("Calendar sign-in cancelled");return}
+        localStorage.setItem(GOOGLE_CAL_TOKEN_KEY,JSON.stringify({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000}));
+        await refreshCalendarSchedule();
+        renderCalendarConnectionStatus();
+      }
+    });
+    client.requestAccessToken({prompt:"consent"});
+  }catch(err){showToast("Calendar sign-in failed")}
+}
+function disconnectGoogleCalendar(){
+  if(!confirm("Disconnect Google Calendar? The app will fall back to the built-in Term IV schedule."))return;
+  const tok=getSavedCalToken();
+  if(tok)fetch(`https://oauth2.googleapis.com/revoke?token=${tok.access_token}`,{method:"POST"}).catch(()=>{});
+  localStorage.removeItem(GOOGLE_CAL_TOKEN_KEY);
+  localStorage.removeItem(GOOGLE_CAL_CACHE_KEY);
+  state.classes=filteredClasses();renderAll();
+  renderCalendarConnectionStatus();
+}
+function renderCalendarConnectionStatus(){
+  const cache=loadCalCache(),on=!!(cache&&cache.sessions&&cache.sessions.length);
+  const status=$("#gcalStatus"),conn=$("#gcalConnected"),disc=$("#gcalDisconnected");
+  if(status)status.textContent=on
+    ?`${cache.sessions.length} sessions \u00b7 updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(cache.at))}`
+    :"Using the built-in Term IV schedule.";
+  if(conn)conn.hidden=!on;
+  if(disc)disc.hidden=on;
 }
 async function connectGoogleTasks(){
   try{
@@ -2921,6 +3112,13 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   });
   $("#freeBlockStrip")?.addEventListener("click",()=>showPage("calendar"));
   $("#messStrip")?.addEventListener("click",()=>{showPage("campus");openCampusTab("mess")});
+  $("#connectGcal")?.addEventListener("click",connectGoogleCalendar);
+  $("#disconnectGcal")?.addEventListener("click",disconnectGoogleCalendar);
+  $("#refreshGcal")?.addEventListener("click",()=>refreshCalendarSchedule());
+  renderCalendarConnectionStatus();
+  /* A cached schedule is served immediately; the refresh behind it is silent so a
+     stale token never greets anyone with an error on launch. */
+  if(getSavedCalToken())refreshCalendarSchedule({silent:true});
   $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
@@ -3013,7 +3211,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova158",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova159",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

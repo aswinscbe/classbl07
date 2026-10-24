@@ -27,7 +27,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260928-nova158">
+  <link rel="stylesheet" href="styles.css?v=20260928-nova159">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -158,6 +158,7 @@
                   <p class="term-progress-sub" id="termProgressSub">—</p>
                 </div>
               </div>
+              <div class="course-progress" id="courseProgress"></div>
             </section>
           </div>
 
@@ -371,6 +372,7 @@
 
             <article class="panel settings-footer">
               <div class="settings-row"><div><strong>Google Tasks</strong><p>Sync tasks to your Google account.</p><div id="googleTasksStatus"></div></div><span id="googleTasksConnected" hidden><button class="secondary-button" id="disconnectGoogleTasks">Disconnect</button></span><span id="googleTasksDisconnected"><button class="primary-button google-tasks-button" id="connectGoogleTasks">Connect</button></span></div>
+              <div class="settings-row"><div><strong>Google Calendar</strong><p>Read your own class invites so the schedule is yours and stays current.</p><div id="gcalStatus"></div></div><span id="gcalConnected" hidden><button class="secondary-button" id="refreshGcal">Refresh</button><button class="secondary-button" id="disconnectGcal">Disconnect</button></span><span id="gcalDisconnected"><button class="primary-button" id="connectGcal">Connect</button></span></div>
               <div class="settings-row"><div><strong>Schedule sync</strong><p id="lastUpdated">Not synced yet</p></div><button class="secondary-button" id="refreshData">Refresh</button></div>
               <div class="settings-row"><div><strong>Local app data</strong><p>Tasks, notes and profile stay on this device.</p></div><button class="danger-button" id="resetData">Reset</button></div>
             </article>
@@ -562,11 +564,11 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260928-nova158"></script>
-  <script src="staff-bus-data.js?v=20260928-nova158"></script>
-  <script src="exam-data.js?v=20260928-nova158"></script>
-  <script src="term4-data.js?v=20260928-nova158"></script>
-  <script src="app.js?v=20260928-nova158"></script>
-  <script src="polish.js?v=20260928-nova158"></script>
+  <script src="campus-data.js?v=20260928-nova159"></script>
+  <script src="staff-bus-data.js?v=20260928-nova159"></script>
+  <script src="exam-data.js?v=20260928-nova159"></script>
+  <script src="term4-data.js?v=20260928-nova159"></script>
+  <script src="app.js?v=20260928-nova159"></script>
+  <script src="polish.js?v=20260928-nova159"></script>
 </body>
 </html>
