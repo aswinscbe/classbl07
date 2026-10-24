@@ -1,18 +1,11 @@
-/* Self-hosted, latin subset, one variable file each. Both faces used to come from a
-   CDN — Google for the display face, Fontshare for Satoshi — which meant that on a
-   slow, captive or filtered network the app silently fell back to system sans and
-   every bit of type work in it evaporated. 94KB total, served from the same origin as
-   everything else, so it either all loads or nothing does. */
+/* Self-hosted, latin subset, one variable file. The app ran a serif display face
+   against a sans body; it is one grotesque now, with hierarchy coming from size and
+   weight alone. Inter is drawn for interfaces — large x-height, unambiguous figures,
+   and it holds up at the 11px label sizes this app leans on. */
 @font-face{
-  font-family:"Fraunces";
-  src:url("fonts/fraunces-latin.woff2") format("woff2");
-  font-weight:400 700;font-style:normal;font-display:swap;
-  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
-}
-@font-face{
-  font-family:"Fraunces";
-  src:url("fonts/fraunces-italic-latin.woff2") format("woff2");
-  font-weight:400 600;font-style:italic;font-display:swap;
+  font-family:"Inter";
+  src:url("fonts/inter-latin.woff2") format("woff2");
+  font-weight:400 800;font-style:normal;font-display:swap;
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 @font-face{
@@ -32,13 +25,13 @@
      separated aubergine/plum ground so surfaces actually lift off each
      other, plus a warmer plum-to-bronze accent pairing instead of the
      previous flat blue-gray. */
-  --bg:#0a0e16;
-  --bg-elevated:#172030;
-  --bg-panel:#111925;
-  --bg-raised:#1f2b3d;
-  --ink:#f1f5fb;
-  --ink-muted:#9aa8bf;
-  --ink-faint:#6c7b94;
+  --bg:#0b0f1d;
+  --bg-elevated:#182142;
+  --bg-panel:#121936;
+  --bg-raised:#202a52;
+  --ink:#eef1fa;
+  --ink-muted:#a0a7c4;
+  --ink-faint:#717aa0;
   --accent:#e9a73e;
   --accent-2:#d2694c;
   --accent-soft:rgba(233,167,62,.18);
@@ -48,8 +41,8 @@
   --amber-soft:rgba(229,192,90,.16);
   --danger:#e2645f;
   --danger-soft:rgba(226,100,95,.16);
-  --border:#222d3f;
-  --border-strong:#33415a;
+  --border:#242e55;
+  --border-strong:#394472;
   --shadow-lg:0 1px 2px rgba(0,0,0,.4), 0 24px 52px -22px rgba(0,0,0,.65);
   --shadow-md:0 1px 2px rgba(0,0,0,.34), 0 14px 30px -16px rgba(0,0,0,.55);
   --shadow-sm:0 1px 1px rgba(0,0,0,.28), 0 7px 16px -10px rgba(0,0,0,.5);
@@ -63,8 +56,8 @@
     var(--bg-elevated) 58%,
     color-mix(in srgb, var(--accent-2) 14%, var(--bg-elevated)) 100%);
   --grad-glow:rgba(180,96,60,.4);
-  --on-grad:#f1f5fb;
-  --on-grad-muted:#c3cede;
+  --on-grad:#eef1fa;
+  --on-grad-muted:#c6cbe4;
   --on-grad-line:rgba(255,255,255,.13);
   --radius-xl:20px;
   --radius-lg:16px;
@@ -72,12 +65,11 @@
   --radius-sm:10px;
   --radius-xs:8px;
   --radius-pill:99px;
-  --font:"Jakarta",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  /* A high-contrast serif on the headlines against a grotesque body — the pairing that
-     separates a designed interface from a tidy one. Fraunces is kept to the greeting,
-     the big numerals and section titles: three or four places per screen. Everywhere
-     else is Jakarta, which beats any serif at 11-13px. */
-  --font-display:"Fraunces",Georgia,"Times New Roman",serif;
+  --font:"Inter","Jakarta",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  /* Same family. Display is a role, not a second typeface: headlines get tighter
+     tracking and a heavier weight, which is all the separation one good grotesque
+     needs. */
+  --font-display:var(--font);
 
   /* Type scale — six steps. Sizes were previously picked ad hoc per rule
      (11/11.5/12/13/13.5/14/15px), which is most of the difference between a page
@@ -148,13 +140,13 @@
    background, warm-tinted soft shadows, and the accent stays in the plum family
    (just deepened for contrast) so light mode feels like the same product. */
 :root[data-theme="light"]{
-  --bg:#f7f3ea;
-  --bg-elevated:#fffdf7;
-  --bg-panel:#efe9dc;
-  --bg-raised:#fffdf7;
-  --ink:#1e1a14;
-  --ink-muted:#5e564a;
-  --ink-faint:#8a8275;
+  --bg:#f5f5fa;
+  --bg-elevated:#ffffff;
+  --bg-panel:#ebebf4;
+  --bg-raised:#ffffff;
+  --ink:#171a2b;
+  --ink-muted:#525871;
+  --ink-faint:#80869e;
   --accent:#a8641a;
   --accent-2:#b04a2c;
   --accent-soft:rgba(168,100,26,.15);
@@ -164,8 +156,8 @@
   --amber-soft:rgba(138,106,22,.16);
   --danger:#a83c34;
   --danger-soft:rgba(168,60,52,.14);
-  --border:#e6ddc9;
-  --border-strong:#d0c3a8;
+  --border:#dfe0ec;
+  --border-strong:#c3c5d8;
   --shadow-lg:0 1px 2px rgba(60,40,20,.08), 0 24px 52px -30px rgba(60,40,20,.16);
   --shadow-md:0 1px 2px rgba(60,40,20,.07), 0 14px 28px -18px rgba(60,40,20,.13);
   --shadow-sm:0 1px 1px rgba(60,40,20,.06), 0 6px 14px -10px rgba(60,40,20,.11);
@@ -173,13 +165,13 @@
 }
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]):not([data-theme="light"]){
-    --bg:#f7f3ea;
-    --bg-elevated:#fffdf7;
-    --bg-panel:#efe9dc;
-    --bg-raised:#fffdf7;
-    --ink:#1e1a14;
-    --ink-muted:#5e564a;
-    --ink-faint:#8a8275;
+    --bg:#f5f5fa;
+    --bg-elevated:#ffffff;
+    --bg-panel:#ebebf4;
+    --bg-raised:#ffffff;
+    --ink:#171a2b;
+    --ink-muted:#525871;
+    --ink-faint:#80869e;
     --accent:#a8641a;
     --accent-2:#b04a2c;
     --accent-soft:rgba(168,100,26,.15);
@@ -189,8 +181,8 @@
     --amber-soft:rgba(138,106,22,.16);
     --danger:#a83c34;
     --danger-soft:rgba(168,60,52,.14);
-    --border:#e6ddc9;
-    --border-strong:#d0c3a8;
+    --border:#dfe0ec;
+    --border-strong:#c3c5d8;
     --shadow-lg:0 1px 2px rgba(60,40,20,.08), 0 24px 52px -30px rgba(60,40,20,.16);
     --shadow-md:0 1px 2px rgba(60,40,20,.07), 0 14px 28px -18px rgba(60,40,20,.13);
     --shadow-sm:0 1px 1px rgba(60,40,20,.06), 0 6px 14px -10px rgba(60,40,20,.11);
@@ -269,17 +261,8 @@ h3,b,strong{font-family:inherit}
 }
 /* Inside a card the heading is already framed by the card, so the tick is noise. */
 .panel .overline::before,.hero-card .overline::before,.panel-compact .overline::before{display:none}
-/* Fraunces at 600 rather than 800: a serif gets its presence from contrast and size,
-   not from weight, and the heavy optical sizes go muddy at headline scale. */
-h1{font-size:var(--text-3xl);line-height:1.12;letter-spacing:-.018em;font-weight:600;margin:0 0 6px}
-/* Fraunces carries a live optical-size axis, and the browser's automatic mapping ties
-   it to the font size in points — so a 34px headline lands around opsz 26, which is
-   still a text cut. Asking for the display end gives the headline the finer hairlines
-   and tighter fit the face was drawn to have at that size; the small numerals keep the
-   automatic mapping, where the sturdier text cut is the right one. */
-h1,.hero-time,.course-card h3{font-variation-settings:"opsz" 144}
-html{font-optical-sizing:auto}
-h2{letter-spacing:-.015em;font-weight:600}
+h1{font-size:var(--text-3xl);line-height:1.15;letter-spacing:-.025em;font-weight:800;margin:0 0 6px}
+h2{letter-spacing:-.02em;font-weight:800}
 h2{font-size:22px;line-height:var(--lh-snug);font-weight:700;margin:0}
 .subtitle{margin:0;color:var(--ink-muted);font-size:var(--text-md);font-weight:500}
 .empty-state{
@@ -618,8 +601,8 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    than a system label. */
 .hero-status{
   display:inline-flex;align-items:center;gap:7px;
-  font-family:var(--font-display);font-style:italic;font-size:var(--text-md);font-weight:var(--w-strong);
-  letter-spacing:var(--track-normal);
+  font-size:var(--text-sm);font-weight:var(--w-label);
+  letter-spacing:var(--track-label);text-transform:uppercase;
   padding:5px 12px;border-radius:var(--radius-pill);background:var(--hero-chip-bg);color:var(--on-grad-muted);white-space:nowrap;
 }
 .hero-status i{width:6px;height:6px;border-radius:50%;background:var(--live)}
@@ -2331,8 +2314,8 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
   -webkit-backdrop-filter:blur(20px) saturate(1.3);
 }
 
-/* Fraunces has real tabular figures and needs them switched on explicitly; without
-   this every countdown jitters as the digits change width. */
+/* Tabular figures everywhere a number counts down or ticks, so digits keep their
+   width as they change value. */
 .hero-time,.wc-num,.tc-stop b,.frc-end b,#termProgressPct,.next-bus-time{font-variant-numeric:tabular-nums}
 
 /* ============ Courses and Faculty ============ */
@@ -2446,24 +2429,19 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 .mwg-cell b[data-meal="dinner"],.day-pill.is-today[data-meal="dinner"],.mess-now-line[data-meal="dinner"]{--meal-accent:#5b86c4;color:#5b86c4}
 .day-pill.is-today[data-meal],.mess-now-line[data-meal]{color:inherit}
 
-/* ============ The italic voice ============
-   Fraunces italic carries the lines that comment on the schedule rather than state
-   it — the context line under the greeting, the card's read on the day, what comes
-   next for a professor, and the copy under an empty state. Four places, all of them
-   asides, which is the one job an italic should have in an interface. */
-.home-sync-text,.hero-insight,.fac-next,.empty-state small,.frc-sub,.tc-note{
-  font-family:var(--font-display);font-style:italic;font-weight:var(--w-body);
-  letter-spacing:var(--track-normal);
+/* These lines comment on the schedule rather than state it. They had been set in a
+   serif italic; with one grotesque the same separation comes from colour and weight,
+   which is quieter and does not need a second font file. */
+.home-sync-text,.hero-insight,.fac-next,.empty-state small,.frc-sub,.tc-note,.cc-next{
+  font-style:normal;font-weight:var(--w-body);letter-spacing:var(--track-normal);
+  color:var(--ink-muted);
 }
 .home-sync-text{font-size:var(--text-md);color:var(--ink-faint)}
-.hero-insight{font-size:var(--text-md)}
-.fac-next,.frc-sub,.tc-note{font-size:var(--text-md)}
-.empty-state small{font-size:var(--text-md)}
+.hero-insight,.fac-next,.frc-sub,.tc-note,.cc-next,.empty-state small{font-size:var(--text-md)}
 
-/* A person's name is the one string in the app that is genuinely editorial, and a
-   serif is what names are set in. */
-.fac-body strong,.fac-chip b{font-family:var(--font-display);font-weight:var(--w-strong);letter-spacing:var(--track-normal)}
-.fac-body strong{font-size:var(--text-lg)}
+/* Names get their weight from the type scale now, not from a different typeface. */
+.fac-body strong{font-size:var(--text-lg);font-weight:var(--w-bold);letter-spacing:-.01em}
+.fac-chip b{font-weight:var(--w-bold);letter-spacing:var(--track-tight)}
 
 /* Uppercase was doing too much. These three are short phrases, not codes: set in
    sentence case they stop competing with the labels that have earned their caps. */
@@ -2473,7 +2451,7 @@ kbd{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(
 
 /* Serif headlines want tighter leading than the sans they replaced; body copy wants
    a touch more than it had. */
-h1,h2,.course-card h3,.hero-card h2#focusTitle{line-height:1.14}
+h1,h2,.course-card h3,.hero-card h2#focusTitle{line-height:1.2;letter-spacing:-.02em}
 .sr-subj,.cc-topics li span{line-height:1.45}
 
 /* ============ Motion ============ */
@@ -2629,7 +2607,4 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
   background:var(--live);
   box-shadow:0 0 0 2px color-mix(in srgb, var(--live) 30%, transparent);
 }
-.cc-next{
-  margin:12px 0 0;font-family:var(--font-display);font-style:italic;font-weight:var(--w-body);
-  font-size:var(--text-md);color:var(--ink-muted);letter-spacing:var(--track-normal);
-}
+.cc-next{margin:12px 0 0;font-size:var(--text-md);font-weight:var(--w-body);color:var(--ink-muted)}

@@ -17,7 +17,7 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
    blues in play; at dot size hue alone doesn't separate, lightness does. Each hue now
    also sits at its own value, and every colour stays dark enough to carry white text
    where these are used as fills. */
-const COURSE_COLORS={SM:"#4a90d9",DBST:"#3b4ea8",AIB:"#7c5cd6",OS:"#a855c7",CV:"#d1479b",PM:"#c2415c",POM:"#d4632f",CB:"#c8961a",SBM:"#8a9b2e",NWW:"#4fa54f",MAAS:"#1f7a4d",ACC:"#2fb896",IS:"#35b8c4",MBGAI:"#e9a73e",FSA:"#4f9ae0",MFSA:"#a579e0",GC:"#e0624f",SI:"#2fa882",EPIS:"#e07ab0"};
+const COURSE_COLORS={SM:"#4a90d9",DBST:"#3b4ea8",AIB:"#7c5cd6",OS:"#a855c7",CV:"#d1479b",PM:"#c2415c",POM:"#d4632f",CB:"#c8961a",SBM:"#8a9b2e",NWW:"#4fa54f",MAAS:"#1f7a4d",ACC:"#2fb896",IS:"#35b8c4",MBGAI:"#e3b65c",FSA:"#5ab0e8",MFSA:"#b88ae8",GC:"#ef7a66",SI:"#43bd94",EPIS:"#ec86bd"};
 const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
 /* Course colour stopped carrying information when the term feed became the immersion
    module: two codes, one per week, so a colour said only what the week already said.
@@ -100,7 +100,7 @@ function zoned(iso,hhmm="12:00"){
   const guess=new Date(`${iso}T${hhmm}:00Z`);
   return new Date(guess.getTime()-tzOffsetMinutes(guess)*60000);
 }
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",section:"A",electives:[],theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null,peekSection:null,peekAll:null};
+const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null};
 let editingTaskId=null;
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function haptic(ms=12){try{navigator.vibrate?.(ms)}catch(e){}}
@@ -233,20 +233,19 @@ function renderThemeToggleIcon(theme){
   span.innerHTML=icon(wantIcon);
   setTimeout(()=>span.classList.remove("icon-morph"),320);
 }
-/* These are applied to the document at runtime and therefore override whatever the
-   stylesheet declares for --accent — which is why changing the palette in CSS alone
-   did nothing until this list changed too. "Amber Night" is the default: streetlight amber
-   against an ink-blue ground, terracotta second. It was drawn for the Barcelona
-   module and kept afterwards because it reads well anywhere, but the name had to go. A saved preset that no longer
-   exists (everyone currently on "plum") falls through to it. */
+/* Applied to the document at runtime, so these override whatever the stylesheet
+   declares for --accent — changing the palette in CSS alone does nothing until this
+   list changes too. "Academic Indigo" is the default; a saved preset that no longer
+   exists falls through to it. */
 const ACCENT_PRESETS={
+  indigo:{name:"Academic Indigo",dark:{accent:"#8c9bf5",accent2:"#e3b65c"},light:{accent:"#4350c4",accent2:"#9a7016"},grad:"linear-gradient(135deg,#121a3d 0%,#27306b 55%,#9a7a3a 100%)",glow:"#27306b"},
+  slate:{name:"Graphite",dark:{accent:"#7d8aa6",accent2:"#c0a267"},light:{accent:"#4a5570",accent2:"#8a7232"},grad:"linear-gradient(135deg,#141822 0%,#2b3345 55%,#8a7232 100%)",glow:"#2b3345"},
   amber:{name:"Amber Night",dark:{accent:"#e9a73e",accent2:"#d2694c"},light:{accent:"#a8641a",accent2:"#b04a2c"},grad:"linear-gradient(135deg,#0f1622 0%,#1d2b3f 55%,#b4603c 100%)",glow:"#b4603c"},
-  gaudi:{name:"Gaud\u00ed Mosaic",dark:{accent:"#4fb3a5",accent2:"#e0855c"},light:{accent:"#2f7f74",accent2:"#b35b36"},grad:"linear-gradient(135deg,#0d1f22 0%,#195550 55%,#c26a42 100%)",glow:"#195550"},
-  crimson:{name:"Crimson Ember",dark:{accent:"#c15a6e",accent2:"#d98a4f"},light:{accent:"#a83f52",accent2:"#a5673f"},grad:"linear-gradient(135deg,#2a1114 0%,#5e2a35 55%,#a5673f 100%)",glow:"#5e2a35"},
-  indigo:{name:"Indigo Slate",dark:{accent:"#6a7bc9",accent2:"#4fb0a0"},light:{accent:"#4a5aa8",accent2:"#2f8c7e"},grad:"linear-gradient(135deg,#151a35 0%,#2a3566 55%,#2f8c7e 100%)",glow:"#2a3566"},
-  forest:{name:"Forest Emerald",dark:{accent:"#5a9c6a",accent2:"#c9a04f"},light:{accent:"#3f8250",accent2:"#a5823f"},grad:"linear-gradient(135deg,#11291a 0%,#2a5e38 55%,#a5823f 100%)",glow:"#2a5e38"}
-};function applyAccent(){
-  const preset=ACCENT_PRESETS[state.profile.accent]||ACCENT_PRESETS.amber;
+  teal:{name:"Monsoon Teal",dark:{accent:"#4fb3a5",accent2:"#e0855c"},light:{accent:"#2f7f74",accent2:"#b35b36"},grad:"linear-gradient(135deg,#0d1f22 0%,#195550 55%,#c26a42 100%)",glow:"#195550"},
+  crimson:{name:"Crimson Ember",dark:{accent:"#c15a6e",accent2:"#d98a4f"},light:{accent:"#a83f52",accent2:"#a5673f"},grad:"linear-gradient(135deg,#2a1114 0%,#5e2a35 55%,#a5673f 100%)",glow:"#5e2a35"}
+};
+function applyAccent(){
+  const preset=ACCENT_PRESETS[state.profile.accent]||ACCENT_PRESETS.indigo;
   const theme=document.documentElement.dataset.theme==="light"?"light":"dark",tone=preset[theme];
   const root=document.documentElement.style;
   root.setProperty("--accent",tone.accent);
@@ -257,16 +256,14 @@ const ACCENT_PRESETS={
 }
 /* Section peek — a read-only view swap for Core classes only (electives aren't
    section-locked, so they always come from the viewer's own data regardless).
-   When peekSection is set, Core classes are sourced from the separately-fetched
-   peekAll instead of the normal state.all, everything else is untouched. Every
    existing filteredClasses() call site picks this up automatically. */
 /* Term IV is the whole schedule, compiled from the programme office's calendar feed
    into term4-data.js. The Google Apps Script sync is still wired up but switched off:
    the feed is the authority now, and a sync would overwrite it with Term III. */
+/* No section filter: Term IV is an elective term with no A/B split, and the feed is
+   this student's own enrolment, so every row in it is theirs. */
 function filteredClasses(){
-  const activeSection=state.peekSection||state.profile.section;
   return(window.TERM4_CLASSES||[])
-    .filter(c=>c.section===activeSection)
     .slice()
     .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
 }
@@ -275,23 +272,6 @@ async function fetchSectionClasses(section){
   const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`HTTP ${r.status}`);
   const d=await r.json();if(!d.success)throw new Error(d.error||"API failed");
   return d.classes||[];
-}
-async function setSectionView(target){
-  const mySection=state.profile.section||"A",btn=$("#sectionPeekToggle");
-  if(target===mySection){
-    state.peekSection=null;state.classes=filteredClasses();renderAll();
-    return;
-  }
-  if(btn){btn.classList.add("is-fetching");btn.disabled=true}
-  try{
-    if(!state.peekAll||state.peekSection!==target)state.peekAll=await fetchSectionClasses(target);
-    state.peekSection=target;state.classes=filteredClasses();renderAll();
-  }catch(e){
-    showToast("Couldn't load the other section right now");
-  }finally{
-    const after=$("#sectionPeekToggle");
-    if(after){after.classList.remove("is-fetching");after.disabled=false}
-  }
 }
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
 function classKey(c){return`${classIdentity(c)}|${c.endTime||""}|${venueOf(c)}`}
@@ -364,7 +344,6 @@ async function syncSchedule(force=false){
     _syncInFlight=false;
     if(refreshBtn){refreshBtn.dataset.state="";refreshBtn.setAttribute("aria-busy","false")}
   }
-  if(force&&state.peekSection){try{state.peekAll=await fetchSectionClasses(state.peekSection);state.classes=filteredClasses()}catch(e){}}
   state.scheduleLoading=false;
   renderAll();
 }
@@ -2335,43 +2314,51 @@ function setSegValue(id,value){
   $$(".seg-opt",el).forEach(b=>b.classList.toggle("active",b.dataset.value===value));
 }
 function segValue(id,fallback){return $(id)?.dataset.value||fallback}
-function renderProfile(){$("#profileName").value=state.profile.name||"";setSegValue("#profileSectionSeg",state.profile.section||"A");setSegValue("#profileThemeSeg",state.profile.theme||"system");
-  const peekBtn=$("#sectionPeekToggle");
-  if(peekBtn){
-    const mine=state.profile.section||"A",other=mine==="A"?"B":"A";
-    peekBtn.textContent=state.peekSection?`Back to Section ${mine}`:`Preview Section ${other}`;
-    peekBtn.classList.toggle("is-peeking",!!state.peekSection);
-  }
+function renderProfile(){$("#profileName").value=state.profile.name||"";setSegValue("#profileThemeSeg",state.profile.theme||"system");
+  const meta=window.TERM4_META||{};
+  const courses=Object.entries(window.TERM4_COURSES||{});
   $("#stubName").textContent=state.profile.name||"Student";
-  $("#stubSection").textContent=`Section ${state.profile.section||"A"}`;
-  const avatarDisc=$("#profileAvatarDisc");if(avatarDisc){avatarDisc.setAttribute("data-initials",initials(state.profile.name));avatarDisc.classList.toggle("section-b",state.profile.section==="B")}
+  /* Was "Section A". Term IV has no sections, so the line says what is actually true
+     of this student: the term, and how many electives they are carrying. */
+  $("#stubSection").textContent=courses.length
+    ?`${meta.term||"Term IV"} \u00b7 ${courses.length} electives \u00b7 ${courses.reduce((t,[,v])=>t+(v.credits||0),0)} credits`
+    :(meta.term||"Term IV");
+  const avatarDisc=$("#profileAvatarDisc");if(avatarDisc)avatarDisc.setAttribute("data-initials",initials(state.profile.name));
   const bc=$("#stubBarcode");if(bc)bc.innerHTML=barcodeHtml(state.profile.name||state.profile.section);
   /* A malformed updatedAt from the feed used to throw here, and since renderProfile runs
      before renderHome in renderAll, that took the whole app down with it. */
   const lastSynced=state.lastUpdated?new Date(state.lastUpdated):null;
-  $("#lastUpdated").textContent=lastSynced&&!isNaN(lastSynced)?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(lastSynced)}`:"Not synced yet";const selected=new Set((state.profile.electives||[]).map(canonical)),items=(state.electives||[]).filter(e=>selected.has(canonical(e.code)));const chips=$("#selectedElectiveChips");if(chips)chips.innerHTML=items.length?items.map(e=>`<span title="${esc(e.course)}"><b>${esc(e.code)}</b>${esc(e.course)}</span>`).join(""):'<em>No electives selected</em>'
+  $("#lastUpdated").textContent=lastSynced&&!isNaN(lastSynced)?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(lastSynced)}`:"Not synced yet";/* Read from the term feed rather than from a saved selection. The schedule is the
+   enrolment, so there is nothing for a picker to pick — listing them is the honest
+   version of the same card. */
+  const chips=$("#selectedElectiveChips");
+  if(chips)chips.innerHTML=courses.length
+    ?courses.map(([code,v])=>`<span title="${esc(v.title)}" style="--course:${colorFor(code)}"><b>${esc(code)}</b>${esc(v.title)}<em>${v.credits} cr</em></span>`).join("")
+    :"<em>Schedule not loaded</em>";
   renderSessionRings();
   renderAccentSwatches();
   renderTermRing();
   renderWorkloadChart();
   renderProfileInsight();
 }
-/* Profile's ring, not Home's — the Home card is gone. Repointed at the immersion
-   window; against the closed Term III window it would have read "0 days left,
-   100% complete" for ever. */
+/* Profile's ring, not Home's. The window comes from the term data rather than being
+   written in here: hardcoded to the immersion fortnight it read "0 days left, 100%
+   complete" from the day that module ended, which is how it was still reading when
+   Term IV started. */
 function renderTermRing(){
   const fill=$("#termRingFill");if(!fill)return;
-  const termStart=zoned("2026-10-05","00:00"),termEnd=zoned("2026-10-16","23:59"),now=new Date();
+  const meta=window.TERM4_META||{startIso:"2026-10-26",endIso:"2027-01-10"};
+  const termStart=zoned(meta.startIso,"00:00"),termEnd=zoned(meta.endIso,"23:59"),now=new Date();
   const totalMs=termEnd-termStart,elapsedMs=Math.max(0,Math.min(totalMs,now-termStart));
   const pct=totalMs>0?Math.round(elapsedMs/totalMs*100):0,daysLeft=Math.max(0,Math.ceil((termEnd-now)/86400000));
   fill.style.setProperty("--pct",pct);
   $("#termRingDays").textContent=daysLeft;
   $("#termRingLabel").textContent=`${daysLeft} ${daysLeft===1?"day":"days"} left`;
-  $("#termRingSub").textContent=`${pct}% of the immersion complete`;
+  $("#termRingSub").textContent=`${pct}% of ${(window.TERM4_META||{}).term||"the term"} complete`;
 }
 function renderAccentSwatches(){
   const el=$("#accentSwatches");if(!el)return;
-  const current=state.profile.accent||"amber";
+  const current=state.profile.accent||"indigo";
   el.innerHTML=Object.entries(ACCENT_PRESETS).map(([key,preset])=>
     `<button type="button" class="accent-swatch ${key===current?"active":""}" data-accent="${key}" style="--swatch:${preset.dark.accent}" aria-label="${esc(preset.name)}" title="${esc(preset.name)}"></button>`
   ).join("");
@@ -2810,15 +2797,10 @@ function bind(){
     summary.classList.toggle("open");
     summary.nextElementSibling?.classList.toggle("collapsed");
   });
-  $("#sectionPeekToggle")?.addEventListener("click",()=>{
-    const mine=state.profile.section||"A";
-    setSectionView(state.peekSection?mine:(mine==="A"?"B":"A"));
-  });
-  $("#profileSectionSeg")?.addEventListener("click",e=>{const b=e.target.closest("[data-value]");if(!b)return;setSegValue("#profileSectionSeg",b.dataset.value)});
   $("#profileThemeSeg")?.addEventListener("click",e=>{const b=e.target.closest("[data-value]");if(!b)return;setSegValue("#profileThemeSeg",b.dataset.value)});
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
   $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$(`.accent-swatch[data-accent="${b.dataset.accent}"]`);if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
-  $("#resetAccentButton")?.addEventListener("click",()=>{state.profile.accent="amber";save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$('.accent-swatch[data-accent="amber"]');if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
+  $("#resetAccentButton")?.addEventListener("click",()=>{state.profile.accent="indigo";save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$('.accent-swatch[data-accent="indigo"]');if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
   $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
   $("#timelinePrevDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)-1,"backward"));
   $("#timelineNextDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)+1,"forward"));
@@ -2977,7 +2959,7 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#openNoteForm").addEventListener("click",()=>{clearDialogValidation(noteDialog);noteDialog.showModal()});
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
-  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),section:segValue("#profileSectionSeg","A"),electives:[...(state.profile.electives||[])],theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);state.peekSection=null;state.peekAll=null;applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
+  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
@@ -3011,7 +2993,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova156",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova157",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
