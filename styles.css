@@ -2608,3 +2608,16 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
   box-shadow:0 0 0 2px color-mix(in srgb, var(--live) 30%, transparent);
 }
 .cc-next{margin:12px 0 0;font-size:var(--text-md);font-weight:var(--w-body);color:var(--ink-muted)}
+
+/* A reserved hour — the batch quiz slot — is not a class: no course colour, no
+   faculty, no room. Drawn as an outlined block so it reads as time taken rather than
+   something to prepare for. */
+.sched-row.event .sr-accent{background:repeating-linear-gradient(180deg,var(--border-strong) 0 4px,transparent 4px 8px)}
+.sched-row.event .sr-subj{color:var(--ink-muted);font-weight:var(--w-bold)}
+.sched-row.event .sr-time b{color:var(--ink-muted)}
+.sr-event-pill{
+  flex:none;padding:2px 8px;border-radius:var(--radius-pill);
+  font-size:var(--text-xs);font-weight:var(--w-label);letter-spacing:var(--track-label);
+  text-transform:uppercase;color:var(--ink-faint);
+  border:1px dashed var(--border-strong);white-space:nowrap;
+}

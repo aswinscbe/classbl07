@@ -18,7 +18,9 @@ const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",
    also sits at its own value, and every colour stays dark enough to carry white text
    where these are used as fills. */
 const COURSE_COLORS={SM:"#4a90d9",DBST:"#3b4ea8",AIB:"#7c5cd6",OS:"#a855c7",CV:"#d1479b",PM:"#c2415c",POM:"#d4632f",CB:"#c8961a",SBM:"#8a9b2e",NWW:"#4fa54f",MAAS:"#1f7a4d",ACC:"#2fb896",IS:"#35b8c4",MBGAI:"#e3b65c",FSA:"#5ab0e8",MFSA:"#b88ae8",GC:"#ef7a66",SI:"#43bd94",EPIS:"#ec86bd"};
-const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day"});
+/* Institute holidays come from the term feed; the Independence Day entry predates it
+   and is kept so older cached terms still render one. */
+const HOLIDAYS=Object.freeze({"2026-08-15":"Independence Day",...(window.TERM4_HOLIDAYS||{})});
 /* Course colour stopped carrying information when the term feed became the immersion
    module: two codes, one per week, so a colour said only what the week already said.
    What varies inside a day is the KIND of session — a lecture and a company visit ask
@@ -263,7 +265,11 @@ function applyAccent(){
 /* No section filter: Term IV is an elective term with no A/B split, and the feed is
    this student's own enrolment, so every row in it is theirs. */
 function filteredClasses(){
-  return(window.TERM4_CLASSES||[])
+  /* The standing quiz slot is a reserved hour with no course, faculty or room. It
+     joins the day list so it blocks time like anything else, flagged so the renderers
+     can draw it as an event rather than a session — and so course counts, progress and
+     the faculty directory all ignore it. */
+  return[...(window.TERM4_CLASSES||[]),...(window.TERM4_EVENTS||[])]
     .slice()
     .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
 }
@@ -426,9 +432,13 @@ function setPlannerTab(tab){
    no new data, no second source to keep in step with it. The schedule answers "what is
    on at 11:30"; these answer "what am I actually taking" and "who is teaching me",
    which until now could only be got by scrolling two weeks of rows. */
+/* A reserved hour is not a session. Course grouping, term progress and the course
+   legend all count teaching, so they filter on this; the day list and the free-time
+   maths deliberately do not, because a blocked hour blocks time either way. */
+const isSession=c=>c&&c.kind!=="event";
 function courseGroups(){
   const by=new Map();
-  state.classes.filter(c=>c.status!=="Cancelled").forEach(c=>{
+  state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled").forEach(c=>{
     const code=canonical(c.code),g=by.get(code)||{code,sessions:[]};
     g.sessions.push(c);by.set(code,g);
   });
@@ -545,7 +555,7 @@ function renderWeekDigest(){
 function renderHomeLegend(){
   const el=$("#homeLegend");if(!el)return;
   const monday=zoned(mondayIso(isoToday()),"00:00"),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
-  const used=[...new Set(state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).map(c=>canonical(c.code)))];
+  const used=[...new Set(state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).map(c=>canonical(c.code)))];
   if(!used.length){el.innerHTML="";return}
   /* The legend was a colour key and nothing more. Each course already has an ordered
      session list, so the same row can carry how far through that course you are. */
@@ -562,7 +572,7 @@ function renderHomeLegend(){
   /* Colour is back on the course now that there are six of them, so the kind key is
      only worth printing when the week actually holds more than one kind of session —
      a term of straight lectures would otherwise get a legend entry reading "Lecture". */
-  const kindsUsed=[...new Set(state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).map(sessionKind))];
+  const kindsUsed=[...new Set(state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).map(sessionKind))];
   if(kindsUsed.length<2)kindsUsed.length=0;
   const order=Object.keys(SESSION_KINDS);
   const kindKey=kindsUsed.sort((a,b)=>order.indexOf(a)-order.indexOf(b))
@@ -846,7 +856,7 @@ function renderHome(){
      than weeks — "2 weeks to go" is a poor unit for a ten-day module. */
   const meta=window.TERM4_META||{startIso:"2026-10-26",endIso:"2027-01-10"};
   const immStart=zoned(meta.startIso,"00:00"),immEnd=zoned(meta.endIso,"23:59");
-  const immAll=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=immStart&&dateTime(c,"startTime")<=immEnd);
+  const immAll=state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled"&&dateTime(c,"startTime")>=immStart&&dateTime(c,"startTime")<=immEnd);
   const immDone=immAll.filter(c=>dateTime(c,"endTime")<now).length,immLeft=Math.max(0,immAll.length-immDone);
   const immPct=immAll.length?Math.round(immDone/immAll.length*100):0;
   animateCount($("#termProgressPct"),immPct,"%");
@@ -1383,6 +1393,16 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
         const label=nxt.dateIso===dayIso?"later today":nxt.dateIso===tomorrowIso()?"tomorrow":fmtDate(nxt.dateIso,{weekday:"short",day:"numeric",month:"short"});
         nextLine=`<p class="sr-next">Next ${esc(canonical(c.code))} — ${esc(label)}, ${esc(fmtTime(nxt.startTime))}</p>`;
       }
+    }
+    if(!isSession(c)){
+      html+=`<article class="sched-row event ${tier}" data-class-id="${esc(classIdentity(c))}" style="--i:${idx}">
+        <div class="sr-time"><b>${esc(h12)}</b><small>${esc((ap||"").toUpperCase())}</small><span class="sr-time-end">${esc(fmtTime(c.endTime))}</span></div>
+        <div class="sr-accent"></div>
+        <div class="sr-body"><div class="sr-top"><span class="sr-subj">${esc(c.title||c.course)}</span><span class="sr-event-pill">Reserved</span></div>
+        <div class="sr-meta">${esc(compactDuration(dur))}<span class="sep">\u00b7</span>batch-wide</div></div>
+      </article>`;
+      prevEnd=minutes(c.endTime);
+      return;
     }
     const chips=[roomChip(c),facultyChip(c.faculty)].filter(Boolean).join("");
     const meta=[roomOf(c)?venueBase(c):venueOf(c),compactDuration(dur)].filter(Boolean);
@@ -2993,7 +3013,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova157",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova158",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

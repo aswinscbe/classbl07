@@ -15,9 +15,24 @@
    worth being shown rather than averaged away. */
 window.TERM4_META={
   term:"Term IV",year:"2026-27",section:"A",
-  startIso:"2026-10-26",endIso:"2027-01-10",
-  defaultRoom:"CR A3"
+  /* The portal's own term record, not the first and last session: teaching ends
+     10 January but the term runs to the 15th, and the weekly quiz slot sits in that
+     tail. Inferring the end from the last class had it five days short. */
+  startIso:"2026-10-26",endIso:"2027-01-15",
+  lastTeachingIso:"2027-01-10",
+  defaultRoom:"CR A3",
+  minCredits:16,maxCredits:18
 };
+/* Institute holidays from the portal feed. Both fall outside teaching days this term,
+   which is worth showing rather than leaving to coincidence. */
+window.TERM4_HOLIDAYS={"2026-11-08":"Diwali","2026-12-25":"Christmas"};
+/* A standing batch-wide quiz slot, every Thursday 14:30-15:45, with no course or room
+   attached — it is a reserved hour rather than a class, so it is kept apart from the
+   session list and drawn differently. */
+window.TERM4_EVENTS=["2026-10-29","2026-11-05","2026-11-12","2026-11-19","2026-11-26",
+  "2026-12-03","2026-12-10","2026-12-17","2026-12-24","2026-12-31","2027-01-07","2027-01-14"]
+  .map(dateIso=>({dateIso,startTime:"14:30",endTime:"15:45",title:"Quiz slot",
+    code:"QUIZ",course:"PGP BL07 \u00b7 Quiz slot",venue:"IIM Kozhikode",kind:"event",status:"Scheduled"}));
 window.TERM4_COURSES={
   MBGAI:{title:'Managing Business with Generative and Agentic AI',faculty:'Prof. Swati Jain',credits:3,sessions:24},
   FSA:{title:'Financial Statements Analysis',faculty:'Prof. Rachappa Shette',credits:2,sessions:18},
