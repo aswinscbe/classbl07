@@ -1056,22 +1056,24 @@ function renderTodayStrips(){
 /* The other strip that came off for Barcelona. Which meal is next and its headline
    dish — the question people open the Campus tab for, answered without the trip. */
 /* The mess's own service times: breakfast from 8am, lunch from 1pm, dinner from 8pm.
-   The 90-minute length of each service is an assumption rather than something the
-   sheet states — adjust the `to` values if the counters close earlier or later.
+   Start times only — the counters stay open a while and no closing time is published,
+   so the app never prints one rather than inventing it. A meal is therefore "on" from
+   its start until the next meal starts.
 
    This is the single definition. There used to be a second one inside renderMess
    (nowHour<11 ? breakfast : nowHour<16 ? lunch : dinner) which disagreed with this
    table and with the mess, so Home and the Mess tab could name different meals at
    the same moment. */
 const MEAL_WINDOWS=[
-  {key:"breakfast",label:"Breakfast",from:8*60,to:9*60+30},
-  {key:"lunch",label:"Lunch",from:13*60,to:14*60+30},
-  {key:"dinner",label:"Dinner",from:20*60,to:21*60+30}
+  {key:"breakfast",label:"Breakfast",from:8*60},
+  {key:"lunch",label:"Lunch",from:13*60},
+  {key:"dinner",label:"Dinner",from:20*60}
 ];
-const mealServingAt=mins=>MEAL_WINDOWS.find(m=>mins>=m.from&&mins<m.to)||null;
+/* The meal currently on: the last one to have started today. Null before breakfast. */
+const mealServingAt=mins=>[...MEAL_WINDOWS].reverse().find(m=>mins>=m.from)||null;
 const mealNextAt=mins=>MEAL_WINDOWS.find(m=>mins<m.from)||null;
-/* The meal a moment belongs to even when nothing is being served — for tinting
-   today's pill and marking the tab worth opening. */
+/* The meal a moment belongs to, for tinting today's pill and marking the tab worth
+   opening — before 8am that is the breakfast still to come. */
 const mealContextAt=mins=>mealServingAt(mins)||mealNextAt(mins)||MEAL_WINDOWS[0];
 function renderMessStrip(now=new Date()){
   const el=$("#messStrip");if(!el)return;
@@ -1080,7 +1082,8 @@ function renderMessStrip(now=new Date()){
   if(!menu){el.hidden=true;return}
   const live=mealServingAt(mins);
   const next=live||mealNextAt(mins);
-  /* After the last window the useful answer is tomorrow's breakfast, not today's. */
+  /* Past midnight and before 8am there is no meal on and breakfast is still to come,
+     so "next" covers it; the roll-over to tomorrow only applies if neither holds. */
   const rollOver=!next;
   const {key,label}=next||MEAL_WINDOWS[0];
   const src=rollOver?window.CAMPUS_DATA?.mess?.[weekdayKey(new Date(now.getTime()+864e5))]:menu;
@@ -1090,7 +1093,9 @@ function renderMessStrip(now=new Date()){
   if(!headline){el.hidden=true;return}
   el.hidden=false;
   const vintage=((window.CAMPUS_DATA||{}).messMeta||{}).label||"";
-  const when=live?"now":rollOver?"tomorrow, 8:00 am":`at ${fmtTime(minsToTimeStr((next||MEAL_WINDOWS[0]).from))}`;
+  const when=live?`from ${fmtTime(minsToTimeStr(live.from))}`
+    :rollOver?`tomorrow, ${fmtTime(minsToTimeStr(MEAL_WINDOWS[0].from))}`
+    :`from ${fmtTime(minsToTimeStr((next||MEAL_WINDOWS[0]).from))}`;
   el.innerHTML=`<span class="ts-icon">${icon("meal")}</span><span class="ts-text"><strong>${esc(`${label} ${when}`)}</strong><small>${esc(headline)}${vintage?` \u00b7 ${esc(vintage)}`:""}</small></span>`;
 }
 /* The module has a 3.5-day hole in it — Friday 9 October finishes at 13:00 and nothing
@@ -2415,10 +2420,10 @@ function renderMess(){
       nowLine.hidden=false;nowLine.dataset.meal=currentMeal;
       const upcoming=mealNextAt(nowMins);
       nowLine.innerHTML=serving
-        ?`<span class="mnl-dot"></span>${esc(serving.label)} is being served now \u00b7 until ${esc(fmtTime(minsToTimeStr(serving.to)))}`
+        ?`<span class="mnl-dot"></span>${esc(serving.label)} \u00b7 from ${esc(fmtTime(minsToTimeStr(serving.from)))}`
         :upcoming
           ?`<span class="mnl-dot is-idle"></span>${esc(upcoming.label)} from ${esc(fmtTime(minsToTimeStr(upcoming.from)))}`
-          :`<span class="mnl-dot is-idle"></span>Breakfast from ${esc(fmtTime(minsToTimeStr(MEAL_WINDOWS[0].from)))} tomorrow`;
+          :`<span class="mnl-dot is-idle"></span>Breakfast from ${esc(fmtTime(minsToTimeStr(MEAL_WINDOWS[0].from)))}`;
     }else nowLine.hidden=true;
   }
 }
@@ -3283,7 +3288,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova162",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova163",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
