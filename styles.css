@@ -2692,3 +2692,5 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
   text-transform:uppercase;white-space:nowrap;
 }
 .mv-badge svg{width:12px;height:12px;flex:none}
+/* The dot is a live indicator, so it should not pulse when nothing is being served. */
+.mnl-dot.is-idle{background:var(--ink-faint);animation:none;box-shadow:none}

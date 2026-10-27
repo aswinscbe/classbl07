@@ -1055,17 +1055,34 @@ function renderTodayStrips(){
 }
 /* The other strip that came off for Barcelona. Which meal is next and its headline
    dish — the question people open the Campus tab for, answered without the trip. */
-const MEAL_WINDOWS=[["breakfast","Breakfast",7*60+30,9*60+30],["lunch","Lunch",12*60,14*60+30],["dinner","Dinner",19*60+30,21*60+30]];
+/* The mess's own service times: breakfast from 8am, lunch from 1pm, dinner from 8pm.
+   The 90-minute length of each service is an assumption rather than something the
+   sheet states — adjust the `to` values if the counters close earlier or later.
+
+   This is the single definition. There used to be a second one inside renderMess
+   (nowHour<11 ? breakfast : nowHour<16 ? lunch : dinner) which disagreed with this
+   table and with the mess, so Home and the Mess tab could name different meals at
+   the same moment. */
+const MEAL_WINDOWS=[
+  {key:"breakfast",label:"Breakfast",from:8*60,to:9*60+30},
+  {key:"lunch",label:"Lunch",from:13*60,to:14*60+30},
+  {key:"dinner",label:"Dinner",from:20*60,to:21*60+30}
+];
+const mealServingAt=mins=>MEAL_WINDOWS.find(m=>mins>=m.from&&mins<m.to)||null;
+const mealNextAt=mins=>MEAL_WINDOWS.find(m=>mins<m.from)||null;
+/* The meal a moment belongs to even when nothing is being served — for tinting
+   today's pill and marking the tab worth opening. */
+const mealContextAt=mins=>mealServingAt(mins)||mealNextAt(mins)||MEAL_WINDOWS[0];
 function renderMessStrip(now=new Date()){
   const el=$("#messStrip");if(!el)return;
   const p=istParts(now),mins=Number(p.hour)*60+Number(p.minute);
   const day=weekdayKey(now),menu=window.CAMPUS_DATA?.mess?.[day];
   if(!menu){el.hidden=true;return}
-  const live=MEAL_WINDOWS.find(([,,from,to])=>mins>=from&&mins<to);
-  const next=live||MEAL_WINDOWS.find(([,,from])=>mins<from);
+  const live=mealServingAt(mins);
+  const next=live||mealNextAt(mins);
   /* After the last window the useful answer is tomorrow's breakfast, not today's. */
   const rollOver=!next;
-  const [key,label]=next||MEAL_WINDOWS[0];
+  const {key,label}=next||MEAL_WINDOWS[0];
   const src=rollOver?window.CAMPUS_DATA?.mess?.[weekdayKey(new Date(now.getTime()+864e5))]:menu;
   const meal=src?.[key];if(!meal){el.hidden=true;return}
   const headline=key==="breakfast"?meal[0]
@@ -1073,7 +1090,8 @@ function renderMessStrip(now=new Date()){
   if(!headline){el.hidden=true;return}
   el.hidden=false;
   const vintage=((window.CAMPUS_DATA||{}).messMeta||{}).label||"";
-  el.innerHTML=`<span class="ts-icon">${icon("meal")}</span><span class="ts-text"><strong>${esc(live?`${label} now`:rollOver?"Breakfast tomorrow":`${label} next`)}</strong><small>${esc(headline)}${vintage?` \u00b7 ${esc(vintage)}`:""}</small></span>`;
+  const when=live?"now":rollOver?"tomorrow, 8:00 am":`at ${fmtTime(minsToTimeStr((next||MEAL_WINDOWS[0]).from))}`;
+  el.innerHTML=`<span class="ts-icon">${icon("meal")}</span><span class="ts-text"><strong>${esc(`${label} ${when}`)}</strong><small>${esc(headline)}${vintage?` \u00b7 ${esc(vintage)}`:""}</small></span>`;
 }
 /* The module has a 3.5-day hole in it — Friday 9 October finishes at 13:00 and nothing
    runs again until Tuesday 13th at 09:30, with Monday 12th completely empty. The app
@@ -2376,7 +2394,8 @@ function renderMessVintage(){
 }
 function renderMess(){
   const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
-  const nowHour=Number(istParts().hour),currentMeal=nowHour<11?"breakfast":nowHour<16?"lunch":"dinner";
+  const nowParts=istParts(),nowMins=Number(nowParts.hour)*60+Number(nowParts.minute);
+  const serving=mealServingAt(nowMins),currentMeal=mealContextAt(nowMins).key;
   const todayIso=isoToday(),todayDow=(zoned(todayIso,"12:00").getDay()+6)%7,todayDayName=ds[todayDow];
   /* Today's pill picks up the current meal's accent hue instead of a generic active
      tint, so "which day am I on" and "what's serving right now" read off the same row. */
@@ -2389,9 +2408,17 @@ function renderMess(){
   $$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal)});
   const nowLine=$("#messNowLine");
   if(nowLine){
+    /* This claimed "Lunch is being served now" at any hour of the afternoon. It only
+       says "now" when a service is actually open; otherwise it says when the next
+       one starts. */
     if(state.messDay===todayDayName){
       nowLine.hidden=false;nowLine.dataset.meal=currentMeal;
-      nowLine.innerHTML=`<span class="mnl-dot"></span>${currentMeal[0].toUpperCase()+currentMeal.slice(1)} is being served now`;
+      const upcoming=mealNextAt(nowMins);
+      nowLine.innerHTML=serving
+        ?`<span class="mnl-dot"></span>${esc(serving.label)} is being served now \u00b7 until ${esc(fmtTime(minsToTimeStr(serving.to)))}`
+        :upcoming
+          ?`<span class="mnl-dot is-idle"></span>${esc(upcoming.label)} from ${esc(fmtTime(minsToTimeStr(upcoming.from)))}`
+          :`<span class="mnl-dot is-idle"></span>Breakfast from ${esc(fmtTime(minsToTimeStr(MEAL_WINDOWS[0].from)))} tomorrow`;
     }else nowLine.hidden=true;
   }
 }
@@ -3256,7 +3283,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova161",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova162",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
