@@ -76,11 +76,16 @@ function venueBase(c){return venueOf(c).replace(/\s*[\u00b7,-]?\s*(?:room|cr)\s+
    chip that never varies — noise dressed as information. It appears only when the
    room is not the term's usual one, which is the only time anyone needs telling. */
 function roomLabel(c){return c.room||(roomOf(c)?`Room ${roomOf(c)}`:"")}
+/* The room always shows. I had it appearing only when it differed from the term's
+   usual one, on the reasoning that a chip which never varies says nothing — but the
+   thing you actually want from a timetable is which room to walk to, and "usually
+   A3" is not the same as knowing. It still marks itself when the room is not the
+   term's normal one, which is when it matters most. */
 function roomChip(c){
   const r=roomOf(c);if(!r)return"";
   const usual=(window.TERM4_META&&window.TERM4_META.defaultRoom||"").replace(/^CR\s+/i,"");
-  if(usual&&r.toUpperCase()===usual.toUpperCase())return"";
-  return`<span class="room-chip is-exception">${icon("pin")}${esc(roomLabel(c)||r)}</span>`;
+  const odd=usual&&r.toUpperCase()!==usual.toUpperCase();
+  return`<span class="room-chip${odd?" is-exception":""}">${icon("pin")}${esc(roomLabel(c)||r)}</span>`;
 }
 
 window.BL07_HOLIDAYS=HOLIDAYS;
@@ -567,6 +572,32 @@ function renderWeekDigest(){
    EPIS has not started and GC is a quarter done. Where you stand in each course is
    the version of that fact you can actually use, and it is the same data the ring
    above is already aggregating. */
+/* The term as a row of weeks. The ring gives a percentage and the per-course rows
+   give depth, but neither answers "how far in are we" the way eleven ticks with one
+   of them lit does — and it is the natural place to show the holidays and the quiz
+   Thursdays sitting in the term rather than listing them somewhere else. */
+function renderTermStrip(now=new Date()){
+  const el=$("#termStrip");if(!el)return;
+  const meta=window.TERM4_META;
+  if(!meta||!meta.startIso){el.hidden=true;return}
+  const start=zoned(mondayIso(meta.startIso),"00:00"),end=zoned(meta.endIso,"23:59");
+  const weeks=Math.ceil((end-start)/(7*864e5));
+  if(weeks<2||weeks>30){el.hidden=true;return}
+  const holidays=window.TERM4_HOLIDAYS||{};
+  const out=[];
+  for(let w=0;w<weeks;w++){
+    const wStart=new Date(start.getTime()+w*7*864e5),wEnd=new Date(wStart.getTime()+7*864e5);
+    const isNow=now>=wStart&&now<wEnd,past=wEnd<=now;
+    const count=state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled"
+      &&dateTime(c,"startTime")>=wStart&&dateTime(c,"startTime")<wEnd).length;
+    const hol=Object.keys(holidays).find(d=>{const t=zoned(d,"12:00");return t>=wStart&&t<wEnd});
+    out.push(`<span class="ts-week ${isNow?"is-now":""} ${past?"is-past":""} ${count?"":"is-empty"} ${hol?"has-holiday":""}"
+      title="Week ${w+1} \u00b7 ${count} session${count===1?"":"s"}${hol?` \u00b7 ${esc(holidays[hol])}`:""}"
+      style="--load:${count?Math.min(1,count/8):0}"></span>`);
+  }
+  el.hidden=false;
+  el.innerHTML=`<div class="ts-weeks">${out.join("")}</div>`;
+}
 function renderCourseProgress(now=new Date()){
   const el=$("#courseProgress");if(!el)return;
   const by=new Map();
@@ -831,7 +862,7 @@ function renderHome(){
     if(shown.tentative)pills.push(heroPill("Timing not confirmed","warn"));
     /* Room and professor use the same chips as the schedule rows, so the hero and the
        list below it name the same things the same way. */
-    pills.push(heroPill(roomLabel(shown)?`${icon("pin")}${esc(venueBase(shown))} \u00b7 ${esc(roomLabel(shown))}`:`${icon("pin")}${esc(venueOf(shown))}`));
+    pills.push(heroPill(`${icon("pin")}${esc(roomLabel(shown)||venueOf(shown))}`));
     if(sessionKind(shown)!=="lecture")pills.push(heroPill(esc(kindOf(shown).label)));
     if(shown.faculty)pills.push(heroPill(facultyChip(shown.faculty)));
     if(creditsFor(shown.code))pills.push(heroPill(`<span class="credit-mark">${esc(creditLabel(shown.code))}</span>`));
@@ -952,7 +983,7 @@ function renderHome(){
       return`<circle class="ring-seg" cx="32" cy="32" r="26" stroke="${colorFor(code)}" stroke-dasharray="${drawn} ${C-drawn}" stroke-dashoffset="${offset}"><title>${esc(code)}</title></circle>`;
     }).join("");
   }
-  renderCourseProgress(now);
+  renderCourseProgress(now);renderTermStrip(now);
   renderWeekDigest();renderHomeLegend();renderTodayStrips();
   /* Week bar chart — count above, bar height by load, day letter below. A vertical
      bar reads "how busy is this day" faster than a same-size square with a number
@@ -1465,7 +1496,16 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
       const gap=minutes(c.startTime)-prevEnd;
       /* A gap is a slot you can put something in, so it is drawn as an empty slot
          rather than as a caption between two cards. */
-      if(gap>=45)html+=`<div class="sched-gap"><span class="sg-rule"></span><span class="sg-label">${icon("clock")}${esc(compactDuration(gap))} free</span><span class="sg-rule"></span></div>`;
+      /* The gap takes height in proportion to the time it holds, so four free hours
+         look like four free hours on the way past rather than reading the same as
+         forty-five minutes. Capped, or one long afternoon pushes the evening off
+         screen. It also names what it sits between, which is the thing you want when
+         deciding whether to go home. */
+      if(gap>=45){
+        const prevCode=canonical(chronological[idx-1].code),nextCode=canonical(c.code);
+        const between=prevCode&&nextCode&&prevCode!==nextCode?` \u00b7 ${prevCode} \u2192 ${nextCode}`:"";
+        html+=`<div class="sched-gap" style="--gap-h:${Math.min(96,Math.round(gap*0.42))}px"><span class="sg-rule"></span><span class="sg-label">${icon("clock")}${esc(compactDuration(gap))} free${esc(between)}</span><span class="sg-rule"></span></div>`;
+      }
     }
     const status=agendaStatus(c),cancelled=c.status==="Cancelled";
     const tier=cancelled?"cancelled":status==="Live"?"live":status==="Completed"?"done":"upcoming";
@@ -1491,7 +1531,13 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
       return;
     }
     const chips=[roomChip(c),facultyChip(c.faculty)].filter(Boolean).join("");
-    const meta=[roomOf(c)?venueBase(c):venueOf(c),compactDuration(dur),creditLabel(c.code)].filter(Boolean);
+    /* Was "IIM Kozhikode · 1h 15m · 2 cr" — the institute is where everyone already
+       is, so it was a word that cost a line and told you nothing. The room takes its
+       place. */
+    /* The room sits on its own chip above, so the meta line carries what the chip
+       does not. It used to lead with "IIM Kozhikode", which is where everyone
+       already is. */
+    const meta=[roomChip(c)?"":roomLabel(c)||venueOf(c),compactDuration(dur),creditLabel(c.code)].filter(Boolean);
     if(tier==="live")meta.push(`ends in ${tagCountdown((dateTime(c,"endTime")-now)/60000)}`);
     if(c.tentative)meta.push("timing not confirmed");
     /* On Home the hero card directly above already spells out the live class in full —
@@ -1695,12 +1741,53 @@ function renderWeekPlanner(){
   dayFocusEl.hidden=!!state.plannerWeekView;
   const glanceEl=$("#weekGlanceView");
   if(glanceEl)glanceEl.hidden=!state.plannerWeekView;
-  if(state.plannerWeekView)renderWeekGlance(days);
+  const gridEl=$("#weekGridView");
+  if(gridEl)gridEl.hidden=!state.plannerWeekView;
+  if(state.plannerWeekView){renderWeekGrid(days);renderWeekGlance(days)}
   else renderDayFocus(state.selectedDate||today);
 }
 /* All 7 days in one scroll instead of one at a time — same "week at a glance"
    pattern Mess already uses. Days with nothing on them collapse to a single
    muted line instead of a full empty-state block so a light week stays short. */
+/* A true week grid: seven columns, one row per teaching slot, blocks placed where
+   they actually fall. The week was a list of days and a bar chart of counts, neither
+   of which shows the week's shape — that Tuesday and Thursday are the long ones, that
+   the 14:30 row is almost always empty, that Friday ends early. The slot rows come
+   from the data rather than a fixed table, so a term with different hours still
+   lines up. */
+function weekSlots(days){
+  const set=new Map();
+  state.classes.filter(c=>days.includes(c.dateIso)&&c.status!=="Cancelled")
+    .forEach(c=>set.set(c.startTime,{start:c.startTime,end:c.endTime}));
+  return[...set.values()].sort((a,b)=>minutes(a.start)-minutes(b.start));
+}
+function renderWeekGrid(days){
+  const el=$("#weekGridView");if(!el)return;
+  const slots=weekSlots(days),today=isoToday();
+  if(!slots.length){el.innerHTML=`<div class="empty-state empty-state-mark">${CAMPUS_MARK}<p>Nothing this week</p><small>No sessions scheduled.</small></div>`;return}
+  const letters=["MON","TUE","WED","THU","FRI","SAT","SUN"];
+  const head=`<div class="wg-row wg-head"><span class="wg-time"></span>${days.map((iso,i)=>
+    `<span class="wg-col-head ${iso===today?"is-today":""}"><b>${letters[i]}</b><i>${Number(iso.slice(8))}</i></span>`).join("")}</div>`;
+  const body=slots.map(slot=>{
+    const cells=days.map(iso=>{
+      const c=state.classes.find(x=>x.dateIso===iso&&x.startTime===slot.start&&x.status!=="Cancelled");
+      if(!c)return`<span class="wg-cell is-empty"></span>`;
+      const ev=!isSession(c);
+      const live=dateTime(c,"startTime")<=new Date()&&dateTime(c,"endTime")>new Date();
+      const past=dateTime(c,"endTime")<new Date();
+      return`<button type="button" class="wg-cell ${ev?"is-event":""} ${live?"is-live":""} ${past?"is-past":""}"
+        style="--course:${ev?"var(--ink-faint)":colorFor(c.code)}" data-date="${esc(iso)}"
+        title="${esc(ev?c.title||c.course:`${canonical(c.code)} \u00b7 ${c.course}`)} \u00b7 ${esc(fmtRange(c.startTime,c.endTime))}${c.room?` \u00b7 ${esc(c.room)}`:""}">
+        <b>${esc(ev?"QUIZ":canonical(c.code))}</b>${c.room&&isSession(c)?`<i>${esc(String(c.room).replace(/^CR\s*/i,""))}</i>`:""}
+      </button>`;
+    }).join("");
+    return`<div class="wg-row"><span class="wg-time">${esc(fmtTime(slot.start))}</span>${cells}</div>`;
+  }).join("");
+  el.innerHTML=head+body;
+  $$(".wg-cell[data-date]",el).forEach(b=>b.addEventListener("click",()=>{
+    state.selectedDate=b.dataset.date;state.plannerWeekView=false;renderCalendar();
+  }));
+}
 function renderWeekGlance(days){
   const el=$("#weekGlanceView");if(!el)return;
   const today=isoToday();
@@ -2226,11 +2313,13 @@ function renderBusClassCatch(now){
   const code=canonical(next.code),classTime=fmtTime(next.startTime);
   if(!last){
     el.hidden=false;el.classList.add("is-missed");
-    el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>No bus makes ${esc(code)} at ${esc(classTime)}</strong><small>Nothing on this route arrives in time</small></span>`;
+    el.style.setProperty("--course",colorFor(next.code));
+    el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>No bus makes <span class="bcc-code">${esc(code)}</span> at ${esc(classTime)}</strong><small>Nothing on this route arrives in time</small></span>`;
     return;
   }
   el.hidden=false;el.classList.remove("is-missed");
-  el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>Last bus for ${esc(code)} — ${esc(fmtTime(last.b.time))}</strong><small>Arrives ~${esc(fmtTime(minsToTimeStr(last.arrive.getHours()*60+last.arrive.getMinutes())))} · class at ${esc(classTime)}</small></span>`;
+  el.style.setProperty("--course",colorFor(next.code));
+  el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>Last bus for <span class="bcc-code">${esc(code)}</span> — ${esc(fmtTime(last.b.time))}</strong><small>Arrives ~${esc(fmtTime(minsToTimeStr(last.arrive.getHours()*60+last.arrive.getMinutes())))} · class at ${esc(classTime)}</small></span>`;
 }
 function renderBuses(){
   const upcomingList=$("#upcomingBuses"),fullList=$("#fullBusList");
@@ -3189,6 +3278,18 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   });
   $("#freeBlockStrip")?.addEventListener("click",()=>showPage("calendar"));
   $("#messStrip")?.addEventListener("click",()=>{showPage("campus");openCampusTab("mess")});
+  /* The arrows worked but a day view is a thing the hand expects to swipe. Same
+     gesture helper the week rail uses, so the threshold and the ignore-list match. */
+  const dayPanel=$(".hero-day-section.day-panel");
+  if(dayPanel&&!dayPanel.dataset.swipeBound){
+    dayPanel.dataset.swipeBound="1";
+    bindSwipeGesture(dayPanel,dir=>{
+      const step=dir==="left"?1:-1,nextOffset=(state.timelineOffset||0)+step;
+      if(nextOffset<0||nextOffset>6)return;
+      state.timelineOffset=nextOffset;state.timelineTouched=true;
+      renderHome();haptic(8);
+    },{ignore:"a,input,select,textarea,button",threshold:46});
+  }
   $("#connectGcal")?.addEventListener("click",connectGoogleCalendar);
   $("#disconnectGcal")?.addEventListener("click",disconnectGoogleCalendar);
   $("#refreshGcal")?.addEventListener("click",()=>refreshCalendarSchedule());
@@ -3288,7 +3389,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova163",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova165",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
