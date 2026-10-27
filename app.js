@@ -193,6 +193,14 @@ function subjectSessionOrdinal(c){
 }
 /* Prefer the course's declared session count over the number of rows we happen to
    hold, so "7 of 25" stays right even when a week has not been published yet. */
+/* One phrasing for the session number so every surface says it the same way.
+   `short` is the compact form used in pills and grids; the long form is for text
+   that will be read as a sentence. */
+function sessionTag(c,{short=true}={}){
+  const n=subjectSessionOrdinal(c);if(!n)return"";
+  const t=subjectSessionTotal(c.code);
+  return short?`S${n}/${t}`:`Session ${n} of ${t}`;
+}
 function subjectSessionTotal(code){
   const known=((window.TERM4_COURSES||{})[canonical(code)]||{}).sessions;
   return known||subjectSessions(code).length;
@@ -886,7 +894,7 @@ function renderHome(){
     const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessionTotal(shown.code):0;
     if(heroSessionN){
       const leftAfter=Math.max(0,heroSessionTotal-heroSessionN);
-      pills.push(heroPill(`Session ${heroSessionN} of ${heroSessionTotal}${leftAfter?` · ${leftAfter} left`:" · last one"}`));
+      pills.unshift(heroPill(`<span class="hero-sess">Session ${heroSessionN}<em>&nbsp;of ${heroSessionTotal}</em></span><span class="hero-sess-left">${leftAfter?`${leftAfter} left`:"last one"}</span>`,"sess"));
     }
     if(nextInDay)pills.push(heroPill(`Next ${canonical(nextInDay.code)} · ${fmtTime(nextInDay.startTime)}`))
     $("#heroPills").innerHTML=pills.join("");
@@ -1220,7 +1228,7 @@ function shareDayText(iso){
   const exams=examsForDay(iso);
   const header=`📅 *${fmtDate(iso,{weekday:"long",day:"numeric",month:"long"})}*`;
   const examLines=exams.map(e=>`📝 *${EXAM_SLOT_LABELS[e.slot]} EXAM*\n${e.code} · ${e.subject}`);
-  const classLines=classes.map(c=>`*${fmtRange(c.startTime,c.endTime)}*\n${canonical(c.code)} · ${c.course}\n${venueOf(c)}`);
+  const classLines=classes.map(c=>`*${fmtRange(c.startTime,c.endTime)}*\n${canonical(c.code)}${sessionTag(c)?` ${sessionTag(c)}`:""} · ${c.course}\n${roomLabel(c)||venueOf(c)}`);
   const lines=[...examLines,...classLines];
   if(!lines.length)return`${header}\n\nFree day — no classes scheduled.`;
   return`${header}\n\n${lines.join("\n\n")}`;
@@ -1233,7 +1241,7 @@ function shareWeekText(startIso){
     const exams=examsForDay(iso);
     const dayHeader=`*${fmtDate(iso,{weekday:"long",day:"numeric",month:"short"})}*`;
     const examRows=exams.map(e=>`📝 ${EXAM_SLOT_LABELS[e.slot]} EXAM — ${e.code}: ${e.subject}`);
-    const classRows=classes.map(c=>`${fmtRange(c.startTime,c.endTime)} — ${canonical(c.code)}: ${c.course} (${venueOf(c)})`);
+    const classRows=classes.map(c=>`${fmtRange(c.startTime,c.endTime)} — ${canonical(c.code)}${sessionTag(c)?` ${sessionTag(c)}`:""}: ${c.course} (${roomLabel(c)||venueOf(c)})`);
     const rows=[...examRows,...classRows];
     if(!rows.length)return`${dayHeader}\nFree day`;
     return`${dayHeader}\n${rows.join("\n")}`;
@@ -1406,7 +1414,7 @@ function renderDayShapeBar(classes,dayIso){
     }
     const status=agendaStatus(c),tier=status==="Live"?"live":status==="Completed"?"done":"upcoming";
     const dur=Math.max(1,minutes(c.endTime)-minutes(c.startTime));
-    html+=`<span class="dsb-box ${tier}" style="--course:${colorFor(c.code)};--grow:${dur/totalMins}" title="${esc(canonical(c.code))} · ${esc(kindOf(c).label)} · ${esc(fmtRange(c.startTime,c.endTime))} · ${esc(compactDuration(dur))}">${esc(canonical(c.code))}</span>`;
+    html+=`<span class="dsb-box ${tier}" style="--course:${colorFor(c.code)};--grow:${dur/totalMins}" title="${esc(canonical(c.code))}${sessionTag(c)?` · ${esc(sessionTag(c,{short:false}))}`:""} · ${esc(fmtRange(c.startTime,c.endTime))} · ${esc(compactDuration(dur))}"><b>${esc(canonical(c.code))}</b>${subjectSessionOrdinal(c)?`<i>S${subjectSessionOrdinal(c)}</i>`:""}</span>`;
     prevEnd=minutes(c.endTime);
   });
   /* The bar was proportional but floating free of any reference, so reading it meant
@@ -1563,7 +1571,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
     if(tier==="live"&&opts.heroClassId&&classIdentity(c)===opts.heroClassId){
       html+=`<div class="sched-now-marker" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
         <span class="snm-dot"></span>
-        <span class="snm-text">Now · ${esc(canonical(c.code))}</span>
+        <span class="snm-text">Now · ${esc(canonical(c.code))}${sessionN?` · ${esc(sessionTag(c))}`:""}</span>
         <span class="snm-rule"></span>
       </div>`;
       prevEnd=minutes(c.endTime);
@@ -1612,7 +1620,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
   if(collapseDone&&leadingDone===chronological.length)html+='</div>';
   return html+'</div>';
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){
+function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(canonical(c.code))}${sessionTag(c)?` ${esc(sessionTag(c))}`:""} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){
   const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();
   $("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);
   const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);
@@ -1886,8 +1894,8 @@ function showCalendarTooltip(target,iso){
   if(!list.length)return;
   const scheduled=list.filter(c=>c.status!=="Cancelled"),cancelled=list.filter(c=>c.status==="Cancelled");
   const summary=`${scheduled.length} scheduled${cancelled.length?` · ${cancelled.length} cancelled`:""}`;
-  const rows=scheduled.map(c=>`<div class="calendar-tooltip-row" style="--tooltip-course:${colorFor(c.code)}"><time>${esc(fmtRange(c.startTime,c.endTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong></div>`).join("");
-  const cancelledRows=cancelled.map(c=>`<div class="calendar-tooltip-row cancelled" style="--tooltip-course:var(--danger)"><time>${esc(fmtRange(c.startTime,c.endTime))}</time><strong>${esc(c.code)} · ${esc(c.course)}</strong><span>CANCELLED</span></div>`).join("");
+  const rows=scheduled.map(c=>`<div class="calendar-tooltip-row" style="--tooltip-course:${colorFor(c.code)}"><time>${esc(fmtRange(c.startTime,c.endTime))}</time><strong>${esc(canonical(c.code))}${sessionTag(c)?` ${esc(sessionTag(c))}`:""} · ${esc(c.course)}</strong></div>`).join("");
+  const cancelledRows=cancelled.map(c=>`<div class="calendar-tooltip-row cancelled" style="--tooltip-course:var(--danger)"><time>${esc(fmtRange(c.startTime,c.endTime))}</time><strong>${esc(canonical(c.code))}${sessionTag(c)?` ${esc(sessionTag(c))}`:""} · ${esc(c.course)}</strong><span>CANCELLED</span></div>`).join("");
   tip.innerHTML=`<div class="calendar-tooltip-head"><h4>${esc(fmtDate(iso))}</h4><small>${esc(summary)}</small></div>${scheduled.length?rows:'<div class="calendar-tooltip-empty">No scheduled classes</div>'}${cancelledRows}`;
   const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-240,r.bottom+8)}px`;tip.classList.add("show")
 }
@@ -2732,7 +2740,7 @@ function openClassSheet(c){
   activeSheetClassId=classIdentity(c);
   $("#sheetClassCode").textContent=canonical(c.code)||"CLASS";
   $("#sheetClassTitle").textContent=c.course||"Class details";
-  const sheetSessionN=subjectSessionOrdinal(c),sheetSessionTotal=sheetSessionN?subjectSessions(c.code).length:0;
+  const sheetSessionN=subjectSessionOrdinal(c),sheetSessionTotal=sheetSessionN?subjectSessionTotal(c.code):0;
   $("#sheetClassMeta").textContent=[fmtRange(c.startTime,c.endTime),venueOf(c),c.faculty,sheetSessionN?`Session ${sheetSessionN}/${sheetSessionTotal}`:""].filter(Boolean).join(" · ");
   const calendarLink=$("#sheetAddCalendar");
   if(calendarLink){
@@ -3406,7 +3414,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova168",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova169",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

@@ -2799,3 +2799,27 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
   margin:0 -4px;padding:10px 4px 8px;
 }
 .wg-day-head.is-today{color:var(--accent)}
+
+/* The session number in the hero. It had been one pill among five, which is the
+   wrong weight for the thing that tells you where you are in a course — it leads the
+   row now, in the session colour, with the total and the remainder set quieter. */
+.hero-pill.sess{
+  background:color-mix(in srgb, var(--focus-course,var(--accent)) 18%, transparent);
+  border-color:color-mix(in srgb, var(--focus-course,var(--accent)) 30%, transparent);
+  gap:7px;
+}
+.hero-sess{
+  font-weight:var(--w-label);letter-spacing:var(--track-tight);font-variant-numeric:tabular-nums;
+  color:color-mix(in srgb, var(--focus-course,var(--accent)) 85%, var(--on-grad) 15%);
+}
+.hero-sess em{font-style:normal;font-weight:var(--w-body);opacity:.65;margin-left:4px}
+.hero-sess-left{
+  padding-left:7px;border-left:1px solid var(--on-grad-line);
+  font-size:var(--text-xs);font-weight:var(--w-bold);color:var(--on-grad-muted);white-space:nowrap;
+}
+
+/* The day-shape boxes carried the course code alone; the session number sits under
+   it now, small enough that the proportions still read at a glance. */
+.dsb-box{flex-direction:column;gap:0;line-height:1.05}
+.dsb-box b{font-size:var(--text-xs);font-weight:var(--w-label);letter-spacing:.02em}
+.dsb-box i{font-style:normal;font-size:9px;font-weight:var(--w-body);opacity:.7;font-variant-numeric:tabular-nums}
