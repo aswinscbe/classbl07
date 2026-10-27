@@ -2577,6 +2577,7 @@ function renderMess(){
   /* The pills carry their date. "Saturday" and "the 31st" are the same question asked two
      ways, and the menu repeats weekly, so without a number there is nothing to tell you
      which Saturday you are looking at. */
+  const isToday=state.messDay===todayDayName;
   const noonToday=zoned(todayIso,"12:00");
   const weekDates=ds.map((d,i)=>Number(istParts(new Date(noonToday.getTime()+(i-todayDow)*864e5)).day));
   $("#messDayPills").innerHTML=ds.map((d,i)=>`<button class="day-pill ${d===state.messDay?"active":""} ${d===todayDayName?"is-today":""}" data-day="${d}" ${d===todayDayName?`data-meal="${currentMeal}"`:""}><b>${d.slice(0,3).toUpperCase()}</b><em>${weekDates[i]}</em></button>`).join("");
@@ -2590,7 +2591,9 @@ function renderMess(){
      and showing it turns three blind taps into one. */
   $$(".meal-tab").forEach(b=>{
     b.classList.toggle("active",b.dataset.meal===state.meal);
-    b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal);
+    /* "NOW" is a claim about this moment, so it only belongs on today. Browsing to
+       Friday used to carry the badge along and mark Friday's dinner as being served. */
+    b.classList.toggle("is-now",isToday&&b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal);
     const dish=$(".mt-dish",b);
     if(dish)dish.textContent=mealHeadline(menu[b.dataset.meal])||"—";
   });
@@ -3492,7 +3495,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova172",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova173",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
