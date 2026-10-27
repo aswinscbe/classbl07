@@ -863,7 +863,8 @@ function renderHome(){
     $("#focusPulse").style.display=isNow?"":"none";
     $("#focusEmptyIcon").hidden=true;
     $("#focusKicker").textContent=isNow?"In progress":onBreak?"On a break":isToday?"Upcoming":"Next up";
-    $("#focusCode").hidden=false;$("#focusCode").textContent=canonical(shown.code);$("#focusTitle").textContent=shown.course;
+    const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessionTotal(shown.code):0;
+    $("#focusCode").hidden=false;$("#focusCode").innerHTML=`${esc(canonical(shown.code))}${heroSessionN?`<b>S${heroSessionN}<em>/${heroSessionTotal}</em></b>`:""}`;$("#focusTitle").textContent=shown.course;
     $("#focusRange").hidden=false;$("#focusRange").innerHTML=fmtRangeRich(shown.startTime,shown.endTime);
     const dayList=scheduled.filter(c=>c.dateIso===shown.dateIso),posIndex=dayList.indexOf(shown),nextInDay=dayList[posIndex+1];
     const ring=$("#heroRing"),liveProgress=$("#heroLiveProgress");
@@ -891,7 +892,6 @@ function renderHome(){
     if(creditsFor(shown.code))pills.push(heroPill(`<span class="credit-mark">${esc(creditLabel(shown.code))}</span>`));
     /* "Session 1/1" told you nothing about where the course is going. Saying how many
        meetings of this course are still to come is the part worth knowing. */
-    const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessionTotal(shown.code):0;
     if(heroSessionN){
       const leftAfter=Math.max(0,heroSessionTotal-heroSessionN);
       pills.unshift(heroPill(`<span class="hero-sess">Session ${heroSessionN}<em>&nbsp;of ${heroSessionTotal}</em></span><span class="hero-sess-left">${leftAfter?`${leftAfter} left`:"last one"}</span>`,"sess"));
@@ -1601,10 +1601,9 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
       <div class="sr-accent"></div>
       <div class="sr-body">
         <div class="sr-top">
-          <span class="sr-code">${esc(canonical(c.code))}</span>
+          <span class="sr-code">${esc(canonical(c.code))}${sessionN&&!cancelled?`<b>S${sessionN}<em>/${sessionTotal}</em></b>`:""}</span>
           <span class="sr-subj">${esc(c.course)}</span>
           ${tier==="live"?'<span class="sr-live-pill">NOW</span>':cancelled?'<span class="sr-cancel-pill">CANC.</span>':""}
-          ${sessionN&&!cancelled?`<span class="sr-sess" title="Session ${sessionN} of ${sessionTotal}">S${sessionN}<em>/${sessionTotal}</em></span>`:""}
           ${sessionKind(c)!=="lecture"?`<span class="sr-kind-pill">${esc(kindOf(c).label)}</span>`:""}
           ${c.tentative?'<span class="sr-tbc-pill" title="Timing not yet confirmed">TBC</span>':""}
           ${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}
@@ -3414,7 +3413,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova169",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova170",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
