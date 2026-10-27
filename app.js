@@ -1129,6 +1129,14 @@ const mealNextAt=mins=>MEAL_WINDOWS.find(m=>mins<m.from)||null;
 /* The meal a moment belongs to, for tinting today's pill and marking the tab worth
    opening — before 8am that is the breakfast still to come. */
 const mealContextAt=mins=>mealServingAt(mins)||mealNextAt(mins)||MEAL_WINDOWS[0];
+/* The one dish that answers "what's for dinner": the day's special over the staples, and
+   for breakfast (a plain list, no specials) simply the first thing on it. Shared by the
+   Home strip, the meal tabs and the week grid so all three name the same dish. */
+function mealHeadline(meal){
+  if(!meal)return"";
+  if(Array.isArray(meal))return meal[0]||"";
+  return meal.splVeg||meal.nonVeg||meal.fishEgg||meal.veg||(meal.items||[])[2]||(meal.items||[])[0]||"";
+}
 function renderMessStrip(now=new Date()){
   const el=$("#messStrip");if(!el)return;
   const p=istParts(now),mins=Number(p.hour)*60+Number(p.minute);
@@ -1142,8 +1150,7 @@ function renderMessStrip(now=new Date()){
   const {key,label}=next||MEAL_WINDOWS[0];
   const src=rollOver?window.CAMPUS_DATA?.mess?.[weekdayKey(new Date(now.getTime()+864e5))]:menu;
   const meal=src?.[key];if(!meal){el.hidden=true;return}
-  const headline=key==="breakfast"?meal[0]
-    :meal.nonVeg||meal.veg||meal.splVeg||meal.fishEgg||(meal.items||[])[2]||(meal.items||[])[0];
+  const headline=mealHeadline(meal);
   if(!headline){el.hidden=true;return}
   el.hidden=false;
   const vintage=((window.CAMPUS_DATA||{}).messMeta||{}).label||"";
@@ -2366,6 +2373,8 @@ function renderBuses(){
     $(".next-bus-card")?.classList.remove("is-urgent");
     const empty='<div class="empty-state"><span class="empty-state-icon">'+icon("bus")+'</span><p>No service on this route</p><small>Try another origin or destination.</small></div>';
     upcomingList.innerHTML=empty;fullList.innerHTML=empty;
+    const gapEl=$("#nextBusGap");if(gapEl)gapEl.hidden=true;
+    const lastEl=$("#busLastRun");if(lastEl)lastEl.hidden=true;
     clearTimeout(_leavingSoonTimer);
     return;
   }
@@ -2437,8 +2446,29 @@ function renderBuses(){
   const earlier=withTimes.filter(item=>item.d<=now);
   const finalRun=withTimes[withTimes.length-1];
   const lastKey=finalRun?`${finalRun.b.time}|${finalRun.b.from}|${finalRun.b.to}`:null;
-  upcomingList.innerHTML=(upcoming.length?upcoming:[next]).map(({b})=>busRow(b,nextKey,now,lastKey)).join("");
-  fullList.innerHTML=earlier.map(({b})=>busRow(b,nextKey,now,lastKey)).join("");
+  upcomingList.innerHTML=busBoardHtml(upcoming.length?upcoming:[next],nextKey,now,lastKey);
+  fullList.innerHTML=busBoardHtml(earlier,nextKey,now,lastKey);
+
+  /* The two questions a timetable never answers on its own. First: if I miss this one,
+     how badly am I stuck — a four-minute gap and a two-hour gap look identical as a list
+     of times. Second: what is the last run, which you want to know at 9pm without
+     scrolling to the bottom of the board to find it. */
+  const gapEl=$("#nextBusGap");
+  if(gapEl){
+    const after=upcoming.find(item=>item.d>next.d),gapMins=after?Math.round((after.d-next.d)/60000):0;
+    if(nextDay)gapEl.hidden=true;
+    else if(!after){gapEl.hidden=false;gapEl.className="next-bus-gap is-final";gapEl.innerHTML=`<b>Last one today</b> on this route`}
+    else if(gapMins>=90){gapEl.hidden=false;gapEl.className="next-bus-gap is-wide";gapEl.innerHTML=`Miss it and the next is <b>${esc(fmtTime(after.b.time))}</b> \u2014 a ${esc(compactDuration(gapMins))} wait`}
+    else{gapEl.hidden=false;gapEl.className="next-bus-gap";gapEl.innerHTML=`Then <b>${esc(fmtTime(after.b.time))}</b>, ${esc(compactDuration(gapMins))} later`}
+  }
+  const lastEl=$("#busLastRun");
+  if(lastEl){
+    if(finalRun){
+      const gone=finalRun.d<=now,wait=Math.ceil((finalRun.d-now)/60000);
+      lastEl.hidden=false;lastEl.classList.toggle("is-gone",gone);
+      lastEl.innerHTML=`<span class="blr-icon">${icon("moon")}</span><span class="blr-copy"><b>Last bus ${esc(fmtTime(finalRun.b.time))}</b><small>${gone?"Gone for today \u00b7 next one tomorrow morning":`${esc(busStopLabel(finalRun.b.from))} \u2192 ${esc(busStopLabel(finalRun.b.to))} \u00b7 ${esc(compactDuration(wait))} from now`}</small></span>`;
+    }else lastEl.hidden=true;
+  }
   const toggle=$("#toggleFullBus");
   if(toggle){
     toggle.hidden=!earlier.length;
@@ -2451,12 +2481,28 @@ function renderBuses(){
 /* Rows carry the service and its stops again — stripping them to a bare time left the
    board looking unfinished. What the heading already says is the *chosen* route; what a
    row says is which service runs it, which differs line to line. */
+/* A flat column of twenty times is a timetable, not a board. Splitting the day where a
+   rider already splits it means you scan one block of four instead of the whole list. */
+const BUS_PERIODS=[{label:"Morning",to:12*60},{label:"Afternoon",to:17*60},{label:"Evening",to:21*60},{label:"Late night",to:24*60+1}];
+const busPeriod=mins=>BUS_PERIODS.find(p=>mins<p.to)||BUS_PERIODS[BUS_PERIODS.length-1];
+function busBoardHtml(items,nextKey,now,lastKey){
+  let period=null;
+  return items.map(({b})=>{
+    const p=busPeriod(minutes(b.time)),head=p.label!==period?`<p class="board-period">${esc(p.label)}</p>`:"";
+    period=p.label;
+    return head+busRow(b,nextKey,now,lastKey);
+  }).join("");
+}
 function busRow(bus,nextKey,now=new Date(),lastKey=null){
   const key=`${bus.time}|${bus.from}|${bus.to}`;
   const isNext=nextKey===key;
   /* On a board already filtered to one route, "last" means the last departure the rider
      can catch — not the last of each separate origin, which showed several LAST badges. */
-  const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),elapsed=!isNext&&busDateForStop(bus,state.busFrom)<now;
+  const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),stopDate=busDateForStop(bus,state.busFrom),elapsed=!isNext&&stopDate<now;
+  /* Clock time answers "which bus"; minutes-from-now answers "can I still make it". Only
+     worth printing inside the hour and a half you would actually wait. */
+  const waitMins=Math.ceil((stopDate-now)/60000);
+  const soon=!elapsed&&waitMins>0&&waitMins<=90?`<small class="board-row-in">in ${esc(compactDuration(waitMins))}</small>`:"";
   const badges=[
     isNext?'<span class="tag tag-next">NEXT</span>':"",
     bus.staff?'<span class="tag tag-staff">STAFF</span>':"",
@@ -2470,7 +2516,7 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
       <strong>${esc(busStopLabel(bus.from))} → ${esc(busStopLabel(bus.to))}</strong>
       ${badges?`<div class="board-row-badges">${badges}</div>`:""}
     </div>
-    <span class="t">${esc(fmtTime(bus.time))}</span>
+    <span class="t">${esc(fmtTime(bus.time))}${soon}</span>
   </article>`;
 }
 
@@ -2486,17 +2532,21 @@ function mealCardHtml(meal,label,mealKey){
     <div class="food-section"><div class="food-items">${meal.items.map(i=>`<div class="food-item">${esc(i)}</div>`).join("")}</div></div>
   </article>`;
 }
-function mealSummary(meal){
-  if(!meal)return"—";
-  const items=Array.isArray(meal)?meal:meal.items||[];
-  return items.slice(0,2).join(", ")||"—";
-}
+/* The week view was a read-only wall of text that marked the *selected* day as "today"
+   and then dead-ended: spot something you wanted on Friday and you still had to go back,
+   find Friday, find the meal. Every cell is now the button that opens it, the real today
+   is marked as today, and the meal being served right now is marked too. */
+const MESS_MEALS=[["breakfast","B"],["lunch","L"],["dinner","D"]];
 function renderMessWeekGrid(){
   const el=$("#messWeekGrid");if(!el)return;
   const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  const nowParts=istParts(),nowMins=Number(nowParts.hour)*60+Number(nowParts.minute);
+  const currentMeal=mealContextAt(nowMins).key;
+  const todayIso=isoToday(),todayDow=(zoned(todayIso,"12:00").getDay()+6)%7,todayDayName=ds[todayDow];
   el.innerHTML=ds.map(d=>{
     const menu=window.CAMPUS_DATA.mess[d];
-    return`<div class="mess-week-row ${d===state.messDay?"is-today":""}"><span class="mwg-day">${d.slice(0,3).toUpperCase()}</span><span class="mwg-cell"><b data-meal="breakfast">B</b>${esc(mealSummary(menu.breakfast))}</span><span class="mwg-cell"><b data-meal="lunch">L</b>${esc(mealSummary(menu.lunch))}</span><span class="mwg-cell"><b data-meal="dinner">D</b>${esc(mealSummary(menu.dinner))}</span></div>`;
+    const cells=MESS_MEALS.map(([key,letter])=>`<button type="button" class="mwg-cell ${d===todayDayName&&key===currentMeal?"is-now":""} ${d===state.messDay&&key===state.meal?"is-open":""}" data-day="${d}" data-meal="${key}" aria-label="${esc(d)} ${esc(key)}"><b data-meal="${key}">${letter}</b><span>${esc(mealHeadline(menu[key])||"\u2014")}</span></button>`).join("");
+    return`<div class="mess-week-row ${d===todayDayName?"is-today":""} ${d===state.messDay?"is-selected":""}"><span class="mwg-day">${d.slice(0,3).toUpperCase()}</span>${cells}</div>`;
   }).join("");
 }
 /* Which month's sheet this menu is. A mess menu that has quietly gone stale looks
@@ -2517,13 +2567,26 @@ function renderMess(){
   const todayIso=isoToday(),todayDow=(zoned(todayIso,"12:00").getDay()+6)%7,todayDayName=ds[todayDow];
   /* Today's pill picks up the current meal's accent hue instead of a generic active
      tint, so "which day am I on" and "what's serving right now" read off the same row. */
-  $("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""} ${d===todayDayName?"is-today":""}" data-day="${d}" ${d===todayDayName?`data-meal="${currentMeal}"`:""}>${d.slice(0,3).toUpperCase()}</button>`).join("");
-  $$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));
+  /* The pills carry their date. "Saturday" and "the 31st" are the same question asked two
+     ways, and the menu repeats weekly, so without a number there is nothing to tell you
+     which Saturday you are looking at. */
+  const noonToday=zoned(todayIso,"12:00");
+  const weekDates=ds.map((d,i)=>Number(istParts(new Date(noonToday.getTime()+(i-todayDow)*864e5)).day));
+  $("#messDayPills").innerHTML=ds.map((d,i)=>`<button class="day-pill ${d===state.messDay?"active":""} ${d===todayDayName?"is-today":""}" data-day="${d}" ${d===todayDayName?`data-meal="${currentMeal}"`:""}><b>${d.slice(0,3).toUpperCase()}</b><em>${weekDates[i]}</em></button>`).join("");
+  $$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess();renderMessWeekGrid()}));
   $("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);
   renderMessVintage();
   const menu=window.CAMPUS_DATA.mess[state.messDay],meal=menu[state.meal];
   $("#messMenu").innerHTML=meal?mealCardHtml(meal,state.meal[0].toUpperCase()+state.meal.slice(1),state.meal):"";
-  $$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal)});
+  /* Each tab names its headline dish. Choosing between three meals by reading the word
+     "Lunch" tells you nothing you did not already know; the dish is the actual question,
+     and showing it turns three blind taps into one. */
+  $$(".meal-tab").forEach(b=>{
+    b.classList.toggle("active",b.dataset.meal===state.meal);
+    b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal);
+    const dish=$(".mt-dish",b);
+    if(dish)dish.textContent=mealHeadline(menu[b.dataset.meal])||"—";
+  });
   const nowLine=$("#messNowLine");
   if(nowLine){
     /* This claimed "Lunch is being served now" at any hour of the afternoon. It only
@@ -2531,12 +2594,16 @@ function renderMess(){
        one starts. */
     if(state.messDay===todayDayName){
       nowLine.hidden=false;nowLine.dataset.meal=currentMeal;
+      /* Two facts, in the order they get used: what is on the counters now, and how long
+         until the next service opens. A bare "from 1:00 pm" leaves the reader doing the
+         arithmetic against their own clock every single time. */
       const upcoming=mealNextAt(nowMins);
+      const untilBreakfast=MEAL_WINDOWS[0].from+1440-nowMins;
       nowLine.innerHTML=serving
-        ?`<span class="mnl-dot"></span>${esc(serving.label)} \u00b7 from ${esc(fmtTime(minsToTimeStr(serving.from)))}`
+        ?`<span class="mnl-dot"></span><b>${esc(serving.label)} now</b><span class="mnl-sep">\u00b7</span>since ${esc(fmtTime(minsToTimeStr(serving.from)))}${upcoming?`<small class="mnl-next">${esc(upcoming.label)} in ${esc(compactDuration(upcoming.from-nowMins))}</small>`:""}`
         :upcoming
-          ?`<span class="mnl-dot is-idle"></span>${esc(upcoming.label)} from ${esc(fmtTime(minsToTimeStr(upcoming.from)))}`
-          :`<span class="mnl-dot is-idle"></span>Breakfast from ${esc(fmtTime(minsToTimeStr(MEAL_WINDOWS[0].from)))}`;
+          ?`<span class="mnl-dot is-idle"></span><b>${esc(upcoming.label)} in ${esc(compactDuration(upcoming.from-nowMins))}</b><span class="mnl-sep">\u00b7</span>opens ${esc(fmtTime(minsToTimeStr(upcoming.from)))}`
+          :`<span class="mnl-dot is-idle"></span><b>Breakfast in ${esc(compactDuration(untilBreakfast))}</b><span class="mnl-sep">\u00b7</span>opens ${esc(fmtTime(minsToTimeStr(MEAL_WINDOWS[0].from)))}`;
     }else nowLine.hidden=true;
   }
 }
@@ -3380,13 +3447,18 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
-$("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess()});$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
+$("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess();renderMessWeekGrid()});
+$("#messWeekGrid")?.addEventListener("click",e=>{const cell=e.target.closest(".mwg-cell");if(!cell)return;state.messDay=cell.dataset.day;state.meal=cell.dataset.meal;renderMess();renderMessWeekGrid();$("#toggleMessView")?.click()});$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
 }
 async function init(){
-  const hour=Number(istParts().hour);
-  state.meal=hour<11?"breakfast":hour<16?"lunch":"dinner";
+  /* Which meal the Mess tab opens on comes from MEAL_WINDOWS, not from a second set of
+     cutoffs. This line used to read hour<11?breakfast:hour<16?lunch:dinner, which
+     disagreed with the mess's real service times: at 5pm it opened Dinner while the tabs
+     correctly marked Lunch as the one being served. Third definition, now deleted. */
+  const bootParts=istParts();
+  state.meal=mealContextAt(Number(bootParts.hour)*60+Number(bootParts.minute)).key;
   state.messDay=weekdayKey(new Date());
   applyTheme();
   renderIcons();
@@ -3413,7 +3485,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova170",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova171",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

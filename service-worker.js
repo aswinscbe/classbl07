@@ -1,7 +1,7 @@
 const CACHE="classbl07-review-20260809-1";
-const CACHE_VERSION="20260928-nova170";
+const CACHE_VERSION="20260928-nova171";
 const ACTIVE_CACHE=`${CACHE}-${CACHE_VERSION}`;
-const SHELL=["./index.html","./styles.css?v=20260928-nova170","./app.js?v=20260928-nova170","./polish.js?v=20260928-nova170","./campus-data.js?v=20260928-nova170","./exam-data.js?v=20260928-nova170","./term4-data.js?v=20260928-nova170","./staff-bus-data.js?v=20260928-nova170","./fonts/inter-latin.woff2","./fonts/jakarta-latin.woff2","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./icons/apple-touch-icon.png","./icons/favicon-32.png","./icons/favicon-16.png"];
+const SHELL=["./index.html","./styles.css?v=20260928-nova171","./app.js?v=20260928-nova171","./polish.js?v=20260928-nova171","./campus-data.js?v=20260928-nova171","./exam-data.js?v=20260928-nova171","./term4-data.js?v=20260928-nova171","./staff-bus-data.js?v=20260928-nova171","./fonts/inter-latin.woff2","./fonts/jakarta-latin.woff2","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./icons/apple-touch-icon.png","./icons/favicon-32.png","./icons/favicon-16.png"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(ACTIVE_CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==ACTIVE_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{

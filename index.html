@@ -27,7 +27,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260928-nova170">
+  <link rel="stylesheet" href="styles.css?v=20260928-nova171">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -283,6 +283,7 @@
             <h2 id="nextBusRoute">Choose a route</h2>
             <p id="nextBusMeta">Direct services only</p>
             <p class="next-bus-origin-note" id="nextBusOriginNote" hidden></p>
+            <p class="next-bus-gap" id="nextBusGap" hidden></p>
             <button type="button" class="bus-class-catch" id="busClassCatch" hidden></button>
             <div class="route-visual" id="nextBusVisual"></div>
             <div class="countdown-box">
@@ -302,7 +303,8 @@
             <div class="panel-heading"><div><p class="overline">DEPARTURES</p><h2 id="busBoardRoute">Today</h2></div></div>
             <div class="board-list" id="upcomingBuses"></div>
             <button class="secondary-button small board-earlier-toggle" type="button" id="toggleFullBus">Hide earlier</button>
-            <div class="board-list" id="fullBusList"></div>
+            <div class="board-list collapsed" id="fullBusList"></div>
+            <div class="bus-last-run" id="busLastRun" hidden></div>
           </article>
           </div>
           </div>
@@ -316,9 +318,9 @@
               <div class="mess-rail">
                 <p class="mess-now-line" id="messNowLine"></p>
                 <div class="meal-tabs" id="mealTabs">
-                  <button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span>Breakfast</button>
-                  <button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span>Lunch</button>
-                  <button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span>Dinner</button>
+                  <button class="meal-tab active" data-meal="breakfast"><span data-icon="sunrise"></span><span class="mt-copy"><b>Breakfast</b><small class="mt-dish"></small></span></button>
+                  <button class="meal-tab" data-meal="lunch"><span data-icon="meal"></span><span class="mt-copy"><b>Lunch</b><small class="mt-dish"></small></span></button>
+                  <button class="meal-tab" data-meal="dinner"><span data-icon="moon"></span><span class="mt-copy"><b>Dinner</b><small class="mt-dish"></small></span></button>
                 </div>
                 <p class="menu-note">Menu is tentative and may change with market availability.</p>
               </div>
@@ -566,11 +568,11 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260928-nova170"></script>
-  <script src="staff-bus-data.js?v=20260928-nova170"></script>
-  <script src="exam-data.js?v=20260928-nova170"></script>
-  <script src="term4-data.js?v=20260928-nova170"></script>
-  <script src="app.js?v=20260928-nova170"></script>
-  <script src="polish.js?v=20260928-nova170"></script>
+  <script src="campus-data.js?v=20260928-nova171"></script>
+  <script src="staff-bus-data.js?v=20260928-nova171"></script>
+  <script src="exam-data.js?v=20260928-nova171"></script>
+  <script src="term4-data.js?v=20260928-nova171"></script>
+  <script src="app.js?v=20260928-nova171"></script>
+  <script src="polish.js?v=20260928-nova171"></script>
 </body>
 </html>
