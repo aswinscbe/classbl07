@@ -2342,8 +2342,15 @@ function lastBusForClass(cls,now){
     .sort((a,b)=>a.depart-b.depart);
   return options.length?options[options.length-1]:null;
 }
+/* Teaching happens at the Auditorium and the Arjuna Statue block; C&D Housing, the Main
+   Gate and Phase V are where you live, arrive and pass through. */
+const CLASS_STOPS=new Set(["PGP Auditorium","Arjuna Statue"]);
 function renderBusClassCatch(now){
   const el=$("#busClassCatch");if(!el)return;
+  /* A bus home is not a bus to class. This line used to appear on every board, so a
+     rider heading to C&D Housing was told the last bus that makes MFSA - about a
+     journey they were not taking, in the opposite direction. */
+  if(!CLASS_STOPS.has(state.busTo)){el.hidden=true;return}
   const next=nextClassToday(now);
   /* Only useful while the class is close enough that today's board still applies. */
   if(!next){el.hidden=true;return}
@@ -2382,6 +2389,9 @@ function renderBuses(){
     upcomingList.innerHTML=empty;fullList.innerHTML=empty;
     const gapEl=$("#nextBusGap");if(gapEl)gapEl.hidden=true;
     const lastEl=$("#busLastRun");if(lastEl)lastEl.hidden=true;
+    /* This branch returns before renderBusClassCatch, so without clearing it here the
+       previous route's catch-the-class line stayed on screen over an empty board. */
+    const catchEl=$("#busClassCatch");if(catchEl)catchEl.hidden=true;
     clearTimeout(_leavingSoonTimer);
     return;
   }
@@ -3495,7 +3505,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova173",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova174",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
