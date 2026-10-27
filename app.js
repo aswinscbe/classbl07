@@ -1111,20 +1111,27 @@ function renderTodayStrips(){
    dish — the question people open the Campus tab for, answered without the trip. */
 /* The mess's own service times: breakfast from 8am, lunch from 1pm, dinner from 8pm.
    Start times only — the counters stay open a while and no closing time is published,
-   so the app never prints one rather than inventing it. A meal is therefore "on" from
-   its start until the next meal starts.
+   so the app never prints one rather than inventing it.
+
+   A meal holds the app's focus for three hours from its start - breakfast 8-11, lunch
+   1-4, dinner 8-11 - and then the next meal takes over. That bound is only ever used to
+   decide what to point at: it is never printed, because the mess publishes no closing
+   time and the app would be inventing one. Running focus to the *next* meal's start
+   instead left the strip saying "Breakfast" at half past twelve.
 
    This is the single definition. There used to be a second one inside renderMess
-   (nowHour<11 ? breakfast : nowHour<16 ? lunch : dinner) which disagreed with this
-   table and with the mess, so Home and the Mess tab could name different meals at
-   the same moment. */
+   (nowHour<11 ? breakfast : nowHour<16 ? lunch : dinner) and a third in init(), both
+   disagreeing with this table and with the mess, so Home and the Mess tab could name
+   different meals at the same moment. */
 const MEAL_WINDOWS=[
   {key:"breakfast",label:"Breakfast",from:8*60},
   {key:"lunch",label:"Lunch",from:13*60},
   {key:"dinner",label:"Dinner",from:20*60}
 ];
-/* The meal currently on: the last one to have started today. Null before breakfast. */
-const mealServingAt=mins=>[...MEAL_WINDOWS].reverse().find(m=>mins>=m.from)||null;
+const MEAL_FOCUS_MINS=180;
+/* The meal on right now: one that started within the last three hours. Null outside
+   those stretches - before breakfast, between services, and late at night. */
+const mealServingAt=mins=>[...MEAL_WINDOWS].reverse().find(m=>mins>=m.from&&mins<m.from+MEAL_FOCUS_MINS)||null;
 const mealNextAt=mins=>MEAL_WINDOWS.find(m=>mins<m.from)||null;
 /* The meal a moment belongs to, for tinting today's pill and marking the tab worth
    opening — before 8am that is the breakfast still to come. */
@@ -3485,7 +3492,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova171",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova172",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
