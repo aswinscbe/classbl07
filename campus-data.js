@@ -53,8 +53,15 @@ window.CAMPUS_DATA = {
       to:seq[seq.length-1].name,mainGate:seq.some(s=>s.name==="Main Gate"),
       returnsToPgp:!!returnsToPgp};
   }),
-  /* IIM Kozhikode students' mess, October 2026 sheet. The sheet's own note: "The Menu
-     will be tentative, changes will be there related to the market availability." */
+  /* Which sheet this menu came from, carried as data so the app can say so rather
+     than leaving people to guess whether they are reading a stale menu. Update these
+     two lines whenever the menu below is replaced. */
+  messMeta: {
+    label:"October 2026",
+    effectiveIso:"2026-10-01",
+    note:"Menu is tentative \u2014 items change with market availability."
+  },
+  /* IIM Kozhikode students' mess, October 2026 sheet. */
   mess: {
     monday: {
       breakfast:["Idli","Medu vada","Coconut chutney","Sambhar","Boiled egg","Choccos","Boiled pulses","Banana","Bread, butter & jam","Tea / coffee / milk"],

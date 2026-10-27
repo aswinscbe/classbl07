@@ -2678,3 +2678,17 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
 .settings-row > div:first-child{flex:1;min-width:0}
 .settings-row > span{flex:none;display:flex;gap:8px;align-items:center}
 #gcalStatus{margin-top:6px;font-size:var(--text-sm);font-weight:var(--w-body);color:var(--ink-faint);line-height:var(--lh-snug)}
+
+/* The menu's vintage, stated rather than implied. A mess menu that has quietly gone
+   stale looks exactly as authoritative as a current one, so the month is a filled
+   badge rather than fine print, and the sheet's own "subject to availability" note
+   sits under it. */
+.mess-vintage{margin:8px 0 0}
+.mv-badge{
+  display:inline-flex;align-items:center;gap:6px;align-self:flex-start;
+  padding:4px 11px;border-radius:var(--radius-pill);
+  background:var(--accent-soft);color:var(--accent);
+  font-size:var(--text-xs);font-weight:var(--w-label);letter-spacing:var(--track-label);
+  text-transform:uppercase;white-space:nowrap;
+}
+.mv-badge svg{width:12px;height:12px;flex:none}

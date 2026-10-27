@@ -1072,7 +1072,8 @@ function renderMessStrip(now=new Date()){
     :meal.nonVeg||meal.veg||meal.splVeg||meal.fishEgg||(meal.items||[])[2]||(meal.items||[])[0];
   if(!headline){el.hidden=true;return}
   el.hidden=false;
-  el.innerHTML=`<span class="ts-icon">${icon("meal")}</span><span class="ts-text"><strong>${esc(live?`${label} now`:rollOver?"Breakfast tomorrow":`${label} next`)}</strong><small>${esc(headline)}</small></span>`;
+  const vintage=((window.CAMPUS_DATA||{}).messMeta||{}).label||"";
+  el.innerHTML=`<span class="ts-icon">${icon("meal")}</span><span class="ts-text"><strong>${esc(live?`${label} now`:rollOver?"Breakfast tomorrow":`${label} next`)}</strong><small>${esc(headline)}${vintage?` \u00b7 ${esc(vintage)}`:""}</small></span>`;
 }
 /* The module has a 3.5-day hole in it — Friday 9 October finishes at 13:00 and nothing
    runs again until Tuesday 13th at 09:30, with Monday 12th completely empty. The app
@@ -2362,6 +2363,17 @@ function renderMessWeekGrid(){
     return`<div class="mess-week-row ${d===state.messDay?"is-today":""}"><span class="mwg-day">${d.slice(0,3).toUpperCase()}</span><span class="mwg-cell"><b data-meal="breakfast">B</b>${esc(mealSummary(menu.breakfast))}</span><span class="mwg-cell"><b data-meal="lunch">L</b>${esc(mealSummary(menu.lunch))}</span><span class="mwg-cell"><b data-meal="dinner">D</b>${esc(mealSummary(menu.dinner))}</span></div>`;
   }).join("");
 }
+/* Which month's sheet this menu is. A mess menu that has quietly gone stale looks
+   exactly as authoritative as a current one, so the month is stated rather than left
+   to be guessed. The sheet's tentative caveat is already printed under the meal tabs,
+   so this is only the vintage. */
+function renderMessVintage(){
+  const el=$("#messVintage");if(!el)return;
+  const meta=(window.CAMPUS_DATA||{}).messMeta;
+  if(!meta||!meta.label){el.hidden=true;return}
+  el.hidden=false;
+  el.innerHTML=`<span class="mv-badge">${icon("meal")}${esc(meta.label)} menu</span>`;
+}
 function renderMess(){
   const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
   const nowHour=Number(istParts().hour),currentMeal=nowHour<11?"breakfast":nowHour<16?"lunch":"dinner";
@@ -2371,6 +2383,7 @@ function renderMess(){
   $("#messDayPills").innerHTML=ds.map(d=>`<button class="day-pill ${d===state.messDay?"active":""} ${d===todayDayName?"is-today":""}" data-day="${d}" ${d===todayDayName?`data-meal="${currentMeal}"`:""}>${d.slice(0,3).toUpperCase()}</button>`).join("");
   $$(".day-pill").forEach(b=>b.addEventListener("click",()=>{state.messDay=b.dataset.day;renderMess()}));
   $("#messDayTitle").textContent=state.messDay[0].toUpperCase()+state.messDay.slice(1);
+  renderMessVintage();
   const menu=window.CAMPUS_DATA.mess[state.messDay],meal=menu[state.meal];
   $("#messMenu").innerHTML=meal?mealCardHtml(meal,state.meal[0].toUpperCase()+state.meal.slice(1),state.meal):"";
   $$(".meal-tab").forEach(b=>{b.classList.toggle("active",b.dataset.meal===state.meal);b.classList.toggle("is-now",b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal)});
@@ -3243,7 +3256,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova160",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova161",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
