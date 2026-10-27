@@ -181,7 +181,22 @@ function nextExam(){
 }
 function examDaysLeft(iso){const now=zoned(isoToday(),"00:00"),target=zoned(iso,"00:00");return Math.round((target-now)/86400000)}
 function subjectSessions(code){const want=canonical(code);return state.all.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===want).sort((a,b)=>dateTime(a)-dateTime(b))}
-function subjectSessionOrdinal(c){if(c.status==="Cancelled"||c.type==="General")return null;const list=subjectSessions(c.code);const i=list.findIndex(x=>classIdentity(x)===classIdentity(c));return i<0?null:i+1}
+/* The programme office numbers its own sessions and the feed carries that number, so
+   it is used in preference to counting position in a list. The two agree today, but
+   they stop agreeing the moment a session is inserted or cancelled — and the office's
+   number is the one the attendance register uses. */
+function subjectSessionOrdinal(c){
+  if(!c||c.status==="Cancelled"||c.type==="General")return null;
+  if(c.sessionNo)return c.sessionNo;
+  const list=subjectSessions(c.code);const i=list.findIndex(x=>classIdentity(x)===classIdentity(c));
+  return i<0?null:i+1;
+}
+/* Prefer the course's declared session count over the number of rows we happen to
+   hold, so "7 of 25" stays right even when a week has not been published yet. */
+function subjectSessionTotal(code){
+  const known=((window.TERM4_COURSES||{})[canonical(code)]||{}).sessions;
+  return known||subjectSessions(code).length;
+}
 function initials(n){return String(n||"ST").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 /* A clear day gets a campus mark rather than the same generic spark as an empty task
    filter. The Barcelona skyline that lived here belonged to the immersion module; this
@@ -529,7 +544,7 @@ function renderFacultyDirectory(){
         <strong>${esc(shortFaculty(p.name))}</strong>
         <p class="fac-meta">${p.courses.map(c=>`<span class="fac-course" style="--course:${colorFor(c)}">${esc(c)}</span>`).join("")}<span class="fac-count">${p.sessions.length} session${p.sessions.length===1?"":"s"} \u00b7 ${esc(compactDuration(p.mins))}</span></p>
         <p class="fac-next">${p.next
-          ?`Next \u2014 ${esc(fmtDate(p.next.dateIso,{weekday:"long",day:"numeric",month:"short"}))}, ${esc(fmtTime(p.next.startTime))}`
+          ?`Next \u2014 ${(()=>{const n=subjectSessionOrdinal(p.next);return n?`session ${n}, `:""})()}${esc(fmtDate(p.next.dateIso,{weekday:"long",day:"numeric",month:"short"}))}, ${esc(fmtTime(p.next.startTime))}`
           :"All sessions complete"}</p>
       </div>
     </article>`).join("");
@@ -868,7 +883,7 @@ function renderHome(){
     if(creditsFor(shown.code))pills.push(heroPill(`<span class="credit-mark">${esc(creditLabel(shown.code))}</span>`));
     /* "Session 1/1" told you nothing about where the course is going. Saying how many
        meetings of this course are still to come is the part worth knowing. */
-    const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessions(shown.code).length:0;
+    const heroSessionN=subjectSessionOrdinal(shown),heroSessionTotal=heroSessionN?subjectSessionTotal(shown.code):0;
     if(heroSessionN){
       const leftAfter=Math.max(0,heroSessionTotal-heroSessionN);
       pills.push(heroPill(`Session ${heroSessionN} of ${heroSessionTotal}${leftAfter?` · ${leftAfter} left`:" · last one"}`));
@@ -1509,7 +1524,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
     }
     const status=agendaStatus(c),cancelled=c.status==="Cancelled";
     const tier=cancelled?"cancelled":status==="Live"?"live":status==="Completed"?"done":"upcoming";
-    const dur=minutes(c.endTime)-minutes(c.startTime),sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessions(c.code).length:0;
+    const dur=minutes(c.endTime)-minutes(c.startTime),sessionN=subjectSessionOrdinal(c),sessionTotal=sessionN?subjectSessionTotal(c.code):0;
     const progress=tier==="live"?Math.max(0,Math.min(100,((now-dateTime(c,"startTime"))/(dateTime(c,"endTime")-dateTime(c,"startTime")))*100)):null;
     const [h12,ap]=fmtTime(c.startTime).split(/(?=[ap]m)/i);
     let nextLine="";
@@ -1517,7 +1532,8 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
       const nxt=nextOccurrenceOf(c);
       if(nxt){
         const label=nxt.dateIso===dayIso?"later today":nxt.dateIso===tomorrowIso()?"tomorrow":fmtDate(nxt.dateIso,{weekday:"short",day:"numeric",month:"short"});
-        nextLine=`<p class="sr-next">Next ${esc(canonical(c.code))} — ${esc(label)}, ${esc(fmtTime(nxt.startTime))}</p>`;
+        const nxtN=subjectSessionOrdinal(nxt);
+        nextLine=`<p class="sr-next">${icon("chevron-right")}Next ${esc(canonical(c.code))}${nxtN?` \u00b7 S${nxtN}`:""} \u2014 ${esc(label)}, ${esc(fmtTime(nxt.startTime))}</p>`;
       }
     }
     if(!isSession(c)){
@@ -1579,7 +1595,8 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
         <div class="sr-top">
           <span class="sr-code">${esc(canonical(c.code))}</span>
           <span class="sr-subj">${esc(c.course)}</span>
-          ${tier==="live"?'<span class="sr-live-pill">NOW</span>':cancelled?'<span class="sr-cancel-pill">CANC.</span>':sessionN?`<span class="sr-sess">${sessionN}/${sessionTotal}</span>`:""}
+          ${tier==="live"?'<span class="sr-live-pill">NOW</span>':cancelled?'<span class="sr-cancel-pill">CANC.</span>':""}
+          ${sessionN&&!cancelled?`<span class="sr-sess" title="Session ${sessionN} of ${sessionTotal}">S${sessionN}<em>/${sessionTotal}</em></span>`:""}
           ${sessionKind(c)!=="lecture"?`<span class="sr-kind-pill">${esc(kindOf(c).label)}</span>`:""}
           ${c.tentative?'<span class="sr-tbc-pill" title="Timing not yet confirmed">TBC</span>':""}
           ${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}
@@ -1777,8 +1794,8 @@ function renderWeekGrid(days){
       const past=dateTime(c,"endTime")<new Date();
       return`<button type="button" class="wg-cell ${ev?"is-event":""} ${live?"is-live":""} ${past?"is-past":""}"
         style="--course:${ev?"var(--ink-faint)":colorFor(c.code)}" data-date="${esc(iso)}"
-        title="${esc(ev?c.title||c.course:`${canonical(c.code)} \u00b7 ${c.course}`)} \u00b7 ${esc(fmtRange(c.startTime,c.endTime))}${c.room?` \u00b7 ${esc(c.room)}`:""}">
-        <b>${esc(ev?"QUIZ":canonical(c.code))}</b>${c.room&&isSession(c)?`<i>${esc(String(c.room).replace(/^CR\s*/i,""))}</i>`:""}
+        title="${esc(ev?c.title||c.course:`${canonical(c.code)} \u00b7 ${c.course}`)}${isSession(c)&&subjectSessionOrdinal(c)?` \u00b7 Session ${subjectSessionOrdinal(c)} of ${subjectSessionTotal(c.code)}`:""} \u00b7 ${esc(fmtRange(c.startTime,c.endTime))}${c.room?` \u00b7 ${esc(c.room)}`:""}">
+        <b>${esc(ev?"QUIZ":canonical(c.code))}</b>${(()=>{const n=isSession(c)?subjectSessionOrdinal(c):null;return n?`<i>S${n}</i>`:""})()}
       </button>`;
     }).join("");
     return`<div class="wg-row"><span class="wg-time">${esc(fmtTime(slot.start))}</span>${cells}</div>`;
@@ -1803,7 +1820,7 @@ function renderWeekGlance(days){
     const summary=[count,free?`${compactDuration(free.mins)} free`:""].filter(Boolean).join(" · ");
     const header=`<div class="wg-day-head ${iso===today?"is-today":""}"><span>${esc(fmtDate(iso,{weekday:"long",day:"numeric",month:"short"}))}</span>${iso===today?'<b class="wc-today-badge">TODAY</b>':""}${summary?`<small>${esc(summary)}</small>`:""}</div>`;
     if(!dayClasses.length&&!exam)return`${header}<p class="wg-free">Free day</p>`;
-    return`${header}${scheduleRowsHtml(dayClasses,iso)}`;
+    return`${header}${scheduleRowsHtml(dayClasses,iso,{showNext:true})}`;
   }).join("");
 }
 /* Single-day focus: replaces the old accordion. One day's shape at a time — a time
@@ -1838,7 +1855,7 @@ function renderDayFocus(iso){
       ).join("")}</section>`;
     }
     if(listClasses.length){
-      html+=scheduleRowsHtml(listClasses,iso,{showNext:false,stagger:staggerClass(timelineEl,rowsKey(iso,listClasses))});
+      html+=scheduleRowsHtml(listClasses,iso,{showNext:true,stagger:staggerClass(timelineEl,rowsKey(iso,listClasses))});
     }else if(dayAll.length&&!exam){
       html+=`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("check")}</span><p>All done for today</p><small>Every class on ${esc(fmtDate(iso,{weekday:"long"}))} is wrapped up.</small></div>`;
     }
@@ -3389,7 +3406,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova165",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova168",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
