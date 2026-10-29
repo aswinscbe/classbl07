@@ -163,3 +163,11 @@ window.TERM4_CLASSES = [
   {dateIso:"2027-01-10",startTime:"14:30",endTime:"15:45",code:"EPIS",course:'Executive Presence, Influence & Storytelling',faculty:'Prof. Deepa Sethi',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:15,type:"Elective",section:"A",status:"Scheduled"},
   {dateIso:"2027-01-10",startTime:"16:00",endTime:"17:15",code:"EPIS",course:'Executive Presence, Influence & Storytelling',faculty:'Prof. Deepa Sethi',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:16,type:"Elective",section:"A",status:"Scheduled"},
 ];
+
+/* Changes announced outside the calendar feed. Applied on top of whichever schedule
+   source is in use, so a cancellation reaches people reading their own calendar too -
+   they would otherwise never see an edit made to the table above.
+   Matched on code + sessionNo + dateIso. */
+window.TERM4_OVERRIDES=[
+  {code:"MFSA",sessionNo:4,dateIso:"2026-10-29",status:"Cancelled",note:"Cancelled by the programme office"}
+];

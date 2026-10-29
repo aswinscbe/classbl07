@@ -297,6 +297,27 @@ function applyAccent(){
    the feed is the authority now, and a sync would overwrite it with Term III. */
 /* No section filter: Term IV is an elective term with no A/B split, and the feed is
    this student's own enrolment, so every row in it is theirs. */
+/* Changes the programme office announces outside the calendar - a class called off in
+   a WhatsApp message the evening before, say - laid over whichever source is in use.
+   This layer has to exist: a connected calendar replaces the compiled file outright,
+   so a cancellation edited into term4-data.js would be invisible to everyone actually
+   reading their own calendar, which is the people it needs to reach.
+
+   Matched on course and session number, the identity the office itself uses, with the
+   date checked as well so an override cannot drift onto the wrong sitting. An entry
+   that matches nothing changes nothing. */
+function applyTermOverrides(list){
+  const overrides=window.TERM4_OVERRIDES||[];
+  if(!overrides.length)return list;
+  return list.map(c=>{
+    const hit=overrides.find(o=>
+      canonical(o.code)===canonical(c.code)&&
+      Number(o.sessionNo)===Number(c.sessionNo)&&
+      (!o.dateIso||o.dateIso===c.dateIso));
+    if(!hit)return c;
+    return{...c,...(hit.status?{status:hit.status}:{}),...(hit.note?{overrideNote:hit.note}:{})};
+  });
+}
 function filteredClasses(){
   /* The standing quiz slot is a reserved hour with no course, faculty or room. It
      joins the day list so it blocks time like anything else, flagged so the renderers
@@ -307,7 +328,7 @@ function filteredClasses(){
      rather than an empty app. The quiz slot is appended either way — it is batch-wide
      and does not appear as an invite. */
   const live=calSessions();
-  return[...(live.length?live:(window.TERM4_CLASSES||[])),...(window.TERM4_EVENTS||[])]
+  return applyTermOverrides([...(live.length?live:(window.TERM4_CLASSES||[])),...(window.TERM4_EVENTS||[])])
     .slice()
     .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
 }
@@ -1689,7 +1710,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
         <div class="sr-top">
           <span class="sr-code">${esc(canonical(c.code))}${sessionN&&!cancelled?`<b>S${sessionN}<em>/${sessionTotal}</em></b>`:""}</span>
           <span class="sr-subj">${esc(c.course)}</span>
-          ${tier==="live"?'<span class="sr-live-pill">NOW</span>':cancelled?'<span class="sr-cancel-pill">CANC.</span>':""}
+          ${tier==="live"?'<span class="sr-live-pill">NOW</span>':cancelled?'<span class="sr-cancel-pill">CANCELLED</span>':""}
           ${sessionKind(c)!=="lecture"?`<span class="sr-kind-pill">${esc(kindOf(c).label)}</span>`:""}
           ${c.tentative?'<span class="sr-tbc-pill" title="Timing not yet confirmed">TBC</span>':""}
           ${wasRecentlyAdded(c)?'<span class="timeline-added">ADDED</span>':""}
@@ -3712,7 +3733,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova184",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova185",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
