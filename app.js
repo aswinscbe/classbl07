@@ -2776,7 +2776,15 @@ function renderWorkloadChart(){
    dropped: a friend should land on a clean app, not inherit whatever view the
    sender happened to have open. */
 const appShareUrl=()=>{const u=new URL("./",location.href);u.search="";u.hash="";return u.href};
-const SHARE_PITCH="BL07 Planner — our Term IV schedule, campus bus timings and the mess menu in one place. Works offline, nothing to sign into.";
+/* What a classmate receiving this cold actually needs: what it is, the one thing they
+   must do to make it theirs, and that it costs them nothing. It used to end "nothing
+   to sign into", which stopped being true the moment the calendar connection worked -
+   and left the recipient with no idea why the app showed somebody else's electives. */
+const SHARE_PITCH=`BL07 Planner \u2014 our Term IV timetable, campus bus timings and the mess menu, in one place.
+
+Open it \u2192 Profile \u2192 Connect Google Calendar, and sign in with your @iimk.ac.in account. Your own electives then fill the app automatically, and it keeps up whenever the office changes a session.
+
+No app store, no account to make. Add it to your home screen and it works offline.`;
 
 /* Chrome and Edge fire beforeinstallprompt when the app qualifies; the event is the
    only way to open the install dialog, and it can only be used once, so it is held
@@ -2804,7 +2812,7 @@ function bindShareApp(){
       try{await navigator.share({title:"BL07 Planner",text:SHARE_PITCH,url:url()});return}
       catch(e){if(e?.name==="AbortError")return}
     }
-    try{await navigator.clipboard.writeText(`${SHARE_PITCH}\n${url()}`);showToast("Link copied — paste it anywhere")}
+    try{await navigator.clipboard.writeText(`${SHARE_PITCH}\n\n${url()}`);showToast("Link copied — paste it anywhere")}
     catch(e){showToast("Couldn't copy — the link is shown above")}
   });
   $("#copyAppLink")?.addEventListener("click",async()=>{
@@ -3666,7 +3674,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova180",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova181",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
