@@ -356,11 +356,43 @@ let _syncInFlight=false,_lastSyncAt=0;
    sheet — flip SYNC_ENABLED back on and the whole path works again. While it is off
    nothing refetches, so the term's classes cannot quietly repopulate the cache. */
 const SYNC_ENABLED=false;
+function setSyncPill(cls,label,title){
+  const pill=$("#syncPill");
+  if(!pill)return;
+  pill.className=`sync-pill ${cls}`;
+  pill.innerHTML=`<i></i><span>${esc(label)}</span>`;
+  pill.title=title||label;
+}
+/* The one refresh control in the app. The calendar is the live source now, so this
+   refreshes that; the old Apps Script endpoint behind syncSchedule has been switched
+   off (SYNC_ENABLED=false) since Term III and fetches nothing. With no calendar
+   connected there is nothing to pull, so it says where to connect instead of
+   pretending to sync. */
+async function refreshSchedule(){
+  const btn=$("#refreshButton");
+  if(!getSavedCalToken()){
+    await syncSchedule(true);
+    showToast("Connect Google Calendar in Profile to sync your schedule");
+    return;
+  }
+  if(btn){btn.dataset.state="syncing";btn.setAttribute("aria-busy","true")}
+  setSyncPill("syncing","Checking","Reading your Google Calendar");
+  const ok=await refreshCalendarSchedule();
+  if(btn){delete btn.dataset.state;btn.removeAttribute("aria-busy")}
+  /* Only repaint the calendar card on success: on failure refreshCalendarSchedule has
+     just written Google's own message there, and repainting would erase it. */
+  if(ok){renderCalendarConnectionStatus();setSyncPill("ok","Updated now","Schedule read from your calendar just now")}
+  else setSyncPill("error","Sync failed","Could not read your calendar - see Profile");
+}
 async function syncSchedule(force=false){
   if(!SYNC_ENABLED){
     state.scheduleLoading=false;
     const pill=$("#syncPill");
-    if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Term IV schedule</span>";pill.title="Showing the Term IV elective schedule"}
+    /* The pill names where the schedule actually came from. "Term IV schedule" was
+       true of the built-in table and stayed on screen once a calendar was connected,
+       which is the one case where the distinction matters. */
+    setSyncPill("ok",calSessions().length?"Your calendar":"Term IV schedule",
+      calSessions().length?"Showing sessions read from your Google Calendar":"Showing the built-in Term IV elective schedule");
     state.classes=filteredClasses();
     renderAll();
     return;
@@ -2655,8 +2687,7 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
   const bc=$("#stubBarcode");if(bc)bc.innerHTML=barcodeHtml(state.profile.name||state.profile.section);
   /* A malformed updatedAt from the feed used to throw here, and since renderProfile runs
      before renderHome in renderAll, that took the whole app down with it. */
-  const lastSynced=state.lastUpdated?new Date(state.lastUpdated):null;
-  $("#lastUpdated").textContent=lastSynced&&!isNaN(lastSynced)?`Updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(lastSynced)}`:"Not synced yet";/* Read from the term feed rather than from a saved selection. The schedule is the
+/* Read from the term feed rather than from a saved selection. The schedule is the
    enrolment, so there is nothing for a picker to pick — listing them is the honest
    version of the same card. */
   const chips=$("#selectedElectiveChips");
@@ -3365,7 +3396,7 @@ function bind(){
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
   $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$(`.accent-swatch[data-accent="${b.dataset.accent}"]`);if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
   $("#resetAccentButton")?.addEventListener("click",()=>{state.profile.accent="indigo";save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$('.accent-swatch[data-accent="indigo"]');if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
-  $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});
+  $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await refreshSchedule();button.blur()});
   $("#timelinePrevDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)-1,"backward"));
   $("#timelineNextDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)+1,"forward"));
   bindSwipeGesture($("#focusPanel"),direction=>{
@@ -3542,7 +3573,7 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#openNoteForm").addEventListener("click",()=>{clearDialogValidation(noteDialog);noteDialog.showModal()});
   $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
-  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
+  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess();renderMessWeekGrid()});
 $("#messWeekGrid")?.addEventListener("click",e=>{const cell=e.target.closest(".mwg-cell");if(!cell)return;state.messDay=cell.dataset.day;state.meal=cell.dataset.meal;renderMess();renderMessWeekGrid();$("#toggleMessView")?.click()});bindShareApp();
 $("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
@@ -3582,7 +3613,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova178",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova179",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
