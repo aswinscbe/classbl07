@@ -2728,31 +2728,6 @@ function renderWorkloadChart(){
 const appShareUrl=()=>{const u=new URL("./",location.href);u.search="";u.hash="";return u.href};
 const SHARE_PITCH="BL07 Planner — our Term IV schedule, campus bus timings and the mess menu in one place. Works offline, nothing to sign into.";
 
-/* Rendered to a canvas at whole-module sizes. A QR scaled to a fractional module
-   width gets anti-aliased edges that cheap scanners refuse, so the module size is
-   floored to an integer and the code is centred in whatever space is left. */
-function renderShareQr(){
-  const cv=$("#shareQrCanvas");
-  if(!cv||!window.BL07_QR)return;
-  const url=appShareUrl();
-  let code;
-  try{code=window.BL07_QR.matrix(url)}catch(e){cv.hidden=true;return}
-  cv.hidden=false;
-  const quiet=4,total=code.size+quiet*2;
-  const css=232,scale=Math.max(1,Math.floor(css/total)),dim=scale*total;
-  const dpr=Math.min(3,window.devicePixelRatio||1);
-  cv.width=dim*dpr;cv.height=dim*dpr;
-  cv.style.width=cv.style.height=dim+"px";
-  const ctx=cv.getContext("2d");
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  /* Always black on white, in both themes. A dark-on-dark code is unreadable, and a
-     light-module code inverted to suit the UI defeats half the scanners out there. */
-  ctx.fillStyle="#fff";ctx.fillRect(0,0,dim,dim);
-  ctx.fillStyle="#000";
-  for(let r=0;r<code.size;r++)for(let c=0;c<code.size;c++)
-    if(code.data[r*code.size+c])ctx.fillRect((c+quiet)*scale,(r+quiet)*scale,scale,scale);
-}
-
 /* Chrome and Edge fire beforeinstallprompt when the app qualifies; the event is the
    only way to open the install dialog, and it can only be used once, so it is held
    until the button is pressed. Safari never fires it, which is why the written
@@ -2770,7 +2745,6 @@ window.addEventListener("appinstalled",()=>{deferredInstall=null;renderInstallSt
 function renderShareApp(){
   const urlEl=$("#shareAppUrl");
   if(urlEl)urlEl.textContent=appShareUrl().replace(/^https?:\/\//,"").replace(/\/$/,"");
-  renderShareQr();
   renderInstallState();
 }
 function bindShareApp(){
@@ -3111,14 +3085,24 @@ function disconnectGoogleCalendar(){
   state.classes=filteredClasses();renderAll();
   renderCalendarConnectionStatus();
 }
+/* Connecting the calendar is the one thing a first-time user is looking for, so the
+   card states it plainly and walks through it. Once connected the instructions have
+   done their job and the card collapses to what it is actually carrying. */
 function renderCalendarConnectionStatus(){
   const cache=loadCalCache(),on=!!(cache&&cache.sessions&&cache.sessions.length);
   const status=$("#gcalStatus"),conn=$("#gcalConnected"),disc=$("#gcalDisconnected");
   if(status)status.textContent=on
     ?`${cache.sessions.length} sessions \u00b7 updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(cache.at))}`
-    :"Using the built-in Term IV schedule.";
+    :"Not connected \u2014 showing the built-in Term IV timetable.";
   if(conn)conn.hidden=!on;
   if(disc)disc.hidden=on;
+  const hero=$("#gcalHero"),title=$("#gcalHeroTitle"),copy=$("#gcalHeroCopy"),steps=$("#gcalSteps");
+  if(hero)hero.classList.toggle("is-connected",on);
+  if(title)title.textContent=on?"Google Calendar connected":"Connect Google Calendar";
+  if(copy)copy.textContent=on
+    ?"The planner is reading your own class invites, so it follows your electives and picks up any change the institute makes."
+    :"Your class invites live in your IIMK calendar. Connect it once and the planner follows your own electives \u2014 including any change the institute makes later.";
+  if(steps)steps.hidden=on;
 }
 async function connectGoogleTasks(){
   try{
@@ -3583,7 +3567,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova175",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova176",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
