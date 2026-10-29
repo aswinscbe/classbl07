@@ -390,6 +390,7 @@ async function refreshSchedule(){
   }
   if(btn){btn.dataset.state="syncing";btn.setAttribute("aria-busy","true")}
   setSyncPill("syncing","Checking","Reading your Google Calendar");
+  _calPollAt=Date.now();
   const ok=await refreshCalendarSchedule();
   if(btn){delete btn.dataset.state;btn.removeAttribute("aria-busy")}
   /* Only repaint the calendar card on success: on failure refreshCalendarSchedule has
@@ -442,8 +443,28 @@ async function syncSchedule(force=false){
   state.scheduleLoading=false;
   renderAll();
 }
+/* Nothing was polling the calendar, which is the only live source the app has. The
+   five-minute timer, the window focus hook, the visibilitychange hook and the online
+   hook all called syncSchedule, and that has fetched nothing since SYNC_ENABLED was
+   switched off with Term III. So an app left open across a day, or come back to after
+   lunch, never noticed a change the office had made.
+
+   Deliberately conservative about auth: this refreshes only while a valid token is in
+   hand. Renewing one is left to launch and to an explicit tap, because a renewal
+   fired by a timer could put a Google window on screen unprompted. When the token has
+   aged out the pill says "Tap to update" rather than anything being done silently. */
+const CAL_POLL_MS=10*60e3;
+let _calPollAt=0,_calPollInFlight=false;
+async function maybeRefreshCalendar(){
+  if(!calSessions().length)return;
+  if(!getSavedCalToken()){syncSchedule();return}
+  if(_calPollInFlight||Date.now()-_calPollAt<CAL_POLL_MS)return;
+  _calPollInFlight=true;_calPollAt=Date.now();
+  try{if(await refreshCalendarSchedule({silent:true}))renderCalendarConnectionStatus()}
+  finally{_calPollInFlight=false}
+}
 function scheduleIdleSync(){
-  const run=()=>syncSchedule(false);
+  const run=()=>{syncSchedule(false);maybeRefreshCalendar()};
   if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
   else setTimeout(run,1200);
 }
@@ -3576,13 +3597,16 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   renderCalendarConnectionStatus();
   /* A cached schedule is served immediately; the refresh behind it is silent so a
      stale token never greets anyone with an error on launch. */
-  if(getSavedCalToken())refreshCalendarSchedule({silent:true});
+  /* The launch fetch starts the poll clock too, or the first time the window regains
+     focus a minute later would fetch the same thing again. */
+  if(getSavedCalToken()){_calPollAt=Date.now();refreshCalendarSchedule({silent:true})}
   else if(calSessions().length){
     /* Anyone who connected before opens on yesterday's snapshot. Ask Google for a
        fresh token without any UI; it answers when the session and consent are still
        there, and when it does not the cached schedule simply stays on screen. */
     connectGoogleCalendar({mode:"silent"}).then(ok=>{
       if(!ok)return;
+      _calPollAt=Date.now();
       refreshCalendarSchedule({silent:true}).then(()=>{renderCalendarConnectionStatus();syncSchedule()});
     });
   }
@@ -3684,7 +3708,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova182",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova183",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
