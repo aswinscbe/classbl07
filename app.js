@@ -2630,11 +2630,12 @@ function renderMessWeekGrid(){
   const el=$("#messWeekGrid");if(!el)return;
   const ds=["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
   const nowParts=istParts(),nowMins=Number(nowParts.hour)*60+Number(nowParts.minute);
-  const currentMeal=mealContextAt(nowMins).key;
+  /* Marked only while a service is actually open - see the note on the meal tabs. */
+  const serving=mealServingAt(nowMins);
   const todayIso=isoToday(),todayDow=(zoned(todayIso,"12:00").getDay()+6)%7,todayDayName=ds[todayDow];
   el.innerHTML=ds.map(d=>{
     const menu=window.CAMPUS_DATA.mess[d];
-    const cells=MESS_MEALS.map(([key,letter])=>`<button type="button" class="mwg-cell ${d===todayDayName&&key===currentMeal?"is-now":""} ${d===state.messDay&&key===state.meal?"is-open":""}" data-day="${d}" data-meal="${key}" aria-label="${esc(d)} ${esc(key)}"><b data-meal="${key}">${letter}</b><span>${esc(mealHeadline(menu[key])||"\u2014")}</span></button>`).join("");
+    const cells=MESS_MEALS.map(([key,letter])=>`<button type="button" class="mwg-cell ${d===todayDayName&&serving&&key===serving.key?"is-now":""} ${d===state.messDay&&key===state.meal?"is-open":""}" data-day="${d}" data-meal="${key}" aria-label="${esc(d)} ${esc(key)}"><b data-meal="${key}">${letter}</b><span>${esc(mealHeadline(menu[key])||"\u2014")}</span></button>`).join("");
     return`<div class="mess-week-row ${d===todayDayName?"is-today":""} ${d===state.messDay?"is-selected":""}"><span class="mwg-day">${d.slice(0,3).toUpperCase()}</span>${cells}</div>`;
   }).join("");
 }
@@ -2675,7 +2676,10 @@ function renderMess(){
     b.classList.toggle("active",b.dataset.meal===state.meal);
     /* "NOW" is a claim about this moment, so it only belongs on today. Browsing to
        Friday used to carry the badge along and mark Friday's dinner as being served. */
-    b.classList.toggle("is-now",isToday&&b.dataset.meal===currentMeal&&b.dataset.meal!==state.meal);
+    /* NOW means a counter is open, which is not the same as the meal in focus.
+       mealContextAt falls through to the *next* meal once a service has ended, so
+       between 4pm and 8pm the Dinner tab was badged NOW with nothing being served. */
+    b.classList.toggle("is-now",isToday&&!!serving&&b.dataset.meal===serving.key&&b.dataset.meal!==state.meal);
     const dish=$(".mt-dish",b);
     if(dish)dish.textContent=mealHeadline(menu[b.dataset.meal])||"—";
   });
@@ -3708,7 +3712,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova183",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova184",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

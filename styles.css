@@ -441,14 +441,20 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   font-variant-numeric:tabular-nums;font-size:var(--text-xs);font-weight:700;
   color:var(--ink-faint);letter-spacing:var(--track-label);margin-top:2px;
 }
-@media (min-width:900px){.topbar-clock{display:flex}}
-/* The device already shows the time in its own status bar — repeating it in-app
-   only earns its place once there's a wider desktop bar with room to spare. */
+/* Shown everywhere. The phone's own status bar does carry the time, but it is hidden
+   in an installed app on some devices, and the clock here is the one the schedule is
+   reckoned against. */
+.topbar-clock{display:flex}
+/* The dot is a status light, not decoration: it reports whether the schedule on
+   screen was actually read from the calendar, and amber means it has gone stale and
+   wants a tap. Hiding it below 900px kept that from the people most likely to need
+   it. The label still waits for a desktop bar with room for words. */
 .sync-pill{
-  display:none;align-items:center;gap:7px;padding:0;border-radius:var(--radius-pill);
+  display:flex;align-items:center;gap:7px;padding:0;border-radius:var(--radius-pill);
   background:none;border:0;font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);
 }
 .sync-pill span{display:none}
+@media (min-width:900px){.sync-pill span{display:inline}}
 .sync-pill i{width:7px;height:7px;border-radius:50%;background:var(--ink-faint)}
 .sync-pill.syncing i{background:var(--amber);animation:pulse 1s infinite}
 .sync-pill.ok i{background:var(--live)}
@@ -494,7 +500,6 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 @media (min-width:900px){
   .bottom-nav{display:none}
   .desktop-nav{display:flex}
-  .sync-pill{display:flex}
   .page-wrap{padding:28px 24px 56px}
 }
 
