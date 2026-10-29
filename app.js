@@ -2961,7 +2961,16 @@ const GOOGLE_CAL_CACHE_KEY="classbl07-nova-gcal-schedule-v1";
 const GOOGLE_TOKEN_KEY="classbl07-nova-google-token-v1";
 const GOOGLE_LIST_KEY="classbl07-nova-google-list-v1";
 const GOOGLE_NOTES_MIGRATION_KEY="classbl07-google-subject-notes-v1";
-const GOOGLE_LIST_NAME_MIGRATION_KEY="classbl07-google-list-name-v1";
+/* Bumped to v2 so the rename below runs once more for anyone already carrying a list
+   called "Term 3 Planner". */
+const GOOGLE_LIST_NAME_MIGRATION_KEY="classbl07-google-list-name-v2";
+/* Term-neutral on purpose. The old name was baked in as "Term 3 Planner", which went
+   stale the day Term IV started and would have gone stale again every term after. */
+const GOOGLE_LIST_TITLE="BL07 Planner";
+/* Names this list has been known by, newest first. Looked up in order so an existing
+   list is adopted rather than a second, empty one being created beside it - which is
+   what renaming without this would have done to everyone's saved tasks. */
+const GOOGLE_LIST_ALIASES=[GOOGLE_LIST_TITLE,"Term 3 Planner","BL07 Tasks"];
 let _googleTokenClient=null;
 let _googleAccessToken=null;
 
@@ -3231,14 +3240,15 @@ async function ensureGooglePlannerList(){
   const r=await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists",{headers:{Authorization:`Bearer ${_googleAccessToken}`}});
   if(!r.ok)throw new Error("Could not list task lists");
   const data=await r.json();
-  let list=(data.items||[]).find(l=>l.title==="Term 3 Planner")||(data.items||[]).find(l=>l.title==="BL07 Tasks");
+  let list=null;
+  for(const alias of GOOGLE_LIST_ALIASES){list=(data.items||[]).find(l=>l.title===alias);if(list)break}
   if(!list){
     const cr=await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists",{
       method:"POST",
       headers:{Authorization:`Bearer ${_googleAccessToken}`,"Content-Type":"application/json"},
-      body:JSON.stringify({title:"Term 3 Planner"})
+      body:JSON.stringify({title:GOOGLE_LIST_TITLE})
     });
-    if(!cr.ok)throw new Error("Could not create the Term 3 Planner list");
+    if(!cr.ok)throw new Error(`Could not create the ${GOOGLE_LIST_TITLE} list`);
     list=await cr.json();
   }
   localStorage.setItem(GOOGLE_LIST_KEY,list.id);
@@ -3251,7 +3261,7 @@ async function ensureGooglePlannerListName(listId){
     const response=await fetch(`https://tasks.googleapis.com/tasks/v1/users/@me/lists/${listId}`,{
       method:"PATCH",
       headers:{Authorization:`Bearer ${_googleAccessToken}`,"Content-Type":"application/json"},
-      body:JSON.stringify({title:"Term 3 Planner"})
+      body:JSON.stringify({title:GOOGLE_LIST_TITLE})
     });
     if(response.ok)localStorage.setItem(GOOGLE_LIST_NAME_MIGRATION_KEY,"true");
   }catch(error){console.warn("Google Tasks list rename failed",error)}
@@ -3674,7 +3684,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova181",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova182",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
