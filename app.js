@@ -3069,8 +3069,12 @@ function connectGoogleCalendar(){
           return;
         }
         localStorage.setItem(GOOGLE_CAL_TOKEN_KEY,JSON.stringify({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000}));
-        await refreshCalendarSchedule();
-        renderCalendarConnectionStatus();
+        /* Only repaint the card when the fetch actually worked. On failure
+           refreshCalendarSchedule has just written Google's own message into the
+           status line - "Calendar API has not been used in project N", and so on -
+           and repainting unconditionally replaced the one actionable sentence on the
+           screen with "Not connected", leaving nothing to act on. */
+        if(await refreshCalendarSchedule())renderCalendarConnectionStatus();
       }
     });
     client.requestAccessToken({prompt:"consent"});
@@ -3578,7 +3582,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova177",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova178",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
