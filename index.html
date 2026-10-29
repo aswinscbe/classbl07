@@ -27,7 +27,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260928-nova176">
+  <link rel="stylesheet" href="styles.css?v=20260928-nova177">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -362,6 +362,7 @@
                   <h2 id="gcalHeroTitle">Connect Google Calendar</h2>
                 </div>
               </div>
+              <p class="gcal-hero-status" id="gcalStatus"></p>
               <p class="gcal-hero-copy" id="gcalHeroCopy">Your class invites live in your IIMK calendar. Connect it once and the planner follows your own electives &mdash; including any change the institute makes later.</p>
               <ol class="gcal-steps" id="gcalSteps">
                 <li><span>Tap <b>Connect</b> below and choose your <b>@iimk.ac.in</b> account.</span></li>
@@ -369,10 +370,9 @@
                 <li><span>Your sessions replace the built-in timetable from then on.</span></li>
               </ol>
               <div class="gcal-hero-actions">
-                <span id="gcalDisconnected"><button class="primary-button full-width" id="connectGcal"><span data-icon="gcal"></span>Connect Google Calendar</button></span>
-                <span id="gcalConnected" hidden><button class="secondary-button" id="refreshGcal"><span data-icon="refresh"></span>Refresh</button><button class="secondary-button" id="disconnectGcal">Disconnect</button></span>
+                <span id="gcalDisconnected"><button class="primary-button gcal-connect" id="connectGcal"><span data-icon="gcal"></span>Connect Google Calendar</button></span>
+                <span id="gcalConnected" hidden><button class="secondary-button gcal-refresh" id="refreshGcal"><span data-icon="refresh"></span>Refresh</button><button type="button" class="gcal-disconnect" id="disconnectGcal">Disconnect</button></span>
               </div>
-              <p class="gcal-hero-status" id="gcalStatus"></p>
             </article>
 
             <article class="panel">
@@ -611,11 +611,11 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260928-nova176"></script>
-  <script src="staff-bus-data.js?v=20260928-nova176"></script>
-  <script src="exam-data.js?v=20260928-nova176"></script>
-  <script src="term4-data.js?v=20260928-nova176"></script>
-  <script src="app.js?v=20260928-nova176"></script>
-  <script src="polish.js?v=20260928-nova176"></script>
+  <script src="campus-data.js?v=20260928-nova177"></script>
+  <script src="staff-bus-data.js?v=20260928-nova177"></script>
+  <script src="exam-data.js?v=20260928-nova177"></script>
+  <script src="term4-data.js?v=20260928-nova177"></script>
+  <script src="app.js?v=20260928-nova177"></script>
+  <script src="polish.js?v=20260928-nova177"></script>
 </body>
 </html>

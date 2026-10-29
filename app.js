@@ -3085,15 +3085,26 @@ function disconnectGoogleCalendar(){
   state.classes=filteredClasses();renderAll();
   renderCalendarConnectionStatus();
 }
+const compactAgo=ms=>{
+  const mins=Math.max(0,Math.round(ms/60000));
+  if(mins<1)return"just now";
+  if(mins<60)return`${mins}m ago`;
+  const hrs=Math.round(mins/60);
+  if(hrs<24)return`${hrs}h ago`;
+  const days=Math.round(hrs/24);
+  return days===1?"yesterday":`${days}d ago`;
+};
 /* Connecting the calendar is the one thing a first-time user is looking for, so the
    card states it plainly and walks through it. Once connected the instructions have
    done their job and the card collapses to what it is actually carrying. */
 function renderCalendarConnectionStatus(){
   const cache=loadCalCache(),on=!!(cache&&cache.sessions&&cache.sessions.length);
   const status=$("#gcalStatus"),conn=$("#gcalConnected"),disc=$("#gcalDisconnected");
+  /* "updated 29 Oct 2026, 1:03 pm" wrapped the chip onto a second line and made the
+     reader date-subtract anyway. How long ago is both shorter and the actual question. */
   if(status)status.textContent=on
-    ?`${cache.sessions.length} sessions \u00b7 updated ${new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(cache.at))}`
-    :"Not connected \u2014 showing the built-in Term IV timetable.";
+    ?`${cache.sessions.length} sessions \u00b7 updated ${compactAgo(Date.now()-cache.at)}`
+    :"Not connected \u2014 using the built-in timetable";
   if(conn)conn.hidden=!on;
   if(disc)disc.hidden=on;
   const hero=$("#gcalHero"),title=$("#gcalHeroTitle"),copy=$("#gcalHeroCopy"),steps=$("#gcalSteps");
@@ -3567,7 +3578,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova176",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova177",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

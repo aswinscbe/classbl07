@@ -2782,7 +2782,9 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
    status line ran out under the button instead of wrapping beside it. */
 .settings-row > div:first-child{flex:1;min-width:0}
 .settings-row > span{flex:none;display:flex;gap:8px;align-items:center}
-#gcalStatus{margin-top:6px;font-size:var(--text-sm);font-weight:var(--w-body);color:var(--ink-faint);line-height:var(--lh-snug)}
+/* This used to style the calendar status as a line inside a settings row. The element
+   is now the status chip on the calendar card, and an id selector outranks every class,
+   so leaving it here quietly held the chip grey however .is-connected was styled. */
 
 /* The menu's vintage, stated rather than implied. A mess menu that has quietly gone
    stale looks exactly as authoritative as a current one, so the month is a filled
@@ -2937,8 +2939,8 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
 .gcal-hero-head .overline{margin:0 0 2px}
 .gcal-hero-head h2{margin:0}
 .gcal-hero.is-connected .gcal-hero-icon{
-  background:color-mix(in srgb, var(--mint, #43bd94) 18%, transparent);
-  border-color:color-mix(in srgb, var(--mint, #43bd94) 34%, transparent);color:var(--mint, #43bd94);
+  background:var(--live-soft);
+  border-color:color-mix(in srgb, var(--live) 34%, transparent);color:var(--live);
 }
 .gcal-hero-copy{margin:0 0 13px;font-size:var(--text-md);color:var(--ink-muted);line-height:var(--lh-body)}
 .gcal-steps{
@@ -2955,20 +2957,43 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
   background:color-mix(in srgb, var(--accent) 15%, transparent);color:var(--accent);
 }
 .gcal-steps b{font-weight:700;color:var(--ink)}
-.gcal-hero-actions{display:flex;gap:8px;flex-wrap:wrap}
-.gcal-hero-actions>span{display:flex;gap:8px;flex:1;min-width:0}
-.gcal-hero-actions .secondary-button{flex:1}
-.gcal-hero-actions .primary-button{display:flex;align-items:center;justify-content:center;gap:8px}
-.gcal-hero-status{
-  margin:11px 0 0;display:flex;align-items:center;gap:7px;
+/* Every control in this row is laid out explicitly. The icon inside Refresh is an
+   inline element, so without a flex context it wrapped to its own line and stretched
+   both buttons to 67px, leaving one label centred and the other adrift. */
+.gcal-hero-actions{display:flex;align-items:center;gap:10px}
+.gcal-hero-actions>span{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.gcal-hero-actions>span[hidden]{display:none}
+.gcal-hero-actions button{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:44px;white-space:nowrap;
+}
+.gcal-connect{flex:1;padding:0 18px}
+.gcal-refresh{flex:1;padding:0 16px}
+/* Reconnecting is routine, cutting the link is not, so they are not two identical
+   grey slabs. Disconnect recedes to plain text and only turns red on approach. */
+.gcal-disconnect{
+  flex:none;padding:0 12px;background:none;border:0;cursor:pointer;
   font-size:var(--text-sm);font-weight:600;color:var(--ink-faint);
+  transition:color var(--dur-sm) var(--ease-out);
+}
+.gcal-disconnect:hover,.gcal-disconnect:focus-visible{color:var(--danger)}
+
+/* The connection state, read before the explanation rather than after the buttons. */
+.gcal-hero-status{
+  margin:0 0 12px;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px 5px 9px;border-radius:var(--radius-pill);
+  border:1px solid var(--border);background:var(--bg-panel);
+  font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);
 }
 .gcal-hero-status::before{
   content:"";width:7px;height:7px;border-radius:50%;flex:none;background:var(--ink-faint);
 }
-.gcal-hero.is-connected .gcal-hero-status{color:var(--mint, #43bd94)}
+.gcal-hero.is-connected .gcal-hero-status{
+  color:var(--live);border-color:color-mix(in srgb, var(--live) 34%, transparent);
+  background:var(--live-soft);
+}
 .gcal-hero.is-connected .gcal-hero-status::before{
-  background:var(--mint, #43bd94);box-shadow:0 0 0 3px color-mix(in srgb, var(--mint, #43bd94) 24%, transparent);
+  background:var(--live);box-shadow:0 0 0 3px color-mix(in srgb, var(--live) 26%, transparent);
 }
 
 /* Sharing is a one-line job, so it gets one line. */
