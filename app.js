@@ -2642,6 +2642,7 @@ function setSegValue(id,value){
 }
 function segValue(id,fallback){return $(id)?.dataset.value||fallback}
 function renderProfile(){$("#profileName").value=state.profile.name||"";setSegValue("#profileThemeSeg",state.profile.theme||"system");
+  renderShareApp();
   const meta=window.TERM4_META||{};
   const courses=Object.entries(window.TERM4_COURSES||{});
   $("#stubName").textContent=state.profile.name||"Student";
@@ -2717,6 +2718,82 @@ function renderWorkloadChart(){
     const hours=(mins/60).toFixed(1).replace(/\.0$/,"");
     return`<div class="workload-row" style="--course:${colorFor(code)}"><span class="wl-code">${esc(code)}</span><span class="wl-track"><span style="width:${Math.round((mins/max)*100)}%"></span></span><span class="wl-hours">${hours}h</span></div>`;
   }).join("");
+}
+/* ── Sharing the app itself ──────────────────────────────────────────────────
+   The link is derived from where the page is actually served rather than written
+   down, so it stays right on GitHub Pages, on a custom domain and on localhost
+   without anyone remembering to update a constant. Query string and hash are
+   dropped: a friend should land on a clean app, not inherit whatever view the
+   sender happened to have open. */
+const appShareUrl=()=>{const u=new URL("./",location.href);u.search="";u.hash="";return u.href};
+const SHARE_PITCH="BL07 Planner — our Term IV schedule, campus bus timings and the mess menu in one place. Works offline, nothing to sign into.";
+
+/* Rendered to a canvas at whole-module sizes. A QR scaled to a fractional module
+   width gets anti-aliased edges that cheap scanners refuse, so the module size is
+   floored to an integer and the code is centred in whatever space is left. */
+function renderShareQr(){
+  const cv=$("#shareQrCanvas");
+  if(!cv||!window.BL07_QR)return;
+  const url=appShareUrl();
+  let code;
+  try{code=window.BL07_QR.matrix(url)}catch(e){cv.hidden=true;return}
+  cv.hidden=false;
+  const quiet=4,total=code.size+quiet*2;
+  const css=232,scale=Math.max(1,Math.floor(css/total)),dim=scale*total;
+  const dpr=Math.min(3,window.devicePixelRatio||1);
+  cv.width=dim*dpr;cv.height=dim*dpr;
+  cv.style.width=cv.style.height=dim+"px";
+  const ctx=cv.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  /* Always black on white, in both themes. A dark-on-dark code is unreadable, and a
+     light-module code inverted to suit the UI defeats half the scanners out there. */
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,dim,dim);
+  ctx.fillStyle="#000";
+  for(let r=0;r<code.size;r++)for(let c=0;c<code.size;c++)
+    if(code.data[r*code.size+c])ctx.fillRect((c+quiet)*scale,(r+quiet)*scale,scale,scale);
+}
+
+/* Chrome and Edge fire beforeinstallprompt when the app qualifies; the event is the
+   only way to open the install dialog, and it can only be used once, so it is held
+   until the button is pressed. Safari never fires it, which is why the written
+   instructions are not hidden behind the button's absence. */
+let deferredInstall=null;
+function renderInstallState(){
+  const btn=$("#installAppBtn"),note=$("#installedNote");
+  const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  if(btn)btn.hidden=standalone||!deferredInstall;
+  if(note)note.hidden=!standalone;
+}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;renderInstallState()});
+window.addEventListener("appinstalled",()=>{deferredInstall=null;renderInstallState();showToast("Installed — open it from your home screen")});
+
+function renderShareApp(){
+  const urlEl=$("#shareAppUrl");
+  if(urlEl)urlEl.textContent=appShareUrl().replace(/^https?:\/\//,"").replace(/\/$/,"");
+  renderShareQr();
+  renderInstallState();
+}
+function bindShareApp(){
+  const url=()=>appShareUrl();
+  $("#shareAppLink")?.addEventListener("click",async()=>{
+    if(navigator.share){
+      try{await navigator.share({title:"BL07 Planner",text:SHARE_PITCH,url:url()});return}
+      catch(e){if(e?.name==="AbortError")return}
+    }
+    try{await navigator.clipboard.writeText(`${SHARE_PITCH}\n${url()}`);showToast("Link copied — paste it anywhere")}
+    catch(e){showToast("Couldn't copy — the link is shown above")}
+  });
+  $("#copyAppLink")?.addEventListener("click",async()=>{
+    try{await navigator.clipboard.writeText(url());showToast("Link copied")}
+    catch(e){showToast("Couldn't copy — the link is shown above")}
+  });
+  $("#installAppBtn")?.addEventListener("click",async()=>{
+    if(!deferredInstall)return;
+    const e=deferredInstall;deferredInstall=null;renderInstallState();
+    e.prompt();
+    const {outcome}=await e.userChoice.catch(()=>({outcome:"dismissed"}));
+    if(outcome!=="accepted")showToast("You can install it later from the browser menu");
+  });
 }
 function renderProfileInsight(){
   const el=$("#profileInsight");if(!el)return;
@@ -3468,7 +3545,8 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#noteSearch")?.addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#refreshData").addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await syncSchedule(true);button.blur()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess();renderMessWeekGrid()});
-$("#messWeekGrid")?.addEventListener("click",e=>{const cell=e.target.closest(".mwg-cell");if(!cell)return;state.messDay=cell.dataset.day;state.meal=cell.dataset.meal;renderMess();renderMessWeekGrid();$("#toggleMessView")?.click()});$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
+$("#messWeekGrid")?.addEventListener("click",e=>{const cell=e.target.closest(".mwg-cell");if(!cell)return;state.messDay=cell.dataset.day;state.meal=cell.dataset.meal;renderMess();renderMessWeekGrid();$("#toggleMessView")?.click()});bindShareApp();
+$("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
 }
@@ -3505,7 +3583,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova174",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova175",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

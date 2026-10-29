@@ -27,7 +27,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260928-nova174">
+  <link rel="stylesheet" href="styles.css?v=20260928-nova175">
   <title>BL07 · Term 3 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -374,6 +374,35 @@
               </form>
             </article>
 
+            <article class="panel share-app-panel">
+              <div class="panel-heading"><div><p class="overline">SHARE</p><h2>Send BL07 to a classmate</h2></div></div>
+              <p class="share-app-lead">One link. No sign-in, no account, nothing to download &mdash; it opens in any browser and keeps working offline once they have opened it.</p>
+              <div class="share-app-body">
+                <figure class="share-app-qr">
+                  <canvas id="shareQrCanvas" width="232" height="232" role="img" aria-label="QR code linking to the BL07 Planner app"></canvas>
+                  <figcaption>Point a camera at it</figcaption>
+                </figure>
+                <div class="share-app-side">
+                  <p class="share-app-url" id="shareAppUrl">&mdash;</p>
+                  <div class="share-app-actions">
+                    <button type="button" class="primary-button" id="shareAppLink"><span data-icon="share"></span>Share link</button>
+                    <button type="button" class="secondary-button" id="copyAppLink">Copy</button>
+                  </div>
+                  <button type="button" class="primary-button full-width install-app-button" id="installAppBtn" hidden><span data-icon="download"></span>Install on this device</button>
+                  <p class="share-app-installed" id="installedNote" hidden>Running as an installed app.</p>
+                </div>
+              </div>
+              <details class="install-help">
+                <summary>How your friends install it as an app</summary>
+                <div class="install-help-body">
+                  <div class="install-step"><b>iPhone / iPad</b><span>Open the link in <em>Safari</em> &rarr; Share button &rarr; <em>Add to Home Screen</em>. Chrome on iOS cannot do this &mdash; it has to be Safari.</span></div>
+                  <div class="install-step"><b>Android</b><span>Open in Chrome &rarr; menu (&#8942;) &rarr; <em>Install app</em> or <em>Add to Home screen</em>.</span></div>
+                  <div class="install-step"><b>Computer</b><span>Chrome or Edge shows an install icon at the right-hand end of the address bar.</span></div>
+                  <p class="install-help-note">Once installed it opens full-screen with its own icon, and the schedule, bus board and mess menu all work with no connection.</p>
+                </div>
+              </details>
+            </article>
+
             <article class="panel settings-footer">
               <div class="settings-row"><div><strong>Google Tasks</strong><p>Sync tasks to your Google account.</p><div id="googleTasksStatus"></div></div><span id="googleTasksConnected" hidden><button class="secondary-button" id="disconnectGoogleTasks">Disconnect</button></span><span id="googleTasksDisconnected"><button class="primary-button google-tasks-button" id="connectGoogleTasks">Connect</button></span></div>
               <div class="settings-row"><div><strong>Google Calendar</strong><p>Read your own class invites so the schedule is yours and stays current.</p><div id="gcalStatus"></div></div><span id="gcalConnected" hidden><button class="secondary-button" id="refreshGcal">Refresh</button><button class="secondary-button" id="disconnectGcal">Disconnect</button></span><span id="gcalDisconnected"><button class="primary-button" id="connectGcal">Connect</button></span></div>
@@ -568,11 +597,12 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260928-nova174"></script>
-  <script src="staff-bus-data.js?v=20260928-nova174"></script>
-  <script src="exam-data.js?v=20260928-nova174"></script>
-  <script src="term4-data.js?v=20260928-nova174"></script>
-  <script src="app.js?v=20260928-nova174"></script>
-  <script src="polish.js?v=20260928-nova174"></script>
+  <script src="campus-data.js?v=20260928-nova175"></script>
+  <script src="staff-bus-data.js?v=20260928-nova175"></script>
+  <script src="exam-data.js?v=20260928-nova175"></script>
+  <script src="term4-data.js?v=20260928-nova175"></script>
+  <script src="qr.js?v=20260928-nova175"></script>
+  <script src="app.js?v=20260928-nova175"></script>
+  <script src="polish.js?v=20260928-nova175"></script>
 </body>
 </html>

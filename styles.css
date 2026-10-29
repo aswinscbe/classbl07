@@ -2908,3 +2908,36 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
   padding-left:6px;border-left:1px solid color-mix(in srgb, var(--focus-course,var(--accent)) 38%, transparent);
 }
 .hero-code b em{font-style:normal;font-weight:var(--w-body);opacity:.62}
+
+/* ── Share the app ───────────────────────────────────────────────────────────
+   The panel people land on when a classmate asks "what's that app?". The QR
+   carries its own white plate in both themes, because a code tinted to match the
+   surface is a code that will not scan. */
+.share-app-panel .share-app-lead{margin:0 0 16px;font-size:var(--text-md);color:var(--ink-muted);line-height:var(--lh-body)}
+.share-app-body{display:flex;gap:18px;align-items:flex-start}
+.share-app-qr{margin:0;flex:none;display:flex;flex-direction:column;align-items:center;gap:7px}
+.share-app-qr canvas{display:block;border-radius:var(--radius-sm);background:#fff;padding:0;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.share-app-qr figcaption{font-size:var(--text-xs);font-weight:700;letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-faint)}
+.share-app-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.share-app-url{
+  margin:0;padding:9px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-panel);
+  font-size:var(--text-sm);font-weight:600;color:var(--ink);word-break:break-all;line-height:var(--lh-snug);
+}
+.share-app-actions{display:flex;gap:8px;flex-wrap:wrap}
+.share-app-actions .primary-button,.share-app-actions .secondary-button{flex:1 1 auto}
+.install-app-button{display:flex;align-items:center;justify-content:center;gap:7px}
+.share-app-installed{margin:0;font-size:var(--text-sm);font-weight:700;color:var(--accent)}
+.install-help{margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
+.install-help summary{cursor:pointer;font-size:var(--text-md);font-weight:700;color:var(--ink);list-style:none}
+.install-help summary::-webkit-details-marker{display:none}
+.install-help summary::before{content:"+";display:inline-block;width:1em;color:var(--accent);font-weight:800}
+.install-help[open] summary::before{content:"\2212"}
+.install-help-body{display:flex;flex-direction:column;gap:11px;margin-top:12px}
+.install-step{display:flex;flex-direction:column;gap:2px;font-size:var(--text-sm);color:var(--ink-muted);line-height:var(--lh-body)}
+.install-step b{font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink)}
+.install-step em{font-style:normal;font-weight:700;color:var(--ink)}
+.install-help-note{margin:2px 0 0;font-size:var(--text-sm);color:var(--ink-faint);line-height:var(--lh-body)}
+@media(max-width:560px){
+  .share-app-body{flex-direction:column;align-items:stretch}
+  .share-app-qr{align-self:center}
+}
