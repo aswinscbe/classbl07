@@ -453,6 +453,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 .sync-pill.syncing i{background:var(--amber);animation:pulse 1s infinite}
 .sync-pill.ok i{background:var(--live)}
 .sync-pill.error i{background:var(--danger)}
+/* Connected, but reading a snapshot that has aged out rather than a live feed. */
+.sync-pill.stale i{background:var(--amber)}
+.sync-pill.stale{color:var(--amber);border-color:color-mix(in srgb, var(--amber) 42%, transparent);cursor:default}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .refresh-button[aria-busy="true"] svg{animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}

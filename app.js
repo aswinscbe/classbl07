@@ -356,6 +356,7 @@ let _syncInFlight=false,_lastSyncAt=0;
    sheet — flip SYNC_ENABLED back on and the whole path works again. While it is off
    nothing refetches, so the term's classes cannot quietly repopulate the cache. */
 const SYNC_ENABLED=false;
+const CAL_STALE_MS=12*3600e3;
 function setSyncPill(cls,label,title){
   const pill=$("#syncPill");
   if(!pill)return;
@@ -371,9 +372,21 @@ function setSyncPill(cls,label,title){
 async function refreshSchedule(){
   const btn=$("#refreshButton");
   if(!getSavedCalToken()){
-    await syncSchedule(true);
-    showToast("Connect Google Calendar in Profile to sync your schedule");
-    return;
+    if(!calSessions().length){
+      await syncSchedule(true);
+      showToast("Connect Google Calendar in Profile to sync your schedule");
+      return;
+    }
+    /* Connected before, token has merely aged out. Renew it on this tap rather than
+       reporting an expiry and making the reader go to Profile to press a second
+       button: this is a user gesture, so Google is allowed to open a window if it
+       needs one, and usually it does not. */
+    setSyncPill("syncing","Checking","Renewing calendar access");
+    if(!await connectGoogleCalendar({mode:"silent"})){
+      setSyncPill("error","Reconnect","Calendar sign-in expired - reconnect in Profile");
+      showToast("Calendar sign-in expired — reconnect in Profile");
+      return;
+    }
   }
   if(btn){btn.dataset.state="syncing";btn.setAttribute("aria-busy","true")}
   setSyncPill("syncing","Checking","Reading your Google Calendar");
@@ -391,8 +404,14 @@ async function syncSchedule(force=false){
     /* The pill names where the schedule actually came from. "Term IV schedule" was
        true of the built-in table and stayed on screen once a calendar was connected,
        which is the one case where the distinction matters. */
-    setSyncPill("ok",calSessions().length?"Your calendar":"Term IV schedule",
-      calSessions().length?"Showing sessions read from your Google Calendar":"Showing the built-in Term IV elective schedule");
+    const cache=loadCalCache(),age=cache&&cache.at?Date.now()-cache.at:null;
+    if(!calSessions().length)setSyncPill("ok","Term IV schedule","Showing the built-in Term IV elective schedule");
+    /* A token lasts an hour and cannot be renewed in the background, so a schedule
+       read yesterday is a snapshot, not a live feed. Say so rather than letting a
+       green dot imply the office has changed nothing. */
+    else if(age!==null&&age>CAL_STALE_MS&&!getSavedCalToken())
+      setSyncPill("stale","Tap to update",`Calendar last read ${compactAgo(age)} — refresh to pick up any changes`);
+    else setSyncPill("ok","Your calendar","Showing sessions read from your Google Calendar");
     state.classes=filteredClasses();
     renderAll();
     return;
@@ -3084,32 +3103,57 @@ async function refreshCalendarSchedule({silent}={}){
     return false;
   }
 }
-function connectGoogleCalendar(){
-  try{
-    if(!window.google||!window.google.accounts||!window.google.accounts.oauth2)
-      {showToast("Google sign-in isn't available right now");return}
-    const client=window.google.accounts.oauth2.initTokenClient({
-      client_id:GOOGLE_CLIENT_ID,
-      scope:GOOGLE_CAL_SCOPE,
-      callback:async resp=>{
-        if(resp.error){showToast(`Calendar sign-in: ${resp.error_description||resp.error}`);return}
-        /* Consent is per-scope and can be declined while still returning a token, so
-           the granted list is the thing to check, not the presence of a token. */
-        if(resp.scope&&resp.scope.indexOf("calendar")===-1){
-          showToast("Calendar access wasn't granted — tick the calendar box when signing in");
-          return;
-        }
-        localStorage.setItem(GOOGLE_CAL_TOKEN_KEY,JSON.stringify({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000}));
-        /* Only repaint the card when the fetch actually worked. On failure
-           refreshCalendarSchedule has just written Google's own message into the
-           status line - "Calendar API has not been used in project N", and so on -
-           and repainting unconditionally replaced the one actionable sentence on the
-           screen with "Not connected", leaving nothing to act on. */
-        if(await refreshCalendarSchedule())renderCalendarConnectionStatus();
+/* prompt:"consent" forces the full Google consent screen every single time. That is
+   right on a first connection and pure friction afterwards: the implicit flow issues
+   no refresh token, so the hour-old token is simply gone the next day and picking up
+   a schedule change meant sitting through consent again. A reconnect asks with
+   prompt:"" instead, which Google answers with no UI at all when the person still has
+   a session and has already granted access - the ordinary case. */
+function connectGoogleCalendar({mode="consent"}={}){
+  return new Promise(resolve=>{
+    let settled=false;
+    const finish=v=>{if(!settled){settled=true;resolve(v)}};
+    try{
+      if(!window.google||!window.google.accounts||!window.google.accounts.oauth2){
+        if(mode==="consent")showToast("Google sign-in isn't available right now");
+        return finish(false);
       }
-    });
-    client.requestAccessToken({prompt:"consent"});
-  }catch(err){showToast("Calendar sign-in failed")}
+      const client=window.google.accounts.oauth2.initTokenClient({
+        client_id:GOOGLE_CLIENT_ID,
+        scope:GOOGLE_CAL_SCOPE,
+        callback:resp=>{
+          if(resp.error){
+            if(mode==="consent")showToast(`Calendar sign-in: ${resp.error_description||resp.error}`);
+            return finish(false);
+          }
+          /* Consent is per-scope and can be declined while still returning a token, so
+             the granted list is the thing to check, not the presence of a token. */
+          if(resp.scope&&resp.scope.indexOf("calendar")===-1){
+            showToast("Calendar access wasn't granted — tick the calendar box when signing in");
+            return finish(false);
+          }
+          localStorage.setItem(GOOGLE_CAL_TOKEN_KEY,JSON.stringify({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000}));
+          finish(true);
+        },
+        error_callback:()=>finish(false)
+      });
+      client.requestAccessToken({prompt:mode==="silent"?"":"consent"});
+      /* A silent request that cannot be answered without UI may never call back at
+         all, so it is not allowed to leave the refresh spinning forever. */
+      if(mode==="silent")setTimeout(()=>finish(false),10000);
+    }catch(err){
+      if(mode==="consent")showToast("Calendar sign-in failed");
+      finish(false);
+    }
+  });
+}
+/* Sign in, then load. The card is repainted only on a successful load, because a
+   failure has just written Google's own message into it. */
+async function connectCalendarAndLoad(opts){
+  if(!await connectGoogleCalendar(opts))return false;
+  const ok=await refreshCalendarSchedule();
+  if(ok)renderCalendarConnectionStatus();
+  return ok;
 }
 function disconnectGoogleCalendar(){
   if(!confirm("Disconnect Google Calendar? The app will fall back to the built-in Term IV schedule."))return;
@@ -3508,13 +3552,22 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
       renderHome();haptic(8);
     },{ignore:"a,input,select,textarea,button",threshold:46});
   }
-  $("#connectGcal")?.addEventListener("click",connectGoogleCalendar);
+  $("#connectGcal")?.addEventListener("click",()=>connectCalendarAndLoad());
   $("#disconnectGcal")?.addEventListener("click",disconnectGoogleCalendar);
   $("#refreshGcal")?.addEventListener("click",()=>refreshCalendarSchedule());
   renderCalendarConnectionStatus();
   /* A cached schedule is served immediately; the refresh behind it is silent so a
      stale token never greets anyone with an error on launch. */
   if(getSavedCalToken())refreshCalendarSchedule({silent:true});
+  else if(calSessions().length){
+    /* Anyone who connected before opens on yesterday's snapshot. Ask Google for a
+       fresh token without any UI; it answers when the session and consent are still
+       there, and when it does not the cached schedule simply stays on screen. */
+    connectGoogleCalendar({mode:"silent"}).then(ok=>{
+      if(!ok)return;
+      refreshCalendarSchedule({silent:true}).then(()=>{renderCalendarConnectionStatus();syncSchedule()});
+    });
+  }
   $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
@@ -3613,7 +3666,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova179",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova180",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
