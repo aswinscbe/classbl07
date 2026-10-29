@@ -3525,7 +3525,20 @@ function bind(){
     addTask(`Prep: ${btn.dataset.prepSubject}`,btn.dataset.prepCode,btn.dataset.prepDate);
     showToast("Prep task added");
   });
-  window.addEventListener("scroll",()=>{$(".topbar")?.classList.toggle("is-scrolled",scrollY>4)},{passive:true});
+  /* Coalesced into one frame: scroll fires far faster than the screen refreshes, and
+     writing a custom property on every event forces a style recalculation each time. */
+  let _scrollQueued=false;
+  const paintScroll=()=>{
+    _scrollQueued=false;
+    const bar=$(".topbar");if(!bar)return;
+    bar.classList.toggle("is-scrolled",scrollY>4);
+    const max=document.documentElement.scrollHeight-innerHeight;
+    bar.style.setProperty("--scroll-progress",`${max>8?Math.min(100,Math.max(0,scrollY/max*100)):0}%`);
+  };
+  window.addEventListener("scroll",()=>{
+    if(_scrollQueued)return;
+    _scrollQueued=true;requestAnimationFrame(paintScroll);
+  },{passive:true});
   window.addEventListener("focus",()=>{scheduleIdleSync();scheduleGoogleTasksSync()});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
   window.addEventListener("online",()=>{scheduleIdleSync();updateOfflineBanner(true)});
@@ -3733,7 +3746,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova185",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova186",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

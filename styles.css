@@ -367,13 +367,31 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
   backdrop-filter:blur(16px) saturate(1.3);
   -webkit-backdrop-filter:blur(16px) saturate(1.3);
 }
+/* How far down the page you are, drawn along the bar's own edge. A header that has to
+   be there anyway can carry this for free, and it answers "how much of this day/term am
+   I still scrolling through" without a scrollbar. */
 .topbar::after{
-  content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
-  background:linear-gradient(90deg,transparent,color-mix(in srgb, var(--accent) 45%, transparent) 20%,color-mix(in srgb, var(--accent-2) 45%, transparent) 55%,transparent 85%);
-  opacity:.35;transition:opacity var(--dur-md) var(--ease-out);
+  content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background-color:color-mix(in srgb, var(--ink) 9%, transparent);
+  background-image:linear-gradient(90deg,var(--accent),var(--accent-2));
+  background-repeat:no-repeat;
+  background-size:var(--scroll-progress,0%) 100%;
+  opacity:0;transition:opacity var(--dur-md) var(--ease-out);
 }
-.topbar.is-scrolled::after{opacity:.9}
-.topbar.is-scrolled{background:color-mix(in srgb, var(--bg) 92%, transparent);box-shadow:0 8px 24px -12px rgba(0,0,0,.4)}
+.topbar.is-scrolled::after{opacity:1}
+/* Opaque once scrolled. At 92% the page showed through the bar, so a row of dates
+   passing underneath was legible *through* the header and then sliced in half by its
+   edge. Glass is worth having over the hero at rest; underneath moving content it just
+   looks like a mistake. */
+.topbar.is-scrolled{background:var(--bg);box-shadow:0 10px 26px -16px rgba(0,0,0,.55)}
+/* A short fade below the bar so content emerges from under it rather than being cut
+   against a hard line. */
+.topbar::before{
+  content:"";position:absolute;left:0;right:0;top:100%;height:20px;pointer-events:none;
+  background:linear-gradient(var(--bg),transparent);
+  opacity:0;transition:opacity var(--dur-md) var(--ease-out);
+}
+.topbar.is-scrolled::before{opacity:.9}
 .brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0}
 .brand-mark{
   width:34px;height:34px;border-radius:var(--radius-sm);display:block;object-fit:cover;
@@ -3127,3 +3145,36 @@ dialog::backdrop{backdrop-filter:blur(3px) saturate(.9);-webkit-backdrop-filter:
   .secondary-button:active,.filter-chip:active,.bus-last-run:active{transform:none}
   @media(hover:hover){.board-row:hover,.bus-last-run:hover{transform:none}}
 }
+
+/* ── Scroll and surface polish ───────────────────────────────────────────────
+   The in-page jumps (Today, Next class, the month picker) moved the viewport in
+   one frame, which gives no sense of how far you travelled. Easing it keeps the
+   day you came from connected to the one you land on. */
+html{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* The sticky header overlaps whatever a jump scrolls to, so targets reserve its
+   height rather than landing underneath it. */
+[id]{scroll-margin-top:76px}
+
+/* Schedule rows answer the pointer like the bus board already does. */
+.sched-row{transition:transform var(--dur-xs) var(--ease-spring),box-shadow var(--dur-sm) var(--ease-out),border-color var(--dur-sm) var(--ease-out)}
+.sched-row:active{transform:scale(.985)}
+@media(hover:hover){
+  .sched-row:hover{box-shadow:var(--lift)}
+  .icon-button:hover{background:var(--bg-raised);border-color:var(--border-strong)}
+  .brand:hover .brand-mark{transform:scale(1.04)}
+}
+.icon-button{transition:background var(--dur-sm) var(--ease-out),border-color var(--dur-sm) var(--ease-out),transform var(--dur-xs) var(--ease-spring)}
+.icon-button:active{transform:scale(.92)}
+.brand-mark{transition:transform var(--dur-sm) var(--ease-spring)}
+.brand:active .brand-mark{transform:scale(.94)}
+
+/* The class running right now gets a breathing edge in its own course colour, so
+   it reads as live at a glance rather than only via the NOW pill. */
+.sched-row:has(.sr-live-pill){
+  border-color:color-mix(in srgb, var(--live) 42%, var(--border));
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--live) 20%, transparent), var(--shadow-sm);
+}
+.sr-live-pill{animation:live-breathe 2.4s var(--ease-in-out) infinite}
+@keyframes live-breathe{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--live) 55%, transparent)}60%{box-shadow:0 0 0 6px transparent}}
+@media(prefers-reduced-motion:reduce){.sr-live-pill{animation:none}}
