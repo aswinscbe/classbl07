@@ -1,7 +1,7 @@
 const CACHE="classbl07-review-20260809-1";
-const CACHE_VERSION="20260928-nova190";
+const CACHE_VERSION="20260928-nova191";
 const ACTIVE_CACHE=`${CACHE}-${CACHE_VERSION}`;
-const SHELL=["./index.html","./styles.css?v=20260928-nova190","./app.js?v=20260928-nova190","./polish.js?v=20260928-nova190","./campus-data.js?v=20260928-nova190","./exam-data.js?v=20260928-nova190","./term4-data.js?v=20260928-nova190","./staff-bus-data.js?v=20260928-nova190","./fonts/inter-latin.woff2","./fonts/jakarta-latin.woff2","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./icons/apple-touch-icon.png","./icons/favicon-32.png","./icons/favicon-16.png"];
+const SHELL=["./index.html","./styles.css?v=20260928-nova191","./app.js?v=20260928-nova191","./polish.js?v=20260928-nova191","./campus-data.js?v=20260928-nova191","./exam-data.js?v=20260928-nova191","./term4-data.js?v=20260928-nova191","./staff-bus-data.js?v=20260928-nova191","./fonts/inter-latin.woff2","./fonts/jakarta-latin.woff2","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-192.png","./icons/icon-maskable-512.png","./icons/apple-touch-icon.png","./icons/favicon-32.png","./icons/favicon-16.png"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(ACTIVE_CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==ACTIVE_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{

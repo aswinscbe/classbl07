@@ -852,7 +852,11 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    a dashed rule either side of the duration, inset to the same 73px as the rows. */
 .sched-gap{display:flex;align-items:center;gap:10px;padding:9px 0 9px 73px;color:var(--ink-faint);font-size:var(--text-sm);font-weight:600}
 .sg-rule{flex:1;height:0;border-top:1px dashed var(--border-strong);min-width:8px}
-.sg-label{display:inline-flex;align-items:center;gap:5px;flex:none;padding:3px 9px;border-radius:var(--radius-pill);border:1px dashed var(--border-strong);background:var(--bg-panel)}
+/* flex:none meant the pill could never give ground, so on a narrow phone a long gap
+   label ("3h 15m free · SI -> MBGAI") pushed the whole page sideways. It shrinks and
+   wraps its text now; the dashed rules either side take what is left. */
+.sg-label{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:0 1 auto;min-width:0;padding:3px 9px;border-radius:var(--radius-pill);border:1px dashed var(--border-strong);background:var(--bg-panel);text-align:center}
+.sg-label svg{flex:none}
 /* Stands in for the live class on Home, where the hero already carries its detail. */
 .sched-now-marker{display:flex;align-items:center;gap:8px;padding:8px 0 8px 73px;cursor:pointer}
 .snm-dot{width:8px;height:8px;border-radius:50%;background:var(--course,var(--live));flex:none;box-shadow:0 0 0 3px color-mix(in srgb, var(--course,var(--live)) 22%, transparent)}
@@ -3186,3 +3190,29 @@ html{scroll-behavior:smooth}
 @media(prefers-reduced-motion:reduce){.sr-live-pill{animation:none}}
 /* A session the office shifted to another time or day. */
 .badge-moved{color:var(--accent-2)}
+
+/* ── Narrow phones ───────────────────────────────────────────────────────────
+   At 360px the three Planner tabs could not fit: each one's icon, gap, label and
+   16px of side padding add up past the content width, and a flex item will not
+   shrink below its own content, so the row pushed the page 28px wide. The topbar's
+   action row was 2px over for the same kind of reason once the clock came back. */
+@media (max-width:420px){
+  .subtab{padding:11px 8px;gap:6px}
+}
+@media (max-width:380px){
+  .topbar{padding-left:12px;padding-right:12px;gap:8px}
+  .top-actions{gap:4px}
+  .top-actions .icon-button{width:33px;height:33px}
+  .subtab{padding:11px 6px;gap:4px}
+}
+/* On the narrowest phones still in use the three Planner labels will not fit beside
+   their icons at any sane padding. The label is the half that carries the meaning, so
+   the icon goes. */
+@media (max-width:344px){
+  .subtab [data-icon]{display:none}
+  .subtab{gap:0;padding:11px 4px}
+}
+/* The page title is the one thing here that can afford to lose characters. */
+.brand{min-width:0}
+.brand-copy{min-width:0;display:flex;flex-direction:column}
+.brand-copy strong,.brand-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
