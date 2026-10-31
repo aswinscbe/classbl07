@@ -94,12 +94,36 @@ window.BL07_HOLIDAYS=HOLIDAYS;
 const APP_TZ="Asia/Kolkata";
 /* Resolved per date rather than hardcoded: Spain is CEST (+02:00) during the
    module and CET (+01:00) once the clocks change on 25 October. */
+/* Constructing an Intl.DateTimeFormat resolves locale and time-zone data and is one
+   of the most expensive calls the platform offers. Every one of these used to be built
+   fresh on each call, in the hottest paths in the app - tzOffsetMinutes runs for every
+   date the app touches, which with a term of sessions and a full re-render is
+   thousands of times. Built once per distinct option set instead. */
+const _dtfCache=new Map();
+function dtf(locale,opts,key){
+  const k=key||locale+"|"+JSON.stringify(opts);
+  let f=_dtfCache.get(k);
+  if(!f){f=new Intl.DateTimeFormat(locale,opts);_dtfCache.set(k,f)}
+  return f;
+}
+const ISO_FMT_OPTS={timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"};
+/* The zone offset only changes at a daylight-saving boundary, and those fall on the
+   hour, so one lookup per hour of real time is exact while collapsing thousands of
+   calls into a handful. */
+const _tzOffsetCache=new Map();
 function tzOffsetMinutes(date){
-  const p=new Intl.DateTimeFormat("en-US",{timeZone:APP_TZ,timeZoneName:"longOffset"}).formatToParts(date).find(x=>x.type==="timeZoneName");
+  const hour=Math.floor(date.getTime()/3600000);
+  const hit=_tzOffsetCache.get(hour);
+  if(hit!==undefined)return hit;
+  const p=dtf("en-US",{timeZone:APP_TZ,timeZoneName:"longOffset"},"tzoff").formatToParts(date).find(x=>x.type==="timeZoneName");
   const m=/GMT([+-])(\d{2}):?(\d{2})?/.exec(p?p.value:"");
-  if(!m)return 0;
-  const mins=Number(m[2])*60+Number(m[3]||0);
-  return m[1]==="-"?-mins:mins;
+  let mins=0;
+  if(m){mins=Number(m[2])*60+Number(m[3]||0);if(m[1]==="-")mins=-mins}
+  /* A term spans a few thousand hours; the cap only stops a tab left open for months
+     from growing the map without bound. */
+  if(_tzOffsetCache.size>8192)_tzOffsetCache.clear();
+  _tzOffsetCache.set(hour,mins);
+  return mins;
 }
 /* A real instant for a wall-clock time in Barcelona. Guess as UTC, then shift by
    the zone's offset at that instant. */
@@ -149,14 +173,14 @@ function updateOfflineBanner(reconnected){
     el.hidden=false;el.classList.remove("reconnected");el.querySelector("span:last-child").textContent="You're offline — showing your last saved schedule.";
   }
 }
-function istParts(date=new Date()){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23",weekday:"long"}).formatToParts(date);return Object.fromEntries(parts.map(p=>[p.type,p.value]))}
+function istParts(date=new Date()){const parts=dtf("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23",weekday:"long"},"istparts").formatToParts(date);return Object.fromEntries(parts.map(p=>[p.type,p.value]))}
 function isoToday(){const p=istParts();return`${p.year}-${p.month}-${p.day}`}
 function isoFromDate(d){const p=istParts(d);return`${p.year}-${p.month}-${p.day}`}
 function weekdayKey(d=new Date()){return istParts(d).weekday.toLowerCase()}
 function minutes(t){const[h,m]=String(t||"00:00").split(":").map(Number);return h*60+m}
 function minsToTimeStr(m){return `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`}
 function dateTime(c,w="startTime"){return zoned(c.dateIso,c[w]||c[w==="startTime"?"start":"end"])}
-function fmtTime(t){const[h,m]=t.split(":").map(Number);return new Intl.DateTimeFormat("en-IN",{hour:"numeric",minute:"2-digit"}).format(new Date(2026,0,1,h,m))}
+function fmtTime(t){const[h,m]=t.split(":").map(Number);return dtf("en-IN",{hour:"numeric",minute:"2-digit"},"hm").format(new Date(2026,0,1,h,m))}
 function fmtRange(a,b){return`${fmtTime(a)}–${fmtTime(b)}`}
 /* The hero sets the range as display-sized figures, so the am/pm has to come down to
    a label — at 30px "9:30 am" is mostly the word. Returns markup, not text. */
@@ -166,13 +190,13 @@ function fmtRangeRich(a,b){
 }
 function updateTopbarClock(){
   const main=$("#topbarClockMain"),alt=$("#topbarClockAlt");
-  if(main)main.textContent=new Intl.DateTimeFormat("en-IN",{timeZone:APP_TZ,hour:"numeric",minute:"2-digit"}).format(new Date());
+  if(main)main.textContent=dtf("en-IN",{timeZone:APP_TZ,hour:"numeric",minute:"2-digit"},"hmtz").format(new Date());
   /* The second line carried India time while the programme was in Barcelona. One zone
      again, so it would only ever print the same time twice. */
   if(alt){alt.hidden=true;alt.textContent=""}
 }
 /* 24h digits for the split-flap hero (independent of the localized fmtTime above) */
-function fmtDate(iso,o={weekday:"long",day:"numeric",month:"short"}){return new Intl.DateTimeFormat("en-IN",{...o,timeZone:APP_TZ}).format(zoned(iso,"12:00"))}
+function fmtDate(iso,o={weekday:"long",day:"numeric",month:"short"}){return dtf("en-IN",{...o,timeZone:APP_TZ}).format(zoned(iso,"12:00"))}
 const EXAM_SLOT_LABELS={forenoon:"Forenoon",afternoon:"Afternoon",evening:"Evening"};
 function examOn(iso){return(window.EXAM_DATA||[]).find(e=>e.date===iso)}
 function nextExam(){
@@ -341,8 +365,8 @@ async function fetchSectionClasses(section){
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
 function classKey(c){return`${classIdentity(c)}|${c.endTime||""}|${venueOf(c)}`}
 function classIdentity(c){return`${c.dateIso}|${c.startTime}|${canonical(c.code)}`}
-function tomorrowIso(){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+1);return new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
-function isoForDayOffset(n){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+n);return new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
+function tomorrowIso(){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+1);return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d)}
+function isoForDayOffset(n){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+n);return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d)}
 function isClassCompleted(c){
   if(c.status==="Cancelled")return false;
   return Date.now()>=dateTime(c,"endTime").getTime();
@@ -717,7 +741,7 @@ const EXAM_CARD_ENABLED=false;
 function renderWeekDigest(){
   const el=$("#weekDigest");if(!el)return;
   const monday=zoned(mondayIso(isoToday()),"00:00"),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
-  const mondayIsoStr=mondayIso(isoToday()),nextMondayIsoStr=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ}).format(nextMonday);
+  const mondayIsoStr=mondayIso(isoToday()),nextMondayIsoStr=dtf("en-CA",{timeZone:APP_TZ},"ca").format(nextMonday);
   const weekClasses=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;
   const weekTasks=state.tasks.filter(t=>!t.completed&&t.date&&t.date>=mondayIsoStr&&t.date<nextMondayIsoStr).length;
   const weekExams=(window.EXAM_DATA||[]).filter(e=>e.date>=mondayIsoStr&&e.date<nextMondayIsoStr).length;
@@ -862,7 +886,7 @@ function renderDateStrip(){
   const labels=["MON","TUE","WED","THU","FRI","SAT","SUN"];let html="";
   for(let i=0;i<7;i++){
     const d=new Date(monday);d.setDate(monday.getDate()+i);
-    const iso=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d);
+    const iso=dtf("en-CA",ISO_FMT_OPTS,"iso").format(d);
     const isToday=iso===isoToday(),count=state.classes.filter(c=>c.dateIso===iso&&c.status!=="Cancelled").length;
     html+=`<button class="date-pill ${isToday?"today":""}" data-date="${iso}"><span class="dow">${labels[i]}</span><span class="dnum">${d.getDate()}</span>${count?'<i class="dot"></i>':""}</button>`;
   }
@@ -1329,7 +1353,7 @@ function renderFreeRunCard(){
   const dayName=iso=>iso===isoToday()?"Today":iso===tomorrowIso()?"Tomorrow":fmtDate(iso,{weekday:"long"});
   $("#freeRunLen").textContent=compactDuration(Math.round(mins));
   $("#freeRunTitle").textContent=`Free until ${dayName(toIso)}, ${fmtTime(next.startTime)}`;
-  $("#freeRunFromTime").textContent=new Intl.DateTimeFormat("en-IN",{timeZone:APP_TZ,hour:"numeric",minute:"2-digit"}).format(start);
+  $("#freeRunFromTime").textContent=dtf("en-IN",{timeZone:APP_TZ,hour:"numeric",minute:"2-digit"},"hmtz").format(start);
   $("#freeRunFromDay").textContent=dayName(fromIso);
   $("#freeRunToTime").textContent=fmtTime(next.startTime);
   $("#freeRunToDay").textContent=dayName(toIso);
@@ -1772,7 +1796,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
 }
 function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(canonical(c.code))}${sessionTag(c)?` ${esc(sessionTag(c))}`:""} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){
   const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();
-  $("#calendarTitle").textContent=new Intl.DateTimeFormat("en-IN",{month:"long",year:"numeric"}).format(d);
+  $("#calendarTitle").textContent=dtf("en-IN",{month:"long",year:"numeric"},"my").format(d);
   const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);
   const shownWeek=mondayIso(state.railStart||state.selectedDate||isoToday());
   const monthIsos=[];
@@ -1845,16 +1869,16 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
   const courseFilterBtn=$("#toggleCourseFilter");
   if(courseFilterBtn)courseFilterBtn.classList.toggle("active",!!state.courseFilterOpen||!!state.calendarHighlight);
   const toggleCompletedBtn=$("#toggleCompletedButton");if(toggleCompletedBtn){toggleCompletedBtn.textContent=state.agendaShowCompleted?"Hide completed":`Show completed${hiddenCompletedCount?` (${hiddenCompletedCount})`:""}`;toggleCompletedBtn.hidden=!hiddenCompletedCount&&!state.agendaShowCompleted;}const used=[...new Set(state.classes.filter(c=>c.dateIso.startsWith(`${y}-${String(m+1).padStart(2,"0")}`)).map(c=>canonical(c.code)))];if(state.calendarHighlight&&!used.includes(state.calendarHighlight))state.calendarHighlight=null;const legendEl=$("#calendarLegend");if(legendEl)legendEl.innerHTML=used.map(c=>`<button type="button" class="legend-item ${c===state.calendarHighlight?"active":""}" style="--course:${colorFor(c)}" data-course="${esc(c)}"><i></i>${esc(c)}</button>`).join("");if(legendEl)legendEl.onclick=e=>{const btn=e.target.closest(".legend-item");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()};const courseRow=$("#agendaCourseRow");if(courseRow){const dayCourses=[...new Set(weekAll.filter(c=>c.status!=="Cancelled").map(c=>canonical(c.code)))];if(state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight))dayCourses.push(state.calendarHighlight);const showCourseChips=dayCourses.length>1||!!state.calendarHighlight;courseRow.innerHTML=showCourseChips?dayCourses.map(c=>`<button type="button" class="filter-chip ${c===state.calendarHighlight?"active":""}" data-course="${esc(c)}" style="--course:${colorFor(c)}">${esc(c)}</button>`).join(""):"";courseRow.hidden=!showCourseChips||!state.courseFilterOpen;courseRow.onclick=e=>{const btn=e.target.closest("[data-course]");if(!btn)return;state.calendarHighlight=state.calendarHighlight===btn.dataset.course?null:btn.dataset.course;renderCalendar()}}renderWeekPlanner()}
-function mondayIso(iso){const d=zoned(iso,"12:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
-function nextMondayIso(iso){const d=zoned(mondayIso(iso),"12:00");d.setDate(d.getDate()+7);return new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d)}
-function shiftRailWeek(delta){const d=zoned(state.railStart||mondayIso(state.selectedDate),"12:00");d.setDate(d.getDate()+delta*7);state.railStart=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d);renderCalendar()}
+function mondayIso(iso){const d=zoned(iso,"12:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d)}
+function nextMondayIso(iso){const d=zoned(mondayIso(iso),"12:00");d.setDate(d.getDate()+7);return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d)}
+function shiftRailWeek(delta){const d=zoned(state.railStart||mondayIso(state.selectedDate),"12:00");d.setDate(d.getDate()+delta*7);state.railStart=dtf("en-CA",ISO_FMT_OPTS,"iso").format(d);renderCalendar()}
 /* The planner is one accordion week: seven day rows always on screen, the selected day
    opened in place. There is no day/week mode, because the week is the frame and the day
    is the detail inside it — the old layout answered "what does my week look like" twice,
    once with a date rail and once with a separate week card. */
 function weekDaysFrom(startIso){
   const start=zoned(startIso,"12:00"),out=[];
-  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);out.push(new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(d))}
+  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);out.push(dtf("en-CA",ISO_FMT_OPTS,"iso").format(d))}
   return out;
 }
 function flashDayFocus(){
@@ -2028,7 +2052,7 @@ function renderDayFocus(iso){
 }
 function shiftSelectedDate(delta){
   const day=zoned(state.selectedDate,"12:00");day.setDate(day.getDate()+delta);
-  state.selectedDate=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ,year:"numeric",month:"2-digit",day:"2-digit"}).format(day);
+  state.selectedDate=dtf("en-CA",ISO_FMT_OPTS,"iso").format(day);
   state.calendarMonth=new Date(day.getFullYear(),day.getMonth(),1);
   state.railStart=mondayIso(state.selectedDate);
   renderCalendar();
@@ -2974,7 +2998,7 @@ function renderNotifications(){
   if(!state.notifications.length){$("#notificationList").innerHTML='<div class="empty-state"><span class="empty-state-icon">'+icon("bell")+'</span><p>No schedule updates</p><small>We’ll let you know when something changes.</small></div>';return}
   let html="",lastDay=null;
   state.notifications.forEach(n=>{
-    const dayIso=new Intl.DateTimeFormat("en-CA",{timeZone:APP_TZ}).format(new Date(n.createdAt));
+    const dayIso=dtf("en-CA",{timeZone:APP_TZ},"ca").format(new Date(n.createdAt));
     if(dayIso!==lastDay){html+=`<p class="notification-day-heading">${esc(notificationDayLabel(dayIso))}</p>`;lastDay=dayIso}
     html+=notificationItemHtml(n);
   });
@@ -3824,7 +3848,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova189",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova190",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

@@ -383,7 +383,13 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
    passing underneath was legible *through* the header and then sliced in half by its
    edge. Glass is worth having over the hero at rest; underneath moving content it just
    looks like a mistake. */
-.topbar.is-scrolled{background:var(--bg);box-shadow:0 10px 26px -16px rgba(0,0,0,.55)}
+.topbar.is-scrolled{
+  background:var(--bg);box-shadow:0 10px 26px -16px rgba(0,0,0,.55);
+  /* The bar is opaque here, so there is nothing behind it to blur. Leaving the filter
+     on makes the compositor keep sampling what is underneath on every scrolled frame
+     for a result no one can see. */
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
 /* A short fade below the bar so content emerges from under it rather than being cut
    against a hard line. */
 .topbar::before{
