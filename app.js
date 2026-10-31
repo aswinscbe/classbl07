@@ -436,14 +436,20 @@ async function refreshSchedule(){
       showToast("Connect Google Calendar in Profile to sync your schedule");
       return;
     }
-    /* Connected before, token has merely aged out. Renew it on this tap rather than
-       reporting an expiry and making the reader go to Profile to press a second
-       button: this is a user gesture, so Google is allowed to open a window if it
-       needs one, and usually it does not. */
+    /* Connected before, the token has merely aged out. Renew it on this tap and
+       finish the job, rather than reporting an expiry and sending the reader to
+       Profile to press a second button that then re-asks for the whole grant - which
+       is what made this feel like signing in over and over.
+
+       Straight to the interactive form, not silent first: the silent attempt already
+       had its chance at launch, and if it had worked there would be a live token
+       here. Trying it again now would spend the tap's user gesture waiting on a call
+       that is going to fail, and the window Google opens afterwards would be blocked
+       as a popup. */
     setSyncPill("syncing","Checking","Renewing calendar access");
-    if(!await connectGoogleCalendar({mode:"silent"})){
-      setSyncPill("error","Reconnect","Calendar sign-in expired - reconnect in Profile");
-      showToast("Calendar sign-in expired — reconnect in Profile");
+    if(!await connectGoogleCalendar({mode:"resume"})){
+      setSyncPill("error","Reconnect","Calendar sign-in could not be renewed");
+      showToast("Couldn't renew calendar access — try Connect in Profile");
       return;
     }
   }
@@ -3262,7 +3268,12 @@ function connectGoogleCalendar({mode="consent"}={}){
         },
         error_callback:()=>finish(false)
       });
-      client.requestAccessToken({prompt:mode==="silent"?"":"consent"});
+      /* "consent" re-shows the whole permission screen and is only right the first
+         time. "select_account" is the lightest interactive form for someone who has
+         already granted access - a tap on their account, no re-reading the grant.
+         "" asks Google to answer with no UI at all, which works while the browser
+         still has their session and is why most days need no tap whatsoever. */
+      client.requestAccessToken({prompt:mode==="silent"?"":mode==="resume"?"select_account":"consent"});
       /* A silent request that cannot be answered without UI may never call back at
          all, so it is not allowed to leave the refresh spinning forever. */
       if(mode==="silent")setTimeout(()=>finish(false),10000);
@@ -3691,9 +3702,14 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
       renderHome();haptic(8);
     },{ignore:"a,input,select,textarea,button",threshold:46});
   }
-  $("#connectGcal")?.addEventListener("click",()=>connectCalendarAndLoad());
+  $("#connectGcal")?.addEventListener("click",()=>
+    connectCalendarAndLoad({mode:calSessions().length?"resume":"consent"}));
   $("#disconnectGcal")?.addEventListener("click",disconnectGoogleCalendar);
-  $("#refreshGcal")?.addEventListener("click",()=>refreshCalendarSchedule());
+  /* The same renew-then-read path as the topbar button. This called
+     refreshCalendarSchedule directly, which simply reports "sign-in expired" when the
+     token has aged out - and this is the button someone whose card says "connected"
+     would naturally press, so it was the most likely way to hit that dead end. */
+  $("#refreshGcal")?.addEventListener("click",()=>refreshSchedule());
   renderCalendarConnectionStatus();
   /* A cached schedule is served immediately; the refresh behind it is silent so a
      stale token never greets anyone with an error on launch. */
@@ -3808,7 +3824,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova187",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova188",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
