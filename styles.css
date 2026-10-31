@@ -3178,3 +3178,5 @@ html{scroll-behavior:smooth}
 .sr-live-pill{animation:live-breathe 2.4s var(--ease-in-out) infinite}
 @keyframes live-breathe{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--live) 55%, transparent)}60%{box-shadow:0 0 0 6px transparent}}
 @media(prefers-reduced-motion:reduce){.sr-live-pill{animation:none}}
+/* A session the office shifted to another time or day. */
+.badge-moved{color:var(--accent-2)}

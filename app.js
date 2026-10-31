@@ -365,6 +365,44 @@ function relativeSyncText(){
   const hours=Math.floor(mins/60);return`Schedule checked ${hours} hour${hours>1?"s":""} ago`;
 }
 
+/* The programme office does not add and remove sessions, it moves them: MBGAI session
+   5 was 4:00pm on Monday and is now 5:30pm. compareSnapshots keys on date+start time,
+   so a move reads as one class appearing from nowhere while another silently vanishes
+   - and the single fact worth telling anyone, that it moved and to when, cannot be
+   expressed at all. This keys on the identity the office itself uses, course plus
+   session number, so a session can be followed as it moves. */
+const scheduleKey=c=>`${canonical(c.code)}|${c.sessionNo==null?"":c.sessionNo}`;
+function diffSchedules(oldList,newList){
+  /* No previous reading means nothing has changed - it is a first load, and announcing
+     120 "added" sessions would be noise, not news. */
+  if(!oldList||!oldList.length)return[];
+  const now=new Date();
+  const label=c=>`${canonical(c.code)}${c.sessionNo?` S${c.sessionNo}`:""}`;
+  const when=c=>`${fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"})} · ${fmtTime(c.startTime)}`;
+  const mk=(type,c,title,text)=>({id:crypto.randomUUID(),classId:classIdentity(c),type,
+    code:canonical(c.code),title,text,course:canonical(c.code),createdAt:Date.now(),read:false});
+  const oldMap=new Map(oldList.filter(isSession).map(c=>[scheduleKey(c),c]));
+  const out=[],seen=new Set();
+  newList.filter(isSession).forEach(c=>{
+    const k=scheduleKey(c);seen.add(k);
+    /* Nothing useful to say about a session that has already finished. */
+    if(dateTime(c,"endTime")<=now)return;
+    const old=oldMap.get(k);
+    if(!old){out.push(mk("added",c,`${label(c)} added`,when(c)));return}
+    if(old.status!=="Cancelled"&&c.status==="Cancelled"){out.push(mk("cancelled",c,`${label(c)} cancelled`,when(c)));return}
+    if(old.dateIso!==c.dateIso||old.startTime!==c.startTime){
+      out.push(mk("moved",c,`${label(c)} moved`,`Was ${when(old)} — now ${when(c)}`));return;
+    }
+    if((old.room||"")!==(c.room||"")&&c.room)
+      out.push(mk("venue",c,`${label(c)} room changed`,`${when(c)} · ${esc(old.room||"—")} → ${esc(c.room)}`));
+  });
+  /* Gone from the feed entirely. To the reader that is a cancellation. */
+  oldMap.forEach((c,k)=>{
+    if(seen.has(k)||c.status==="Cancelled"||dateTime(c,"endTime")<=now)return;
+    out.push(mk("cancelled",c,`${label(c)} cancelled`,when(c)));
+  });
+  return out.slice(0,12);
+}
 function compareSnapshots(oldList,newList){
   if(!oldList||!oldList.length)return[];
   const oldMap=new Map(oldList.map(c=>[classIdentity(c),c])),out=[];
@@ -1141,7 +1179,7 @@ function renderHome(){
   $("#silentUpdateStrip").hidden=!unread.length;
   if(unread.length){
     const latest=unread[0];
-    $("#silentUpdateTitle").textContent=latest.type==="added"?"Class added":latest.type==="cancelled"?"Class cancelled":latest.type==="venue"?"Venue changed":"Schedule updated";
+    $("#silentUpdateTitle").textContent=latest.type==="added"?"Class added":latest.type==="cancelled"?"Class cancelled":latest.type==="venue"?"Venue changed":latest.type==="moved"?"Class moved":"Schedule updated";
     $("#silentUpdateText").textContent=`${latest.title} · ${latest.text}`;
   }
   $("#homeSyncText").textContent=relativeSyncText()
@@ -2909,6 +2947,7 @@ function fireConfetti(){
    underlying diff/notification detection in compareSnapshots() is untouched. */
 function notificationTagHtml(n){
   if(n.type==="venue")return`<span class="badge badge-venue">Venue changed</span>`;
+  if(n.type==="moved")return`<span class="badge badge-moved">Moved</span>`;
   if(n.type==="added")return`<span class="badge badge-added">Added</span>`;
   if(n.type==="cancelled")return`<span class="badge badge-cancelled">Cancelled</span>`;
   return"";
@@ -3140,15 +3179,38 @@ async function fetchCalendarSessions(token){
   out.forEach(c=>seen.set(`${c.code}|${c.sessionNo}|${c.dateIso}|${c.startTime}`,c));
   return[...seen.values()].sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime));
 }
+/* A change is worth interrupting for, including when the refresh that found it was a
+   background one - that is the whole point of polling. The in-app bell always gets it;
+   a system notification only goes out if permission was already granted for the
+   leaving-soon alert, since silently asking for it here would be a poor trade. */
+function announceScheduleChanges(changes){
+  const first=changes[0];
+  showToast(changes.length===1?`${first.title} · ${first.text}`:`${changes.length} schedule changes`);
+  try{
+    if(typeof Notification!=="undefined"&&Notification.permission==="granted"){
+      new Notification(changes.length===1?first.title:`${changes.length} schedule changes`,
+        {body:changes.length===1?first.text:changes.map(c=>c.title).join(", "),tag:"bl07-schedule",icon:"icons/icon-192.png"});
+    }
+  }catch(e){}
+}
 async function refreshCalendarSchedule({silent}={}){
   const tok=getSavedCalToken();
   if(!tok)return false;
   try{
     const sessions=await fetchCalendarSessions(tok.access_token);
     if(!sessions.length){if(!silent)showToast("No class sessions found in that calendar");return false}
+    /* Every change the office makes now arrives through this fetch, so this is the only
+       place that can notice one. Compared before the cache is overwritten. */
+    const previous=(loadCalCache()||{}).sessions||[];
+    const changes=diffSchedules(previous,sessions);
     localStorage.setItem(GOOGLE_CAL_CACHE_KEY,JSON.stringify({at:Date.now(),sessions}));
+    if(changes.length){
+      state.notifications=[...changes,...state.notifications].slice(0,40);
+      save(KEYS.notifications,state.notifications);
+    }
     state.classes=filteredClasses();renderAll();
-    if(!silent)showToast(`${sessions.length} sessions from your calendar`);
+    if(changes.length)announceScheduleChanges(changes);
+    else if(!silent)showToast(`${sessions.length} sessions from your calendar`);
     return true;
   }catch(e){
     const d=String(e&&(e.detail||e.message)||"");
@@ -3746,7 +3808,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova186",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova187",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
