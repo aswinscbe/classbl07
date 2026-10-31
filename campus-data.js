@@ -57,46 +57,55 @@ window.CAMPUS_DATA = {
      than leaving people to guess whether they are reading a stale menu. Update these
      two lines whenever the menu below is replaced. */
   messMeta: {
-    label:"October 2026",
-    effectiveIso:"2026-10-01",
+    label:"November 2026",
+    effectiveIso:"2026-11-01",
     note:"Menu is tentative \u2014 items change with market availability."
   },
-  /* IIM Kozhikode students' mess, October 2026 sheet. */
+  /* IIM Kozhikode students' mess, November 2026 sheet.
+
+     Two corrections to the sheet as printed. Monday dinner lists "Kadai Chicken" on
+     the Veg row and "Kadai Paneer" on the Non-Veg row, which is the pair the wrong way
+     round; it is stored the right way round, because the app colours and labels those
+     two rows by what they claim to be and would otherwise tell a vegetarian the
+     chicken was theirs. Friday dinner is a biryani night - the sheet puts the paneer
+     biryani on the Rice row and the chicken biryani on the Dal row, with no bread and
+     no separate mains - so it is marked combo, as the October sheet's biryani night
+     was. */
   mess: {
-    monday: {
-      breakfast:["Idli","Medu vada","Coconut chutney","Sambhar","Boiled egg","Choccos","Boiled pulses","Banana","Bread, butter & jam","Tea / coffee / milk"],
-      lunch:{items:["Green salad","Wheat chapati","Ash gourd dal","Broadbens aloo","Punjabi chole","Lemon rice","Plain rice","Rasam","Buttermilk","Pappad"],splVeg:"Golden corn gobhi dry",fishEgg:"Egg pepper roast"},
-      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Basanti pulao","Masala dal","Fryums","Pickle"],dessert:"Gulab jamun",veg:"Kadai paneer",nonVeg:"Kadai chicken"}
+    monday:{
+      breakfast:["Idli","Medu vada","Coconut chutney","Sambhar","Boiled egg","Chocos","Boiled pulses","Banana","Bread, butter & jam","Tea / coffee / milk"],
+      lunch:{items:["Green salad","Wheat chapati","Ash gourd dal","Broadbeans","Punjabi chole","Lemon rice","Plain rice","Rasam","Lassi","Pappad"],splVeg:"Golden corn gobhi dry",fishEgg:"Egg pepper roast"},
+      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Bhindi fry","Basanti pulao","Masala dal","Curd","Fryums","Pickle"],dessert:"Gulab jamun",veg:"Kadai paneer",nonVeg:"Kadai chicken"}
     },
-    tuesday: {
-      breakfast:["Methi paratha","Pongal","Aalu matar sabji","Coconut chutney","Boiled egg","Cornflakes","Boiled pulses","Papaya","Bread, butter & jam","Tea / coffee / milk"],
-      lunch:{items:["Veg salad","Wheat chapati","Palak dal","Alu gobhi dry","Kadhi pakoda","Curry leaves rice","Plain rice","Sambar","Jeera buttermilk","Pappad"],splVeg:"Rajma masala",fishEgg:"Fish curry"},
-      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Veg Manchurian","Snake gourd chenna dal dry","Schezuan fried rice","Moong dal thadka","Boondi raita","Fryums","Pickle"],dessert:"Ice cream (1 piece)"}
+    tuesday:{
+      breakfast:["Missi roti","Pongal","Aalu matar sabji","Coconut chutney","Boiled egg","Cornflakes","Boiled pulses","Papaya","Bread, butter & jam","Tea / coffee / milk"],
+      lunch:{items:["Veg salad","Wheat chapati","Palak dal","Gobhi dry","Kadhi pakoda","Curry leaves rice","Plain rice","Sambhar","Jeera buttermilk","Pappad"],splVeg:"Rajma masala",fishEgg:"Fish curry"},
+      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Lobia masala","Raw banana fry","Bisi bele baath","Channa dal","Boondi raitha","Boondi spicy","Pickle"],dessert:"Ice cream (1 piece)"}
     },
-    wednesday: {
-      breakfast:["Masala dosa","Veg poha","Sambar","Coriander mint chutney","Boiled egg","Chocos","Boiled pulses","Watermelon","Bread, butter & jam","Tea / coffee / milk"],
-      lunch:{items:["Veg salad","Wheat chapati","Dal tadka","Guthi vangai","Veg kofta curry","Tomato rice","Plain rice","Rasam","Buttermilk","Pappad"],sweet:"M/dal halwa / carrot halwa",splVeg:"Soya curry",fishEgg:"Egg tikka masala"},
-      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Kadala curry","Lowki tomatar","Veg biryani","Chana dal","Curd","Fryums","Pickle"],veg:"Palak paneer",nonVeg:"Pahdi chicken"}
+    wednesday:{
+      breakfast:["Masala dosa","Veg poha","Sambhar","Coriander chutney","Boiled egg","Chocos","Boiled pulses","Watermelon","Bread, butter & jam","Tea / coffee / milk"],
+      lunch:{items:["Veg salad","Wheat chapati","Dal tadka","Cabbage muttar masala dry","Veg kofta curry","Tomato rice","Plain rice","Rasam","Buttermilk","Pappad"],splVeg:"Soya curry",fishEgg:"Kerala fish curry",sweet:"Moong dal halwa / carrot halwa"},
+      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Kadala curry","Lowki tomato","Veg pulao","Chana dal","Curd","Fryums","Pickle"],veg:"Palak paneer",nonVeg:"Pahadi chicken"}
     },
-    thursday: {
-      breakfast:["Kallappam / dal pakwana","Upma","Coriander mint chutney","Vegetable stew","Boiled egg","Corn flakes","Boiled pulses","Mixed fruits","Bread, butter & jam","Tea / coffee / milk"],
-      lunch:{items:["Veg salad","Wheat chapati","Bengal gram dal fry","Dum aloo banaras","Rajma raseela","Ghee rice (pulao)","Plain rice","Sambhar","Buttermilk","Pappad"],splVeg:"Besan gatte",fishEgg:"Fish curry (Nellore chepala pulusu)"},
-      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Mutter masala","Mix veg poriyal","Jeera rice","Tomato pappu","Jeera buttermilk","Fryums","Pickle"],dessert:"Semiya kheer",veg:"Shahi paneer",nonVeg:"Chicken Kolhapuri"}
+    thursday:{
+      breakfast:["Kallappam / dal pakwana","Oats-millet idli / rava idli","Coriander mint chutney","Vegetable stew","Boiled egg","Corn flakes","Boiled pulses","Mixed fruits","Bread, butter & jam","Tea / coffee / milk"],
+      lunch:{items:["Veg salad","Wheat chapati","Bengal gram dal fry","Dum aloo banaras","Rajma raseela","Coconut rice","Plain rice","Sambhar","Buttermilk","Pappad"],splVeg:"Besan gatte",fishEgg:"Fish curry (Nellore)"},
+      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Mutter masala","Mix veg poriyal","Jeera rice","Tomato pappu","Jeera buttermilk","Fryums","Pickle"],dessert:"Fruit custard",veg:"Shahi paneer",nonVeg:"Chicken kolhapuri"}
     },
-    friday: {
+    friday:{
       breakfast:["Aloo paratha","Veg wheat upma","Curd","Coriander mint chutney","Boiled egg","Chocos","Boiled pulses","Banana","Bread, butter & jam","Tea / coffee / milk"],
-      lunch:{items:["Veg salad","Wheat chapati","Dal makkani","Corn palak","Dondakai dum fry","Corn pulao","Plain rice","Rasam","Buttermilk","Pappad"],splVeg:"Bhindi kurkure",fishEgg:"Egg curry"},
-      dinner:{combo:true,items:["Onion salad","Mirchi ka salan","Hyd paneer dum biryani","Hyd chicken dum biryani","Onion cucumber raita","Pickle"],dessert:"Fruit custard"}
+      lunch:{items:["Veg salad","Wheat chapati","Dal makkani","Corn palak","Kootu curry","Corn pulao","Plain rice","Rasam","Buttermilk","Pappad"],splVeg:"Bhindi kurkure",fishEgg:"Egg curry"},
+      dinner:{combo:true,items:["Onion salad","Mirchi ka salan","Onion cucumber raitha","Pickle"],dessert:"Semiya kheer",veg:"Hyderabadi paneer dum biryani",nonVeg:"Hyderabadi chicken dum biryani"}
     },
-    saturday: {
-      breakfast:["Uttapam","Semeya","Coriander mint chutney","Coconut chutney","Boiled egg","Cornflakes","Boiled pulses","Watermelon","Bread, butter & jam","Tea / coffee / milk"],
+    saturday:{
+      breakfast:["Besan chilla","Sameyi upma","Coriander mint chutney","Sambhar","Boiled egg","Cornflakes","Boiled pulses","Watermelon","Bread, butter & jam","Tea / coffee / milk"],
       lunch:{items:["Veg salad","Wheat chapati","Yellow dal","Kadai veg dry","Paneer lababdar","Tamarind rice","Plain rice","Sambhar","Masala buttermilk","Pappad"],sweet:"Sweet boondi"},
-      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Aloo mehthi dry","Chole masala","Bhagara rice","Dal tadka","Plain curd","Fryums","Pickle"],veg:"Peanut masala",nonVeg:"Egg Kolhapuri"}
+      dinner:{combo:false,items:["Veg salad","Chapati / phulka","Aloo methi dry","Chole masala","Bhagara rice","Dal tadka","Plain curd","Fryums","Pickle"],veg:"Peanut masala",nonVeg:"Egg kolhapuri"}
     },
-    sunday: {
-      breakfast:["Pav","Ragi dosa","Bhaaji","Cococunt red chutney","Omelette","Chocos","Boiled pulses","Papaya","Bread, butter & jam","Tea / coffee / milk"],
-      lunch:{items:["Veg salad","Wheat chapati","Arhar dal","Honey chilli potato","Soya capsicum","Tawa pulao","Plain rice","Rasam","Jeera buttermilk","Pappad"],splVeg:"Lobia masala",fishEgg:"Kerala fish curry"},
-      dinner:{combo:false,items:["Veg salad","Chapati / phulka","White peas kuruma","Aalu bhindi","Veg pulao","Dal maharani","Buttermilk","Fryums","Pickle"],dessert:"Balushahi",veg:"Paneer tikka masala",nonVeg:"Chickrn tikka masala"}
+    sunday:{
+      breakfast:["Pav","Ragi dosa","Missal","Coconut red chutney","Omelette","Chocos","Boiled pulses","Papaya","Bread, butter & jam","Tea / coffee / milk"],
+      lunch:{items:["Veg salad","Wheat chapati","Arhar dal","Honey chilli potato","Soya capsicum","Tawa pulao","Plain rice","Rasam","Jeera buttermilk","Pappad"],splVeg:"Masala peanut dry",fishEgg:"Egg burji"},
+      dinner:{combo:false,items:["Veg salad","Chapati / phulka","White peas kuruma","Cluster beans poriyal","Veg pulao","Dal maharani","Buttermilk","Fryums","Pickle"],dessert:"Balushahi",veg:"Paneer tikka masala",nonVeg:"Chicken tikka masala"}
     }
   }
 };
