@@ -544,19 +544,14 @@ async function syncSchedule(force=false){
    aged out the pill says "Tap to update" rather than anything being done silently. */
 const CAL_POLL_MS=10*60e3;
 let _calPollAt=0,_calPollInFlight=false;
-let _silentRenewAt=0;
 async function maybeRefreshCalendar(){
   if(!calSessions().length)return;
-  if(!getSavedCalToken()){
-    /* A second chance at a quiet renewal when the app is returned to. Costs nothing
-       when it fails and shows nothing either way, so the only guard it needs is not
-       running more often than the poll itself. */
-    if(Date.now()-_silentRenewAt>=CAL_POLL_MS){
-      _silentRenewAt=Date.now();
-      if(await connectGoogleCalendar({mode:"silent"}))return maybeRefreshCalendar();
-    }
-    syncSchedule();return;
-  }
+  /* No token, no fetch, and emphatically no attempt to get one. See the note on
+     connectGoogleCalendar: there is no such thing as a quiet token request here, so
+     anything that asks for one without the reader having just pressed something puts
+     a Google window on screen out of nowhere. The cached schedule stays, the pill
+     says it needs a tap, and nothing is asked. */
+  if(!getSavedCalToken()){syncSchedule();return}
   if(_calPollInFlight||Date.now()-_calPollAt<CAL_POLL_MS)return;
   _calPollInFlight=true;_calPollAt=Date.now();
   try{if(await refreshCalendarSchedule({silent:true}))renderCalendarConnectionStatus()}
@@ -3274,12 +3269,19 @@ async function refreshCalendarSchedule({silent}={}){
    a schedule change meant sitting through consent again. A reconnect asks with
    prompt:"" instead, which Google answers with no UI at all when the person still has
    a session and has already granted access - the ordinary case. */
-/* The Google script is loaded with `async`, while app.js is a plain script at the end
-   of the body - so the app always finishes starting first and window.google is not
-   there yet. The silent renewal checked for it, found nothing and returned false
-   without asking Google anything, every single time. It had therefore never once run:
-   the token was always still expired by the next tap, which is why opening the app
-   and pressing refresh always meant signing in again. Wait for the script instead. */
+/* There is no silent token request in this flow, and chasing one was a mistake.
+   Google Identity's token client answers requestAccessToken by opening a sign-in
+   window; prompt:"" only means "do not force the consent screen again", not "do this
+   invisibly". The old gapi.auth2 had an iframe-based prompt:"none", the current
+   library does not. So a renewal attempted without the reader having just pressed
+   something either opens a window out of nowhere or is blocked as a popup.
+
+   Worse, the two bugs hid each other. The attempt at launch never ran at all, because
+   app.js finishes before the async Google script defines window.google; fixing that
+   race made the attempt start firing, and what it produced was the sign-in window on
+   every open. The fix is not better timing - it is not asking. A token is requested
+   only in direct response to a tap, and an expired one simply leaves the cached
+   schedule on screen with the pill asking for a tap. */
 function whenGoogleReady(timeout=8000){
   if(window.google&&window.google.accounts&&window.google.accounts.oauth2)return Promise.resolve(true);
   return new Promise(resolve=>{
@@ -3293,23 +3295,17 @@ function whenGoogleReady(timeout=8000){
   });
 }
 async function connectGoogleCalendar({mode="consent"}={}){
-  const ready=await whenGoogleReady(mode==="silent"?9000:4000);
+  const ready=await whenGoogleReady(4000);
   return new Promise(resolve=>{
     let settled=false;
     const finish=v=>{if(!settled){settled=true;resolve(v)}};
     try{
-      if(!ready){
-        if(mode!=="silent")showToast("Google sign-in isn't available right now");
-        return finish(false);
-      }
+      if(!ready){showToast("Google sign-in isn't available right now");return finish(false)}
       const client=window.google.accounts.oauth2.initTokenClient({
         client_id:GOOGLE_CLIENT_ID,
         scope:GOOGLE_CAL_SCOPE,
         callback:resp=>{
-          if(resp.error){
-            if(mode==="consent")showToast(`Calendar sign-in: ${resp.error_description||resp.error}`);
-            return finish(false);
-          }
+          if(resp.error){showToast(`Calendar sign-in: ${resp.error_description||resp.error}`);return finish(false)}
           /* Consent is per-scope and can be declined while still returning a token, so
              the granted list is the thing to check, not the presence of a token. */
           if(resp.scope&&resp.scope.indexOf("calendar")===-1){
@@ -3326,10 +3322,7 @@ async function connectGoogleCalendar({mode="consent"}={}){
          already granted access - a tap on their account, no re-reading the grant.
          "" asks Google to answer with no UI at all, which works while the browser
          still has their session and is why most days need no tap whatsoever. */
-      client.requestAccessToken({prompt:mode==="silent"?"":mode==="resume"?"select_account":"consent"});
-      /* A silent request that cannot be answered without UI may never call back at
-         all, so it is not allowed to leave the refresh spinning forever. */
-      if(mode==="silent")setTimeout(()=>finish(false),10000);
+      client.requestAccessToken({prompt:mode==="resume"?"select_account":"consent"});
     }catch(err){
       if(mode==="consent")showToast("Calendar sign-in failed");
       finish(false);
@@ -3769,16 +3762,10 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   /* The launch fetch starts the poll clock too, or the first time the window regains
      focus a minute later would fetch the same thing again. */
   if(getSavedCalToken()){_calPollAt=Date.now();refreshCalendarSchedule({silent:true})}
-  else if(calSessions().length){
-    /* Anyone who connected before opens on yesterday's snapshot. Ask Google for a
-       fresh token without any UI; it answers when the session and consent are still
-       there, and when it does not the cached schedule simply stays on screen. */
-    connectGoogleCalendar({mode:"silent"}).then(ok=>{
-      if(!ok)return;
-      _calPollAt=Date.now();
-      refreshCalendarSchedule({silent:true}).then(()=>{renderCalendarConnectionStatus();syncSchedule()});
-    });
-  }
+  /* Nothing is requested on launch. An expired token means the app opens on its
+     cached schedule with the pill showing it wants a tap - which is the honest state,
+     and vastly preferable to a sign-in window appearing every time the app is
+     opened. */
   $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
@@ -3877,7 +3864,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova192",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova193",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
