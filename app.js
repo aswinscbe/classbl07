@@ -544,9 +544,19 @@ async function syncSchedule(force=false){
    aged out the pill says "Tap to update" rather than anything being done silently. */
 const CAL_POLL_MS=10*60e3;
 let _calPollAt=0,_calPollInFlight=false;
+let _silentRenewAt=0;
 async function maybeRefreshCalendar(){
   if(!calSessions().length)return;
-  if(!getSavedCalToken()){syncSchedule();return}
+  if(!getSavedCalToken()){
+    /* A second chance at a quiet renewal when the app is returned to. Costs nothing
+       when it fails and shows nothing either way, so the only guard it needs is not
+       running more often than the poll itself. */
+    if(Date.now()-_silentRenewAt>=CAL_POLL_MS){
+      _silentRenewAt=Date.now();
+      if(await connectGoogleCalendar({mode:"silent"}))return maybeRefreshCalendar();
+    }
+    syncSchedule();return;
+  }
   if(_calPollInFlight||Date.now()-_calPollAt<CAL_POLL_MS)return;
   _calPollInFlight=true;_calPollAt=Date.now();
   try{if(await refreshCalendarSchedule({silent:true}))renderCalendarConnectionStatus()}
@@ -3264,13 +3274,32 @@ async function refreshCalendarSchedule({silent}={}){
    a schedule change meant sitting through consent again. A reconnect asks with
    prompt:"" instead, which Google answers with no UI at all when the person still has
    a session and has already granted access - the ordinary case. */
-function connectGoogleCalendar({mode="consent"}={}){
+/* The Google script is loaded with `async`, while app.js is a plain script at the end
+   of the body - so the app always finishes starting first and window.google is not
+   there yet. The silent renewal checked for it, found nothing and returned false
+   without asking Google anything, every single time. It had therefore never once run:
+   the token was always still expired by the next tap, which is why opening the app
+   and pressing refresh always meant signing in again. Wait for the script instead. */
+function whenGoogleReady(timeout=8000){
+  if(window.google&&window.google.accounts&&window.google.accounts.oauth2)return Promise.resolve(true);
+  return new Promise(resolve=>{
+    const deadline=Date.now()+timeout;
+    const tick=()=>{
+      if(window.google&&window.google.accounts&&window.google.accounts.oauth2)return resolve(true);
+      if(Date.now()>deadline)return resolve(false);
+      setTimeout(tick,100);
+    };
+    tick();
+  });
+}
+async function connectGoogleCalendar({mode="consent"}={}){
+  const ready=await whenGoogleReady(mode==="silent"?9000:4000);
   return new Promise(resolve=>{
     let settled=false;
     const finish=v=>{if(!settled){settled=true;resolve(v)}};
     try{
-      if(!window.google||!window.google.accounts||!window.google.accounts.oauth2){
-        if(mode==="consent")showToast("Google sign-in isn't available right now");
+      if(!ready){
+        if(mode!=="silent")showToast("Google sign-in isn't available right now");
         return finish(false);
       }
       const client=window.google.accounts.oauth2.initTokenClient({
@@ -3848,7 +3877,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova191",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova192",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
