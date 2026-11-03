@@ -471,9 +471,13 @@ async function refreshSchedule(){
        that is going to fail, and the window Google opens afterwards would be blocked
        as a popup. */
     setSyncPill("syncing","Checking","Renewing calendar access");
-    if(!await connectGoogleCalendar({mode:"resume"})){
+    /* Two attempts inside the one tap: the quiet one, which asks nothing when the
+       browser still has a Google session, then the account chooser if it will not. */
+    let got=await connectGoogleCalendar({mode:"resume"});
+    if(!got)got=await connectGoogleCalendar({mode:"resume",retry:true});
+    if(!got){
       setSyncPill("error","Reconnect","Calendar sign-in could not be renewed");
-      showToast("Couldn't renew calendar access — try Connect in Profile");
+      showToast("Couldn't renew calendar access — tap refresh once more");
       return;
     }
   }
@@ -3294,7 +3298,7 @@ function whenGoogleReady(timeout=8000){
     tick();
   });
 }
-async function connectGoogleCalendar({mode="consent"}={}){
+async function connectGoogleCalendar({mode="consent",retry=false}={}){
   const ready=await whenGoogleReady(4000);
   return new Promise(resolve=>{
     let settled=false;
@@ -3318,11 +3322,15 @@ async function connectGoogleCalendar({mode="consent"}={}){
         error_callback:()=>finish(false)
       });
       /* "consent" re-shows the whole permission screen and is only right the first
-         time. "select_account" is the lightest interactive form for someone who has
-         already granted access - a tap on their account, no re-reading the grant.
-         "" asks Google to answer with no UI at all, which works while the browser
-         still has their session and is why most days need no tap whatsoever. */
-      client.requestAccessToken({prompt:mode==="resume"?"select_account":"consent"});
+         time. For a renewal, "" is tried first: where the browser still holds a Google
+         session and the grant is already given, Google answers it by opening and
+         closing its window without asking anything, so the day's first refresh costs a
+         flash rather than a sign-in. It is only worth trying from inside a tap - a
+         popup needs that - which is why this is not attempted at launch.
+
+         When "" cannot be answered that way, the fallback runs inside the few seconds
+         of activation the tap leaves behind, so its window is still allowed to open. */
+      client.requestAccessToken({prompt:mode==="resume"&&!retry?"":mode==="resume"?"select_account":"consent"});
     }catch(err){
       if(mode==="consent")showToast("Calendar sign-in failed");
       finish(false);
@@ -3864,7 +3872,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova193",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova194",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
