@@ -3282,3 +3282,17 @@ html{scroll-behavior:smooth}
 .att-count em{font-style:normal;color:var(--ink-faint);font-weight:600}
 .att-pct{font-size:var(--text-sm);font-weight:700;color:var(--ink-muted);font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
 .att-empty{margin:0;font-size:var(--text-md);color:var(--ink-muted);line-height:var(--lh-body)}
+
+/* Today's finished classes, one tap away inside the agenda instead of behind the
+   More menu. */
+.agenda-earlier{
+  display:flex;align-items:center;gap:9px;width:100%;margin-bottom:10px;
+  padding:10px 13px;border-radius:var(--radius-md);cursor:pointer;
+  border:1px dashed var(--border-strong);background:transparent;
+  font-size:var(--text-sm);font-weight:700;color:var(--ink-muted);text-align:left;
+  transition:transform var(--dur-xs) var(--ease-spring),border-color var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out);
+}
+.agenda-earlier svg{width:15px;height:15px;flex:none;color:var(--live)}
+.agenda-earlier em{margin-left:auto;font-style:normal;font-weight:700;color:var(--accent)}
+.agenda-earlier:active{transform:scale(.985)}
+@media(hover:hover){.agenda-earlier:hover{border-color:var(--accent);color:var(--ink)}}

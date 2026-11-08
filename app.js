@@ -2160,8 +2160,16 @@ function renderDayFocus(iso){
   if(subEl)subEl.innerHTML=`${esc(subText)}${isToday?' <b class="wc-today-badge">TODAY</b>':""}`;
 
   const timelineEl=$("#premiumTimeline");
-  const showCompleted=state.agendaShowCompleted||!isToday;
+  /* Finished classes are hidden on today so the list starts at what is left of the
+     day. Hiding every one of them leaves a day that reads as empty, which is wrong on
+     the one evening you most want to look back at it and mark attendance - so once
+     nothing is left to come, they come back. Past dates always showed them. */
+  const remainingToday=dayAll.filter(c=>c.status!=="Cancelled"&&now<dateTime(c,"endTime"));
+  const showCompleted=state.agendaShowCompleted||!isToday||!remainingToday.length;
   const listClasses=showCompleted?dayAll:dayAll.filter(c=>c.status==="Cancelled"||now<dateTime(c,"endTime"));
+  /* And while some of the day is still to come, the finished ones are one tap away
+     here rather than behind the More menu, where nobody was going to find them. */
+  const hiddenToday=showCompleted?0:dayAll.length-listClasses.length;
 
   if(!dayAll.length&&!exam){
     timelineEl.innerHTML=`<div class="empty-state agenda-empty-rich empty-state-mark">${CAMPUS_MARK}<p>Free day</p><small>No classes, tasks or notes for this date.</small></div>`;
@@ -2171,6 +2179,11 @@ function renderDayFocus(iso){
       html+=`<section class="agenda-exam-section"><div class="agenda-group-title">End Term Exams</div>${Object.entries(exam.slots).map(([slot,entry])=>
         `<article class="agenda-exam-card"><span class="exam-slot">${EXAM_SLOT_LABELS[slot]}</span><span class="agenda-exam-code" style="--course:${colorFor(entry.code)}">${esc(entry.code)}</span><strong>${esc(entry.subject)}</strong></article>`
       ).join("")}</section>`;
+    }
+    if(hiddenToday){
+      html+=`<button type="button" class="agenda-earlier" id="agendaShowEarlier">
+        <span>${icon("check")}</span>${hiddenToday} earlier ${hiddenToday===1?"class":"classes"} today<em>Show &amp; mark</em>
+      </button>`;
     }
     if(listClasses.length){
       html+=scheduleRowsHtml(listClasses,iso,{showNext:true,stagger:staggerClass(timelineEl,rowsKey(iso,listClasses))});
@@ -3864,6 +3877,12 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#closeMonthPicker")?.addEventListener("click",()=>closeDialog($("#monthPickerDialog")));
   $("#monthPickerDialog")?.addEventListener("click",e=>{if(e.target===e.currentTarget)closeDialog(e.currentTarget)});
   $("#toggleCompletedButton")?.addEventListener("click",()=>{state.agendaShowCompleted=!state.agendaShowCompleted;renderCalendar()});
+  /* The agenda is rebuilt on every render, so this is delegated rather than bound to
+     the button itself. */
+  document.addEventListener("click",e=>{
+    if(!e.target.closest("#agendaShowEarlier"))return;
+    state.agendaShowCompleted=true;renderCalendar();
+  });
   $("#jumpToNextClassButton")?.addEventListener("click",()=>{
     const now=Date.now(),next=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime").getTime()>=now).sort((a,b)=>dateTime(a,"startTime")-dateTime(b,"startTime"))[0];
     if(!next){showToast("No upcoming classes");return}
@@ -4001,7 +4020,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova195",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova196",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
