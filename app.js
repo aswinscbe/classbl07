@@ -386,8 +386,8 @@ function setAttendance(c,value){
 function attendanceToggleHtml(c){
   const m=attendanceOf(c);
   return`<div class="sr-att">
-    <button type="button" class="sr-att-btn ${m==="present"?"on":""}" data-att-set="present" aria-pressed="${m==="present"}">Attended</button>
-    <button type="button" class="sr-att-btn is-miss ${m==="absent"?"on":""}" data-att-set="absent" aria-pressed="${m==="absent"}">Missed</button>
+    <button type="button" class="att-set-btn sr-att-btn ${m==="present"?"on":""}" data-att-set="present" aria-pressed="${m==="present"}">Attended</button>
+    <button type="button" class="att-set-btn sr-att-btn is-miss ${m==="absent"?"on":""}" data-att-set="absent" aria-pressed="${m==="absent"}">Missed</button>
   </div>`;
 }
 /* One listener on the document rather than one per row: the schedule is rebuilt on
@@ -395,15 +395,61 @@ function attendanceToggleHtml(c){
    constantly and the old ones left behind. */
 function bindAttendanceToggles(){
   document.addEventListener("click",e=>{
-    const btn=e.target.closest(".sr-att-btn");if(!btn)return;
-    const row=btn.closest(".sched-row");if(!row)return;
-    const c=state.classes.find(x=>classIdentity(x)===row.dataset.classId);if(!c)return;
+    const undo=e.target.closest("#attUndo");
+    if(undo){
+      const last=state.lastAttMark;
+      if(last){
+        const c=state.classes.find(x=>classIdentity(x)===last.id);
+        if(c)setAttendance(c,last.prev);
+        state.lastAttMark=null;renderAll();
+      }
+      return;
+    }
+    const btn=e.target.closest(".att-set-btn");if(!btn)return;
+    const host=btn.closest("[data-class-id]");if(!host)return;
+    const c=state.classes.find(x=>classIdentity(x)===host.dataset.classId);if(!c)return;
     /* Tapping the state a session already holds clears it, so a mis-tap is undone
        with the same button that caused it. */
-    const want=btn.dataset.attSet;
-    setAttendance(c,attendanceOf(c)===want?null:want);
+    const want=btn.dataset.attSet,prev=attendanceOf(c);
+    const next=prev===want?null:want;
+    setAttendance(c,next);
+    /* Remembered so the prompt can offer a single undo: marking from there moves on
+       to the next session immediately, and without this the thing you just answered
+       would be gone with no way back to it. */
+    state.lastAttMark=next?{id:classIdentity(c),prev,value:next,label:`${canonical(c.code)}${c.sessionNo?` S${c.sessionNo}`:""}`}:null;
     haptic();renderAll();
   });
+}
+/* Every session that has happened, newest first, each showing where it stands and
+   changeable on the spot. The prompt is for answering in the moment; this is the
+   record - the place to look back, spot the one marked wrong, and fix it. */
+function renderAttendanceLog(now=new Date()){
+  const el=$("#attendanceLog");if(!el)return;
+  const held=heldSessions(now).sort((a,b)=>dateTime(b,"endTime")-dateTime(a,"endTime"));
+  if(!held.length){el.innerHTML="";return}
+  const all=!!state.attLogAll,shown=all?held:held.slice(0,8);
+  let html=`<div class="al-head"><p class="rail-section-label">Every session so far</p>`;
+  if(held.length>8)html+=`<button type="button" class="text-button" id="attLogToggle">${all?"Show less":`Show all ${held.length}`}</button>`;
+  html+=`</div><div class="al-list">`;
+  let lastDay=null;
+  shown.forEach(c=>{
+    if(c.dateIso!==lastDay){
+      lastDay=c.dateIso;
+      html+=`<p class="al-day">${esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}))}${c.dateIso===isoToday()?" <b>Today</b>":""}</p>`;
+    }
+    const m=attendanceOf(c),n=subjectSessionOrdinal(c);
+    html+=`<div class="al-row ${m?`is-${m}`:"is-unmarked"}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
+      <span class="al-when">${esc(fmtTime(c.startTime))}</span>
+      <span class="al-what"><b>${esc(canonical(c.code))}</b>${n?`<em>S${n}</em>`:""}</span>
+      <span class="al-seg">
+        <button type="button" class="att-set-btn al-btn" data-att-set="present" aria-pressed="${m==="present"}" aria-label="Attended">Attended</button>
+        <button type="button" class="att-set-btn al-btn is-miss" data-att-set="absent" aria-pressed="${m==="absent"}" aria-label="Missed">Missed</button>
+      </span>
+    </div>`;
+  });
+  html+=`</div>`;
+  el.innerHTML=html;
+  $("#attLogToggle")?.addEventListener("click",()=>{state.attLogAll=!state.attLogAll;renderAttendanceLog()});
 }
 /* Sessions that have actually happened: finished, not cancelled, and real teaching
    rather than the batch-wide quiz slot. */
@@ -897,7 +943,24 @@ function renderAttendancePrompt(now=new Date()){
   const pending=state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled"
     &&dateTime(c,"endTime")<=now&&dateTime(c,"endTime")>=since&&!marks[attendanceKey(c)])
     .sort((a,b)=>dateTime(b,"endTime")-dateTime(a,"endTime"));
-  if(!pending.length){el.hidden=true;el.innerHTML="";return}
+  /* Marking used to make the card vanish, which told you nothing: no confirmation of
+     what went in, and no way back to it. When there is nothing left to ask, the card
+     stays and reports the answer it just took, with one undo. */
+  if(!pending.length){
+    const last=state.lastAttMark;
+    if(!last){el.hidden=true;el.innerHTML="";return}
+    el.hidden=false;
+    el.style.removeProperty("--course");
+    el.classList.add("is-done");
+    el.innerHTML=`<div class="ap-copy">
+        <span class="ap-code ap-ok">${icon("check")}All caught up</span>
+        <strong>${esc(last.label)} \u00b7 ${last.value==="present"?"attended":"missed"}</strong>
+        <small>Every finished class is marked.</small>
+      </div>
+      <div class="ap-actions"><button type="button" class="ap-undo" id="attUndo">Undo</button></div>`;
+    return;
+  }
+  el.classList.remove("is-done");
   const c=pending[0],n=subjectSessionOrdinal(c);
   el.hidden=false;
   el.style.setProperty("--course",colorFor(c.code));
@@ -909,12 +972,14 @@ function renderAttendancePrompt(now=new Date()){
     <div class="ap-actions">
       <button type="button" class="ap-yes" data-att="present">Yes</button>
       <button type="button" class="ap-no" data-att="absent">Missed it</button>
-    </div>`;
+    </div>
+    ${state.lastAttMark?`<p class="ap-last">${esc(state.lastAttMark.label)} marked ${state.lastAttMark.value==="present"?"attended":"missed"}<button type="button" id="attUndo">Undo</button></p>`:""}`;
   el.querySelectorAll("[data-att]").forEach(btn=>btn.addEventListener("click",()=>{
+    const prev=attendanceOf(c);
     setAttendance(c,btn.dataset.att);
+    state.lastAttMark={id:classIdentity(c),prev,value:btn.dataset.att,label:`${canonical(c.code)}${n?` S${n}`:""}`};
     haptic();
-    showToast(btn.dataset.att==="present"?`${canonical(c.code)}${n?` S${n}`:""} marked attended`:`${canonical(c.code)}${n?` S${n}`:""} marked missed`);
-    renderAttendancePrompt();renderAttendanceSummary();renderCalendar();
+    renderAll();
   }));
 }
 /* Per course, because that is how attendance is counted, with the overall figure
@@ -2977,8 +3042,8 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
     ?courses.map(([code,v])=>`<span title="${esc(v.title)}" style="--course:${colorFor(code)}"><b>${esc(code)}</b><i>${esc(v.title)}</i><em>${v.credits} cr</em></span>`).join("")
     :"<em>Schedule not loaded</em>";
   renderCalendarConnectionStatus();
-  renderSessionRings();
   renderAttendanceSummary();
+  renderAttendanceLog();
   renderAccentSwatches();
   renderTermRing();
   renderWorkloadChart();
@@ -3006,21 +3071,11 @@ function renderAccentSwatches(){
     `<button type="button" class="accent-swatch ${key===current?"active":""}" data-accent="${key}" style="--swatch:${preset.dark.accent}" aria-label="${esc(preset.name)}" title="${esc(preset.name)}"></button>`
   ).join("");
 }
-function renderSessionRings(){
-  const el=$("#sessionRings");if(!el)return;
-  const codes=[...new Set(state.classes.filter(c=>c.type!=="General").map(c=>canonical(c.code)))].sort();
-  if(!codes.length){el.innerHTML='<p class="empty-inline">No courses scheduled yet.</p>';return}
-  const now=new Date();
-  el.innerHTML=codes.map(code=>{
-    const sessions=subjectSessions(code);
-    const done=sessions.filter(c=>dateTime(c,"endTime")<=now).length;
-    const pct=sessions.length?Math.round((done/sessions.length)*100):0;
-    return`<div class="session-ring-item" style="--course:${colorFor(code)}">
-      <span class="session-ring"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-track" cx="20" cy="20" r="16"></circle><circle class="ring-fill" style="--pct:${pct}" cx="20" cy="20" r="16"></circle></svg><b>${done}</b></span>
-      <div class="session-ring-meta"><strong>${esc(code)}</strong><span>${done}/${sessions.length} sessions</span></div>
-    </div>`;
-  }).join("");
-}
+/* renderSessionRings is gone. It counted through subjectSessions, which reads
+   state.all - a list only the Term III sync ever filled, and that has been switched
+   off since SYNC_ENABLED went false. Every ring therefore read 0/0. What it meant to
+   show, how far each course has been delivered, is what the attendance panel counts
+   anyway, so it is not replaced. */
 function renderWorkloadChart(){
   const el=$("#workloadChart");if(!el)return;
   const totals={};
@@ -4020,7 +4075,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova196",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova197",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

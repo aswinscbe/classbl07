@@ -3296,3 +3296,57 @@ html{scroll-behavior:smooth}
 .agenda-earlier em{margin-left:auto;font-style:normal;font-weight:700;color:var(--accent)}
 .agenda-earlier:active{transform:scale(.985)}
 @media(hover:hover){.agenda-earlier:hover{border-color:var(--accent);color:var(--ink)}}
+
+/* The prompt's confirmation: what went in, and one way back out of it. */
+.attendance-prompt.is-done{border-left-color:var(--live)}
+.ap-code.ap-ok{color:var(--live)}
+.ap-code.ap-ok svg{width:14px;height:14px}
+.ap-last{
+  flex-basis:100%;display:flex;align-items:center;gap:8px;margin:2px 0 0;
+  font-size:var(--text-sm);color:var(--ink-faint);
+}
+.ap-last button,.ap-undo{
+  background:none;border:0;cursor:pointer;padding:4px 2px;
+  font-size:var(--text-sm);font-weight:700;color:var(--accent);
+}
+.ap-undo{
+  padding:0 14px;min-height:38px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--bg-panel);
+}
+.ap-last button:hover,.ap-undo:hover{text-decoration:underline}
+
+/* The record: every session so far, where it stands, changeable in place. */
+.al-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:20px 0 2px;border-top:1px solid var(--border);padding-top:16px}
+.al-head .rail-section-label{margin:0}
+.al-list{display:flex;flex-direction:column;gap:5px}
+.al-day{
+  margin:12px 0 3px;font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);
+  text-transform:uppercase;color:var(--ink-faint);
+}
+.al-day b{color:var(--accent);font-weight:800}
+.al-list>.al-day:first-child{margin-top:4px}
+.al-row{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;
+  border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-panel);
+  border-left:3px solid var(--course);
+}
+.al-row.is-unmarked{border-left-style:dashed;opacity:.82}
+.al-when{font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);font-variant-numeric:tabular-nums;flex:none;min-width:62px}
+.al-what{display:flex;align-items:baseline;gap:5px;flex:1;min-width:0}
+.al-what b{font-size:var(--text-sm);font-weight:800;letter-spacing:var(--track-label);color:var(--course)}
+.al-what em{font-style:normal;font-size:var(--text-xs);font-weight:700;color:var(--ink-faint)}
+.al-seg{display:flex;gap:4px;flex:none}
+.al-btn{
+  padding:5px 9px;border-radius:var(--radius-sm);cursor:pointer;
+  font-size:var(--text-xs);font-weight:700;
+  border:1px solid var(--border);background:transparent;color:var(--ink-faint);
+  transition:transform var(--dur-xs) var(--ease-spring),background var(--dur-sm) var(--ease-out),border-color var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out);
+}
+.al-btn:active{transform:scale(.93)}
+.al-row.is-present .al-btn[data-att-set="present"]{background:var(--live-soft);border-color:color-mix(in srgb, var(--live) 45%, transparent);color:var(--live)}
+.al-row.is-absent .al-btn[data-att-set="absent"]{background:var(--danger-soft);border-color:color-mix(in srgb, var(--danger) 45%, transparent);color:var(--danger)}
+@media(hover:hover){.al-btn:hover{border-color:var(--border-strong);color:var(--ink)}}
+@media(max-width:380px){
+  .al-when{min-width:52px;font-size:var(--text-xs)}
+  .al-btn{padding:5px 7px}
+}
