@@ -28,7 +28,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260928-nova194">
+  <link rel="stylesheet" href="styles.css?v=20260928-nova195">
   <title>BL07 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -121,6 +121,8 @@
               <div class="day-shape-bar" id="dayShapeBar"></div>
               <div id="todayProgressRail"></div>
             </section>
+
+            <section class="attendance-prompt" id="attendancePrompt" hidden></section>
 
             <section class="silent-update-strip" id="silentUpdateStrip" hidden>
               <div class="silent-update-icon"><span data-icon="spark"></span></div>
@@ -432,6 +434,11 @@
               <p class="rail-section-label">Sessions delivered</p>
               <div id="sessionRings" class="session-rings"></div>
             </article>
+
+            <article class="panel attendance-panel">
+              <div class="panel-heading"><div><p class="overline">ATTENDANCE</p><h2>Classes attended</h2></div></div>
+              <div id="attendanceSummary"></div>
+            </article>
           </section>
         </div>
       </section>
@@ -611,11 +618,11 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260928-nova194"></script>
-  <script src="staff-bus-data.js?v=20260928-nova194"></script>
-  <script src="exam-data.js?v=20260928-nova194"></script>
-  <script src="term4-data.js?v=20260928-nova194"></script>
-  <script src="app.js?v=20260928-nova194"></script>
-  <script src="polish.js?v=20260928-nova194"></script>
+  <script src="campus-data.js?v=20260928-nova195"></script>
+  <script src="staff-bus-data.js?v=20260928-nova195"></script>
+  <script src="exam-data.js?v=20260928-nova195"></script>
+  <script src="term4-data.js?v=20260928-nova195"></script>
+  <script src="app.js?v=20260928-nova195"></script>
+  <script src="polish.js?v=20260928-nova195"></script>
 </body>
 </html>

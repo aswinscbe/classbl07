@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 const API="https://script.google.com/macros/s/AKfycbxQWG7cS3quE0C8BBtRVx8PExapIvuqAB5-KLGzQMnOoDNKBMcblxMpztO77jME6EwShQ/exec";
-const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2",busRoute:"classbl07-nova-bus-route-v1",leavingSoon:"classbl07-nova-leaving-soon-v1"};
+const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2",busRoute:"classbl07-nova-bus-route-v1",leavingSoon:"classbl07-nova-leaving-soon-v1",attendance:"classbl07-nova-attendance-v1"};
 /* Evenly spaced around the hue wheel (27.7° apart, HSL S:70 L:58, darkened to
    L:48 through the yellow-green band which otherwise reads washed out on a dark
    background) so no two course colors sit close enough to be confused — SBM and
@@ -365,6 +365,68 @@ async function fetchSectionClasses(section){
 function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
 function classKey(c){return`${classIdentity(c)}|${c.endTime||""}|${venueOf(c)}`}
 function classIdentity(c){return`${c.dateIso}|${c.startTime}|${canonical(c.code)}`}
+/* ── Attendance ──────────────────────────────────────────────────────────────
+   Keyed on course and session number, not on date and time. classIdentity above
+   carries the date and start time, which is right for spotting that the schedule
+   changed - and exactly wrong here: when the office moved MBGAI session 5 from
+   4:00pm to 5:30pm, a mark filed under the old time would have been orphaned and
+   the session would have come back unmarked. Session number is the identity the
+   office itself uses, so a mark follows its session wherever it is moved to. */
+const attendanceKey=c=>`${canonical(c.code)}|${c.sessionNo==null?c.dateIso:c.sessionNo}`;
+function loadAttendance(){const v=load(KEYS.attendance,{});return v&&typeof v==="object"?v:{}}
+function attendanceOf(c){return loadAttendance()[attendanceKey(c)]||null}
+function setAttendance(c,value){
+  const all=loadAttendance(),k=attendanceKey(c);
+  if(value)all[k]=value;else delete all[k];
+  save(KEYS.attendance,all);
+  state.attendance=all;
+}
+/* The catch-up path, for a day nobody answered the prompt on. Only on sessions that
+   have finished: there is nothing to say about a class that has not happened yet. */
+function attendanceToggleHtml(c){
+  const m=attendanceOf(c);
+  return`<div class="sr-att">
+    <button type="button" class="sr-att-btn ${m==="present"?"on":""}" data-att-set="present" aria-pressed="${m==="present"}">Attended</button>
+    <button type="button" class="sr-att-btn is-miss ${m==="absent"?"on":""}" data-att-set="absent" aria-pressed="${m==="absent"}">Missed</button>
+  </div>`;
+}
+/* One listener on the document rather than one per row: the schedule is rebuilt on
+   every render and on the thirty-second tick, so per-row handlers would be re-bound
+   constantly and the old ones left behind. */
+function bindAttendanceToggles(){
+  document.addEventListener("click",e=>{
+    const btn=e.target.closest(".sr-att-btn");if(!btn)return;
+    const row=btn.closest(".sched-row");if(!row)return;
+    const c=state.classes.find(x=>classIdentity(x)===row.dataset.classId);if(!c)return;
+    /* Tapping the state a session already holds clears it, so a mis-tap is undone
+       with the same button that caused it. */
+    const want=btn.dataset.attSet;
+    setAttendance(c,attendanceOf(c)===want?null:want);
+    haptic();renderAll();
+  });
+}
+/* Sessions that have actually happened: finished, not cancelled, and real teaching
+   rather than the batch-wide quiz slot. */
+function heldSessions(now=new Date()){
+  return state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled"&&dateTime(c,"endTime")<=now);
+}
+/* An unmarked session that has already happened counts as attended, because that is
+   the usual case and demanding 120 confirmations would get the feature abandoned in
+   a week. The count of unmarked ones is carried alongside so the figure can say how
+   much of itself is assumed rather than answered. */
+function attendanceFor(code,now=new Date()){
+  const marks=loadAttendance();
+  let held=0,absent=0,unmarked=0;
+  heldSessions(now).forEach(c=>{
+    if(code&&canonical(c.code)!==canonical(code))return;
+    held++;
+    const m=marks[attendanceKey(c)];
+    if(m==="absent")absent++;
+    else if(!m)unmarked++;
+  });
+  const attended=held-absent;
+  return{held,attended,absent,unmarked,pct:held?Math.round(attended/held*100):null};
+}
 function tomorrowIso(){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+1);return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d)}
 function isoForDayOffset(n){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+n);return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d)}
 function isClassCompleted(c){
@@ -818,6 +880,70 @@ function renderCourseProgress(now=new Date()){
     </div>`;
   }).join("");
 }
+/* Asked in the moment, which is the only time the answer is free. The app already
+   knows which classes have ended; the one thing it cannot work out is whether you
+   were there.
+
+   It reaches back a week rather than only to today, because the Planner's catch-up
+   toggles sit behind "Show completed" and nobody is going to find them. A weekend
+   away would otherwise leave a silent gap that the summary then counts as attended.
+   A week is the limit on purpose: past that the honest answer is "I don't remember",
+   and an app that keeps asking anyway just gets ignored. */
+const ATT_PROMPT_DAYS=7;
+function renderAttendancePrompt(now=new Date()){
+  const el=$("#attendancePrompt");if(!el)return;
+  const marks=loadAttendance();
+  const since=new Date(now.getTime()-ATT_PROMPT_DAYS*864e5);
+  const pending=state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled"
+    &&dateTime(c,"endTime")<=now&&dateTime(c,"endTime")>=since&&!marks[attendanceKey(c)])
+    .sort((a,b)=>dateTime(b,"endTime")-dateTime(a,"endTime"));
+  if(!pending.length){el.hidden=true;el.innerHTML="";return}
+  const c=pending[0],n=subjectSessionOrdinal(c);
+  el.hidden=false;
+  el.style.setProperty("--course",colorFor(c.code));
+  el.innerHTML=`<div class="ap-copy">
+      <span class="ap-code">${esc(canonical(c.code))}${n?`<b>S${n}</b>`:""}</span>
+      <strong>Were you there?</strong>
+      <small>${c.dateIso===isoToday()?"":esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}))+" \u00b7 "}${esc(fmtTime(c.startTime))} \u2013 ${esc(fmtTime(c.endTime))}${pending.length>1?` \u00b7 ${pending.length-1} more to mark`:""}</small>
+    </div>
+    <div class="ap-actions">
+      <button type="button" class="ap-yes" data-att="present">Yes</button>
+      <button type="button" class="ap-no" data-att="absent">Missed it</button>
+    </div>`;
+  el.querySelectorAll("[data-att]").forEach(btn=>btn.addEventListener("click",()=>{
+    setAttendance(c,btn.dataset.att);
+    haptic();
+    showToast(btn.dataset.att==="present"?`${canonical(c.code)}${n?` S${n}`:""} marked attended`:`${canonical(c.code)}${n?` S${n}`:""} marked missed`);
+    renderAttendancePrompt();renderAttendanceSummary();renderCalendar();
+  }));
+}
+/* Per course, because that is how attendance is counted, with the overall figure
+   above it. No threshold and no warnings - there is no published minimum to measure
+   against, and inventing one would be the app asserting a rule it does not know. */
+function renderAttendanceSummary(now=new Date()){
+  const el=$("#attendanceSummary");if(!el)return;
+  const overall=attendanceFor(null,now);
+  if(!overall.held){
+    el.innerHTML=`<p class="att-empty">Nothing to count yet \u2014 marks appear here once classes start finishing.</p>`;
+    return;
+  }
+  const codes=[...new Set(heldSessions(now).map(c=>canonical(c.code)))]
+    .map(code=>({code,...attendanceFor(code,now)}))
+    .sort((a,b)=>a.pct-b.pct||a.code.localeCompare(b.code));
+  const unconfirmed=overall.unmarked
+    ?`<small class="att-unconfirmed">${overall.unmarked} not marked, counted as attended</small>`:"";
+  el.innerHTML=`<div class="att-overall">
+      <b>${overall.pct}<em>%</em></b>
+      <span><strong>${overall.attended} of ${overall.held} attended</strong>${unconfirmed}</span>
+    </div>
+    <div class="att-rows">${codes.map(r=>`
+      <div class="att-row" style="--course:${colorFor(r.code)}">
+        <span class="att-code">${esc(r.code)}</span>
+        <span class="att-bar"><i style="width:${r.pct}%"></i></span>
+        <span class="att-count">${r.attended}<em>/${r.held}</em></span>
+        <span class="att-pct">${r.pct}%</span>
+      </div>`).join("")}</div>`;
+}
 function renderHomeLegend(){
   const el=$("#homeLegend");if(!el)return;
   const monday=zoned(mondayIso(isoToday()),"00:00"),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
@@ -1177,7 +1303,7 @@ function renderHome(){
     }).join("");
   }
   renderCourseProgress(now);renderTermStrip(now);
-  renderWeekDigest();renderHomeLegend();renderTodayStrips();
+  renderWeekDigest();renderHomeLegend();renderTodayStrips();renderAttendancePrompt();
   /* Week bar chart — count above, bar height by load, day letter below. A vertical
      bar reads "how busy is this day" faster than a same-size square with a number
      in it, and matches the muted single-hue premium direction (today's bar is the
@@ -1795,6 +1921,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
         ${tier!=="done"&&!cancelled&&chips?`<div class="sr-chips">${chips}</div>`:""}
         ${tier!=="done"&&!cancelled?`<div class="sr-meta">${meta.map(esc).join('<span class="sep">·</span>')}</div>`:""}
         ${progress!==null?`<div class="sr-bar"><span style="width:${progress}%"></span></div>`:""}
+        ${tier==="done"&&!cancelled?attendanceToggleHtml(c):""}
         ${nextLine}
       </div>
     </article>`;
@@ -2838,6 +2965,7 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
     :"<em>Schedule not loaded</em>";
   renderCalendarConnectionStatus();
   renderSessionRings();
+  renderAttendanceSummary();
   renderAccentSwatches();
   renderTermRing();
   renderWorkloadChart();
@@ -3835,6 +3963,7 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess();renderMessWeekGrid()});
 $("#messWeekGrid")?.addEventListener("click",e=>{const cell=e.target.closest(".mwg-cell");if(!cell)return;state.messDay=cell.dataset.day;state.meal=cell.dataset.meal;renderMess();renderMessWeekGrid();$("#toggleMessView")?.click()});bindShareApp();
+bindAttendanceToggles();
 $("#closeShortcutDialog").addEventListener("click",()=>animateCloseDialog($("#shortcutDialog")));document.addEventListener("keydown",e=>{if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName))return;const k=e.key.toLowerCase();if(k==="h")showPage("home");else if(k==="p")showPage("calendar");else if(k==="c")showPage("campus");else if(k==="r")syncSchedule(true);else if(k==="n")openNotifications();else if(e.key==="?")$("#shortcutDialog").showModal()});
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((state.profile.theme||"system")==="system")applyTheme()});
   let resizeTimer;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(fitHeroTime,120)});
@@ -3872,7 +4001,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova194",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova195",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

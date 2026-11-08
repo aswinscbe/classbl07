@@ -3216,3 +3216,69 @@ html{scroll-behavior:smooth}
 .brand{min-width:0}
 .brand-copy{min-width:0;display:flex;flex-direction:column}
 .brand-copy strong,.brand-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── Attendance ──────────────────────────────────────────────────────────────
+   Asked once, in the moment a class ends, where the answer costs nothing. */
+.attendance-prompt{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  margin-top:14px;padding:13px 15px;border-radius:var(--radius-lg);
+  background:var(--bg-elevated);border:1px solid var(--border);
+  border-left:3px solid var(--course,var(--accent));
+  box-shadow:var(--shadow-sm), var(--edge-light);
+}
+.ap-copy{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.ap-code{
+  display:inline-flex;align-items:center;gap:6px;align-self:flex-start;
+  font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);
+  color:var(--course,var(--accent));
+}
+.ap-code b{font-weight:800;opacity:.75}
+.ap-copy strong{font-size:var(--text-md);font-weight:700;color:var(--ink);line-height:var(--lh-snug)}
+.ap-copy small{font-size:var(--text-sm);color:var(--ink-faint)}
+.ap-actions{display:flex;gap:8px;flex:none}
+.ap-yes,.ap-no{
+  min-height:38px;padding:0 15px;border-radius:var(--radius-sm);cursor:pointer;
+  font-size:var(--text-sm);font-weight:700;border:1px solid var(--border);
+  background:var(--bg-panel);color:var(--ink);
+  transition:transform var(--dur-xs) var(--ease-spring),background var(--dur-sm) var(--ease-out),border-color var(--dur-sm) var(--ease-out);
+}
+.ap-yes{background:var(--live-soft);border-color:color-mix(in srgb, var(--live) 40%, transparent);color:var(--live)}
+.ap-no{color:var(--ink-muted)}
+.ap-yes:active,.ap-no:active{transform:scale(.95)}
+@media(hover:hover){
+  .ap-yes:hover{background:color-mix(in srgb, var(--live) 24%, transparent)}
+  .ap-no:hover{border-color:var(--danger);color:var(--danger)}
+}
+
+/* The catch-up toggle inside a finished schedule row. */
+.sr-att{display:flex;gap:6px;margin-top:9px}
+.sr-att-btn{
+  padding:5px 11px;border-radius:var(--radius-pill);cursor:pointer;
+  font-size:var(--text-xs);font-weight:700;
+  border:1px dashed var(--border-strong);background:transparent;color:var(--ink-faint);
+  transition:transform var(--dur-xs) var(--ease-spring),background var(--dur-sm) var(--ease-out),border-color var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out);
+}
+.sr-att-btn:active{transform:scale(.94)}
+.sr-att-btn.on{border-style:solid;background:var(--live-soft);border-color:color-mix(in srgb, var(--live) 45%, transparent);color:var(--live)}
+.sr-att-btn.is-miss.on{background:var(--danger-soft);border-color:color-mix(in srgb, var(--danger) 45%, transparent);color:var(--danger)}
+
+/* The summary. One overall figure, then the per-course split, because that is how
+   attendance is counted. */
+.att-overall{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.att-overall b{
+  font-family:var(--font-display);font-size:var(--text-2xl);font-weight:700;
+  color:var(--ink);line-height:1;font-variant-numeric:tabular-nums;
+}
+.att-overall b em{font-style:normal;font-size:var(--text-lg);color:var(--ink-faint);margin-left:1px}
+.att-overall span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.att-overall strong{font-size:var(--text-md);font-weight:700;color:var(--ink)}
+.att-unconfirmed{font-size:var(--text-sm);color:var(--ink-faint);line-height:var(--lh-body)}
+.att-rows{display:flex;flex-direction:column;gap:10px}
+.att-row{display:grid;grid-template-columns:58px 1fr auto auto;align-items:center;gap:10px}
+.att-code{font-size:var(--text-sm);font-weight:800;letter-spacing:var(--track-label);color:var(--course)}
+.att-bar{height:7px;border-radius:var(--radius-pill);background:color-mix(in srgb, var(--ink) 10%, transparent);overflow:hidden}
+.att-bar i{display:block;height:100%;border-radius:inherit;background:var(--course);transition:width var(--dur-lg) var(--ease-out)}
+.att-count{font-size:var(--text-sm);font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.att-count em{font-style:normal;color:var(--ink-faint);font-weight:600}
+.att-pct{font-size:var(--text-sm);font-weight:700;color:var(--ink-muted);font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+.att-empty{margin:0;font-size:var(--text-md);color:var(--ink-muted);line-height:var(--lh-body)}
