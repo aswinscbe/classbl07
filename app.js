@@ -2303,7 +2303,7 @@ function openTaskEditor(t){
   $("#taskCourse").value=t.course==="General"?"":canonical(t.course);
   $("#taskDate").value=t.date||"";
   $("#taskDialog h2").textContent="Edit task";
-  $("#saveTaskButton").textContent="Save changes";
+  const sb=$("#saveTaskButton");if(sb)sb.textContent="Save changes";
   clearDialogValidation($("#taskDialog"));
   $("#taskDialog").showModal();
 }
@@ -3267,6 +3267,10 @@ function openClassSheet(c){
 }
 function activeSheetClass(){return state.classes.find(x=>classIdentity(x)===activeSheetClassId)}
 function bindDismissibleDialog(dialog){
+  /* A missing dialog is not a reason to abort init. Binding the ledger dialog after it
+     was removed threw here, and because this runs inside bind() the throw took every
+     binding after it with it - the whole app came up dead from one absent element. */
+  if(!dialog)return;
   dialog.addEventListener("click",e=>{if(e.target===dialog)closeDialog(dialog)});
   dialog.addEventListener("cancel",e=>{e.preventDefault();closeDialog(dialog)});
   $$(".dialog-close,.dialog-cancel",dialog).forEach(b=>b.addEventListener("click",()=>closeDialog(dialog)));
@@ -3979,7 +3983,6 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
   $("#ledgerSearch")?.addEventListener("input",renderLedger);
   $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
-  bindDismissibleDialog($("#ledgerDialog"));
   bindDismissibleDialog($("#classActionDialog"));
   $("#closeClassAction")?.addEventListener("click",()=>closeDialog($("#classActionDialog")));
   /* Adding a task for a class used to hop through a second dialog asking for a
@@ -4025,14 +4028,13 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
     e.currentTarget.setAttribute("aria-expanded",String(open));
   });
   $("#weekScanPrev")?.addEventListener("click",()=>shiftRailWeek(-1));
+  /* Tasks and notes are gone from the interface: nobody in the batch was using them,
+     and the app is better for being about one thing. Their bindings are removed here
+     rather than guarded, because an element that no longer exists should not be bound
+     at all. The Google Tasks sync functions are deliberately left in place, unused, so
+     the feature can come back without being rebuilt. */
   $("#weekScanNext")?.addEventListener("click",()=>shiftRailWeek(1));
-  const taskDialog=$("#taskDialog"),noteDialog=$("#noteDialog");
-  bindDismissibleDialog(taskDialog);bindDismissibleDialog(noteDialog);
-  $("#openTaskForm").addEventListener("click",()=>{editingTaskId=null;$("#taskTitle").value="";$("#taskCourse").value="";$("#taskDate").value="";$("#taskDialog h2").textContent="Add task";$("#saveTaskButton").textContent="Save";clearDialogValidation(taskDialog);taskDialog.showModal()});
-  $("#saveTaskButton").addEventListener("click",()=>{const title=$("#taskTitle").value.trim();if(!title){showDialogValidation(taskDialog,"Enter a task title, or close the window to discard.");return}if(editingTaskId){const task=state.tasks.find(t=>t.id===editingTaskId);if(task){task.title=title;task.course=$("#taskCourse").value||"General";task.date=$("#taskDate").value;save(KEYS.tasks,state.tasks);syncTaskToGoogle(task);renderTasks();renderHomeTasks();renderCalendar();renderLedger()}editingTaskId=null}else addTask(title,$("#taskCourse").value,$("#taskDate").value);closeDialog(taskDialog,true)});
   $("#taskFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-task-filter]");if(!b)return;setTaskFilter(b.dataset.taskFilter)});
-  $("#openNoteForm").addEventListener("click",()=>{clearDialogValidation(noteDialog);noteDialog.showModal()});
-  $("#saveNoteButton").addEventListener("click",()=>{const title=$("#noteTitle").value.trim(),body=$("#noteBody").value.trim();if(!title||!body){showDialogValidation(noteDialog,"Add a title and note only when you want to save. You can close this window anytime.");return}state.notes.unshift({id:crypto.randomUUID(),title,body,course:$("#noteCourse").value,createdAt:Date.now()});save(KEYS.notes,state.notes);closeDialog(noteDialog,true);renderNotes();renderLedger()});
   $("#noteSearch")?.addEventListener("input",renderNotes);
   $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess();renderMessWeekGrid()});
@@ -4075,7 +4077,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova198",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova199",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
