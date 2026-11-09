@@ -28,7 +28,7 @@
       }catch(e){document.documentElement.dataset.theme="dark"}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260928-nova199">
+  <link rel="stylesheet" href="styles.css?v=20260928-nova200">
   <title>BL07 Planner</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -44,6 +44,7 @@
         <button class="desktop-nav-item active" data-page-target="home"><span data-icon="home"></span>Home</button>
         <button class="desktop-nav-item" data-page-target="calendar"><span data-icon="calendar"></span>Planner</button>
         <button class="desktop-nav-item" data-page-target="campus"><span data-icon="campus"></span>Campus</button>
+        <button class="desktop-nav-item" data-page-target="attendance"><span data-icon="check"></span>Attendance</button>
         <button class="desktop-nav-item" data-page-target="profile"><span data-icon="profile"></span>Profile</button>
       </nav>
 
@@ -332,6 +333,12 @@
         </section>
       </section>
 
+      <section class="page" id="attendancePage" data-page="attendance">
+        <div class="page-heading"><div><p class="overline">ATTENDANCE</p><h1>Attendance</h1><p class="subtitle">Which classes you were in.</p></div></div>
+        <article class="panel"><div id="attendanceSummary"></div></article>
+        <article class="panel"><div id="attendanceLog"></div></article>
+      </section>
+
       <section class="page" id="profilePage" data-page="profile">
         <div class="page-heading"><div><p class="overline">PROFILE</p><h1>Profile</h1><p class="subtitle">Your courses and settings.</p></div></div>
         <div class="profile-layout">
@@ -427,11 +434,7 @@
           <section class="profile-view" data-profile-view="insights">
             <p class="profile-insight" id="profileInsight" hidden></p>
 
-            <article class="panel attendance-panel">
-              <div class="panel-heading"><div><p class="overline">ATTENDANCE</p><h2>Classes attended</h2></div></div>
-              <div id="attendanceSummary"></div>
-              <div id="attendanceLog"></div>
-            </article>
+
           </section>
         </div>
       </section>
@@ -441,6 +444,7 @@
       <button class="nav-item active" data-page-target="home"><span data-icon="home"></span><b>Home</b></button>
       <button class="nav-item" data-page-target="calendar"><span data-icon="calendar"></span><b>Planner</b></button>
       <button class="nav-item" data-page-target="campus"><span data-icon="campus"></span><b>Campus</b></button>
+      <button class="nav-item" data-page-target="attendance"><span data-icon="check"></span><b>Attend</b></button>
       <button class="nav-item" data-page-target="profile"><span data-icon="profile"></span><b>Profile</b></button>
     </nav>
   </div>
@@ -576,11 +580,11 @@
     </form>
   </dialog>
 
-  <script src="campus-data.js?v=20260928-nova199"></script>
-  <script src="staff-bus-data.js?v=20260928-nova199"></script>
-  <script src="exam-data.js?v=20260928-nova199"></script>
-  <script src="term4-data.js?v=20260928-nova199"></script>
-  <script src="app.js?v=20260928-nova199"></script>
-  <script src="polish.js?v=20260928-nova199"></script>
+  <script src="campus-data.js?v=20260928-nova200"></script>
+  <script src="staff-bus-data.js?v=20260928-nova200"></script>
+  <script src="exam-data.js?v=20260928-nova200"></script>
+  <script src="term4-data.js?v=20260928-nova200"></script>
+  <script src="app.js?v=20260928-nova200"></script>
+  <script src="polish.js?v=20260928-nova200"></script>
 </body>
 </html>

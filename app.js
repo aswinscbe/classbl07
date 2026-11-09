@@ -428,14 +428,16 @@ function renderAttendanceLog(now=new Date()){
   const held=heldSessions(now).sort((a,b)=>dateTime(b,"endTime")-dateTime(a,"endTime"));
   if(!held.length){el.innerHTML="";return}
   const all=!!state.attLogAll,shown=all?held:held.slice(0,8);
-  let html=`<div class="al-head"><p class="rail-section-label">Every session so far</p>`;
+  let html=`<div class="al-head"><p class="rail-section-label">Every class so far</p>`;
   if(held.length>8)html+=`<button type="button" class="text-button" id="attLogToggle">${all?"Show less":`Show all ${held.length}`}</button>`;
   html+=`</div><div class="al-list">`;
   let lastDay=null;
   shown.forEach(c=>{
     if(c.dateIso!==lastDay){
       lastDay=c.dateIso;
-      html+=`<p class="al-day">${esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}))}${c.dateIso===isoToday()?" <b>Today</b>":""}</p>`;
+      const blanks=held.filter(x=>x.dateIso===c.dateIso&&!attendanceOf(x)).length;
+      html+=`<div class="al-day"><span>${esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}))}${c.dateIso===isoToday()?" <b>Today</b>":""}</span>${
+        blanks?`<button type="button" class="al-day-all" data-att-day="${esc(c.dateIso)}">Mark ${blanks===1?"it":"all"} attended</button>`:""}</div>`;
     }
     const m=attendanceOf(c),n=subjectSessionOrdinal(c);
     html+=`<div class="al-row ${m?`is-${m}`:"is-unmarked"}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
@@ -450,28 +452,46 @@ function renderAttendanceLog(now=new Date()){
   html+=`</div>`;
   el.innerHTML=html;
   $("#attLogToggle")?.addEventListener("click",()=>{state.attLogAll=!state.attLogAll;renderAttendanceLog()});
+  $$(".al-day-all",el).forEach(btn=>btn.addEventListener("click",()=>{
+    const iso=btn.dataset.attDay;
+    const n=markManyAttended(held.filter(c=>c.dateIso===iso));
+    haptic();showToast(`${n} ${n===1?"class":"classes"} marked attended`);
+    state.lastAttMark=null;renderAll();
+  }));
 }
 /* Sessions that have actually happened: finished, not cancelled, and real teaching
    rather than the batch-wide quiz slot. */
 function heldSessions(now=new Date()){
   return state.classes.filter(c=>isSession(c)&&c.status!=="Cancelled"&&dateTime(c,"endTime")<=now);
 }
-/* An unmarked session that has already happened counts as attended, because that is
-   the usual case and demanding 120 confirmations would get the feature abandoned in
-   a week. The count of unmarked ones is carried alongside so the figure can say how
-   much of itself is assumed rather than answered. */
+/* Unmarked sessions used to be counted as attended. It made the headline figure
+   cheap to produce and impossible to trust: a number mostly made of assumptions,
+   with a footnote admitting it. The percentage is now of what has actually been
+   answered, and the unanswered ones are reported as work outstanding rather than
+   folded in. A course with nothing marked has no percentage, not 100%. */
 function attendanceFor(code,now=new Date()){
   const marks=loadAttendance();
-  let held=0,absent=0,unmarked=0;
+  let held=0,attended=0,absent=0;
   heldSessions(now).forEach(c=>{
     if(code&&canonical(c.code)!==canonical(code))return;
     held++;
     const m=marks[attendanceKey(c)];
-    if(m==="absent")absent++;
-    else if(!m)unmarked++;
+    if(m==="present")attended++;
+    else if(m==="absent")absent++;
   });
-  const attended=held-absent;
-  return{held,attended,absent,unmarked,pct:held?Math.round(attended/held*100):null};
+  const marked=attended+absent;
+  return{held,attended,absent,marked,unmarked:held-marked,pct:marked?Math.round(attended/marked*100):null};
+}
+/* Marking one session at a time is right in the moment and wrong for a backlog, so
+   the days and the whole outstanding list can be answered in one go. Only ever fills
+   in blanks: an existing answer, including one that contradicts the bulk action, is
+   left exactly as it was. */
+function markManyAttended(sessions){
+  const all=loadAttendance();let n=0;
+  sessions.forEach(c=>{const k=attendanceKey(c);if(!all[k]){all[k]="present";n++}});
+  if(!n)return 0;
+  save(KEYS.attendance,all);state.attendance=all;
+  return n;
 }
 function tomorrowIso(){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+1);return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d)}
 function isoForDayOffset(n){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+n);return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d)}
@@ -989,25 +1009,35 @@ function renderAttendanceSummary(now=new Date()){
   const el=$("#attendanceSummary");if(!el)return;
   const overall=attendanceFor(null,now);
   if(!overall.held){
-    el.innerHTML=`<p class="att-empty">Nothing to count yet \u2014 marks appear here once classes start finishing.</p>`;
+    el.innerHTML=`<p class="att-empty">Nothing to mark yet \u2014 classes appear here once they have finished.</p>`;
     return;
   }
   const codes=[...new Set(heldSessions(now).map(c=>canonical(c.code)))]
     .map(code=>({code,...attendanceFor(code,now)}))
-    .sort((a,b)=>a.pct-b.pct||a.code.localeCompare(b.code));
-  const unconfirmed=overall.unmarked
-    ?`<small class="att-unconfirmed">${overall.unmarked} not marked, counted as attended</small>`:"";
+    .sort((a,b)=>(a.pct==null)-(b.pct==null)||a.pct-b.pct||a.code.localeCompare(b.code));
+  /* The outstanding count is an action, not a disclaimer: one button clears it. */
+  const todo=overall.unmarked?`<div class="att-todo">
+      <span><b>${overall.unmarked}</b> still to mark</span>
+      <button type="button" class="primary-button small" id="attMarkAll">Mark all attended</button>
+    </div>`:`<p class="att-done">${icon("check")}Every class so far is marked.</p>`;
   el.innerHTML=`<div class="att-overall">
-      <b>${overall.pct}<em>%</em></b>
-      <span><strong>${overall.attended} of ${overall.held} attended</strong>${unconfirmed}</span>
+      <b>${overall.pct==null?"\u2014":overall.pct}${overall.pct==null?"":"<em>%</em>"}</b>
+      <span><strong>${overall.attended} attended \u00b7 ${overall.absent} missed</strong>
+      <small>${overall.pct==null?"Nothing marked yet":`of ${overall.marked} marked`}</small></span>
     </div>
+    ${todo}
     <div class="att-rows">${codes.map(r=>`
-      <div class="att-row" style="--course:${colorFor(r.code)}">
+      <div class="att-row ${r.pct==null?"is-blank":""}" style="--course:${colorFor(r.code)}">
         <span class="att-code">${esc(r.code)}</span>
-        <span class="att-bar"><i style="width:${r.pct}%"></i></span>
-        <span class="att-count">${r.attended}<em>/${r.held}</em></span>
-        <span class="att-pct">${r.pct}%</span>
+        <span class="att-bar"><i style="width:${r.pct==null?0:r.pct}%"></i></span>
+        <span class="att-count">${r.attended}<em>/${r.marked}</em></span>
+        <span class="att-pct">${r.pct==null?`${r.held} to mark`:`${r.pct}%`}</span>
       </div>`).join("")}</div>`;
+  $("#attMarkAll")?.addEventListener("click",()=>{
+    const n=markManyAttended(heldSessions());
+    haptic();showToast(`${n} ${n===1?"class":"classes"} marked attended`);
+    state.lastAttMark=null;renderAll();
+  });
 }
 function renderHomeLegend(){
   const el=$("#homeLegend");if(!el)return;
@@ -1106,7 +1136,7 @@ function applyShortcutParams(){
   else if(target==="mess"){showPage("campus");openCampusTab("mess")}
   history.replaceState(null,"",location.pathname);
 }
-function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
+function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderAttendanceSummary();renderAttendanceLog();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
 /* Ledger badge — tasks that are due today or overdue and still open, so a
    glance at the header icon says whether anything needs attention without
    opening the Tasks & Notes dialog. */
@@ -3042,8 +3072,6 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
     ?courses.map(([code,v])=>`<span title="${esc(v.title)}" style="--course:${colorFor(code)}"><b>${esc(code)}</b><i>${esc(v.title)}</i><em>${v.credits} cr</em></span>`).join("")
     :"<em>Schedule not loaded</em>";
   renderCalendarConnectionStatus();
-  renderAttendanceSummary();
-  renderAttendanceLog();
   renderAccentSwatches();
   renderTermRing();
   renderWorkloadChart();
@@ -4077,7 +4105,7 @@ async function init(){
   requestAnimationFrame(playCardEntrance);
   setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
   setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova199",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova200",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

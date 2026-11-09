@@ -3316,13 +3316,21 @@ html{scroll-behavior:smooth}
 .ap-last button:hover,.ap-undo:hover{text-decoration:underline}
 
 /* The record: every session so far, where it stands, changeable in place. */
-.al-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:20px 0 2px;border-top:1px solid var(--border);padding-top:16px}
+/* Its own panel now, so it no longer needs a rule separating it from the summary. */
+.al-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 2px}
 .al-head .rail-section-label{margin:0}
 .al-list{display:flex;flex-direction:column;gap:5px}
 .al-day{
-  margin:12px 0 3px;font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:14px 0 4px;font-size:var(--text-xs);font-weight:800;letter-spacing:var(--track-label);
   text-transform:uppercase;color:var(--ink-faint);
 }
+/* A day is usually answered the same way for every class in it, so it can be. */
+.al-day-all{
+  background:none;border:0;cursor:pointer;padding:3px 0;
+  font-size:var(--text-xs);font-weight:700;letter-spacing:0;text-transform:none;color:var(--accent);
+}
+.al-day-all:hover{text-decoration:underline}
 .al-day b{color:var(--accent);font-weight:800}
 .al-list>.al-day:first-child{margin-top:4px}
 .al-row{
@@ -3349,4 +3357,27 @@ html{scroll-behavior:smooth}
 @media(max-width:380px){
   .al-when{min-width:52px;font-size:var(--text-xs)}
   .al-btn{padding:5px 7px}
+}
+
+/* The outstanding count is work to clear, not a caveat on the number. */
+.att-todo{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin:14px 0 4px;padding:11px 13px;border-radius:var(--radius-md);
+  background:color-mix(in srgb, var(--accent) 9%, transparent);
+  border:1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  font-size:var(--text-sm);color:var(--ink-muted);
+}
+.att-todo b{font-size:var(--text-md);font-weight:700;color:var(--ink)}
+.att-done{
+  display:flex;align-items:center;gap:7px;margin:14px 0 4px;
+  font-size:var(--text-sm);font-weight:600;color:var(--live);
+}
+.att-done svg{width:15px;height:15px}
+.att-row.is-blank .att-bar{opacity:.45}
+.att-row.is-blank .att-count{color:var(--ink-faint)}
+.att-pct{white-space:nowrap}
+/* Five tabs rather than four; the labels give up a little room at phone widths. */
+@media (max-width:400px){
+  .nav-item{font-size:10px;padding:6px 2px}
+  .nav-item svg{width:19px;height:19px}
 }
