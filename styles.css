@@ -3018,8 +3018,22 @@ html{scroll-behavior:smooth}
   .ap-no:hover{border-color:var(--danger);color:var(--danger)}
 }
 
-/* The catch-up toggle inside a finished schedule row. */
-.sr-att{display:flex;gap:6px;margin-top:9px}
+/* The catch-up toggle inside a finished schedule row. It leads with where the class
+   stands, because two outline buttons said only that a question existed - a marked
+   class and an unmarked one looked the same from a glance away. */
+.sr-att{display:flex;align-items:center;gap:8px;margin-top:9px}
+.sr-att-state{
+  flex:1;min-width:0;font-size:var(--text-xs);font-weight:800;
+  letter-spacing:var(--track-label);text-transform:uppercase;color:var(--ink-faint);
+}
+.att-present .sr-att-state{color:var(--live)}
+.att-absent .sr-att-state{color:var(--danger)}
+.sr-att-seg{display:flex;gap:6px;flex:none}
+/* A finished row that has been answered stops looking like an open question: the
+   dashed "unanswered" treatment is dropped and the spine takes the answer's colour. */
+.sched-row.done.att-present .sr-accent{opacity:.85;background:var(--live)}
+.sched-row.done.att-absent .sr-accent{opacity:.85;background:var(--danger)}
+.sched-row.done.att-unmarked .sr-accent{opacity:.35}
 .sr-att-btn{
   padding:5px 11px;border-radius:var(--radius-pill);cursor:pointer;
   font-size:var(--text-xs);font-weight:700;
@@ -3106,10 +3120,15 @@ html{scroll-behavior:smooth}
   border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-panel);
   border-left:3px solid var(--course);
 }
-.al-row.is-unmarked{border-left-style:dashed;opacity:.82}
+.al-row.att-unmarked{border-left-style:dashed;opacity:.82}
 .al-when{font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);font-variant-numeric:tabular-nums;flex:none;min-width:62px}
-.al-what{display:flex;align-items:baseline;gap:5px;flex:1;min-width:0}
+/* The code and session number must give way before the two buttons do - the row is
+   10 characters of label against a control, and on a 320px phone the buttons used to
+   sit on top of the code. */
+.al-what{display:flex;align-items:baseline;gap:5px;flex:1;min-width:0;overflow:hidden}
+.al-what b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .al-what b{font-size:var(--text-sm);font-weight:800;letter-spacing:var(--track-label);color:var(--course)}
+.alb-short{display:none}
 .al-what em{font-style:normal;font-size:var(--text-xs);font-weight:700;color:var(--ink-faint)}
 .al-seg{display:flex;gap:4px;flex:none}
 .al-btn{
@@ -3119,8 +3138,10 @@ html{scroll-behavior:smooth}
   transition:transform var(--dur-xs) var(--ease-spring),background var(--dur-sm) var(--ease-out),border-color var(--dur-sm) var(--ease-out),color var(--dur-sm) var(--ease-out);
 }
 .al-btn:active{transform:scale(.93)}
-.al-row.is-present .al-btn[data-att-set="present"]{background:var(--live-soft);border-color:color-mix(in srgb, var(--live) 45%, transparent);color:var(--live)}
-.al-row.is-absent .al-btn[data-att-set="absent"]{background:var(--danger-soft);border-color:color-mix(in srgb, var(--danger) 45%, transparent);color:var(--danger)}
+.al-btn.on{border-style:solid;background:var(--live-soft);border-color:color-mix(in srgb, var(--live) 45%, transparent);color:var(--live)}
+.al-btn.is-miss.on{background:var(--danger-soft);border-color:color-mix(in srgb, var(--danger) 45%, transparent);color:var(--danger)}
+.al-row.att-present{border-left-color:var(--live)}
+.al-row.att-absent{border-left-color:var(--danger)}
 @media(hover:hover){.al-btn:hover{border-color:var(--border-strong);color:var(--ink)}}
 @media(max-width:380px){
   .al-when{min-width:52px;font-size:var(--text-xs)}
@@ -3148,4 +3169,51 @@ html{scroll-behavior:smooth}
 @media (max-width:400px){
   .nav-item{font-size:10px;padding:6px 2px}
   .nav-item svg{width:19px;height:19px}
+}
+
+/* The Planner's day attendance bar. It sits above the day's classes and answers the
+   question the Planner could not: is this day dealt with. Amber while something is
+   outstanding, quiet once it is not. */
+.day-att{
+  display:flex;align-items:center;gap:11px;margin:0 0 12px;padding:10px 13px;
+  border-radius:var(--radius-sm);border:1px solid color-mix(in srgb, var(--amber) 30%, transparent);
+  background:color-mix(in srgb, var(--amber) 9%, transparent);
+}
+.day-att.is-done{
+  border-color:var(--border);background:var(--bg-panel);
+}
+.day-att-icon{
+  width:26px;height:26px;flex:none;border-radius:50%;display:grid;place-items:center;
+  background:color-mix(in srgb, var(--amber) 20%, transparent);color:var(--amber);
+}
+.day-att.is-done .day-att-icon{background:var(--live-soft);color:var(--live)}
+.day-att-icon svg{width:14px;height:14px}
+.day-att-text{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+.day-att-text b{font-size:var(--text-sm);font-weight:800;color:var(--ink)}
+.day-att-text small{font-size:var(--text-xs);font-weight:600;color:var(--ink-muted)}
+.day-att-all{
+  flex:none;padding:7px 12px;border-radius:var(--radius-pill);cursor:pointer;
+  font-size:var(--text-xs);font-weight:800;
+  border:1px solid color-mix(in srgb, var(--amber) 45%, transparent);
+  background:transparent;color:var(--amber);
+  transition:transform var(--dur-xs) var(--ease-spring),background var(--dur-sm) var(--ease-out);
+}
+.day-att-all:active{transform:scale(.95)}
+@media(hover:hover){.day-att-all:hover{background:color-mix(in srgb, var(--amber) 16%, transparent)}}
+@media(max-width:400px){
+  .day-att{gap:9px;padding:9px 11px}
+  .day-att-all{padding:6px 9px}
+  .sr-att-state{font-size:9px}
+  .sr-att-seg{gap:5px}
+}
+
+/* Below 380px the two words will not fit beside the time and the course code, and
+   shrinking them further makes a tap target too small to hit. A tick and a cross in
+   full-size buttons is the honest trade: the row already carries its state in colour
+   and in its left edge, and both buttons keep their aria-label. */
+@media(max-width:379px){
+  .alb-long{display:none}
+  .alb-short{display:inline;font-size:var(--text-sm);line-height:1}
+  .al-btn{min-width:34px;padding:5px 0;display:grid;place-items:center}
+  .al-when{min-width:50px}
 }

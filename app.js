@@ -377,12 +377,98 @@ function setAttendance(c,value){
 }
 /* The catch-up path, for a day nobody answered the prompt on. Only on sessions that
    have finished: there is nothing to say about a class that has not happened yet. */
+const ATT_WORD={present:"Attended",absent:"Missed"};
+function attendanceStateClass(c){return`att-${attendanceOf(c)||"unmarked"}`}
+/* data-att-for carries the attendance key, not the class identity, because one session
+   can be on screen in three places at once - the Planner row, the Home prompt and the
+   record - and marking it in one has to show in all three. Keying the markup on what
+   the mark is filed under is what lets a mark be applied to every copy without
+   rebuilding any of the lists they sit in. */
 function attendanceToggleHtml(c){
   const m=attendanceOf(c);
-  return`<div class="sr-att">
-    <button type="button" class="att-set-btn sr-att-btn ${m==="present"?"on":""}" data-att-set="present" aria-pressed="${m==="present"}">Attended</button>
-    <button type="button" class="att-set-btn sr-att-btn is-miss ${m==="absent"?"on":""}" data-att-set="absent" aria-pressed="${m==="absent"}">Missed</button>
+  return`<div class="sr-att" data-att-for="${esc(attendanceKey(c))}">
+    <span class="sr-att-state">${m?ATT_WORD[m]:"Not marked"}</span>
+    <span class="sr-att-seg">
+      <button type="button" class="att-set-btn sr-att-btn ${m==="present"?"on":""}" data-att-set="present" aria-pressed="${m==="present"}">Attended</button>
+      <button type="button" class="att-set-btn sr-att-btn is-miss ${m==="absent"?"on":""}" data-att-set="absent" aria-pressed="${m==="absent"}">Missed</button>
+    </span>
   </div>`;
+}
+/* Marking used to call renderAll(), which rebuilt every list on the page - and the
+   Planner rebuilds its finished rows collapsed, so the row you had just marked
+   disappeared under your finger. Nothing about a mark changes which classes exist or
+   what order they are in, so nothing needs rebuilding: the mark is written into the
+   rows already on screen, wherever they are, and only the counts around them are
+   redrawn. */
+function applyAttendanceInPlace(c){
+  const m=attendanceOf(c);
+  $$(`[data-att-for="${attendanceKey(c)}"]`).forEach(box=>{
+    const label=$(".sr-att-state",box);
+    if(label)label.textContent=m?ATT_WORD[m]:"Not marked";
+    $$(".att-set-btn",box).forEach(b=>{
+      const on=b.dataset.attSet===m;
+      b.classList.toggle("on",on);b.setAttribute("aria-pressed",String(on));
+    });
+    const row=box.closest("[data-class-id]");
+    if(row){row.classList.remove("att-present","att-absent","att-unmarked");row.classList.add(`att-${m||"unmarked"}`)}
+  });
+}
+function attDayAllHtml(iso,blanks){
+  return blanks?`<button type="button" class="al-day-all" data-att-day="${esc(iso)}">Mark ${blanks===1?"it":"all"} attended</button>`:"";
+}
+/* The record's day headers each carry a "mark the rest of this day" action whose label
+   depends on how many are still blank. Rewritten rather than re-rendered, so marking
+   one row never rebuilds the list it is in. */
+function refreshAttendanceLogDays(){
+  const held=heldSessions();
+  $$("[data-att-day-head]").forEach(head=>{
+    const iso=head.dataset.attDayHead;
+    const blanks=held.filter(c=>c.dateIso===iso&&!attendanceOf(c)).length;
+    const existing=$(".al-day-all",head);
+    if(!blanks){if(existing)existing.remove();return}
+    if(existing)existing.textContent=`Mark ${blanks===1?"it":"all"} attended`;
+    else head.insertAdjacentHTML("beforeend",attDayAllHtml(iso,blanks));
+  });
+}
+/* Attendance for one day, in the Planner, above that day's classes. The record on the
+   Attendance tab is for looking back over the term; this is for the much commoner
+   thing - you are already looking at Tuesday, and Tuesday is what you want to mark.
+   Without it the Planner could change a mark but never said a day was unanswered,
+   which is a large part of why marking there felt like it did nothing. */
+function dayAttendanceStats(iso,now=new Date()){
+  const held=heldSessions(now).filter(c=>c.dateIso===iso);
+  const marked=held.filter(c=>attendanceOf(c));
+  return{held:held.length,marked:marked.length,
+    attended:marked.filter(c=>attendanceOf(c)==="present").length,
+    blanks:held.length-marked.length,sessions:held};
+}
+function dayAttendanceBarHtml(iso){
+  const st=dayAttendanceStats(iso);
+  if(!st.held)return"";
+  const done=st.blanks===0;
+  const detail=done?`${st.attended} attended · ${st.marked-st.attended} missed`
+                   :`${st.blanks} still to answer`;
+  return`<div class="day-att ${done?"is-done":""}" data-day-att="${esc(iso)}">
+    <span class="day-att-icon">${icon(done?"check":"clock")}</span>
+    <span class="day-att-text"><b>${st.marked} of ${st.held} marked</b><small>${esc(detail)}</small></span>
+    ${done?"":`<button type="button" class="day-att-all" data-att-day="${esc(iso)}">Mark all attended</button>`}
+  </div>`;
+}
+function renderDayAttendanceBar(iso){
+  const existing=$(`[data-day-att]`);
+  if(!existing)return;
+  const html=dayAttendanceBarHtml(existing.dataset.dayAtt||iso);
+  if(!html){existing.remove();return}
+  existing.outerHTML=html;
+}
+/* The surfaces that count marks rather than hold them. None of these contains the
+   control that was just tapped, so redrawing them cannot move anything under a
+   finger. */
+function refreshAttendanceCounts(){
+  renderAttendancePrompt();
+  renderAttendanceSummary();
+  renderDayAttendanceBar(state.selectedDate);
+  refreshAttendanceLogDays();
 }
 /* One listener on the document rather than one per row: the schedule is rebuilt on
    every render and on the thirty-second tick, so per-row handlers would be re-bound
@@ -394,8 +480,8 @@ function bindAttendanceToggles(){
       const last=state.lastAttMark;
       if(last){
         const c=state.classes.find(x=>classIdentity(x)===last.id);
-        if(c)setAttendance(c,last.prev);
-        state.lastAttMark=null;renderAll();
+        if(c){setAttendance(c,last.prev);applyAttendanceInPlace(c)}
+        state.lastAttMark=null;refreshAttendanceCounts();
       }
       return;
     }
@@ -407,11 +493,12 @@ function bindAttendanceToggles(){
     const want=btn.dataset.attSet,prev=attendanceOf(c);
     const next=prev===want?null:want;
     setAttendance(c,next);
+    applyAttendanceInPlace(c);
     /* Remembered so the prompt can offer a single undo: marking from there moves on
        to the next session immediately, and without this the thing you just answered
        would be gone with no way back to it. */
     state.lastAttMark=next?{id:classIdentity(c),prev,value:next,label:`${canonical(c.code)}${c.sessionNo?` S${c.sessionNo}`:""}`}:null;
-    haptic();renderAll();
+    haptic();refreshAttendanceCounts();
   });
 }
 /* Every session that has happened, newest first, each showing where it stands and
@@ -430,27 +517,28 @@ function renderAttendanceLog(now=new Date()){
     if(c.dateIso!==lastDay){
       lastDay=c.dateIso;
       const blanks=held.filter(x=>x.dateIso===c.dateIso&&!attendanceOf(x)).length;
-      html+=`<div class="al-day"><span>${esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}))}${c.dateIso===isoToday()?" <b>Today</b>":""}</span>${
-        blanks?`<button type="button" class="al-day-all" data-att-day="${esc(c.dateIso)}">Mark ${blanks===1?"it":"all"} attended</button>`:""}</div>`;
+      html+=`<div class="al-day" data-att-day-head="${esc(c.dateIso)}"><span>${esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}))}${c.dateIso===isoToday()?" <b>Today</b>":""}</span>${
+        attDayAllHtml(c.dateIso,blanks)}</div>`;
     }
     const m=attendanceOf(c),n=subjectSessionOrdinal(c);
-    html+=`<div class="al-row ${m?`is-${m}`:"is-unmarked"}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
+    html+=`<div class="al-row att-${m||"unmarked"}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)}">
       <span class="al-when">${esc(fmtTime(c.startTime))}</span>
       <span class="al-what"><b>${esc(canonical(c.code))}</b>${n?`<em>S${n}</em>`:""}</span>
-      <span class="al-seg">
-        <button type="button" class="att-set-btn al-btn" data-att-set="present" aria-pressed="${m==="present"}" aria-label="Attended">Attended</button>
-        <button type="button" class="att-set-btn al-btn is-miss" data-att-set="absent" aria-pressed="${m==="absent"}" aria-label="Missed">Missed</button>
+      <span class="al-seg" data-att-for="${esc(attendanceKey(c))}">
+        <button type="button" class="att-set-btn al-btn ${m==="present"?"on":""}" data-att-set="present" aria-pressed="${m==="present"}" aria-label="Attended"><span class="alb-long">Attended</span><span class="alb-short" aria-hidden="true">\u2713</span></button>
+        <button type="button" class="att-set-btn al-btn is-miss ${m==="absent"?"on":""}" data-att-set="absent" aria-pressed="${m==="absent"}" aria-label="Missed"><span class="alb-long">Missed</span><span class="alb-short" aria-hidden="true">\u2715</span></button>
       </span>
     </div>`;
   });
   html+=`</div>`;
   el.innerHTML=html;
   $("#attLogToggle")?.addEventListener("click",()=>{state.attLogAll=!state.attLogAll;renderAttendanceLog()});
+  refreshAttendanceLogDays();
   $$(".al-day-all",el).forEach(btn=>btn.addEventListener("click",()=>{
     const iso=btn.dataset.attDay;
     const n=markManyAttended(held.filter(c=>c.dateIso===iso));
     haptic();showToast(`${n} ${n===1?"class":"classes"} marked attended`);
-    state.lastAttMark=null;renderAll();
+    state.lastAttMark=null;refreshAttendanceCounts();
   }));
 }
 /* Sessions that have actually happened: finished, not cancelled, and real teaching
@@ -481,10 +569,11 @@ function attendanceFor(code,now=new Date()){
    in blanks: an existing answer, including one that contradicts the bulk action, is
    left exactly as it was. */
 function markManyAttended(sessions){
-  const all=loadAttendance();let n=0;
-  sessions.forEach(c=>{const k=attendanceKey(c);if(!all[k]){all[k]="present";n++}});
+  const all=loadAttendance();let n=0;const touched=[];
+  sessions.forEach(c=>{const k=attendanceKey(c);if(!all[k]){all[k]="present";n++;touched.push(c)}});
   if(!n)return 0;
   save(KEYS.attendance,all);state.attendance=all;
+  touched.forEach(applyAttendanceInPlace);
   return n;
 }
 function tomorrowIso(){const d=zoned(isoToday(),"12:00");d.setDate(d.getDate()+1);return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d)}
@@ -882,9 +971,10 @@ function renderAttendancePrompt(now=new Date()){
   el.querySelectorAll("[data-att]").forEach(btn=>btn.addEventListener("click",()=>{
     const prev=attendanceOf(c);
     setAttendance(c,btn.dataset.att);
+    applyAttendanceInPlace(c);
     state.lastAttMark={id:classIdentity(c),prev,value:btn.dataset.att,label:`${canonical(c.code)}${n?` S${n}`:""}`};
     haptic();
-    renderAll();
+    refreshAttendanceCounts();
   }));
 }
 /* Per course, because that is how attendance is counted, with the overall figure
@@ -921,7 +1011,7 @@ function renderAttendanceSummary(now=new Date()){
   $("#attMarkAll")?.addEventListener("click",()=>{
     const n=markManyAttended(heldSessions());
     haptic();showToast(`${n} ${n===1?"class":"classes"} marked attended`);
-    state.lastAttMark=null;renderAll();
+    state.lastAttMark=null;refreshAttendanceCounts();
   });
 }
 function renderHomeLegend(){
@@ -1220,7 +1310,7 @@ function renderHome(){
     daySectionEl.hidden=!state.timelineTouched&&(!timelineClasses.length||onlyClassIsFocus);
   }
   renderDayShapeBar(timelineClasses,timelineIso);
-  $("#todayProgressRail").innerHTML=timelineClasses.length?scheduleRowsHtml(timelineClasses,timelineIso,{showNext:true,heroClassId:focusPanel.dataset.focusClassId||"",stagger:staggerClass($("#todayProgressRail"),rowsKey(timelineIso,timelineClasses))}):`<div class="empty-state empty-state-mark">${CAMPUS_MARK}<p>Nothing scheduled</p><small>${timelineOffset===0?"A clear day on campus.":"Nothing scheduled this day."}</small></div>`;
+  $("#todayProgressRail").innerHTML=timelineClasses.length?scheduleRowsHtml(timelineClasses,timelineIso,{showNext:true,collapseDone:true,heroClassId:focusPanel.dataset.focusClassId||"",stagger:staggerClass($("#todayProgressRail"),rowsKey(timelineIso,timelineClasses))}):`<div class="empty-state empty-state-mark">${CAMPUS_MARK}<p>Nothing scheduled</p><small>${timelineOffset===0?"A clear day on campus.":"Nothing scheduled this day."}</small></div>`;
   const holidayBanner=$("#todayProgressRail")?.previousElementSibling;
   const holiday=HOLIDAYS[timelineIso];
   $$(".timeline-holiday-banner").forEach(n=>n.remove());
@@ -1786,7 +1876,11 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
     if(agendaStatus(c)!=="Completed")break;
     leadingDone++;
   }
-  const collapseDone=leadingDone>=2;
+  /* Home collapses a morning that is over, because the question Home answers is what
+     is left of today. The Planner does not: its finished rows are the ones carrying
+     attendance, and a control hidden inside a collapsed block that rebuilds itself
+     shut is worse than no control. */
+  const collapseDone=!!opts.collapseDone&&leadingDone>=2;
   let html=`<div class="sched-list${opts.stagger||""}">`,prevEnd=null;
   if(collapseDone){
     const doneMins=chronological.slice(0,leadingDone).reduce((sum,c)=>sum+(minutes(c.endTime)-minutes(c.startTime)),0);
@@ -1879,7 +1973,8 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
       prevEnd=minutes(c.endTime);
       return;
     }
-    html+=`<article class="sched-row ${tier} kind-${sessionKind(c)}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)};--i:${idx}">
+    const attClass=tier==="done"&&!cancelled&&isSession(c)?` ${attendanceStateClass(c)}`:"";
+    html+=`<article class="sched-row ${tier} kind-${sessionKind(c)}${attClass}" data-class-id="${esc(classIdentity(c))}" style="--course:${colorFor(c.code)};--i:${idx}">
       <div class="sr-time"><b>${esc(h12)}</b><small>${esc((ap||"").toUpperCase())}</small><span class="sr-time-end">${esc(fmtTime(c.endTime))}</span></div>
       <div class="sr-accent"></div>
       <div class="sr-body">
@@ -2152,6 +2247,7 @@ function renderDayFocus(iso){
         `<article class="agenda-exam-card"><span class="exam-slot">${EXAM_SLOT_LABELS[slot]}</span><span class="agenda-exam-code" style="--course:${colorFor(entry.code)}">${esc(entry.code)}</span><strong>${esc(entry.subject)}</strong></article>`
       ).join("")}</section>`;
     }
+    html+=dayAttendanceBarHtml(iso);
     if(hiddenToday){
       html+=`<button type="button" class="agenda-earlier" id="agendaShowEarlier">
         <span>${icon("check")}</span>${hiddenToday} earlier ${hiddenToday===1?"class":"classes"} today<em>Show &amp; mark</em>
@@ -3017,6 +3113,13 @@ function bind(){
   },{capture:true});
   document.addEventListener("change",e=>{if(e.target.matches('input[type="checkbox"]'))haptic(16)});
   document.addEventListener("click",e=>{
+    const dayAll=e.target.closest(".day-att-all");
+    if(dayAll){
+      const n=markManyAttended(dayAttendanceStats(dayAll.dataset.attDay).sessions);
+      haptic();showToast(`${n} ${n===1?"class":"classes"} marked attended`);
+      state.lastAttMark=null;refreshAttendanceCounts();
+      return;
+    }
     const summary=e.target.closest(".sched-done-summary");if(!summary)return;
     summary.classList.toggle("open");
     summary.nextElementSibling?.classList.toggle("collapsed");
@@ -3196,7 +3299,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova201",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova202",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
