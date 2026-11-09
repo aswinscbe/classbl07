@@ -21,6 +21,9 @@ window.TERM4_META={
   startIso:"2026-10-26",endIso:"2027-01-15",
   lastTeachingIso:"2027-01-10",
   defaultRoom:"CR A3",
+  /* Last reconciled against the programme office's calendar feed. Shown in the app
+     so nobody trusts a stale table without knowing how old it is. */
+  verifiedIso:"2026-11-09",
   minCredits:16,maxCredits:18
 };
 /* Institute holidays from the portal feed. Both fall outside teaching days this term,
@@ -56,8 +59,8 @@ window.TERM4_CLASSES = [
   {dateIso:"2026-10-29",startTime:"19:00",endTime:"20:15",code:"MFSA",course:'Models and Frameworks of Strategic Analysis',faculty:'Prof. Anubha Shekhar Sinha & Prof. Salman Ali',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:4,type:"Elective",section:"A",status:"Scheduled"},
   {dateIso:"2026-10-30",startTime:"19:00",endTime:"20:15",code:"GC",course:'Globalisation and Culture',faculty:'Prof. A F Mathew',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:2,type:"Elective",section:"A",status:"Scheduled"},
   {dateIso:"2026-11-02",startTime:"12:15",endTime:"13:30",code:"SI",course:'Strategy Implementation',faculty:'Prof. Sumit Mitra',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:2,type:"Elective",section:"A",status:"Scheduled"},
-  {dateIso:"2026-11-02",startTime:"16:00",endTime:"17:15",code:"MBGAI",course:'Managing Business with Generative and Agentic AI',faculty:'Prof. Swati Jain',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:5,type:"Elective",section:"A",status:"Scheduled"},
-  {dateIso:"2026-11-02",startTime:"17:30",endTime:"18:45",code:"MBGAI",course:'Managing Business with Generative and Agentic AI',faculty:'Prof. Swati Jain',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:6,type:"Elective",section:"A",status:"Scheduled"},
+  {dateIso:"2026-11-02",startTime:"17:30",endTime:"18:45",code:"MBGAI",course:'Managing Business with Generative and Agentic AI',faculty:'Prof. Swati Jain',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:5,type:"Elective",section:"A",status:"Scheduled"},
+  {dateIso:"2026-11-02",startTime:"20:30",endTime:"21:45",code:"MBGAI",course:'Managing Business with Generative and Agentic AI',faculty:'Prof. Swati Jain',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:6,type:"Elective",section:"A",status:"Scheduled"},
   {dateIso:"2026-11-03",startTime:"10:45",endTime:"12:00",code:"FSA",course:'Financial Statements Analysis',faculty:'Prof. Rachappa Shette',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:3,type:"Elective",section:"A",status:"Scheduled"},
   {dateIso:"2026-11-03",startTime:"12:15",endTime:"13:30",code:"FSA",course:'Financial Statements Analysis',faculty:'Prof. Rachappa Shette',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:4,type:"Elective",section:"A",status:"Scheduled"},
   {dateIso:"2026-11-03",startTime:"17:30",endTime:"18:45",code:"MFSA",course:'Models and Frameworks of Strategic Analysis',faculty:'Prof. Anubha Shekhar Sinha & Prof. Salman Ali',venue:"IIM Kozhikode \u00b7 CR A3",room:"CR A3",sessionNo:5,type:"Elective",section:"A",status:"Scheduled"},

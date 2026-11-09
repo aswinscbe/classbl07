@@ -1,7 +1,6 @@
 (() => {
 "use strict";
-const API="https://script.google.com/macros/s/AKfycbxQWG7cS3quE0C8BBtRVx8PExapIvuqAB5-KLGzQMnOoDNKBMcblxMpztO77jME6EwShQ/exec";
-const KEYS={profile:"classbl07-nova-profile-v1",tasks:"classbl07-nova-tasks-v1",notes:"classbl07-nova-notes-v1",cache:"classbl07-nova-schedule-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2",busRoute:"classbl07-nova-bus-route-v1",leavingSoon:"classbl07-nova-leaving-soon-v1",attendance:"classbl07-nova-attendance-v1"};
+const KEYS={profile:"classbl07-nova-profile-v1",snapshot:"classbl07-nova-snapshot-v1",notifications:"classbl07-nova-notifications-v1",onboarded:"bl07_onboarded_v2",busRoute:"classbl07-nova-bus-route-v1",leavingSoon:"classbl07-nova-leaving-soon-v1",attendance:"classbl07-nova-attendance-v1"};
 /* Evenly spaced around the hue wheel (27.7° apart, HSL S:70 L:58, darkened to
    L:48 through the yellow-green band which otherwise reads washed out on a dark
    background) so no two course colors sit close enough to be confused — SBM and
@@ -131,8 +130,11 @@ function zoned(iso,hhmm="12:00"){
   const guess=new Date(`${iso}T${hhmm}:00Z`);
   return new Date(guess.getTime()-tzOffsetMinutes(guess)*60000);
 }
-const state={all:[],classes:[],electives:[],profile:load(KEYS.profile,{name:"",theme:"system",homeOrder:"summary-first"}),tasks:load(KEYS.tasks,[]),notes:load(KEYS.notes,[]),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),taskFilter:"open",ledgerFilter:"all",messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,lastUpdated:null,calendarHighlight:null};
-let editingTaskId=null;
+/* One list of classes, built from the compiled table on every render. There used to
+   be a second (state.all, straight from the feed) and a cache of it in localStorage;
+   with the table shipped in the page there is nothing to cache and nothing that could
+   disagree with it. */
+const state={classes:[],profile:load(KEYS.profile,{name:"",theme:"system",homeOrder:"summary-first"}),notifications:load(KEYS.notifications,[]),selectedDate:isoToday(),calendarMonth:new Date(new Date().getFullYear(),new Date().getMonth(),1),messDay:weekdayKey(new Date()),meal:"breakfast",busFrom:load(KEYS.busRoute,{}).from||"C&D Housing",busTo:load(KEYS.busRoute,{}).to||"PGP Auditorium",timelineOffset:0,calendarHighlight:null};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function haptic(ms=12){try{navigator.vibrate?.(ms)}catch(e){}}
 const canonical=c=>String(c||"").toUpperCase().replace(/^NWLB$/,"NWW").split("-")[0];
@@ -204,7 +206,7 @@ function nextExam(){
   return list[0]||null;
 }
 function examDaysLeft(iso){const now=zoned(isoToday(),"00:00"),target=zoned(iso,"00:00");return Math.round((target-now)/86400000)}
-function subjectSessions(code){const want=canonical(code);return state.all.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===want).sort((a,b)=>dateTime(a)-dateTime(b))}
+function subjectSessions(code){const want=canonical(code);return state.classes.filter(c=>c.status!=="Cancelled"&&canonical(c.code)===want).sort((a,b)=>dateTime(a)-dateTime(b))}
 /* The programme office numbers its own sessions and the feed carries that number, so
    it is used in preference to counting position in a list. The two agree today, but
    they stop agreeing the moment a session is inserted or cancelled — and the office's
@@ -313,19 +315,12 @@ function applyAccent(){
   root.setProperty("--grad",preset.grad);
   root.setProperty("--grad-glow",`color-mix(in srgb, ${preset.glow} ${theme==="light"?30:40}%, transparent)`);
 }
-/* Section peek — a read-only view swap for Core classes only (electives aren't
-   section-locked, so they always come from the viewer's own data regardless).
-   existing filteredClasses() call site picks this up automatically. */
-/* Term IV is the whole schedule, compiled from the programme office's calendar feed
-   into term4-data.js. The Google Apps Script sync is still wired up but switched off:
-   the feed is the authority now, and a sync would overwrite it with Term III. */
-/* No section filter: Term IV is an elective term with no A/B split, and the feed is
-   this student's own enrolment, so every row in it is theirs. */
-/* Changes the programme office announces outside the calendar - a class called off in
-   a WhatsApp message the evening before, say - laid over whichever source is in use.
-   This layer has to exist: a connected calendar replaces the compiled file outright,
-   so a cancellation edited into term4-data.js would be invisible to everyone actually
-   reading their own calendar, which is the people it needs to reach.
+/* Term IV is the whole schedule, compiled from the programme office's calendar into
+   term4-data.js, and it is the only source. No section filter either: Term IV is an
+   elective term with no A/B split, so every row in the table is this reader's. */
+/* Changes the office announces outside the calendar - a class called off in a WhatsApp
+   message the evening before, say - laid over the compiled table, so a correction can
+   ship without recompiling the whole term.
 
    Matched on course and session number, the identity the office itself uses, with the
    date checked as well so an override cannot drift onto the wrong sitting. An entry
@@ -351,18 +346,17 @@ function filteredClasses(){
      The compiled file is the fallback so an unconnected install still has a schedule
      rather than an empty app. The quiz slot is appended either way — it is batch-wide
      and does not appear as an invite. */
-  const live=calSessions();
-  return applyTermOverrides([...(live.length?live:(window.TERM4_CLASSES||[])),...(window.TERM4_EVENTS||[])])
+  return applyTermOverrides([...(window.TERM4_CLASSES||[]),...(window.TERM4_EVENTS||[])])
     .slice()
     .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
 }
-async function fetchSectionClasses(section){
-  const u=new URL(API);u.searchParams.set("section",section);u.searchParams.set("electives","");u.searchParams.set("includeCancelled","true");
-  const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`HTTP ${r.status}`);
-  const d=await r.json();if(!d.success)throw new Error(d.error||"API failed");
-  return d.classes||[];
+/* Older installs stored an elective list and a section; neither selects anything now
+   that the schedule is one compiled table, so they are dropped on first load. */
+function migrateProfile(){
+  if(!("electives"in state.profile)&&!("section"in state.profile))return;
+  delete state.profile.electives;delete state.profile.section;
+  save(KEYS.profile,state.profile);
 }
-function migrateProfile(){state.profile.electives=[...new Set((state.profile.electives||[]).map(canonical))];save(KEYS.profile,state.profile)}
 function classKey(c){return`${classIdentity(c)}|${c.endTime||""}|${venueOf(c)}`}
 function classIdentity(c){return`${c.dateIso}|${c.startTime}|${canonical(c.code)}`}
 /* ── Attendance ──────────────────────────────────────────────────────────────
@@ -505,21 +499,15 @@ function wasRecentlyAdded(c){
   return c.status==="Added"||addedFill||state.notifications.some(n=>n.type==="added"&&n.classId===classIdentity(c));
 }
 function relativeSyncText(){
-  /* Nothing is being fetched while the term feed is off, so "waiting for the first
-     schedule check" would sit there for ever. Name what is actually on screen. */
-  if(!SYNC_ENABLED)return"Term IV · Electives";
-  const stamp=_lastSyncAt||new Date(state.lastUpdated||0).getTime();
-  if(!stamp)return"Waiting for the first schedule check";
-  const mins=Math.max(0,Math.floor((Date.now()-stamp)/60000));
-  if(mins<1)return"Schedule checked just now";
-  if(mins===1)return"Schedule checked 1 minute ago";
-  if(mins<60)return`Schedule checked ${mins} minutes ago`;
-  const hours=Math.floor(mins/60);return`Schedule checked ${hours} hour${hours>1?"s":""} ago`;
+  /* There is no feed to be behind any more, so this names what is on screen rather
+     than when it was last pulled. How current the table is has its own indicator:
+     see renderScheduleFreshness. */
+  return"Term IV · Electives";
 }
 
 /* The programme office does not add and remove sessions, it moves them: MBGAI session
-   5 was 4:00pm on Monday and is now 5:30pm. compareSnapshots keys on date+start time,
-   so a move reads as one class appearing from nowhere while another silently vanishes
+   5 was 4:00pm on Monday and is now 5:30pm. Keying a diff on date plus start time,
+   as this once did, reads a move as one class appearing from nowhere while another vanishes
    - and the single fact worth telling anyone, that it moved and to when, cannot be
    expressed at all. This keys on the identity the office itself uses, course plus
    session number, so a session can be followed as it moves. */
@@ -555,145 +543,44 @@ function diffSchedules(oldList,newList){
   });
   return out.slice(0,12);
 }
-function compareSnapshots(oldList,newList){
-  if(!oldList||!oldList.length)return[];
-  const oldMap=new Map(oldList.map(c=>[classIdentity(c),c])),out=[];
-  newList.forEach(c=>{const old=oldMap.get(classIdentity(c));if(!old&&c.status!=="Cancelled"&&dateTime(c,"endTime")>new Date())out.push({id:crypto.randomUUID(),classId:classIdentity(c),type:"added",code:c.code,title:`${c.code} class added`,text:`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)} · ${venueOf(c)}`,course:canonical(c.code),createdAt:Date.now(),read:false});else if(old&&old.status!=="Cancelled"&&c.status==="Cancelled"&&dateTime(c,"endTime")>new Date())out.push({id:crypto.randomUUID(),classId:classIdentity(c),type:"cancelled",code:c.code,title:`${c.code} class cancelled`,text:`${fmtDate(c.dateIso,{day:"numeric",month:"short"})} · ${fmtTime(c.startTime)}`,course:canonical(c.code),createdAt:Date.now(),read:false})});
-  return out.slice(0,12)
+/* The schedule is a compiled table now, not a feed, so there is nothing to poll and
+   nothing to sign into. What there is instead is a date: when the table was last
+   reconciled against the programme office's own calendar. A table that has not been
+   checked for three weeks should say so rather than present itself with the same
+   confidence as one checked this morning. */
+function scheduleVerifiedIso(){return (window.TERM4_META||{}).verifiedIso||null}
+function scheduleAgeDays(){
+  const iso=scheduleVerifiedIso();if(!iso)return null;
+  return Math.max(0,Math.round((zoned(isoToday(),"12:00")-zoned(iso,"12:00"))/864e5));
 }
-let _syncInFlight=false,_lastSyncAt=0;
-/* The term feed is switched off now that Term III has ended. Left in place rather
-   than deleted, because the immersion module may yet be published through the same
-   sheet — flip SYNC_ENABLED back on and the whole path works again. While it is off
-   nothing refetches, so the term's classes cannot quietly repopulate the cache. */
-const SYNC_ENABLED=false;
-const CAL_STALE_MS=12*3600e3;
-function setSyncPill(cls,label,title){
-  const pill=$("#syncPill");
-  if(!pill)return;
-  pill.className=`sync-pill ${cls}`;
+function renderScheduleFreshness(){
+  const pill=$("#syncPill");if(!pill)return;
+  const iso=scheduleVerifiedIso(),age=scheduleAgeDays();
+  if(!iso){pill.hidden=true;return}
+  pill.hidden=false;
+  const label=age===0?"Checked today":age===1?"Checked yesterday":`Checked ${age}d ago`;
+  /* Amber past a fortnight: long enough that the office has probably changed
+     something, not so soon that it cries wolf every other week. */
+  pill.className=`sync-pill ${age>14?"stale":"ok"}`;
   pill.innerHTML=`<i></i><span>${esc(label)}</span>`;
-  pill.title=title||label;
+  pill.title=`Schedule last checked against the programme office's calendar on ${fmtDate(iso,{weekday:"long",day:"numeric",month:"long"})}`;
 }
-/* The one refresh control in the app. The calendar is the live source now, so this
-   refreshes that; the old Apps Script endpoint behind syncSchedule has been switched
-   off (SYNC_ENABLED=false) since Term III and fetches nothing. With no calendar
-   connected there is nothing to pull, so it says where to connect instead of
-   pretending to sync. */
-async function refreshSchedule(){
-  const btn=$("#refreshButton");
-  if(!getSavedCalToken()){
-    if(!calSessions().length){
-      await syncSchedule(true);
-      showToast("Connect Google Calendar in Profile to sync your schedule");
-      return;
-    }
-    /* Connected before, the token has merely aged out. Renew it on this tap and
-       finish the job, rather than reporting an expiry and sending the reader to
-       Profile to press a second button that then re-asks for the whole grant - which
-       is what made this feel like signing in over and over.
+/* A change pushed in the data file should announce itself rather than appear in
+   silence. The snapshot of what the reader last saw is kept locally and diffed on
+   load, so an edited session or a new override arrives as a notification the same
+   way a calendar change used to. */
+function announceDataChanges(){
+  const current=state.classes.filter(isSession);
+  const previous=load(KEYS.snapshot,[]);
+  const changes=diffSchedules(previous,current);
+  if(changes.length){
+    state.notifications=[...changes,...state.notifications].slice(0,40);
+    save(KEYS.notifications,state.notifications);
+  }
+  save(KEYS.snapshot,current);
+  return changes;
+}
 
-       Straight to the interactive form, not silent first: the silent attempt already
-       had its chance at launch, and if it had worked there would be a live token
-       here. Trying it again now would spend the tap's user gesture waiting on a call
-       that is going to fail, and the window Google opens afterwards would be blocked
-       as a popup. */
-    setSyncPill("syncing","Checking","Renewing calendar access");
-    /* Two attempts inside the one tap: the quiet one, which asks nothing when the
-       browser still has a Google session, then the account chooser if it will not. */
-    let got=await connectGoogleCalendar({mode:"resume"});
-    if(!got)got=await connectGoogleCalendar({mode:"resume",retry:true});
-    if(!got){
-      setSyncPill("error","Reconnect","Calendar sign-in could not be renewed");
-      showToast("Couldn't renew calendar access — tap refresh once more");
-      return;
-    }
-  }
-  if(btn){btn.dataset.state="syncing";btn.setAttribute("aria-busy","true")}
-  setSyncPill("syncing","Checking","Reading your Google Calendar");
-  _calPollAt=Date.now();
-  const ok=await refreshCalendarSchedule();
-  if(btn){delete btn.dataset.state;btn.removeAttribute("aria-busy")}
-  /* Only repaint the calendar card on success: on failure refreshCalendarSchedule has
-     just written Google's own message there, and repainting would erase it. */
-  if(ok){renderCalendarConnectionStatus();setSyncPill("ok","Updated now","Schedule read from your calendar just now")}
-  else setSyncPill("error","Sync failed","Could not read your calendar - see Profile");
-}
-async function syncSchedule(force=false){
-  if(!SYNC_ENABLED){
-    state.scheduleLoading=false;
-    const pill=$("#syncPill");
-    /* The pill names where the schedule actually came from. "Term IV schedule" was
-       true of the built-in table and stayed on screen once a calendar was connected,
-       which is the one case where the distinction matters. */
-    const cache=loadCalCache(),age=cache&&cache.at?Date.now()-cache.at:null;
-    if(!calSessions().length)setSyncPill("ok","Term IV schedule","Showing the built-in Term IV elective schedule");
-    /* A token lasts an hour and cannot be renewed in the background, so a schedule
-       read yesterday is a snapshot, not a live feed. Say so rather than letting a
-       green dot imply the office has changed nothing. */
-    else if(age!==null&&age>CAL_STALE_MS&&!getSavedCalToken())
-      setSyncPill("stale","Tap to update",`Calendar last read ${compactAgo(age)} — refresh to pick up any changes`);
-    else setSyncPill("ok","Your calendar","Showing sessions read from your Google Calendar");
-    state.classes=filteredClasses();
-    renderAll();
-    return;
-  }
-  if(_syncInFlight)return;
-  if(!force&&Date.now()-_lastSyncAt<30000)return;
-  _syncInFlight=true;
-  const pill=$("#syncPill"),refreshBtn=$("#refreshButton");
-  if(pill){pill.className="sync-pill syncing";pill.innerHTML="<i></i><span>Checking</span>";pill.title="Checking for schedule updates"}
-  if(refreshBtn){refreshBtn.dataset.state="syncing";refreshBtn.setAttribute("aria-busy","true")}
-  try{
-    const u=new URL(API);u.searchParams.set("section",state.profile.section||"A");u.searchParams.set("electives",(state.profile.electives||[]).join(","));u.searchParams.set("includeCancelled","true");if(force)u.searchParams.set("_",Date.now());
-    const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`HTTP ${r.status}`);const d=await r.json();if(!d.success)throw new Error(d.error||"API failed");
-    const previous=load(KEYS.snapshot,[]),changes=compareSnapshots(previous,d.classes||[]);
-    if(changes.length){state.notifications=[...changes,...state.notifications].slice(0,40);save(KEYS.notifications,state.notifications)}
-    state.all=d.classes||[];state.electives=d.availableElectives||[];state.lastUpdated=d.updatedAt;save(KEYS.cache,{all:state.all,electives:state.electives,lastUpdated:state.lastUpdated});save(KEYS.snapshot,state.all);state.classes=filteredClasses();
-    _lastSyncAt=Date.now();
-    if(pill){pill.className="sync-pill ok";pill.innerHTML="<i></i><span>Updated now</span>";pill.title="Schedule updated just now"}
-  }catch(e){
-    const c=load(KEYS.cache,null);
-    if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
-    if(pill){pill.className="sync-pill error";pill.innerHTML="<i></i><span>Offline</span>";pill.title="Offline — showing last saved schedule"}
-    console.error(e);
-  }finally{
-    _syncInFlight=false;
-    if(refreshBtn){refreshBtn.dataset.state="";refreshBtn.setAttribute("aria-busy","false")}
-  }
-  state.scheduleLoading=false;
-  renderAll();
-}
-/* Nothing was polling the calendar, which is the only live source the app has. The
-   five-minute timer, the window focus hook, the visibilitychange hook and the online
-   hook all called syncSchedule, and that has fetched nothing since SYNC_ENABLED was
-   switched off with Term III. So an app left open across a day, or come back to after
-   lunch, never noticed a change the office had made.
-
-   Deliberately conservative about auth: this refreshes only while a valid token is in
-   hand. Renewing one is left to launch and to an explicit tap, because a renewal
-   fired by a timer could put a Google window on screen unprompted. When the token has
-   aged out the pill says "Tap to update" rather than anything being done silently. */
-const CAL_POLL_MS=10*60e3;
-let _calPollAt=0,_calPollInFlight=false;
-async function maybeRefreshCalendar(){
-  if(!calSessions().length)return;
-  /* No token, no fetch, and emphatically no attempt to get one. See the note on
-     connectGoogleCalendar: there is no such thing as a quiet token request here, so
-     anything that asks for one without the reader having just pressed something puts
-     a Google window on screen out of nowhere. The cached schedule stays, the pill
-     says it needs a tap, and nothing is asked. */
-  if(!getSavedCalToken()){syncSchedule();return}
-  if(_calPollInFlight||Date.now()-_calPollAt<CAL_POLL_MS)return;
-  _calPollInFlight=true;_calPollAt=Date.now();
-  try{if(await refreshCalendarSchedule({silent:true}))renderCalendarConnectionStatus()}
-  finally{_calPollInFlight=false}
-}
-function scheduleIdleSync(){
-  const run=()=>{syncSchedule(false);maybeRefreshCalendar()};
-  if("requestIdleCallback"in window)requestIdleCallback(run,{timeout:2500});
-  else setTimeout(run,1200);
-}
 /* Plays the card entrance on whichever page just became active. Time-based rather
    than scroll-based on purpose — see the note by @keyframes card-in. The class is
    removed once the animation has had time to finish so it can replay on the next
@@ -880,10 +767,8 @@ function renderWeekDigest(){
   const monday=zoned(mondayIso(isoToday()),"00:00"),nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
   const mondayIsoStr=mondayIso(isoToday()),nextMondayIsoStr=dtf("en-CA",{timeZone:APP_TZ},"ca").format(nextMonday);
   const weekClasses=state.classes.filter(c=>c.status!=="Cancelled"&&dateTime(c,"startTime")>=monday&&dateTime(c,"startTime")<nextMonday).length;
-  const weekTasks=state.tasks.filter(t=>!t.completed&&t.date&&t.date>=mondayIsoStr&&t.date<nextMondayIsoStr).length;
   const weekExams=(window.EXAM_DATA||[]).filter(e=>e.date>=mondayIsoStr&&e.date<nextMondayIsoStr).length;
   const parts=[`${weekClasses} ${weekClasses===1?"class":"classes"}`];
-  if(weekTasks)parts.push(`${weekTasks} ${weekTasks===1?"task":"tasks"} due`);
   if(weekExams)parts.push(`${weekExams} ${weekExams===1?"exam":"exams"}`);
   el.hidden=false;
   el.textContent=parts.join(" · ")+" this week";
@@ -1083,7 +968,6 @@ function renderExamsPage(){
       $("#examHeroTitle").textContent=entry.subject;
       $("#examHeroMeta").textContent=`${fmtDate(next.date,{weekday:"long",day:"numeric",month:"long"})} · ${EXAM_SLOT_LABELS[firstSlot]}${Object.keys(next.slots).length>1?` +${Object.keys(next.slots).length-1} more that day`:""}`;
       $("#examHeroDays").textContent=daysLeft<=0?"Today":`${daysLeft}d`;
-      $("#examHeroPrep").onclick=()=>{addTask(`Prep: ${entry.subject}`,entry.code,next.date);showToast("Prep task added")};
     }else hero.hidden=true;
   }
   if(!allExams.length){
@@ -1136,17 +1020,10 @@ function applyShortcutParams(){
   else if(target==="mess"){showPage("campus");openCampusTab("mess")}
   history.replaceState(null,"",location.pathname);
 }
-function renderAll(){migrateProfile();state.classes=filteredClasses();renderProfile();renderAttendanceSummary();renderAttendanceLog();renderCourseOptions();renderHome();renderCalendar();renderTasks();renderNotes();renderLedger();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
+function renderAll(){migrateProfile();state.classes=filteredClasses();renderScheduleFreshness();renderProfile();renderAttendanceSummary();renderAttendanceLog();renderHome();renderCalendar();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
 /* Ledger badge — tasks that are due today or overdue and still open, so a
    glance at the header icon says whether anything needs attention without
    opening the Tasks & Notes dialog. */
-function renderLedgerBadge(){
-  const badge=$("#ledgerBadge");if(!badge)return;
-  const today=isoToday();
-  const dueCount=state.tasks.filter(t=>!t.completed&&t.date&&t.date<=today).length;
-  badge.hidden=!dueCount;
-  badge.textContent=dueCount>9?"9+":String(dueCount);
-}
 function heroPill(html,tone=""){return`<span class="hero-pill ${tone}">${html}</span>`}
 /* A count ("3 classes") describes a day far worse than its shape does. This reads the
    remaining run of the day and says the one thing worth knowing about it. */
@@ -1216,9 +1093,6 @@ function tagCountdown(totalMins){
 }
 function renderHome(){
   setHeroLoading(!state.classes.length);
-  $("#focusPanel")?.classList.toggle("is-loading",!!state.scheduleLoading);
-  $("#weekHeatmap")?.classList.toggle("is-loading",!!state.scheduleLoading);
-  $("#todayProgressRail")?.classList.toggle("is-loading",!!state.scheduleLoading);
   const now=new Date(),today=isoToday();$("#todayLabel").textContent=fmtDate(today,{weekday:"long",day:"numeric",month:"long"}).toUpperCase();$("#dateOrbitDay").textContent=today.slice(8);$("#dateOrbitMonth").textContent=fmtDate(today,{month:"short"}).toUpperCase();const h=Number(istParts().hour),firstName=String(state.profile.name||"").trim().split(/\s+/)[0],dayGreeting=`Good ${h<12?"morning":h<17?"afternoon":"evening"}`;$("#greeting").textContent=firstName?`${dayGreeting}, ${firstName}.`:`${dayGreeting}.`;
   /* A faint time-of-day tint on the hero card, so it doesn't look identical at 9am and
      9pm — purely ambient, layered under the existing accent/course colouring. */
@@ -1412,7 +1286,7 @@ function renderHome(){
       const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
       const dayClasses=state.classes.filter(c=>c.dateIso===iso),active=dayClasses.filter(c=>c.status!=="Cancelled"),hasCancelled=dayClasses.some(c=>c.status==="Cancelled");
       const codes=active.sort((a,b)=>minutes(a.startTime)-minutes(b.startTime)).map(c=>canonical(c.code));
-      dayCounts.push({iso,count:active.length,codes,hasCancelled,hasExam:!!examOn(iso),hasTask:state.tasks.some(t=>!t.completed&&t.date===iso)});
+      dayCounts.push({iso,count:active.length,codes,hasCancelled,hasExam:!!examOn(iso)});
     }
     const maxCount=Math.max(1,...dayCounts.map(d=>d.count));
     /* A light week used to render as a tall box holding one bar and six dashes. The
@@ -1423,7 +1297,7 @@ function renderHome(){
     heatEl.innerHTML=dayCounts.map((d,i)=>{
       const isToday=d.iso===isoToday();
       const h=d.count?Math.round(Math.max(.18,d.count/maxCount)*MAX_BAR):4;
-      const marks=`${d.hasExam?'<i class="wk-bar-mark exam"></i>':""}${d.hasTask?'<i class="wk-bar-mark task"></i>':""}`;
+      const marks=d.hasExam?'<i class="wk-bar-mark exam"></i>':"";
       /* A solid bar only ever said "how much". Splitting it into one course-coloured
          segment per class makes the same bar say what the day is made of, read against
          the legend directly below it. */
@@ -1443,7 +1317,6 @@ function renderHome(){
     $("#silentUpdateText").textContent=`${latest.title} · ${latest.text}`;
   }
   $("#homeSyncText").textContent=relativeSyncText()
-  renderHomeTasks()
   renderDateStrip()
 }
 
@@ -1460,13 +1333,16 @@ function agendaStatus(c){
   if(c.dateIso===isoToday()&&now<dateTime(c,"startTime"))return"Upcoming";
   return"Scheduled";
 }
-function googleUrl(c){
-  const start=String(c.startTime||"").replace(":","")+"00";
-  const end=String(c.endTime||"").replace(":","")+"00";
-  return "https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=Asia%2FKolkata&text="+
-    encodeURIComponent(`${c.code} · ${c.course}`)+
-    "&dates="+`${c.dateIso.replace(/-/g,"")}T${start}/${c.dateIso.replace(/-/g,"")}T${end}`+
-    "&location="+encodeURIComponent(venueOf(c));
+/* One class as a calendar file. This used to be a calendar.google.com template link,
+   which worked only for readers signed into Google in that browser; an .ics opens in
+   whatever calendar the phone already uses, Google included. */
+function downloadClassIcs(c){
+  const text=icsFrom([c]);
+  const blob=new Blob([text],{type:"text/calendar;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=`${canonical(c.code)}-${c.dateIso}.ics`;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  showToast("Added to your calendar app");
 }
 function agendaTag(c){
   const status=agendaStatus(c);
@@ -1867,8 +1743,10 @@ function icsFold(line){
 function icsStamp(iso,hhmm){return`${iso.replace(/-/g,"")}T${String(hhmm||"00:00").replace(":","")}00`}
 function buildIcs(days){
   const wanted=new Set(days);
-  const list=state.classes.filter(c=>wanted.has(c.dateIso)&&c.status!=="Cancelled")
-    .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime));
+  return icsFrom(state.classes.filter(c=>wanted.has(c.dateIso)&&c.status!=="Cancelled")
+    .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)));
+}
+function icsFrom(list){
   const now=new Date().toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
   const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//BL07//Term Planner//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:BL07 Term IV"];
   list.forEach((c,i)=>{
@@ -2025,7 +1903,7 @@ function scheduleRowsHtml(classes,dayIso,opts={}){
   if(collapseDone&&leadingDone===chronological.length)html+='</div>';
   return html+'</div>';
 }
-function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)return;let tip=$("#calendarTooltip");if(!tip){tip=document.createElement("div");tip.id="calendarTooltip";tip.className="calendar-tooltip";document.body.appendChild(tip)}const list=state.classes.filter(c=>c.dateIso===iso).sort((a,b)=>minutes(a.startTime)-minutes(b.startTime));if(!list.length)return;tip.innerHTML=`<h4>${esc(fmtDate(iso))}</h4>${list.map(c=>`<div class="calendar-tooltip-row"><time>${esc(fmtTime(c.startTime))}</time><strong>${esc(canonical(c.code))}${sessionTag(c)?` ${esc(sessionTag(c))}`:""} · ${esc(c.course)}</strong></div>`).join("")}`;const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-220,r.bottom+8)}px`;tip.classList.add("show")}function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}function renderCalendar(){
+function renderCalendar(){
   const d=state.calendarMonth,y=d.getFullYear(),m=d.getMonth();
   $("#calendarTitle").textContent=dtf("en-IN",{month:"long",year:"numeric"},"my").format(d);
   const first=new Date(y,m,1),off=(first.getDay()+6)%7,start=new Date(y,m,1-off);
@@ -2051,7 +1929,6 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
       const dayCourses=[...new Set(active.map(c=>canonical(c.code)))];
       const dimmed=state.calendarHighlight&&!dayCourses.includes(state.calendarHighlight);
       const exam=examOn(iso),holiday=HOLIDAYS[iso];
-      const hasTask=state.tasks.some(t=>!t.completed&&t.date===iso);
       const cls=["calendar-day",day.getMonth()!==m?"outside":"",isWeekend?"weekend":"",
         iso===isoToday()?"today":"",iso===state.selectedDate?"selected":"",dimmed?"dimmed":"",
         exam?"has-exam":"",holiday?"has-holiday":""].filter(Boolean).join(" ");
@@ -2063,9 +1940,9 @@ function showCalendarTooltip(target,iso){if(matchMedia("(hover: none)").matches)
         ?`<span class="cd-dots">${dayCourses.slice(0,3).map(code=>`<i style="--course:${colorFor(code)}"></i>`).join("")}${dayCourses.length>3?'<b>+</b>':""}</span>`
         :"";
       const holidayMark=!active.length&&holiday?'<span class="cd-mark cd-holiday" aria-hidden="true"></span>':"";
-      const taskMark=hasTask?'<span class="cd-mark cd-task" aria-hidden="true"></span>':"";
+
       return`<button class="${cls}" data-date="${iso}" style="--density:${density}"${holiday?` title="${esc(holiday)}"`:""} data-courses="${esc(dayCourses.join(","))}">
-        <span class="calendar-day-number">${day.getDate()}</span>${dayDot}${holidayMark}${taskMark}
+        <span class="calendar-day-number">${day.getDate()}</span>${dayDot}${holidayMark}
       </button>`;
     }).join("");
     html+=`<div class="month-week ${rowInWeek?"in-week":""}">${cells}</div>`;
@@ -2285,11 +2162,8 @@ function renderDayFocus(iso){
     }else if(dayAll.length&&!exam){
       html+=`<div class="empty-state agenda-empty-rich"><span class="empty-state-icon">${icon("check")}</span><p>All done for today</p><small>Every class on ${esc(fmtDate(iso,{weekday:"long"}))} is wrapped up.</small></div>`;
     }
-    const tasks=state.tasks.filter(t=>t.date===iso);
-    if(tasks.length)html+=`<section class="agenda-task-section"><div class="agenda-task-heading">Tasks due</div><div class="task-list">${tasks.map(taskHtml).join("")}</div></section>`;
     timelineEl.innerHTML=html;
   }
-  bindTaskRows(timelineEl);
   /* el is a persistent node whose children get replaced on every render, not el
      itself — bind the swipe listener once or it stacks a new one on every call. */
   if(!el.dataset.swipeBound){el.dataset.swipeBound="1";bindSwipeGesture(el,direction=>shiftSelectedDate(direction==="left"?1:-1),{ignore:"button,a,input,select,textarea",threshold:46})}
@@ -2317,128 +2191,10 @@ function showCalendarTooltip(target,iso){
   tip.innerHTML=`<div class="calendar-tooltip-head"><h4>${esc(fmtDate(iso))}</h4><small>${esc(summary)}</small></div>${scheduled.length?rows:'<div class="calendar-tooltip-empty">No scheduled classes</div>'}${cancelledRows}`;
   const r=target.getBoundingClientRect();tip.style.left=`${Math.min(innerWidth-292,Math.max(12,r.left+r.width/2-130))}px`;tip.style.top=`${Math.min(innerHeight-240,r.bottom+8)}px`;tip.classList.add("show")
 }
-function renderCourseOptions(){const selected=new Set((state.profile.electives||[]).map(canonical));const seen=new Set(),courses=[];state.all.forEach(c=>{const code=canonical(c.baseCode||c.code);const allowed=c.type==="General"?true:c.type==="Core"?c.section===state.profile.section:selected.has(code);if(allowed&&!seen.has(code)){seen.add(code);courses.push({code,course:c.course})}});const o=courses.sort((a,b)=>a.course.localeCompare(b.course)).map(e=>`<option value="${esc(e.code)}">${esc(e.code)} · ${esc(e.course)}</option>`).join("");["#quickTaskCourse","#taskCourse","#noteCourse"].forEach(s=>{const el=$(s);if(el)el.innerHTML='<option value="">General</option>'+o})}
-function addTask(title,course,date){
-  const t={id:crypto.randomUUID(),title,course:course||"General",date,completed:false,createdAt:Date.now()};
-  state.tasks.unshift(t);
-  save(KEYS.tasks,state.tasks);
-  renderTasks();renderHomeTasks();renderCalendar();renderLedger();
-  if(_googleAccessToken)syncTaskToGoogle(t);
-}
-function taskHtml(t){return`<article class="task-item ${t.completed?"completed":""}" data-task="${t.id}" style="--course:${colorFor(t.course)}"><input type="checkbox" ${t.completed?"checked":""}><div><strong>${esc(t.title)}</strong><p>${esc(t.course||"General")}${t.date?` · ${esc(fmtDate(t.date,{day:"numeric",month:"short"}))}`:""}</p></div><button class="delete-button">×</button></article>`}
-function openTaskEditor(t){
-  if(!t)return;
-  editingTaskId=t.id;
-  $("#taskTitle").value=t.title||"";
-  $("#taskCourse").value=t.course==="General"?"":canonical(t.course);
-  $("#taskDate").value=t.date||"";
-  $("#taskDialog h2").textContent="Edit task";
-  const sb=$("#saveTaskButton");if(sb)sb.textContent="Save changes";
-  clearDialogValidation($("#taskDialog"));
-  $("#taskDialog").showModal();
-}
-function bindTaskRows(root){
-  if(!root)return;$$(".task-item",root).forEach(r=>{
-  $("input",r)?.addEventListener("change",e=>{
-    const t=state.tasks.find(x=>x.id===r.dataset.task);if(!t)return;
-    const commit=()=>{t.completed=e.target.checked;save(KEYS.tasks,state.tasks);syncTaskToGoogle(t);renderTasks();renderHomeTasks();renderCalendar();renderLedger()};
-    if(e.target.checked&&!t.completed){r.classList.add("task-completing");setTimeout(commit,280)}
-    else commit();
-  });
-  $(".delete-button",r)?.addEventListener("click",()=>{const t=state.tasks.find(x=>x.id===r.dataset.task);if(t)deleteGoogleTask(t);state.tasks=state.tasks.filter(x=>x.id!==r.dataset.task);save(KEYS.tasks,state.tasks);renderTasks();renderHomeTasks();renderCalendar();renderLedger()});
-  $(".task-item>div",r)?.addEventListener("click",()=>openTaskEditor(state.tasks.find(x=>x.id===r.dataset.task)));
-})}
-function renderHomeTasks(){const el=$("#homeTasks");if(!el)return;const a=state.tasks.filter(t=>!t.completed).slice(0,3);el.innerHTML=a.length?a.map(taskHtml).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("check")+'</span><p>All caught up</p><small>No open tasks right now.</small></div>';bindTaskRows(el)}
-const TASK_FILTERS=["open","today","upcoming","completed"];
-function setTaskFilter(filter,direction="none"){if(!TASK_FILTERS.includes(filter))return;state.taskFilter=filter;$$(`.filter`).forEach(x=>x.classList.toggle("active",x.dataset.taskFilter===filter));const list=$("#taskList");if(list&&direction!=="none"){list.classList.remove("filter-slide-left","filter-slide-right");list.classList.add(direction==="left"?"filter-slide-left":"filter-slide-right")}renderTasks();requestAnimationFrame(()=>requestAnimationFrame(()=>list?.classList.remove("filter-slide-left","filter-slide-right")))}
-function renderTasks(){const list=$("#taskList");if(!list)return;const t=isoToday();let a=state.tasks;if(state.taskFilter==="open")a=a.filter(x=>!x.completed);if(state.taskFilter==="today")a=a.filter(x=>!x.completed&&x.date===t);if(state.taskFilter==="upcoming")a=a.filter(x=>!x.completed&&x.date&&x.date>t);if(state.taskFilter==="completed")a=a.filter(x=>x.completed);list.innerHTML=a.length?a.map(taskHtml).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("check")+'</span><p>Nothing here</p><small>Tasks matching this filter will appear here.</small></div>';bindTaskRows(list)}
-function renderNotes(){const search=$("#noteSearch");const list=$("#noteList");if(!list)return;const q=(search?.value||"").toLowerCase(),a=state.notes.filter(n=>(n.title+" "+n.body+" "+n.course).toLowerCase().includes(q));list.innerHTML=a.length?a.map(n=>`<article class="note-card" data-note="${n.id}"><header><div><small>${esc(n.course||"GENERAL")}</small><h3>${esc(n.title)}</h3></div><button class="delete-button">×</button></header><p>${esc(n.body)}</p></article>`).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("note")+'</span><p>No notes yet</p><small>Save something worth remembering.</small></div>';$$(".note-card .delete-button",list).forEach(b=>b.addEventListener("click",()=>{state.notes=state.notes.filter(n=>n.id!==b.closest(".note-card").dataset.note);save(KEYS.notes,state.notes);renderNotes();renderLedger()}))}
-
-/* ===== Tasks & Notes ledger (Planner "Tasks & Notes" subtab + Home ledger icon) =====
-   Merges tasks and notes into one numbered list per the locked spec. Reuses the
-   same state.tasks/state.notes arrays and CRUD helpers — no schema changes. */
-function ledgerItems(){
-  const q=($("#ledgerSearch")?.value||"").trim().toLowerCase(),filter=state.ledgerFilter||"all";
-  let items=[
-    ...state.tasks.map(t=>({id:t.id,kind:"task",title:t.title,course:t.course,date:t.date,completed:t.completed,sortAt:t.createdAt||0})),
-    ...state.notes.map(n=>({id:n.id,kind:"note",title:n.title,body:n.body,course:n.course,sortAt:n.createdAt||0}))
-  ];
-  if(filter!=="all")items=items.filter(i=>i.kind===(filter==="tasks"?"task":"note"));
-  if(q)items=items.filter(i=>`${i.title||""} ${i.body||""} ${i.course||""}`.toLowerCase().includes(q));
-  return items.sort((a,b)=>b.sortAt-a.sortAt);
-}
-/* A due date reads as "today/tomorrow/overdue" rather than a bare ISO string,
-   and carries its own tier colour (overdue = danger, today = accent, future =
-   neutral) the same way the rest of the app colour-codes urgency instead of
-   leaving every date the same flat grey. */
-function ledgerDateBadge(dateIso,completed){
-  if(!dateIso)return"";
-  const today=isoToday(),tomorrow=tomorrowIso();
-  let label,tier;
-  if(dateIso===today){label="Today";tier="today"}
-  else if(dateIso===tomorrow){label="Tomorrow";tier="soon"}
-  else if(dateIso<today&&!completed){label=fmtDate(dateIso,{day:"numeric",month:"short"});tier="overdue"}
-  else{label=fmtDate(dateIso,{day:"numeric",month:"short"});tier="future"}
-  return`<span class="ledger-date ${tier}">${esc(label)}</span>`;
-}
-function renderLedger(){
-  const list=$("#ledgerList");if(!list)return;
-  const items=ledgerItems();
-  list.innerHTML=items.length?items.map(it=>{
-    const tag=it.course&&it.course!=="General"?canonical(it.course):"",course=colorFor(it.course);
-    const chip=tag?`<span class="ledger-tag" style="--course:${course}">${esc(tag)}</span>`:"";
-    if(it.kind==="task"){
-      return `<article class="ledgerrow" data-ledger-kind="task" data-ledger-id="${esc(it.id)}">
-        <span class="ledger-check ${it.completed?"done":""}">${it.completed?icon("check"):""}</span>
-        <span class="ledger-main">
-          <span class="txt ${it.completed?"done":""}">${esc(it.title)}</span>
-          <span class="ledger-meta">${chip}${ledgerDateBadge(it.date,it.completed)}</span>
-        </span>
-        <button class="ledger-del" type="button" data-ledger-del="task" data-ledger-id="${esc(it.id)}" aria-label="Delete task">${icon("close")}</button>
-      </article>`;
-    }
-    return `<article class="ledgerrow" data-ledger-kind="note" data-ledger-id="${esc(it.id)}">
-      <span class="ledger-note-dot">${icon("note")}</span>
-      <span class="ledger-main">
-        <span class="txt">${esc(it.title)}</span>
-        <span class="ledger-meta">${chip}${it.body?`<span class="ledger-snippet">${esc(it.body.slice(0,60))}${it.body.length>60?"…":""}</span>`:""}</span>
-      </span>
-      <button class="ledger-del" type="button" data-ledger-del="note" data-ledger-id="${esc(it.id)}" aria-label="Delete note">${icon("close")}</button>
-    </article><div class="ledger-body" id="ledgerBody-${esc(it.id)}" hidden>${esc(it.body||"")}</div>`;
-  }).join(""):'<div class="empty-state"><span class="empty-state-icon">'+icon("note")+'</span><p>Nothing here yet</p><small>Tasks and notes you add will show up in this ledger.</small></div>';
-  bindLedgerRows();
-  renderLedgerBadge();
-}
-function bindLedgerRows(){
-  $$(".ledgerrow").forEach(row=>{
-    row.addEventListener("click",e=>{
-      if(e.target.closest(".ledger-del"))return;
-      const id=row.dataset.ledgerId;
-      if(row.dataset.ledgerKind==="task"){
-        const t=state.tasks.find(x=>x.id===id);if(!t)return;
-        t.completed=!t.completed;save(KEYS.tasks,state.tasks);syncTaskToGoogle(t);
-        renderTasks();renderHomeTasks();renderCalendar();renderLedger();
-      }else{
-        const body=$(`#ledgerBody-${CSS.escape(id)}`);
-        if(body)body.hidden=!body.hidden;
-      }
-    });
-  });
-  $$("[data-ledger-del]").forEach(btn=>{
-    btn.addEventListener("click",e=>{
-      e.stopPropagation();
-      const id=btn.dataset.ledgerId;
-      if(btn.dataset.ledgerDel==="task"){
-        const t=state.tasks.find(x=>x.id===id);if(t)deleteGoogleTask(t);
-        state.tasks=state.tasks.filter(x=>x.id!==id);save(KEYS.tasks,state.tasks);
-        renderTasks();renderHomeTasks();renderCalendar();
-      }else{
-        state.notes=state.notes.filter(x=>x.id!==id);save(KEYS.notes,state.notes);renderNotes();
-      }
-      renderLedger();
-    });
-  });
-}
+function hideCalendarTooltip(){$("#calendarTooltip")?.classList.remove("show")}
+/* Tasks, notes and pull-to-refresh are gone with the features behind them. The pull
+   gesture kicked a schedule fetch, and there is no fetch any more; a gesture that does
+   nothing is worse than no gesture, because it looks like the app ignored you. */
 function busDate(b,t=false){const n=new Date(),[h,m]=b.time.split(":").map(Number),d=new Date(n);d.setHours(h,m,0,0);if(t)d.setDate(d.getDate()+1);return d}
 
 function busStopLabel(stop){
@@ -2471,41 +2227,6 @@ function setTimelineOffset(offset,direction){
     });
   },180);
 }
-function bindPullToRefresh(){
-  const page=$("#homePage");
-  if(!page)return;
-  const indicator=document.createElement("div");
-  indicator.className="ptr-indicator";
-  indicator.innerHTML='<span class="ptr-spinner" data-icon="refresh"></span>';
-  page.prepend(indicator);
-  renderIcons();
-  let startY=0,dragging=false,pull=0;
-  const READY=56;
-  const setPull=px=>{indicator.style.setProperty("--pull",`${px}px`);indicator.style.setProperty("--pull-ratio",`${Math.min(1,px/40)}`)};
-  page.addEventListener("touchstart",e=>{
-    if(window.scrollY>0||e.target.closest("button,a,input,select,textarea"))return;
-    startY=e.touches[0].clientY;dragging=true;pull=0;
-  },{passive:true});
-  page.addEventListener("touchmove",e=>{
-    if(!dragging)return;
-    const dy=e.touches[0].clientY-startY;
-    if(dy<=0||window.scrollY>0){pull=0;setPull(0);indicator.classList.remove("ready");return}
-    pull=Math.min(90,dy*0.5);
-    setPull(pull);
-    const wasReadyBefore=indicator.classList.contains("ready"),nowReady=pull>=READY;
-    if(nowReady&&!wasReadyBefore)haptic(14);
-    indicator.classList.toggle("ready",nowReady);
-  },{passive:true});
-  page.addEventListener("touchend",async()=>{
-    if(!dragging)return;
-    dragging=false;
-    const wasReady=pull>=READY;
-    setPull(0);
-    indicator.classList.remove("ready");
-    if(wasReady){haptic(20);indicator.classList.add("loading");await syncSchedule(true);indicator.classList.remove("loading")}
-    pull=0;
-  });
-}
 function bindSwipeGesture(el,onSwipe,{ignore="input,select,textarea,button,a",threshold=50}={}){
   if(!el)return;
   let sx=0,sy=0,active=false;
@@ -2526,71 +2247,6 @@ function bindSwipeGesture(el,onSwipe,{ignore="input,select,textarea,button,a",th
   el.addEventListener("touchend",end);
   el.addEventListener("mousedown",start);
   el.addEventListener("mouseup",end);
-}
-
-/* Pull-to-refresh on Home — only arms when the page is scrolled to the very top
-   (so it never fights normal scrolling), tracks the vertical drag with resistance
-   past a threshold, and triggers the same syncSchedule(true) the header refresh
-   button already uses. Ignored once a horizontal drag is clearly what's happening,
-   so it doesn't compete with the hero card's day-swipe gesture. */
-function bindPullToRefresh(){
-  const indicator=$("#pullRefreshIndicator");if(!indicator)return;
-  const MAX_PULL=70,THRESHOLD=52;
-  let sy=0,sx=0,dragging=false,pulled=0,refreshing=false;
-  const isHome=()=>$("#homePage")?.classList.contains("active");
-  document.addEventListener("touchstart",e=>{
-    if(!isHome()||refreshing||window.scrollY>0){dragging=false;return}
-    const p=e.touches[0];sy=p.clientY;sx=p.clientX;dragging=true;pulled=0;
-  },{passive:true});
-  document.addEventListener("touchmove",e=>{
-    if(!dragging)return;
-    const p=e.touches[0],dy=p.clientY-sy,dx=p.clientX-sx;
-    if(Math.abs(dx)>Math.abs(dy)){dragging=false;indicator.classList.remove("pulling","ready");return}
-    if(dy<=0)return;
-    pulled=Math.min(MAX_PULL,dy*0.5);
-    indicator.style.setProperty("--pull-y",`${pulled}px`);
-    indicator.style.transform=`translate(-50%,${pulled}px)`;
-    indicator.classList.add("pulling");
-    indicator.classList.toggle("ready",pulled>=THRESHOLD*0.7);
-  },{passive:true});
-  document.addEventListener("touchend",async()=>{
-    if(!dragging)return;dragging=false;
-    if(pulled>=THRESHOLD*0.7&&!refreshing){
-      refreshing=true;
-      indicator.style.setProperty("--pull-y","32px");
-      indicator.style.transform="translate(-50%,32px)";
-      indicator.classList.add("spinning");
-      haptic(14);
-      await syncSchedule(true);
-      indicator.classList.remove("spinning","pulling","ready");
-      indicator.style.transform="translate(-50%,0)";
-      refreshing=false;
-    }else{
-      indicator.classList.remove("pulling","ready");
-      indicator.style.transform="translate(-50%,0)";
-    }
-    pulled=0;
-  });
-}
-
-/* Electives onboarding */
-function openOnboardingManually(){
-  const dialog=$("#onboardingDialog");
-  if(!dialog)return;
-  // Force render electives + restore any saved selections before opening
-  renderOnboardingElectives();
-  const section=state.profile.section||"A";
-  const sec=dialog.querySelector(`input[name="onboardingSection"][value="${section}"]`);
-  if(sec)sec.checked=true;
-  const nameInput=$("#onboardingName");
-  if(nameInput)nameInput.value=state.profile.name||"";
-  const saved=new Set((state.profile.electives||[]).map(canonical));
-  $$("#onboardingElectives input").forEach(cb=>cb.checked=saved.has(canonical(cb.value)));
-  renderElectiveClashWarnings();
-  updateElectiveSelectionState();
-  state._electiveEditBefore=[...saved];
-  setOnboardingStep(2);
-  dialog.showModal();
 }
 
 /* Student services now carry their real stop sequence, so there is nothing to infer.
@@ -3061,7 +2717,7 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
     ?`${meta.term||"Term IV"} \u00b7 ${courses.length} electives \u00b7 ${courses.reduce((t,[,v])=>t+(v.credits||0),0)} credits`
     :(meta.term||"Term IV");
   const avatarDisc=$("#profileAvatarDisc");if(avatarDisc)avatarDisc.setAttribute("data-initials",initials(state.profile.name));
-  const bc=$("#stubBarcode");if(bc)bc.innerHTML=barcodeHtml(state.profile.name||state.profile.section);
+  const bc=$("#stubBarcode");if(bc)bc.innerHTML=barcodeHtml(state.profile.name||"BL07");
   /* A malformed updatedAt from the feed used to throw here, and since renderProfile runs
      before renderHome in renderAll, that took the whole app down with it. */
 /* Read from the term feed rather than from a saved selection. The schedule is the
@@ -3071,7 +2727,6 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
   if(chips)chips.innerHTML=courses.length
     ?courses.map(([code,v])=>`<span title="${esc(v.title)}" style="--course:${colorFor(code)}"><b>${esc(code)}</b><i>${esc(v.title)}</i><em>${v.credits} cr</em></span>`).join("")
     :"<em>Schedule not loaded</em>";
-  renderCalendarConnectionStatus();
   renderAccentSwatches();
   renderTermRing();
   renderWorkloadChart();
@@ -3099,11 +2754,9 @@ function renderAccentSwatches(){
     `<button type="button" class="accent-swatch ${key===current?"active":""}" data-accent="${key}" style="--swatch:${preset.dark.accent}" aria-label="${esc(preset.name)}" title="${esc(preset.name)}"></button>`
   ).join("");
 }
-/* renderSessionRings is gone. It counted through subjectSessions, which reads
-   state.all - a list only the Term III sync ever filled, and that has been switched
-   off since SYNC_ENABLED went false. Every ring therefore read 0/0. What it meant to
-   show, how far each course has been delivered, is what the attendance panel counts
-   anyway, so it is not replaced. */
+/* renderSessionRings is gone. It counted through a list only the retired feed ever
+   filled, so every ring read 0/0. What it meant to show, how far each course has been
+   delivered, is what the attendance panel counts anyway, so it is not replaced. */
 function renderWorkloadChart(){
   const el=$("#workloadChart");if(!el)return;
   const totals={};
@@ -3123,15 +2776,14 @@ function renderWorkloadChart(){
    dropped: a friend should land on a clean app, not inherit whatever view the
    sender happened to have open. */
 const appShareUrl=()=>{const u=new URL("./",location.href);u.search="";u.hash="";return u.href};
-/* What a classmate receiving this cold actually needs: what it is, the one thing they
-   must do to make it theirs, and that it costs them nothing. It used to end "nothing
-   to sign into", which stopped being true the moment the calendar connection worked -
-   and left the recipient with no idea why the app showed somebody else's electives. */
+/* What a classmate receiving this cold actually needs: what it is, what to do with it,
+   and that it costs them nothing. There is no sign-in step to describe any more - the
+   timetable is in the page, so the link is the whole of it. */
 const SHARE_PITCH=`BL07 Planner \u2014 our Term IV timetable, campus bus timings and the mess menu, in one place.
 
-Open it \u2192 Profile \u2192 Connect Google Calendar, and sign in with your @iimk.ac.in account. Your own electives then fill the app automatically, and it keeps up whenever the office changes a session.
+Open the link and the full elective schedule is already there \u2014 sessions, venues, what is next and when to leave for it. Mark the classes you attend and it keeps your attendance too.
 
-No app store, no account to make. Add it to your home screen and it works offline.`;
+No sign-in, no app store, no account to make. Add it to your home screen and it works offline.`;
 
 /* Chrome and Edge fire beforeinstallprompt when the app qualifies; the event is the
    only way to open the install dialog, and it can only be used once, so it is held
@@ -3207,7 +2859,7 @@ function fireConfetti(){
 }
 /* Gate-change / status tag for a notification, matching the bus gate-board and timeline
    tag language depending on what kind of schedule change it is. Presentation only — the
-   underlying diff/notification detection in compareSnapshots() is untouched. */
+   underlying diff/notification detection in diffSchedules() is untouched. */
 function notificationTagHtml(n){
   if(n.type==="venue")return`<span class="badge badge-venue">Venue changed</span>`;
   if(n.type==="moved")return`<span class="badge badge-moved">Moved</span>`;
@@ -3286,11 +2938,7 @@ function openClassSheet(c){
   const sheetSessionN=subjectSessionOrdinal(c),sheetSessionTotal=sheetSessionN?subjectSessionTotal(c.code):0;
   $("#sheetClassMeta").textContent=[fmtRange(c.startTime,c.endTime),venueOf(c),c.faculty,sheetSessionN?`Session ${sheetSessionN}/${sheetSessionTotal}`:""].filter(Boolean).join(" · ");
   const calendarLink=$("#sheetAddCalendar");
-  if(calendarLink){
-    if(c.status!=="Cancelled"){calendarLink.hidden=false;calendarLink.href=googleUrl(c)}
-    else calendarLink.hidden=true;
-  }
-  $("#sheetQuickTask").hidden=true;$("#sheetActionGrid").hidden=false;
+  if(calendarLink)calendarLink.hidden=c.status==="Cancelled";
   $("#classActionDialog").showModal();
 }
 function activeSheetClass(){return state.classes.find(x=>classIdentity(x)===activeSheetClassId)}
@@ -3304,418 +2952,21 @@ function bindDismissibleDialog(dialog){
   $$(".dialog-close,.dialog-cancel",dialog).forEach(b=>b.addEventListener("click",()=>closeDialog(dialog)));
 }
 
-/* ===== Google Tasks OAuth ===== */
-const GOOGLE_CLIENT_ID="326019358906-4dpbtbmnp6rm6a7m8bikcir4a2pejiot.apps.googleusercontent.com";
-const GOOGLE_TASKS_SCOPE="https://www.googleapis.com/auth/tasks";
-const GOOGLE_CAL_SCOPE="https://www.googleapis.com/auth/calendar.readonly";
-const GOOGLE_CAL_TOKEN_KEY="classbl07-nova-gcal-token-v1";
-const GOOGLE_CAL_CACHE_KEY="classbl07-nova-gcal-schedule-v1";
-const GOOGLE_TOKEN_KEY="classbl07-nova-google-token-v1";
-const GOOGLE_LIST_KEY="classbl07-nova-google-list-v1";
-const GOOGLE_NOTES_MIGRATION_KEY="classbl07-google-subject-notes-v1";
-/* Bumped to v2 so the rename below runs once more for anyone already carrying a list
-   called "Term 3 Planner". */
-const GOOGLE_LIST_NAME_MIGRATION_KEY="classbl07-google-list-name-v2";
-/* Term-neutral on purpose. The old name was baked in as "Term 3 Planner", which went
-   stale the day Term IV started and would have gone stale again every term after. */
-const GOOGLE_LIST_TITLE="BL07 Planner";
-/* Names this list has been known by, newest first. Looked up in order so an existing
-   list is adopted rather than a second, empty one being created beside it - which is
-   what renaming without this would have done to everyone's saved tasks. */
-const GOOGLE_LIST_ALIASES=[GOOGLE_LIST_TITLE,"Term 3 Planner","BL07 Tasks"];
-let _googleTokenClient=null;
-let _googleAccessToken=null;
+/* Google is gone from this app: the Calendar connection, the Tasks sync, the OAuth
+   client, both scopes and the token handling that went with them.
 
-function getSavedGoogleToken(){
-  try{
-    const raw=localStorage.getItem(GOOGLE_TOKEN_KEY);
-    if(!raw)return null;
-    const o=JSON.parse(raw);
-    if(o?.access_token&&(!o.expires_at||Date.now()<o.expires_at-60000))return o;
-  }catch(e){}
-  return null;
-}
-function saveGoogleToken(o){
-  _googleAccessToken=o.access_token;
-  localStorage.setItem(GOOGLE_TOKEN_KEY,JSON.stringify(o));
-}
-function clearGoogleToken(){
-  _googleAccessToken=null;
-  localStorage.removeItem(GOOGLE_TOKEN_KEY);
-  localStorage.removeItem(GOOGLE_LIST_KEY);
-}
-async function initGoogleTokenClient(){
-  if(_googleTokenClient)return _googleTokenClient;
-  if(!window.google?.accounts?.oauth2)return null;
-  return new Promise(resolve=>{
-    _googleTokenClient=window.google.accounts.oauth2.initTokenClient({
-      client_id:GOOGLE_CLIENT_ID,
-      scope:GOOGLE_TASKS_SCOPE,
-      callback:()=>{}
-    });
-    resolve(_googleTokenClient);
-  });
-}
-/* ============ Schedule from the student's own Google Calendar ============
-   The term schedule shipped as a compiled data file, which meant it was only ever
-   this one student's timetable and only correct until the programme office changed
-   something. Signing in reads the reader's own calendar instead, so the app works
-   for any classmate on first open and stays current without a rebuild.
+   The calendar was the only live source of the schedule, and losing it is a real
+   cost - changes the programme office makes no longer arrive on their own. But it
+   was only ever live for the people who signed in, and after the sign-in friction
+   most of the batch was reading the compiled table anyway. It bought a live schedule
+   for a handful of readers at the price of an OAuth stack, a Cloud project, a consent
+   screen, hourly token expiry, and three of the last week's bugs.
 
-   Read-only scope, and nothing leaves the device: the events are parsed in the page,
-   filtered down to class sessions, and cached in localStorage. Everything that is not
-   a class session is discarded before anything is stored — a calendar holds a lot more
-   than lectures and none of the rest is the app's business.
-
-   The compiled file stays as the fallback, so an unconnected install still shows a
-   schedule rather than an empty app. */
-let _gcalTokenClient=null;
-function getSavedCalToken(){
-  try{
-    const o=JSON.parse(localStorage.getItem(GOOGLE_CAL_TOKEN_KEY)||"null");
-    if(o&&o.access_token&&(!o.expires_at||Date.now()<o.expires_at-60000))return o;
-  }catch(e){}
-  return null;
-}
-function loadCalCache(){try{return JSON.parse(localStorage.getItem(GOOGLE_CAL_CACHE_KEY)||"null")}catch(e){return null}}
-function calSessions(){const c=loadCalCache();return c&&Array.isArray(c.sessions)?c.sessions:[]}
-
-/* The programme office writes every invite the same way:
-     "Session No: 7 - MBGAI(A)-SJ-(CR A3)"
-   code, section, faculty initials and room, with the professor's name in the
-   description. Anything that does not match this shape is not a class and is dropped
-   on the spot. */
-const GCAL_SESSION_RE=/^Session\s*No:\s*(\d+)\s*-\s*([A-Z0-9]+)\(([A-Z])\)-([A-Z]+)-\(([^)]*)\)/i;
-function parseCalendarEvent(ev){
-  const m=GCAL_SESSION_RE.exec(String(ev.summary||"").trim());
-  if(!m)return null;
-  if(!ev.start||!ev.start.dateTime||!ev.end||!ev.end.dateTime)return null;
-  const [,sessionNo,code,section,,room]=m;
-  const startParts=istParts(new Date(ev.start.dateTime)),endParts=istParts(new Date(ev.end.dateTime));
-  const known=(window.TERM4_COURSES||{})[code.toUpperCase()]||{};
-  /* Title case the organiser's shouty "ANUBHA SHEKHAR SINHA", but keep a name the
-     term file already knows, since that one carries the full co-teacher credit. */
-  const raw=String(ev.description||"").trim();
-  const faculty=known.faculty||(raw?"Prof. "+raw.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()):"");
-  return{
-    dateIso:`${startParts.year}-${startParts.month}-${startParts.day}`,
-    startTime:`${startParts.hour}:${startParts.minute}`,
-    endTime:`${endParts.hour}:${endParts.minute}`,
-    code:code.toUpperCase(),
-    course:known.title||String(ev.organizer&&ev.organizer.displayName||code).replace(/^Term\s+\w+\s+/i,"").replace(/\s*\([A-Z]\)\s*$/,""),
-    faculty,
-    venue:`IIM Kozhikode \u00b7 ${room||"CR A3"}`,
-    room:room||"CR A3",
-    sessionNo:Number(sessionNo),
-    type:"Elective",section:section.toUpperCase(),
-    status:ev.status==="cancelled"?"Cancelled":"Scheduled"
-  };
-}
-async function fetchCalendarSessions(token){
-  const meta=window.TERM4_META||{};
-  const timeMin=new Date(`${meta.startIso||"2026-10-26"}T00:00:00+05:30`).toISOString();
-  const timeMax=new Date(`${meta.endIso||"2027-01-15"}T23:59:59+05:30`).toISOString();
-  const out=[];let pageToken="";
-  /* The API caps a page at 2500 and this term is ~120 events, but paging is cheap
-     insurance against a busier calendar. */
-  for(let guard=0;guard<10;guard++){
-    const u=new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
-    u.searchParams.set("timeMin",timeMin);u.searchParams.set("timeMax",timeMax);
-    u.searchParams.set("singleEvents","true");u.searchParams.set("orderBy","startTime");
-    u.searchParams.set("maxResults","2500");
-    if(pageToken)u.searchParams.set("pageToken",pageToken);
-    const r=await fetch(u,{headers:{Authorization:`Bearer ${token}`}});
-    if(!r.ok){
-      /* Google puts the actionable part in the body — "Calendar API has not been
-         used in project N before or it is disabled", "insufficient scope", and so on.
-         Swallowing it for a tidy message left nothing to act on. */
-      let detail="";
-      try{const b=await r.json();detail=(b&&b.error&&(b.error.message||b.error.status))||""}catch(e){}
-      const err=new Error(detail||`HTTP ${r.status}`);
-      err.status=r.status;err.detail=detail;
-      throw err;
-    }
-    const d=await r.json();
-    (d.items||[]).forEach(ev=>{const c=parseCalendarEvent(ev);if(c)out.push(c)});
-    if(!d.nextPageToken)break;
-    pageToken=d.nextPageToken;
-  }
-  /* Two calendars can carry the same session (the course calendar and the personal
-     copy of its invite), so collapse on the identity the office gives it. */
-  const seen=new Map();
-  out.forEach(c=>seen.set(`${c.code}|${c.sessionNo}|${c.dateIso}|${c.startTime}`,c));
-  return[...seen.values()].sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime));
-}
-/* A change is worth interrupting for, including when the refresh that found it was a
-   background one - that is the whole point of polling. The in-app bell always gets it;
-   a system notification only goes out if permission was already granted for the
-   leaving-soon alert, since silently asking for it here would be a poor trade. */
-function announceScheduleChanges(changes){
-  const first=changes[0];
-  showToast(changes.length===1?`${first.title} · ${first.text}`:`${changes.length} schedule changes`);
-  try{
-    if(typeof Notification!=="undefined"&&Notification.permission==="granted"){
-      new Notification(changes.length===1?first.title:`${changes.length} schedule changes`,
-        {body:changes.length===1?first.text:changes.map(c=>c.title).join(", "),tag:"bl07-schedule",icon:"icons/icon-192.png"});
-    }
-  }catch(e){}
-}
-async function refreshCalendarSchedule({silent}={}){
-  const tok=getSavedCalToken();
-  if(!tok)return false;
-  try{
-    const sessions=await fetchCalendarSessions(tok.access_token);
-    if(!sessions.length){if(!silent)showToast("No class sessions found in that calendar");return false}
-    /* Every change the office makes now arrives through this fetch, so this is the only
-       place that can notice one. Compared before the cache is overwritten. */
-    const previous=(loadCalCache()||{}).sessions||[];
-    const changes=diffSchedules(previous,sessions);
-    localStorage.setItem(GOOGLE_CAL_CACHE_KEY,JSON.stringify({at:Date.now(),sessions}));
-    if(changes.length){
-      state.notifications=[...changes,...state.notifications].slice(0,40);
-      save(KEYS.notifications,state.notifications);
-    }
-    state.classes=filteredClasses();renderAll();
-    if(changes.length)announceScheduleChanges(changes);
-    else if(!silent)showToast(`${sessions.length} sessions from your calendar`);
-    return true;
-  }catch(e){
-    const d=String(e&&(e.detail||e.message)||"");
-    /* 401 is an expired token and self-heals on reconnect, so it stays quiet. The
-       rest are setup problems in the Google Cloud project that no amount of retrying
-       will fix, so they are reported as they came. */
-    if(!silent){
-      if(e&&e.status===401)showToast("Calendar sign-in expired — connect again");
-      else if(/has not been used|is disabled|SERVICE_DISABLED/i.test(d))showToast("Enable the Google Calendar API for this app's Cloud project");
-      else if(/insufficient|scope|PERMISSION_DENIED|ACCESS_TOKEN_SCOPE/i.test(d))showToast("Calendar permission wasn't granted — reconnect and allow calendar access");
-      else showToast(`Calendar: ${d.slice(0,90)||"unknown error"}`);
-    }
-    const st=$("#gcalStatus");
-    if(st&&d)st.innerHTML=`<span class="gcal-error">${esc(d.slice(0,160))}</span>`;
-    return false;
-  }
-}
-/* prompt:"consent" forces the full Google consent screen every single time. That is
-   right on a first connection and pure friction afterwards: the implicit flow issues
-   no refresh token, so the hour-old token is simply gone the next day and picking up
-   a schedule change meant sitting through consent again. A reconnect asks with
-   prompt:"" instead, which Google answers with no UI at all when the person still has
-   a session and has already granted access - the ordinary case. */
-/* There is no silent token request in this flow, and chasing one was a mistake.
-   Google Identity's token client answers requestAccessToken by opening a sign-in
-   window; prompt:"" only means "do not force the consent screen again", not "do this
-   invisibly". The old gapi.auth2 had an iframe-based prompt:"none", the current
-   library does not. So a renewal attempted without the reader having just pressed
-   something either opens a window out of nowhere or is blocked as a popup.
-
-   Worse, the two bugs hid each other. The attempt at launch never ran at all, because
-   app.js finishes before the async Google script defines window.google; fixing that
-   race made the attempt start firing, and what it produced was the sign-in window on
-   every open. The fix is not better timing - it is not asking. A token is requested
-   only in direct response to a tap, and an expired one simply leaves the cached
-   schedule on screen with the pill asking for a tap. */
-function whenGoogleReady(timeout=8000){
-  if(window.google&&window.google.accounts&&window.google.accounts.oauth2)return Promise.resolve(true);
-  return new Promise(resolve=>{
-    const deadline=Date.now()+timeout;
-    const tick=()=>{
-      if(window.google&&window.google.accounts&&window.google.accounts.oauth2)return resolve(true);
-      if(Date.now()>deadline)return resolve(false);
-      setTimeout(tick,100);
-    };
-    tick();
-  });
-}
-async function connectGoogleCalendar({mode="consent",retry=false}={}){
-  const ready=await whenGoogleReady(4000);
-  return new Promise(resolve=>{
-    let settled=false;
-    const finish=v=>{if(!settled){settled=true;resolve(v)}};
-    try{
-      if(!ready){showToast("Google sign-in isn't available right now");return finish(false)}
-      const client=window.google.accounts.oauth2.initTokenClient({
-        client_id:GOOGLE_CLIENT_ID,
-        scope:GOOGLE_CAL_SCOPE,
-        callback:resp=>{
-          if(resp.error){showToast(`Calendar sign-in: ${resp.error_description||resp.error}`);return finish(false)}
-          /* Consent is per-scope and can be declined while still returning a token, so
-             the granted list is the thing to check, not the presence of a token. */
-          if(resp.scope&&resp.scope.indexOf("calendar")===-1){
-            showToast("Calendar access wasn't granted — tick the calendar box when signing in");
-            return finish(false);
-          }
-          localStorage.setItem(GOOGLE_CAL_TOKEN_KEY,JSON.stringify({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000}));
-          finish(true);
-        },
-        error_callback:()=>finish(false)
-      });
-      /* "consent" re-shows the whole permission screen and is only right the first
-         time. For a renewal, "" is tried first: where the browser still holds a Google
-         session and the grant is already given, Google answers it by opening and
-         closing its window without asking anything, so the day's first refresh costs a
-         flash rather than a sign-in. It is only worth trying from inside a tap - a
-         popup needs that - which is why this is not attempted at launch.
-
-         When "" cannot be answered that way, the fallback runs inside the few seconds
-         of activation the tap leaves behind, so its window is still allowed to open. */
-      client.requestAccessToken({prompt:mode==="resume"&&!retry?"":mode==="resume"?"select_account":"consent"});
-    }catch(err){
-      if(mode==="consent")showToast("Calendar sign-in failed");
-      finish(false);
-    }
-  });
-}
-/* Sign in, then load. The card is repainted only on a successful load, because a
-   failure has just written Google's own message into it. */
-async function connectCalendarAndLoad(opts){
-  if(!await connectGoogleCalendar(opts))return false;
-  const ok=await refreshCalendarSchedule();
-  if(ok)renderCalendarConnectionStatus();
-  return ok;
-}
-function disconnectGoogleCalendar(){
-  if(!confirm("Disconnect Google Calendar? The app will fall back to the built-in Term IV schedule."))return;
-  const tok=getSavedCalToken();
-  if(tok)fetch(`https://oauth2.googleapis.com/revoke?token=${tok.access_token}`,{method:"POST"}).catch(()=>{});
-  localStorage.removeItem(GOOGLE_CAL_TOKEN_KEY);
-  localStorage.removeItem(GOOGLE_CAL_CACHE_KEY);
-  state.classes=filteredClasses();renderAll();
-  renderCalendarConnectionStatus();
-}
-const compactAgo=ms=>{
-  const mins=Math.max(0,Math.round(ms/60000));
-  if(mins<1)return"just now";
-  if(mins<60)return`${mins}m ago`;
-  const hrs=Math.round(mins/60);
-  if(hrs<24)return`${hrs}h ago`;
-  const days=Math.round(hrs/24);
-  return days===1?"yesterday":`${days}d ago`;
-};
-/* Connecting the calendar is the one thing a first-time user is looking for, so the
-   card states it plainly and walks through it. Once connected the instructions have
-   done their job and the card collapses to what it is actually carrying. */
-function renderCalendarConnectionStatus(){
-  const cache=loadCalCache(),on=!!(cache&&cache.sessions&&cache.sessions.length);
-  const status=$("#gcalStatus"),conn=$("#gcalConnected"),disc=$("#gcalDisconnected");
-  /* "updated 29 Oct 2026, 1:03 pm" wrapped the chip onto a second line and made the
-     reader date-subtract anyway. How long ago is both shorter and the actual question. */
-  if(status)status.textContent=on
-    ?`${cache.sessions.length} sessions \u00b7 updated ${compactAgo(Date.now()-cache.at)}`
-    :"Not connected \u2014 using the built-in timetable";
-  if(conn)conn.hidden=!on;
-  if(disc)disc.hidden=on;
-  const hero=$("#gcalHero"),title=$("#gcalHeroTitle"),copy=$("#gcalHeroCopy"),steps=$("#gcalSteps");
-  if(hero)hero.classList.toggle("is-connected",on);
-  if(title)title.textContent=on?"Google Calendar connected":"Connect Google Calendar";
-  if(copy)copy.textContent=on
-    ?"The planner is reading your own class invites, so it follows your electives and picks up any change the institute makes."
-    :"Your class invites live in your IIMK calendar. Connect it once and the planner follows your own electives \u2014 including any change the institute makes later.";
-  if(steps)steps.hidden=on;
-}
-async function connectGoogleTasks(){
-  try{
-    const client=await initGoogleTokenClient();
-    if(!client)throw new Error("Google Identity Services not loaded");
-    client.callback=async resp=>{
-      if(resp.error)return;
-      saveGoogleToken({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000});
-      try{await ensureGooglePlannerList();await pullGoogleTasks();await migrateGoogleTaskNotes();for(const task of state.tasks.filter(t=>!t.googleTaskId))await syncTaskToGoogle(task)}catch(e){}
-      renderGoogleTasksStatus();
-    };
-    client.requestAccessToken({prompt:"consent"});
-  }catch(err){
-    alert("Google Tasks sign-in failed: "+(err.message||err));
-  }
-}
-function disconnectGoogleTasks(){
-  if(!confirm("Disconnect Google Tasks? Your tasks in this app will stay."))return;
-  if(_googleAccessToken){
-    fetch(`https://oauth2.googleapis.com/revoke?token=${_googleAccessToken}`,{method:"POST"}).catch(()=>{});
-  }
-  clearGoogleToken();
-  renderGoogleTasksStatus();
-}
-async function ensureGooglePlannerList(){
-  const saved=localStorage.getItem(GOOGLE_LIST_KEY);
-  if(saved){await ensureGooglePlannerListName(saved);return saved}
-  const r=await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists",{headers:{Authorization:`Bearer ${_googleAccessToken}`}});
-  if(!r.ok)throw new Error("Could not list task lists");
-  const data=await r.json();
-  let list=null;
-  for(const alias of GOOGLE_LIST_ALIASES){list=(data.items||[]).find(l=>l.title===alias);if(list)break}
-  if(!list){
-    const cr=await fetch("https://tasks.googleapis.com/tasks/v1/users/@me/lists",{
-      method:"POST",
-      headers:{Authorization:`Bearer ${_googleAccessToken}`,"Content-Type":"application/json"},
-      body:JSON.stringify({title:GOOGLE_LIST_TITLE})
-    });
-    if(!cr.ok)throw new Error(`Could not create the ${GOOGLE_LIST_TITLE} list`);
-    list=await cr.json();
-  }
-  localStorage.setItem(GOOGLE_LIST_KEY,list.id);
-  await ensureGooglePlannerListName(list.id);
-  return list.id;
-}
-async function ensureGooglePlannerListName(listId){
-  if(!_googleAccessToken||!listId||localStorage.getItem(GOOGLE_LIST_NAME_MIGRATION_KEY)==="true")return;
-  try{
-    const response=await fetch(`https://tasks.googleapis.com/tasks/v1/users/@me/lists/${listId}`,{
-      method:"PATCH",
-      headers:{Authorization:`Bearer ${_googleAccessToken}`,"Content-Type":"application/json"},
-      body:JSON.stringify({title:GOOGLE_LIST_TITLE})
-    });
-    if(response.ok)localStorage.setItem(GOOGLE_LIST_NAME_MIGRATION_KEY,"true");
-  }catch(error){console.warn("Google Tasks list rename failed",error)}
-}
-function googleTaskSubject(task){const code=canonical(task.course);const match=state.all.find(c=>canonical(c.code)===code)||state.electives.find(c=>canonical(c.code)===code);return match?.course||task.course||"General"}
-function googleTaskCourse(note){const value=String(note||"General").replace(/^ClassBL07\|/,"");const direct=state.all.find(c=>c.course===value||canonical(c.code)===canonical(value))||state.electives.find(c=>c.course===value||canonical(c.code)===canonical(value));return direct?canonical(direct.code):value||"General"}
-async function syncTaskToGoogle(task){
-  if(!_googleAccessToken)return;
-  try{
-    const listId=await ensureGooglePlannerList();
-    if(task.googleTaskId){
-      // update existing
-      await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks/${task.googleTaskId}`,{
-        method:"PATCH",
-        headers:{Authorization:`Bearer ${_googleAccessToken}`,"Content-Type":"application/json"},
-        body:JSON.stringify({title:task.title,status:task.completed?"completed":"needsAction",due:task.date?`${task.date}T00:00:00.000Z`:null,notes:googleTaskSubject(task)})
-      });
-    }else{
-      const r=await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks`,{
-        method:"POST",
-        headers:{Authorization:`Bearer ${_googleAccessToken}`,"Content-Type":"application/json"},
-        body:JSON.stringify({title:task.title,status:task.completed?"completed":"needsAction",due:task.date?`${task.date}T00:00:00.000Z`:undefined,notes:googleTaskSubject(task)})
-      });
-      if(r.ok){
-        const data=await r.json();
-        task.googleTaskId=data.id;
-        save(KEYS.tasks,state.tasks);
-      }
-    }
-  }catch(err){
-    console.warn("Google Tasks sync failed",err);
-  }
-}
-async function deleteGoogleTask(task){if(!_googleAccessToken||!task.googleTaskId)return;try{const listId=await ensureGooglePlannerList();await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks/${task.googleTaskId}`,{method:"DELETE",headers:{Authorization:`Bearer ${_googleAccessToken}`}})}catch(err){console.warn("Google task deletion failed",err)}}
-async function pullGoogleTasks(){if(!_googleAccessToken)return;const listId=await ensureGooglePlannerList();const r=await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${listId}/tasks?showCompleted=true&showHidden=true&maxResults=100`,{headers:{Authorization:`Bearer ${_googleAccessToken}`}});if(!r.ok)throw new Error("Could not sync Google Tasks");const remote=(await r.json()).items||[],byGoogle=new Map(state.tasks.filter(t=>t.googleTaskId).map(t=>[t.googleTaskId,t]));remote.forEach(item=>{const course=googleTaskCourse(item.notes),date=item.due?item.due.slice(0,10):"",local=byGoogle.get(item.id);if(local)Object.assign(local,{title:item.title,course,date,completed:item.status==="completed"});else state.tasks.push({id:crypto.randomUUID(),googleTaskId:item.id,title:item.title,course,date,completed:item.status==="completed",createdAt:Date.now()})});save(KEYS.tasks,state.tasks);renderTasks();renderHomeTasks();renderCalendar();renderLedger()}
-let _lastGooglePull=0,_googlePullInFlight=false;
-async function scheduleGoogleTasksSync(){if(!_googleAccessToken||_googlePullInFlight||Date.now()-_lastGooglePull<15000)return;_googlePullInFlight=true;try{await pullGoogleTasks();_lastGooglePull=Date.now()}catch(e){console.warn("Google Tasks refresh failed",e)}finally{_googlePullInFlight=false}}
-async function migrateGoogleTaskNotes(){if(!_googleAccessToken||localStorage.getItem(GOOGLE_NOTES_MIGRATION_KEY)==="true")return;for(const task of state.tasks.filter(t=>t.googleTaskId))await syncTaskToGoogle(task);localStorage.setItem(GOOGLE_NOTES_MIGRATION_KEY,"true")}
-function renderGoogleTasksStatus(){
-  const connectedEl=$("#googleTasksConnected");
-  const disconnectedEl=$("#googleTasksDisconnected");
-  if(!connectedEl||!disconnectedEl)return;
-  const saved=getSavedGoogleToken();
-  if(saved||_googleAccessToken){
-    connectedEl.hidden=false;
-    disconnectedEl.hidden=true;
-  }else{
-    connectedEl.hidden=true;
-    disconnectedEl.hidden=false;
-  }
-}
-
-
+   The schedule now comes from term4-data.js, with TERM4_OVERRIDES for anything the
+   office changes afterwards. That reaches everyone equally, which the calendar never
+   did. TERM4_META.verifiedIso records when the table was last checked against the
+   office's own feed, and the app shows it, so a stale table says so rather than
+   looking as authoritative as a fresh one. */
 function bindOutsideDismiss(dialog){
   if(!dialog)return;
   dialog.addEventListener("click",event=>{
@@ -3732,122 +2983,37 @@ function shouldShowOnboarding(){
   if(localStorage.getItem(KEYS.onboarded)==="true")return false;
   const p=load(KEYS.profile,null);
   if(!p)return true;
-  if(!p.section)return true;
-  if(!p.electives||!p.electives.length)return true;
   return false;
 }
-function setOnboardingStep(step){
-  $$(".onboarding-step").forEach(panel=>panel.classList.toggle("active",panel.dataset.onboardingStep===String(step)));
-  $$("[data-onboarding-progress]").forEach(item=>item.classList.toggle("active",Number(item.dataset.onboardingProgress)<=step));
-}
-function renderOnboardingElectives(){
-  const container=$("#onboardingElectives");
-  if(!container)return;
-  container.innerHTML=(state.electives||[]).map(item=>`
-    <label class="onboarding-elective-choice">
-      <input type="checkbox" value="${esc(canonical(item.code))}">
-      <span><strong>${esc(item.code)} · ${esc(item.course)}</strong><small>${esc(item.faculty||"")}</small></span>
-    </label>
-  `).join("");
-  renderElectiveClashWarnings();
-  updateElectiveSelectionState();
-}
-function updateElectiveSelectionState(){
-  const boxes=$$("#onboardingElectives input"),selected=boxes.filter(box=>box.checked).length,count=$("#electiveSelectionCount");
-  if(count)count.textContent=`${selected} of ${boxes.length} selected`;
-  const all=$("#selectAllElectives"),clear=$("#clearAllElectives");
-  if(all)all.disabled=!boxes.length||selected===boxes.length;
-  if(clear)clear.disabled=!selected;
-}
-
-/* ===== Elective clash detector =====
-   Self-contained addition: checks every pair of currently-checked electives in the
-   onboarding/profile picker for overlapping class slots in the real schedule data
-   (state.all), and surfaces any overlap inline. Does not touch schedule-sync logic. */
-function timeOverlap(aStart,aEnd,bStart,bEnd){return minutes(aStart)<minutes(bEnd)&&minutes(bStart)<minutes(aEnd)}
-function detectElectiveClashes(selectedCodes){
-  const codes=[...new Set(selectedCodes.map(canonical))];
-  const slots=[];
-  codes.forEach(code=>{
-    state.all.filter(c=>canonical(c.baseCode||c.code)===code&&c.status!=="Cancelled").forEach(c=>slots.push({code,dateIso:c.dateIso,startTime:c.startTime,endTime:c.endTime}));
-  });
-  const seen=new Set(),out=[];
-  for(let i=0;i<slots.length;i++)for(let j=i+1;j<slots.length;j++){
-    const a=slots[i],b=slots[j];
-    if(a.code===b.code||a.dateIso!==b.dateIso)continue;
-    if(!timeOverlap(a.startTime,a.endTime,b.startTime,b.endTime))continue;
-    const key=[a.code,b.code].sort().join("|")+a.dateIso+a.startTime;
-    if(seen.has(key))continue;
-    seen.add(key);
-    out.push({a:a.code,b:b.code,dateIso:a.dateIso,aTime:fmtRange(a.startTime,a.endTime),bTime:fmtRange(b.startTime,b.endTime)});
-  }
-  return out;
-}
-function renderElectiveClashWarnings(){
-  const container=$("#electiveClashWarnings");
-  if(!container)return;
-  const selected=$$("#onboardingElectives input:checked").map(i=>i.value);
-  const clashes=detectElectiveClashes(selected);
-  container.innerHTML=clashes.length?clashes.map(c=>`<div class="clash-warning"><span class="badge badge-cancelled">Clash</span><span>${esc(c.a)} × ${esc(c.b)} — ${esc(fmtDate(c.dateIso,{weekday:"short",day:"numeric",month:"short"}))}, ${esc(c.aTime)}</span></div>`).join(""):"";
-}
+/* Onboarding asks for a name and nothing else now. It used to have a second step for
+   picking electives, which was both unreachable (it bailed on an empty state.electives,
+   a list only the retired feed ever filled) and untrue: the schedule comes from the
+   compiled table, which is already this reader's six courses. */
 function maybeOpenOnboarding(){
   const dialog=$("#onboardingDialog");
   if(!dialog||dialog.open)return;
   if(!shouldShowOnboarding())return;
-  if(!state.electives.length)return;
-  renderOnboardingElectives();
-  // Pre-check saved electives so returning users see their current picks
-  const saved=new Set((state.profile.electives||[]).map(canonical));
-  $$("#onboardingElectives input").forEach(cb=>cb.checked=saved.has(canonical(cb.value)));
-  const section=state.profile.section||"A";
-  const sec=dialog.querySelector(`input[name="onboardingSection"][value="${section}"]`);
-  if(sec)sec.checked=true;
   const nameInput=$("#onboardingName");
   if(nameInput)nameInput.value=state.profile.name||"";
-  renderElectiveClashWarnings();
-  updateElectiveSelectionState();
-  setOnboardingStep(1);
   dialog.showModal();
 }
 function completeOnboarding(){
   const name=$("#onboardingName")?.value.trim()||"";
   if(!name){$("#onboardingName")?.focus();$("#onboardingName")?.reportValidity();return}
-  const section=$('input[name="onboardingSection"]:checked')?.value||"A";
-  const electives=$$("#onboardingElectives input:checked").map(input=>canonical(input.value));
-  state.profile={...state.profile,name,section,electives};
+  state.profile={...state.profile,name};
   save(KEYS.profile,state.profile);
   localStorage.setItem(KEYS.onboarded,"true");
-  state.classes=filteredClasses();
   renderAll();
   $("#onboardingDialog")?.close();
-  if(state._electiveEditBefore){
-    const before=new Set(state._electiveEditBefore),after=new Set(electives);
-    const added=electives.filter(c=>!before.has(c)),removed=state._electiveEditBefore.filter(c=>!after.has(c));
-    if(added.length||removed.length){
-      const parts=[];
-      if(removed.length)parts.push(`−${removed.join(", ")}`);
-      if(added.length)parts.push(`+${added.join(", ")}`);
-      showToast(`Electives updated: ${parts.join("  ")}`);
-    }
-    delete state._electiveEditBefore;
-  }
-  syncSchedule(true);
 }
 function bind(){
-  $("#onboardingContinue")?.addEventListener("click",()=>{const input=$("#onboardingName");if(!input?.value.trim()){input?.focus();input?.reportValidity();return}setOnboardingStep(2)});
-  $("#onboardingElectives")?.addEventListener("change",e=>{if(e.target.matches('input[type="checkbox"]')){renderElectiveClashWarnings();updateElectiveSelectionState()}});
-  $("#selectAllElectives")?.addEventListener("click",()=>{$$("#onboardingElectives input").forEach(cb=>cb.checked=true);renderElectiveClashWarnings();updateElectiveSelectionState()});
-  $("#clearAllElectives")?.addEventListener("click",()=>{$$("#onboardingElectives input").forEach(cb=>cb.checked=false);renderElectiveClashWarnings();updateElectiveSelectionState()});
-  $("#onboardingBack")?.addEventListener("click",()=>setOnboardingStep(1));
   $("#onboardingForm")?.addEventListener("submit",event=>{event.preventDefault();completeOnboarding()});
-  bindOutsideDismiss($("#taskDialog"));
-  bindOutsideDismiss($("#noteDialog"));
   bindOutsideDismiss($("#onboardingDialog"));
   $$("[data-page-target]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.pageTarget)));$$("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
   document.addEventListener("click",e=>{
     const t=e.target.closest("button,[data-page-target],[data-go],.calendar-day,.wc-cell,.day-pill,.meal-tab,.subtab,.accent-swatch,.hero-day-arrow,.seg-opt,.week-arrow");
     if(!t||t.disabled)return;
-    haptic(t.matches(".primary-button,.danger-button,.google-tasks-button")?18:10);
+    haptic(t.matches(".primary-button,.danger-button")?18:10);
   },{capture:true});
   document.addEventListener("change",e=>{if(e.target.matches('input[type="checkbox"]'))haptic(16)});
   document.addEventListener("click",e=>{
@@ -3859,26 +3025,16 @@ function bind(){
   $("#themeToggle").addEventListener("click",()=>{document.documentElement.classList.add("theme-transition");state.profile.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";save(KEYS.profile,state.profile);applyTheme();renderProfile();setTimeout(()=>document.documentElement.classList.remove("theme-transition"),320)});
   $("#accentSwatches")?.addEventListener("click",e=>{const b=e.target.closest("[data-accent]");if(!b)return;state.profile.accent=b.dataset.accent;save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$(`.accent-swatch[data-accent="${b.dataset.accent}"]`);if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
   $("#resetAccentButton")?.addEventListener("click",()=>{state.profile.accent="indigo";save(KEYS.profile,state.profile);applyAccent();renderAccentSwatches();const picked=$('.accent-swatch[data-accent="indigo"]');if(picked){picked.classList.remove("just-picked");void picked.offsetWidth;picked.classList.add("just-picked")}});
-  $("#refreshButton")?.addEventListener("click",async e=>{const button=e.currentTarget;button.blur();await refreshSchedule();button.blur()});
   $("#timelinePrevDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)-1,"backward"));
   $("#timelineNextDay")?.addEventListener("click",()=>setTimelineOffset((state.timelineOffset||0)+1,"forward"));
   bindSwipeGesture($("#focusPanel"),direction=>{
     const delta=direction==="left"?1:-1;
     setTimelineOffset((state.timelineOffset||0)+delta,delta>0?"forward":"backward");
   },{ignore:"input,select,textarea,a,button"});
-  bindPullToRefresh();
   $("#notificationButton").addEventListener("click",openNotifications);$("#openUpdatesFromHome").addEventListener("click",openNotifications);$("#closeNotifications").addEventListener("click",closeNotifications);$("#notificationBackdrop").addEventListener("click",closeNotifications);
   $("#markNotificationsRead")?.addEventListener("click",()=>{state.notifications.forEach(n=>n.read=true);save(KEYS.notifications,state.notifications);renderNotifications();renderHome();closeNotifications();showToast("Notifications marked as read")});
   $("#clearNotifications")?.addEventListener("click",()=>{
     state.notifications=[];save(KEYS.notifications,state.notifications);renderNotifications();renderHome();closeNotifications();showToast("Notifications cleared");
-  });
-  $("#chooseElectivesInline")?.addEventListener("click",()=>openOnboardingManually());
-  $("#connectGoogleTasks")?.addEventListener("click",()=>connectGoogleTasks());
-  $("#disconnectGoogleTasks")?.addEventListener("click",()=>disconnectGoogleTasks());
-  $("#examsList")?.addEventListener("click",e=>{
-    const btn=e.target.closest("[data-prep-code]");if(!btn)return;
-    addTask(`Prep: ${btn.dataset.prepSubject}`,btn.dataset.prepCode,btn.dataset.prepDate);
-    showToast("Prep task added");
   });
   /* Coalesced into one frame: scroll fires far faster than the screen refreshes, and
      writing a custom property on every event forces a style recalculation each time. */
@@ -3894,9 +3050,7 @@ function bind(){
     if(_scrollQueued)return;
     _scrollQueued=true;requestAnimationFrame(paintScroll);
   },{passive:true});
-  window.addEventListener("focus",()=>{scheduleIdleSync();scheduleGoogleTasksSync()});
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){scheduleIdleSync();scheduleGoogleTasksSync()}});
-  window.addEventListener("online",()=>{scheduleIdleSync();updateOfflineBanner(true)});
+  window.addEventListener("online",()=>updateOfflineBanner(true));
   window.addEventListener("offline",()=>updateOfflineBanner(false));
   $$(".subtab[data-campus-tab]").forEach(b=>b.addEventListener("click",()=>openCampusTab(b.dataset.campusTab)));
   $$(".subtab[data-planner-tab]").forEach(b=>b.addEventListener("click",()=>setPlannerTab(b.dataset.plannerTab)));
@@ -3990,56 +3144,11 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
       renderHome();haptic(8);
     },{ignore:"a,input,select,textarea,button",threshold:46});
   }
-  $("#connectGcal")?.addEventListener("click",()=>
-    connectCalendarAndLoad({mode:calSessions().length?"resume":"consent"}));
-  $("#disconnectGcal")?.addEventListener("click",disconnectGoogleCalendar);
-  /* The same renew-then-read path as the topbar button. This called
-     refreshCalendarSchedule directly, which simply reports "sign-in expired" when the
-     token has aged out - and this is the button someone whose card says "connected"
-     would naturally press, so it was the most likely way to hit that dead end. */
-  $("#refreshGcal")?.addEventListener("click",()=>refreshSchedule());
-  renderCalendarConnectionStatus();
-  /* A cached schedule is served immediately; the refresh behind it is silent so a
-     stale token never greets anyone with an error on launch. */
-  /* The launch fetch starts the poll clock too, or the first time the window regains
-     focus a minute later would fetch the same thing again. */
-  if(getSavedCalToken()){_calPollAt=Date.now();refreshCalendarSchedule({silent:true})}
-  /* Nothing is requested on launch. An expired token means the app opens on its
-     cached schedule with the pill showing it wants a tap - which is the honest state,
-     and vastly preferable to a sign-in window appearing every time the app is
-     opened. */
-  $("#ledgerButton")?.addEventListener("click",()=>{renderLedger();$("#ledgerDialog").showModal()});
-  $("#ledgerSearch")?.addEventListener("input",renderLedger);
-  $("#ledgerFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-ledger-filter]");if(!b)return;state.ledgerFilter=b.dataset.ledgerFilter;$$("#ledgerFilters .filter").forEach(x=>x.classList.toggle("active",x===b));renderLedger()});
   bindDismissibleDialog($("#classActionDialog"));
   $("#closeClassAction")?.addEventListener("click",()=>closeDialog($("#classActionDialog")));
-  /* Adding a task for a class used to hop through a second dialog asking for a
-     title, a course and a date — all three of which are already known from the
-     class just tapped. An inline field in the same sheet does the same job in
-     one step instead of two. */
-  $("#sheetAddTask")?.addEventListener("click",()=>{
+  $("#sheetAddCalendar")?.addEventListener("click",()=>{
     const c=activeSheetClass();if(!c)return;
-    $("#sheetActionGrid").hidden=true;
-    const form=$("#sheetQuickTask");form.hidden=false;
-    const input=$("#sheetQuickTaskInput");input.value="";
-    requestAnimationFrame(()=>input.focus());
-  });
-  $("#sheetQuickTaskCancel")?.addEventListener("click",()=>{
-    $("#sheetQuickTask").hidden=true;$("#sheetActionGrid").hidden=false;
-  });
-  $("#sheetQuickTask")?.addEventListener("submit",e=>{
-    e.preventDefault();
-    const c=activeSheetClass();if(!c)return;
-    const title=$("#sheetQuickTaskInput").value.trim();if(!title)return;
-    addTask(title,canonical(c.code),c.dateIso);
-    showToast("Task added");
-    closeDialog($("#classActionDialog"));
-  });
-  $("#sheetAddNote")?.addEventListener("click",()=>{
-    const c=activeSheetClass();if(!c)return;
-    closeDialog($("#classActionDialog"));
-    $("#noteTitle").value=`${canonical(c.code)} note`;$("#noteCourse").value=canonical(c.code);$("#noteBody").value="";
-    clearDialogValidation($("#noteDialog"));$("#noteDialog").showModal();
+    downloadClassIcs(c);closeDialog($("#classActionDialog"));
   });
   document.addEventListener("click",e=>{
     if(e.target.closest("button,a,input"))return;
@@ -4056,15 +3165,8 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
     e.currentTarget.setAttribute("aria-expanded",String(open));
   });
   $("#weekScanPrev")?.addEventListener("click",()=>shiftRailWeek(-1));
-  /* Tasks and notes are gone from the interface: nobody in the batch was using them,
-     and the app is better for being about one thing. Their bindings are removed here
-     rather than guarded, because an element that no longer exists should not be bound
-     at all. The Google Tasks sync functions are deliberately left in place, unused, so
-     the feature can come back without being rebuilt. */
   $("#weekScanNext")?.addEventListener("click",()=>shiftRailWeek(1));
-  $("#taskFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-task-filter]");if(!b)return;setTaskFilter(b.dataset.taskFilter)});
-  $("#noteSearch")?.addEventListener("input",renderNotes);
-  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");syncSchedule(true)});$("#resetData").addEventListener("click",()=>{if(confirm("Reset profile, tasks, notes and cached schedule?")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
+  $("#profileForm").addEventListener("submit",e=>{e.preventDefault();state.profile={...state.profile,name:$("#profileName").value.trim(),theme:segValue("#profileThemeSeg","system"),homeOrder:state.profile.homeOrder||"summary-first"};save(KEYS.profile,state.profile);applyTheme();renderProfile();showToast("Profile updated successfully");renderAll()});$("#resetData").addEventListener("click",()=>{if(confirm("Reset your name, attendance marks and settings? The timetable itself is part of the app and stays.")){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));localStorage.removeItem("classbl07-home-order-v1");location.reload()}});
 $("#busFrom").addEventListener("change",()=>{state.busFrom=$("#busFrom").value;saveBusRoute();renderBusControls();renderBuses()});$("#busTo").addEventListener("change",()=>{state.busTo=$("#busTo").value;saveBusRoute();renderBusControls();renderBuses()});$("#swapBusRoute").addEventListener("click",()=>{[state.busFrom,state.busTo]=[state.busTo,state.busFrom];saveBusRoute();renderBusControls();renderBuses()});$("#toggleFullBus").addEventListener("click",()=>{$("#fullBusList").classList.toggle("collapsed");renderBuses()});$("#toggleMessView").addEventListener("click",()=>{const grid=$("#messWeekGrid"),dayView=$("#messDayView"),weekMode=grid.hidden;grid.hidden=!weekMode;dayView.hidden=weekMode;$("#toggleMessView").textContent=weekMode?"Day view":"Week menu"});$("#leavingSoonToggle")?.addEventListener("click",async()=>{const on=!load(KEYS.leavingSoon,false);if(on){if(typeof Notification==="undefined"){showToast("Notifications aren't supported on this device");return}let perm=Notification.permission;if(perm==="default")perm=await Notification.requestPermission();if(perm!=="granted"){showToast("Allow notifications to get a leaving-soon alert");return}}save(KEYS.leavingSoon,on);showToast(on?"You'll be notified 10 min before departure":"Leaving-soon reminder turned off");renderBuses()});$("#mealTabs").addEventListener("click",e=>{const b=e.target.closest("[data-meal]");if(!b)return;state.meal=b.dataset.meal;renderMess();renderMessWeekGrid()});
 $("#messWeekGrid")?.addEventListener("click",e=>{const cell=e.target.closest(".mwg-cell");if(!cell)return;state.messDay=cell.dataset.day;state.meal=cell.dataset.meal;renderMess();renderMessWeekGrid();$("#toggleMessView")?.click()});bindShareApp();
 bindAttendanceToggles();
@@ -4083,29 +3185,18 @@ async function init(){
   applyTheme();
   renderIcons();
   bind();
-  bindPullToRefresh();
   updateOfflineBanner();
-  const c=load(KEYS.cache,null);
-  if(c){state.all=c.all||[];state.electives=c.electives||[];state.lastUpdated=c.lastUpdated;state.classes=filteredClasses()}
-  else state.scheduleLoading=true;
-  // Restore Google Tasks token silently
-  const savedToken=getSavedGoogleToken();
-  if(savedToken){_googleAccessToken=savedToken.access_token;initGoogleTokenClient().catch(()=>{});pullGoogleTasks().then(async()=>{await migrateGoogleTaskNotes();for(const task of state.tasks.filter(t=>!t.googleTaskId))await syncTaskToGoogle(task)}).catch(()=>{})}
   renderAll();
   applyShortcutParams();
   positionNavIndicator();
   playHeroEntrance();
   window.addEventListener("resize",positionNavIndicator);
-  renderGoogleTasksStatus();
-  maybeOpenOnboarding();
-  syncSchedule(false).then(()=>maybeOpenOnboarding());
+  announceDataChanges();renderScheduleFreshness();maybeOpenOnboarding();
   updateTopbarClock();
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  setInterval(()=>{if(document.visibilityState==="visible")scheduleIdleSync()},300000);
-  setInterval(()=>scheduleGoogleTasksSync(),60000);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova200",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova201",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
