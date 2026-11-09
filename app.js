@@ -346,9 +346,362 @@ function filteredClasses(){
      The compiled file is the fallback so an unconnected install still has a schedule
      rather than an empty app. The quiz slot is appended either way — it is batch-wide
      and does not appear as an invite. */
-  return applyTermOverrides([...(window.TERM4_CLASSES||[]),...(window.TERM4_EVENTS||[])])
+  const live=calSessions();
+  return applyTermOverrides([...(live.length?live:(window.TERM4_CLASSES||[])),...(window.TERM4_EVENTS||[])])
     .slice()
     .sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime)||String(a.code).localeCompare(String(b.code)));
+}
+/* ===== Google Calendar =====
+   Restored. Removing it was my call and the wrong one: the schedule is each reader's
+   own, and a file compiled from one student's calendar cannot be that for anybody
+   else. Read-only scope, nothing leaves the device, and Google Tasks stays gone - it
+   is the calendar that earns its keep here, not the rest of the account. */
+const GOOGLE_CLIENT_ID="326019358906-4dpbtbmnp6rm6a7m8bikcir4a2pejiot.apps.googleusercontent.com";
+const GOOGLE_CAL_SCOPE="https://www.googleapis.com/auth/calendar.readonly";
+const GOOGLE_CAL_TOKEN_KEY="classbl07-nova-gcal-token-v1";
+const GOOGLE_CAL_CACHE_KEY="classbl07-nova-gcal-schedule-v1";
+/* ============ Schedule from the student's own Google Calendar ============
+   The term schedule shipped as a compiled data file, which meant it was only ever
+   this one student's timetable and only correct until the programme office changed
+   something. Signing in reads the reader's own calendar instead, so the app works
+   for any classmate on first open and stays current without a rebuild.
+
+   Read-only scope, and nothing leaves the device: the events are parsed in the page,
+   filtered down to class sessions, and cached in localStorage. Everything that is not
+   a class session is discarded before anything is stored — a calendar holds a lot more
+   than lectures and none of the rest is the app's business.
+
+   The compiled file stays as the fallback, so an unconnected install still shows a
+   schedule rather than an empty app. */
+let _gcalTokenClient=null;
+function getSavedCalToken(){
+  try{
+    const o=JSON.parse(localStorage.getItem(GOOGLE_CAL_TOKEN_KEY)||"null");
+    if(o&&o.access_token&&(!o.expires_at||Date.now()<o.expires_at-60000))return o;
+  }catch(e){}
+  return null;
+}
+function loadCalCache(){try{return JSON.parse(localStorage.getItem(GOOGLE_CAL_CACHE_KEY)||"null")}catch(e){return null}}
+function calSessions(){const c=loadCalCache();return c&&Array.isArray(c.sessions)?c.sessions:[]}
+
+/* The programme office writes every invite the same way:
+     "Session No: 7 - MBGAI(A)-SJ-(CR A3)"
+   code, section, faculty initials and room, with the professor's name in the
+   description. Anything that does not match this shape is not a class and is dropped
+   on the spot. */
+const GCAL_SESSION_RE=/^Session\s*No:\s*(\d+)\s*-\s*([A-Z0-9]+)\(([A-Z])\)-([A-Z]+)-\(([^)]*)\)/i;
+function parseCalendarEvent(ev){
+  const m=GCAL_SESSION_RE.exec(String(ev.summary||"").trim());
+  if(!m)return null;
+  if(!ev.start||!ev.start.dateTime||!ev.end||!ev.end.dateTime)return null;
+  const [,sessionNo,code,section,,room]=m;
+  const startParts=istParts(new Date(ev.start.dateTime)),endParts=istParts(new Date(ev.end.dateTime));
+  const known=(window.TERM4_COURSES||{})[code.toUpperCase()]||{};
+  /* Title case the organiser's shouty "ANUBHA SHEKHAR SINHA", but keep a name the
+     term file already knows, since that one carries the full co-teacher credit. */
+  const raw=String(ev.description||"").trim();
+  const faculty=known.faculty||(raw?"Prof. "+raw.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()):"");
+  return{
+    dateIso:`${startParts.year}-${startParts.month}-${startParts.day}`,
+    startTime:`${startParts.hour}:${startParts.minute}`,
+    endTime:`${endParts.hour}:${endParts.minute}`,
+    code:code.toUpperCase(),
+    course:known.title||String(ev.organizer&&ev.organizer.displayName||code).replace(/^Term\s+\w+\s+/i,"").replace(/\s*\([A-Z]\)\s*$/,""),
+    faculty,
+    venue:`IIM Kozhikode \u00b7 ${room||"CR A3"}`,
+    room:room||"CR A3",
+    sessionNo:Number(sessionNo),
+    type:"Elective",section:section.toUpperCase(),
+    status:ev.status==="cancelled"?"Cancelled":"Scheduled"
+  };
+}
+async function fetchCalendarSessions(token){
+  const meta=window.TERM4_META||{};
+  const timeMin=new Date(`${meta.startIso||"2026-10-26"}T00:00:00+05:30`).toISOString();
+  const timeMax=new Date(`${meta.endIso||"2027-01-15"}T23:59:59+05:30`).toISOString();
+  const out=[];let pageToken="";
+  /* The API caps a page at 2500 and this term is ~120 events, but paging is cheap
+     insurance against a busier calendar. */
+  for(let guard=0;guard<10;guard++){
+    const u=new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+    u.searchParams.set("timeMin",timeMin);u.searchParams.set("timeMax",timeMax);
+    u.searchParams.set("singleEvents","true");u.searchParams.set("orderBy","startTime");
+    u.searchParams.set("maxResults","2500");
+    if(pageToken)u.searchParams.set("pageToken",pageToken);
+    const r=await fetch(u,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok){
+      /* Google puts the actionable part in the body — "Calendar API has not been
+         used in project N before or it is disabled", "insufficient scope", and so on.
+         Swallowing it for a tidy message left nothing to act on. */
+      let detail="";
+      try{const b=await r.json();detail=(b&&b.error&&(b.error.message||b.error.status))||""}catch(e){}
+      const err=new Error(detail||`HTTP ${r.status}`);
+      err.status=r.status;err.detail=detail;
+      throw err;
+    }
+    const d=await r.json();
+    (d.items||[]).forEach(ev=>{const c=parseCalendarEvent(ev);if(c)out.push(c)});
+    if(!d.nextPageToken)break;
+    pageToken=d.nextPageToken;
+  }
+  /* Two calendars can carry the same session (the course calendar and the personal
+     copy of its invite), so collapse on the identity the office gives it. */
+  const seen=new Map();
+  out.forEach(c=>seen.set(`${c.code}|${c.sessionNo}|${c.dateIso}|${c.startTime}`,c));
+  return[...seen.values()].sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||minutes(a.startTime)-minutes(b.startTime));
+}
+/* A change is worth interrupting for, including when the refresh that found it was a
+   background one - that is the whole point of polling. The in-app bell always gets it;
+   a system notification only goes out if permission was already granted for the
+   leaving-soon alert, since silently asking for it here would be a poor trade. */
+function announceScheduleChanges(changes){
+  const first=changes[0];
+  showToast(changes.length===1?`${first.title} · ${first.text}`:`${changes.length} schedule changes`);
+  try{
+    if(typeof Notification!=="undefined"&&Notification.permission==="granted"){
+      new Notification(changes.length===1?first.title:`${changes.length} schedule changes`,
+        {body:changes.length===1?first.text:changes.map(c=>c.title).join(", "),tag:"bl07-schedule",icon:"icons/icon-192.png"});
+    }
+  }catch(e){}
+}
+async function refreshCalendarSchedule({silent}={}){
+  const tok=getSavedCalToken();
+  if(!tok)return false;
+  try{
+    const sessions=await fetchCalendarSessions(tok.access_token);
+    if(!sessions.length){if(!silent)showToast("No class sessions found in that calendar");return false}
+    /* Every change the office makes now arrives through this fetch, so this is the only
+       place that can notice one. Compared before the cache is overwritten. */
+    const previous=(loadCalCache()||{}).sessions||[];
+    const changes=diffSchedules(previous,sessions);
+    localStorage.setItem(GOOGLE_CAL_CACHE_KEY,JSON.stringify({at:Date.now(),sessions}));
+    if(changes.length){
+      state.notifications=[...changes,...state.notifications].slice(0,40);
+      save(KEYS.notifications,state.notifications);
+    }
+    state.classes=filteredClasses();renderAll();
+    if(changes.length)announceScheduleChanges(changes);
+    else if(!silent)showToast(`${sessions.length} sessions from your calendar`);
+    return true;
+  }catch(e){
+    const d=String(e&&(e.detail||e.message)||"");
+    /* 401 is an expired token and self-heals on reconnect, so it stays quiet. The
+       rest are setup problems in the Google Cloud project that no amount of retrying
+       will fix, so they are reported as they came. */
+    if(!silent){
+      if(e&&e.status===401)showToast("Calendar sign-in expired — connect again");
+      else if(/has not been used|is disabled|SERVICE_DISABLED/i.test(d))showToast("Enable the Google Calendar API for this app's Cloud project");
+      else if(/insufficient|scope|PERMISSION_DENIED|ACCESS_TOKEN_SCOPE/i.test(d))showToast("Calendar permission wasn't granted — reconnect and allow calendar access");
+      else showToast(`Calendar: ${d.slice(0,90)||"unknown error"}`);
+    }
+    const st=$("#gcalStatus");
+    if(st&&d)st.innerHTML=`<span class="gcal-error">${esc(d.slice(0,160))}</span>`;
+    return false;
+  }
+}
+/* prompt:"consent" forces the full Google consent screen every single time. That is
+   right on a first connection and pure friction afterwards: the implicit flow issues
+   no refresh token, so the hour-old token is simply gone the next day and picking up
+   a schedule change meant sitting through consent again. A reconnect asks with
+   prompt:"" instead, which Google answers with no UI at all when the person still has
+   a session and has already granted access - the ordinary case. */
+/* There is no silent token request in this flow, and chasing one was a mistake.
+   Google Identity's token client answers requestAccessToken by opening a sign-in
+   window; prompt:"" only means "do not force the consent screen again", not "do this
+   invisibly". The old gapi.auth2 had an iframe-based prompt:"none", the current
+   library does not. So a renewal attempted without the reader having just pressed
+   something either opens a window out of nowhere or is blocked as a popup.
+
+   Worse, the two bugs hid each other. The attempt at launch never ran at all, because
+   app.js finishes before the async Google script defines window.google; fixing that
+   race made the attempt start firing, and what it produced was the sign-in window on
+   every open. The fix is not better timing - it is not asking. A token is requested
+   only in direct response to a tap, and an expired one simply leaves the cached
+   schedule on screen with the pill asking for a tap. */
+function whenGoogleReady(timeout=8000){
+  if(window.google&&window.google.accounts&&window.google.accounts.oauth2)return Promise.resolve(true);
+  return new Promise(resolve=>{
+    const deadline=Date.now()+timeout;
+    const tick=()=>{
+      if(window.google&&window.google.accounts&&window.google.accounts.oauth2)return resolve(true);
+      if(Date.now()>deadline)return resolve(false);
+      setTimeout(tick,100);
+    };
+    tick();
+  });
+}
+async function connectGoogleCalendar({mode="consent",retry=false}={}){
+  const ready=await whenGoogleReady(4000);
+  return new Promise(resolve=>{
+    let settled=false;
+    const finish=v=>{if(!settled){settled=true;resolve(v)}};
+    try{
+      if(!ready){showToast("Google sign-in isn't available right now");return finish(false)}
+      const client=window.google.accounts.oauth2.initTokenClient({
+        client_id:GOOGLE_CLIENT_ID,
+        scope:GOOGLE_CAL_SCOPE,
+        callback:resp=>{
+          if(resp.error){showToast(`Calendar sign-in: ${resp.error_description||resp.error}`);return finish(false)}
+          /* Consent is per-scope and can be declined while still returning a token, so
+             the granted list is the thing to check, not the presence of a token. */
+          if(resp.scope&&resp.scope.indexOf("calendar")===-1){
+            showToast("Calendar access wasn't granted — tick the calendar box when signing in");
+            return finish(false);
+          }
+          localStorage.setItem(GOOGLE_CAL_TOKEN_KEY,JSON.stringify({access_token:resp.access_token,expires_at:Date.now()+resp.expires_in*1000}));
+          finish(true);
+        },
+        error_callback:()=>finish(false)
+      });
+      /* "consent" re-shows the whole permission screen and is only right the first
+         time. For a renewal, "" is tried first: where the browser still holds a Google
+         session and the grant is already given, Google answers it by opening and
+         closing its window without asking anything, so the day's first refresh costs a
+         flash rather than a sign-in. It is only worth trying from inside a tap - a
+         popup needs that - which is why this is not attempted at launch.
+
+         When "" cannot be answered that way, the fallback runs inside the few seconds
+         of activation the tap leaves behind, so its window is still allowed to open. */
+      client.requestAccessToken({prompt:mode==="resume"&&!retry?"":mode==="resume"?"select_account":"consent"});
+    }catch(err){
+      if(mode==="consent")showToast("Calendar sign-in failed");
+      finish(false);
+    }
+  });
+}
+/* Sign in, then load. The card is repainted only on a successful load, because a
+   failure has just written Google's own message into it. */
+async function connectCalendarAndLoad(opts){
+  if(!await connectGoogleCalendar(opts))return false;
+  const ok=await refreshCalendarSchedule();
+  if(ok)renderCalendarConnectionStatus();
+  return ok;
+}
+function disconnectGoogleCalendar(){
+  if(!confirm("Disconnect Google Calendar? The app will fall back to the built-in Term IV schedule."))return;
+  const tok=getSavedCalToken();
+  if(tok)fetch(`https://oauth2.googleapis.com/revoke?token=${tok.access_token}`,{method:"POST"}).catch(()=>{});
+  localStorage.removeItem(GOOGLE_CAL_TOKEN_KEY);
+  localStorage.removeItem(GOOGLE_CAL_CACHE_KEY);
+  state.classes=filteredClasses();renderAll();
+  renderCalendarConnectionStatus();
+}
+const compactAgo=ms=>{
+  const mins=Math.max(0,Math.round(ms/60000));
+  if(mins<1)return"just now";
+  if(mins<60)return`${mins}m ago`;
+  const hrs=Math.round(mins/60);
+  if(hrs<24)return`${hrs}h ago`;
+  const days=Math.round(hrs/24);
+  return days===1?"yesterday":`${days}d ago`;
+};
+/* Connecting the calendar is the one thing a first-time user is looking for, so the
+   card states it plainly and walks through it. Once connected the instructions have
+   done their job and the card collapses to what it is actually carrying. */
+function renderCalendarConnectionStatus(){
+  const cache=loadCalCache(),on=!!(cache&&cache.sessions&&cache.sessions.length);
+  const status=$("#gcalStatus"),conn=$("#gcalConnected"),disc=$("#gcalDisconnected");
+  /* "updated 29 Oct 2026, 1:03 pm" wrapped the chip onto a second line and made the
+     reader date-subtract anyway. How long ago is both shorter and the actual question. */
+  if(status)status.textContent=on
+    ?`${cache.sessions.length} sessions \u00b7 updated ${compactAgo(Date.now()-cache.at)}`
+    :"Not connected \u2014 using the built-in timetable";
+  if(conn)conn.hidden=!on;
+  if(disc)disc.hidden=on;
+  const hero=$("#gcalHero"),title=$("#gcalHeroTitle"),copy=$("#gcalHeroCopy"),steps=$("#gcalSteps");
+  if(hero)hero.classList.toggle("is-connected",on);
+  if(title)title.textContent=on?"Google Calendar connected":"Connect Google Calendar";
+  if(copy)copy.textContent=on
+    ?"The planner is reading your own class invites, so it follows your electives and picks up any change the institute makes."
+    :"Your class invites live in your IIMK calendar. Connect it once and the planner follows your own electives \u2014 including any change the institute makes later.";
+  if(steps)steps.hidden=on;
+}
+/* The one refresh control. Everything about when a Google window may appear is
+   decided here, because getting that wrong is what made the old version ask for a
+   sign-in on every launch.
+
+   The rule: a token is only ever REQUESTED from inside a tap. A token already held is
+   used freely - that is a plain REST call and shows nothing. A token lasts about an
+   hour, so within an hour of connecting, refreshing costs nothing at all.
+
+   What went wrong before: a silent renewal was attempted at launch. There is no such
+   thing as a silent token request in this flow - prompt:"" means "do not force the
+   consent screen", not "do not open a window" - so every launch put a Google window
+   on screen unasked. Now nothing is requested without a tap, and the pill says the
+   access needs renewing rather than renewing it behind the reader's back. */
+function setPillBusy(text){
+  const pill=$("#syncPill");if(!pill)return;
+  pill.hidden=false;pill.className="sync-pill syncing";
+  pill.innerHTML=`<i></i><span>${esc(text)}</span>`;
+}
+let _refreshing=false;
+async function refreshSchedule(){
+  if(_refreshing)return;
+  const btn=$("#refreshButton");
+  _refreshing=true;
+  try{
+    if(!getSavedCalToken()){
+      if(!calSessions().length){
+        showToast("Connect Google Calendar in Profile to read your own schedule");
+        showPage("profile");
+        return;
+      }
+      /* Connected before; the token has merely aged out. Renew it on this tap and
+         finish the job, rather than reporting an expiry and sending the reader to
+         Profile to press a second button - which is what made this feel like signing
+         in over and over. Two attempts inside the one tap: the quiet one, which asks
+         nothing when the browser still holds a Google session, then the account
+         chooser if it will not. */
+      setPillBusy("Renewing");
+      let got=await connectGoogleCalendar({mode:"resume"});
+      if(!got)got=await connectGoogleCalendar({mode:"resume",retry:true});
+      if(!got){
+        renderScheduleFreshness();
+        showToast("Couldn't renew calendar access — tap refresh once more");
+        return;
+      }
+    }
+    if(btn){btn.dataset.state="syncing";btn.setAttribute("aria-busy","true")}
+    setPillBusy("Reading");
+    const ok=await refreshCalendarSchedule();
+    /* Only repaint the Profile card on success: on failure refreshCalendarSchedule has
+       just written Google's own message there, and repainting would erase it. */
+    if(ok)renderCalendarConnectionStatus();
+    renderScheduleFreshness();
+  }finally{
+    _refreshing=false;
+    if(btn){delete btn.dataset.state;btn.removeAttribute("aria-busy")}
+  }
+}
+/* Background top-up, and only ever with a token already in hand. No token means no
+   fetch and emphatically no attempt to get one: the cached schedule stays, the pill
+   says how old it is, and nothing is asked. */
+const CAL_POLL_MS=10*60e3;
+let _calPollAt=0,_calPollInFlight=false;
+async function maybeRefreshCalendar(){
+  if(!calSessions().length)return;
+  if(!getSavedCalToken())return;
+  if(_calPollInFlight||Date.now()-_calPollAt<CAL_POLL_MS)return;
+  _calPollInFlight=true;_calPollAt=Date.now();
+  try{
+    if(await refreshCalendarSchedule({silent:true})){renderCalendarConnectionStatus();renderScheduleFreshness()}
+  }finally{_calPollInFlight=false}
+}
+function scheduleIdleSync(){
+  if("requestIdleCallback"in window)requestIdleCallback(()=>maybeRefreshCalendar(),{timeout:2500});
+  else setTimeout(()=>maybeRefreshCalendar(),1200);
+}
+/* Which courses this reader is actually carrying: the distinct codes in the schedule
+   on screen, not the keys of the compiled course map. With a connected calendar those
+   two differ - the map describes the timetable the file was built from, and the
+   calendar describes this reader - and showing the map would have told a classmate
+   they were enrolled in somebody else's electives. Titles and credits still come from
+   the map where it knows the code, because a calendar invite carries neither. */
+function enrolledCourses(){
+  const map=window.TERM4_COURSES||{};
+  const codes=[...new Set(state.classes.filter(isSession).map(c=>canonical(c.code)))];
+  if(!codes.length)return Object.entries(map);
+  return codes.sort().map(code=>[code,map[code]||{title:code,credits:0}]);
 }
 /* Older installs stored an elective list and a section; neither selects anything now
    that the schedule is one compiled table, so they are dropped on first load. */
@@ -642,23 +995,40 @@ function scheduleAgeDays(){
   const iso=scheduleVerifiedIso();if(!iso)return null;
   return Math.max(0,Math.round((zoned(isoToday(),"12:00")-zoned(iso,"12:00"))/864e5));
 }
+/* Two different things can be on screen and the pill has to say which. A connected
+   calendar is the reader's own and the only question is how long ago it was read. The
+   built-in table is somebody else's timetable that happens to be right for most of the
+   batch, and the honest thing is to say so and to age. */
 function renderScheduleFreshness(){
   const pill=$("#syncPill");if(!pill)return;
+  const cache=loadCalCache();
+  if(cache&&cache.sessions&&cache.sessions.length){
+    const mins=(Date.now()-cache.at)/60000;
+    pill.hidden=false;
+    pill.className=`sync-pill ${mins>720?"stale":"ok"}`;
+    pill.innerHTML=`<i></i><span>${esc(`Your calendar \u00b7 ${compactAgo(Date.now()-cache.at)}`)}</span>`;
+    pill.title=`${cache.sessions.length} sessions read from your Google Calendar. Tap refresh to read it again.`;
+    return;
+  }
   const iso=scheduleVerifiedIso(),age=scheduleAgeDays();
   if(!iso){pill.hidden=true;return}
   pill.hidden=false;
-  const label=age===0?"Checked today":age===1?"Checked yesterday":`Checked ${age}d ago`;
+  const label=age===0?"Built-in \u00b7 checked today":age===1?"Built-in \u00b7 checked yesterday":`Built-in \u00b7 ${age}d old`;
   /* Amber past a fortnight: long enough that the office has probably changed
      something, not so soon that it cries wolf every other week. */
   pill.className=`sync-pill ${age>14?"stale":"ok"}`;
   pill.innerHTML=`<i></i><span>${esc(label)}</span>`;
-  pill.title=`Schedule last checked against the programme office's calendar on ${fmtDate(iso,{weekday:"long",day:"numeric",month:"long"})}`;
+  pill.title=`Showing the built-in Term IV timetable, last checked against the programme office's calendar on ${fmtDate(iso,{weekday:"long",day:"numeric",month:"long"})}. Connect your Google Calendar in Profile to read your own.`;
 }
 /* A change pushed in the data file should announce itself rather than appear in
    silence. The snapshot of what the reader last saw is kept locally and diffed on
    load, so an edited session or a new override arrives as a notification the same
    way a calendar change used to. */
 function announceDataChanges(){
+  /* Only for the built-in table. A connected calendar diffs inside
+     refreshCalendarSchedule, against the previous read of that same calendar - running
+     both would report every difference between the two sources as a change. */
+  if(calSessions().length)return[];
   const current=state.classes.filter(isSession);
   const previous=load(KEYS.snapshot,[]);
   const changes=diffSchedules(previous,current);
@@ -1110,7 +1480,7 @@ function applyShortcutParams(){
   else if(target==="mess"){showPage("campus");openCampusTab("mess")}
   history.replaceState(null,"",location.pathname);
 }
-function renderAll(){migrateProfile();state.classes=filteredClasses();renderScheduleFreshness();renderProfile();renderAttendanceSummary();renderAttendanceLog();renderHome();renderCalendar();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
+function renderAll(){migrateProfile();state.classes=filteredClasses();renderScheduleFreshness();renderCalendarConnectionStatus();renderProfile();renderAttendanceSummary();renderAttendanceLog();renderHome();renderCalendar();renderCampus();renderNotifications();renderExamsPage();renderIcons()}
 /* Ledger badge — tasks that are due today or overdue and still open, so a
    glance at the header icon says whether anything needs attention without
    opening the Tasks & Notes dialog. */
@@ -2805,7 +3175,7 @@ function segValue(id,fallback){return $(id)?.dataset.value||fallback}
 function renderProfile(){$("#profileName").value=state.profile.name||"";setSegValue("#profileThemeSeg",state.profile.theme||"system");
   renderShareApp();
   const meta=window.TERM4_META||{};
-  const courses=Object.entries(window.TERM4_COURSES||{});
+  const courses=enrolledCourses();
   $("#stubName").textContent=state.profile.name||"Student";
   /* Was "Section A". Term IV has no sections, so the line says what is actually true
      of this student: the term, and how many electives they are carrying. */
@@ -2816,8 +3186,8 @@ function renderProfile(){$("#profileName").value=state.profile.name||"";setSegVa
   const bc=$("#stubBarcode");if(bc)bc.innerHTML=barcodeHtml(state.profile.name||"BL07");
   /* A malformed updatedAt from the feed used to throw here, and since renderProfile runs
      before renderHome in renderAll, that took the whole app down with it. */
-/* Read from the term feed rather than from a saved selection. The schedule is the
-   enrolment, so there is nothing for a picker to pick — listing them is the honest
+/* Read from the schedule rather than from a saved selection. The schedule is the
+   enrolment, so there is nothing for a picker to pick - listing them is the honest
    version of the same card. */
   const chips=$("#selectedElectiveChips");
   if(chips)chips.innerHTML=courses.length
@@ -2872,14 +3242,15 @@ function renderWorkloadChart(){
    dropped: a friend should land on a clean app, not inherit whatever view the
    sender happened to have open. */
 const appShareUrl=()=>{const u=new URL("./",location.href);u.search="";u.hash="";return u.href};
-/* What a classmate receiving this cold actually needs: what it is, what to do with it,
-   and that it costs them nothing. There is no sign-in step to describe any more - the
-   timetable is in the page, so the link is the whole of it. */
+/* What a classmate receiving this cold actually needs: what it is, the one thing they
+   must do to make it theirs, and that it costs them nothing. It opens on my timetable
+   until they connect their own calendar, and saying so is the difference between a
+   working app and one that quietly shows them somebody else's electives. */
 const SHARE_PITCH=`BL07 Planner \u2014 our Term IV timetable, campus bus timings and the mess menu, in one place.
 
-Open the link and the full elective schedule is already there \u2014 sessions, venues, what is next and when to leave for it. Mark the classes you attend and it keeps your attendance too.
+Open it \u2192 Profile \u2192 Connect Google Calendar, and pick your @iimk.ac.in account. Your own electives then fill the app, and it follows any change the office makes. Until you do, it shows the built-in timetable.
 
-No sign-in, no app store, no account to make. Add it to your home screen and it works offline.`;
+No app store, no account to make. Add it to your home screen and it works offline.`;
 
 /* Chrome and Edge fire beforeinstallprompt when the app qualifies; the event is the
    only way to open the install dialog, and it can only be used once, so it is held
@@ -3249,6 +3620,14 @@ $("#monthJumpInput")?.addEventListener("change",e=>{
   }
   bindDismissibleDialog($("#classActionDialog"));
   $("#closeClassAction")?.addEventListener("click",()=>closeDialog($("#classActionDialog")));
+  $("#refreshButton")?.addEventListener("click",async e=>{const b=e.currentTarget;b.blur();await refreshSchedule();b.blur()});
+  $("#connectGcal")?.addEventListener("click",()=>connectCalendarAndLoad({mode:calSessions().length?"resume":"consent"}));
+  $("#refreshGcal")?.addEventListener("click",()=>refreshSchedule());
+  $("#disconnectGcal")?.addEventListener("click",disconnectGoogleCalendar);
+  /* Coming back to the app is a good moment to top up, but only with a token in hand -
+     scheduleIdleSync asks for nothing. */
+  window.addEventListener("focus",()=>scheduleIdleSync());
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")scheduleIdleSync()});
   $("#sheetAddCalendar")?.addEventListener("click",()=>{
     const c=activeSheetClass();if(!c)return;
     downloadClassIcs(c);closeDialog($("#classActionDialog"));
@@ -3295,11 +3674,16 @@ async function init(){
   playHeroEntrance();
   window.addEventListener("resize",positionNavIndicator);
   announceDataChanges();renderScheduleFreshness();maybeOpenOnboarding();
+  /* A token already held is used at once - no window, no prompt, just a fetch. A token
+     that has expired is left alone until the reader taps refresh. */
+  if(getSavedCalToken()){_calPollAt=Date.now();refreshCalendarSchedule({silent:true}).then(ok=>{
+    if(ok){renderCalendarConnectionStatus();renderScheduleFreshness()}
+  })}
   updateTopbarClock();
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova202",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova203",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();

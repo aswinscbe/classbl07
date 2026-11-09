@@ -3217,3 +3217,74 @@ html{scroll-behavior:smooth}
   .al-btn{min-width:34px;padding:5px 0;display:grid;place-items:center}
   .al-when{min-width:50px}
 }
+
+/* ===== Google Calendar card, restored with the connection itself ===== */
+.top-actions .refresh-button{color:var(--ink)}
+.refresh-button[aria-busy="true"] svg{animation:spin 1s linear infinite}
+.gcal-error{display:block;margin-top:4px;font-size:var(--text-xs);font-weight:var(--w-bold);color:var(--danger);line-height:var(--lh-snug)}
+.gcal-hero{position:relative;overflow:hidden}
+.gcal-hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 12% 0%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 62%);
+}
+.gcal-hero>*{position:relative}
+.gcal-hero-top{display:flex;align-items:center;gap:13px;margin-bottom:11px}
+.gcal-hero-icon{
+  width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:var(--radius-md);
+  background:color-mix(in srgb, var(--accent) 16%, transparent);color:var(--accent);
+  border:1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+}
+.gcal-hero-icon svg{width:21px;height:21px}
+.gcal-hero-head .overline{margin:0 0 2px}
+.gcal-hero-head h2{margin:0}
+.gcal-hero.is-connected .gcal-hero-icon{
+  background:var(--live-soft);
+  border-color:color-mix(in srgb, var(--live) 34%, transparent);color:var(--live);
+}
+.gcal-hero-copy{margin:0 0 13px;font-size:var(--text-md);color:var(--ink-muted);line-height:var(--lh-body)}
+.gcal-steps{
+  margin:0 0 15px;padding:0;list-style:none;counter-reset:gcal;
+  display:flex;flex-direction:column;gap:9px;
+}
+.gcal-steps li{
+  counter-increment:gcal;display:flex;gap:10px;align-items:flex-start;
+  font-size:var(--text-sm);color:var(--ink-muted);line-height:var(--lh-body);
+}
+.gcal-steps li::before{
+  content:counter(gcal);flex:none;width:20px;height:20px;border-radius:50%;
+  display:grid;place-items:center;font-size:var(--text-xs);font-weight:800;
+  background:color-mix(in srgb, var(--accent) 15%, transparent);color:var(--accent);
+}
+.gcal-steps b{font-weight:700;color:var(--ink)}
+.gcal-hero-actions{display:flex;align-items:center;gap:10px}
+.gcal-hero-actions>span{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.gcal-hero-actions>span[hidden]{display:none}
+.gcal-hero-actions button{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:44px;white-space:nowrap;
+}
+.gcal-connect{flex:1;padding:0 18px}
+.gcal-refresh{flex:1;padding:0 16px}
+.gcal-disconnect{
+  flex:none;padding:0 12px;background:none;border:0;cursor:pointer;
+  font-size:var(--text-sm);font-weight:600;color:var(--ink-faint);
+  transition:color var(--dur-sm) var(--ease-out);
+}
+.gcal-disconnect:hover,.gcal-disconnect:focus-visible{color:var(--danger)}
+.gcal-hero-status{
+  margin:0 0 12px;display:inline-flex;align-items:center;gap:7px;
+  padding:5px 11px 5px 9px;border-radius:var(--radius-pill);
+  border:1px solid var(--border);background:var(--bg-panel);
+  font-size:var(--text-sm);font-weight:600;color:var(--ink-muted);
+}
+.gcal-hero-status::before{
+  content:"";width:7px;height:7px;border-radius:50%;flex:none;background:var(--ink-faint);
+}
+.gcal-hero.is-connected .gcal-hero-status{
+  color:var(--live);border-color:color-mix(in srgb, var(--live) 34%, transparent);
+  background:var(--live-soft);
+}
+.gcal-hero.is-connected .gcal-hero-status::before{
+  background:var(--live);box-shadow:0 0 0 3px color-mix(in srgb, var(--live) 26%, transparent);
+}
+.gcal-steps li>span{min-width:0}
