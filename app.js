@@ -2772,20 +2772,65 @@ function serviceSupports(bus,from,to){
   return fromIndex>=0&&toIndex>fromIndex;
 }
 
-/* Last-departure-of-the-day flag, computed per route direction (from -> to) straight off
-   the existing sorted campus-data.js bus array — self-contained, doesn't touch bus logic. */
-let _lastBusKeys=null;
-function lastBusKeys(){
-  if(_lastBusKeys)return _lastBusKeys;
-  const byDirection=new Map();
-  window.CAMPUS_DATA.bus.forEach(b=>{
-    const key=`${b.from}→${b.to}`,cur=byDirection.get(key);
-    if(!cur||minutes(b.time)>minutes(cur.time))byDirection.set(key,b);
-  });
-  _lastBusKeys=new Set([...byDirection.values()].map(b=>`${b.time}|${b.from}|${b.to}`));
-  return _lastBusKeys;
+/* ===== Which bus timetable is in force =====
+   The institute replaces the whole campus timetable on an event day rather than adding
+   to it, so a special day is a different list, not a modified one. Every reader of the
+   bus data goes through here, because the day in question is not always today: the
+   "leave by" line on Home is about the day the class is on. */
+/* A bus timetable's day does not end at midnight. The 14 November sheet runs through to
+   1:10am, and those small-hours services belong to the night of the 14th - not to the
+   morning of the 14th, twenty-three hours earlier, which is where sorting them by clock
+   time alone puts them. Reading a 12:10am service as "already gone" at 11pm is exactly
+   the wrong answer on the one night people are out late.
+
+   So the bus day runs 3am to 3am. Everything that asks which sheet is in force, which
+   service is the last one, and when a service actually departs, measures from there. */
+const BUS_DAY_START_MIN=180;
+function busDayInfo(iso){return (window.CAMPUS_DATA?.busDays||{})[iso]||null}
+function busServiceDateIso(now=new Date()){
+  return dtf("en-CA",ISO_FMT_OPTS,"iso").format(new Date(now.getTime()-BUS_DAY_START_MIN*60000));
 }
-function isLastBus(bus){return lastBusKeys().has(`${bus.time}|${bus.from}|${bus.to}`)}
+/* Where a service sits in its own day: a 1:10am run is minute 1510 of the day before,
+   not minute 70 of this one. */
+function serviceMinutes(bus){const m=minutes(bus.time);return m<BUS_DAY_START_MIN?m+1440:m}
+/* ...and when it actually leaves, as an instant. Measured from midnight at the start of
+   the bus day it belongs to, so it is right from either side of midnight: a 1:10am
+   service on the 14th's sheet is the 15th at 1:10am whether you ask at 10pm or at
+   half past midnight, and the 11:10pm service is the 14th either way. Patching clock
+   dates with a "tomorrow" flag got the first of those right and the second wrong. */
+function serviceDepartureAt(bus,stop,now=new Date(),dayIso=null){
+  const iso=dayIso||busServiceDateIso(now);
+  const at=serviceMinutes(bus)+stopOffsetMinutes(bus,stop);
+  return new Date(zoned(iso,"00:00").getTime()+at*60000);
+}
+/* The bus day after this one - which on 15 November is a different sheet from the 14th,
+   so "nothing left tonight, next one is..." has to be answered from the right list. */
+function nextBusDayIso(iso){
+  const d=zoned(iso,"12:00");d.setDate(d.getDate()+1);
+  return dtf("en-CA",ISO_FMT_OPTS,"iso").format(d);
+}
+function busesForDate(iso){
+  const special=(window.CAMPUS_DATA?.busByDate||{})[iso];
+  return special&&special.length?special:(window.CAMPUS_DATA?.bus||[]);
+}
+function busesToday(){return busesForDate(busServiceDateIso())}
+/* Last-departure-of-the-day flag, computed per route direction (from -> to) straight off
+   the sorted bus array. Memoised per date, because a special day has its own last
+   departures and a cache keyed on nothing would carry yesterday's answer into it. */
+const _lastBusKeys=new Map();
+function lastBusKeys(iso=busServiceDateIso()){
+  const hit=_lastBusKeys.get(iso);
+  if(hit)return hit;
+  const byDirection=new Map();
+  busesForDate(iso).forEach(b=>{
+    const key=`${b.from}→${b.to}`,cur=byDirection.get(key);
+    if(!cur||serviceMinutes(b)>serviceMinutes(cur))byDirection.set(key,b);
+  });
+  const set=new Set([...byDirection.values()].map(b=>`${b.time}|${b.from}|${b.to}`));
+  _lastBusKeys.set(iso,set);
+  return set;
+}
+function isLastBus(bus,iso=busServiceDateIso()){return lastBusKeys(iso).has(`${bus.time}|${bus.from}|${bus.to}`)}
 
 /* Presets built from whatever stops are actually selected right now, instead of a
    fixed pair — a hardcoded C&D/Main Gate set is useless to someone whose stop is
@@ -2862,7 +2907,7 @@ function nextClassToday(now){
 function lastBusForClass(cls,now){
   if(!cls)return null;
   const startsAt=dateTime(cls,"startTime");
-  const options=(window.CAMPUS_DATA?.bus||[])
+  const options=busesForDate(cls.dateIso)
     .filter(bus=>serviceSupports(bus,state.busFrom,state.busTo))
     .map(b=>({b,depart:busDateForStop(b,state.busFrom),arrive:busDateForStop(b,state.busTo)}))
     .filter(o=>o.depart>now&&o.arrive<=startsAt)
@@ -2893,11 +2938,30 @@ function renderBusClassCatch(now){
   el.style.setProperty("--course",colorFor(next.code));
   el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>Last bus for <span class="bcc-code">${esc(code)}</span> — ${esc(fmtTime(last.b.time))}</strong><small>Arrives ~${esc(fmtTime(minsToTimeStr(last.arrive.getHours()*60+last.arrive.getMinutes())))} · class at ${esc(classTime)}</small></span>`;
 }
+/* A replaced timetable has to announce itself. Someone reading the board on an event
+   day has no way to tell that it is not the usual sheet, and the usual sheet is the one
+   they have in their head - so the board says which day's schedule it is showing and
+   who boards where, which is the part of the Inter-IIM sheet that is not obvious from
+   the times. */
+function renderBusSpecialNotice(){
+  const el=$("#busSpecialNotice");if(!el)return;
+  const info=busDayInfo(busServiceDateIso());
+  if(!info){el.innerHTML="";return}
+  const count=busesToday().length;
+  el.innerHTML=`<div class="bus-special">
+    <span class="bus-special-tag">${esc(info.label)}</span>
+    <div class="bus-special-copy">
+      <b>Special timetable today</b>
+      <small>${count} services · the usual campus schedule is not running${info.note?` · ${esc(info.note)}`:""}</small>
+    </div>
+  </div>`;
+}
 function renderBuses(){
   const upcomingList=$("#upcomingBuses"),fullList=$("#fullBusList");
   if(!upcomingList||!fullList)return;
   const now=new Date();
-  const services=window.CAMPUS_DATA.bus.filter(bus=>serviceSupports(bus,state.busFrom,state.busTo));
+  renderBusSpecialNotice();
+  const services=busesToday().filter(bus=>serviceSupports(bus,state.busFrom,state.busTo));
 
   const heroRoute=$("#nextBusRoute");
   if(heroRoute)heroRoute.textContent=`${busStopLabel(state.busFrom)} → ${busStopLabel(state.busTo)}`;
@@ -2923,20 +2987,29 @@ function renderBuses(){
     return;
   }
 
-  const withTimes=services.map(b=>({b,d:busDateForStop(b,state.busFrom)})).sort((a,b)=>a.d-b.d);
+  const withTimes=services.map(b=>({b,d:serviceDepartureAt(b,state.busFrom,now)})).sort((a,b)=>a.d-b.d);
   let next=withTimes.find(item=>item.d>now);
   const nextDay=!next;
-  if(!next)next=services.map(b=>({b,d:busDateForStop(b,state.busFrom,true)})).sort((a,b)=>a.d-b.d)[0];
+  if(!next){
+    /* Nothing left in this bus day. The next one may be a different sheet entirely -
+       the 15th's, not another run of the 14th's - so it is read from that day's list. */
+    const tomorrowIsoDay=nextBusDayIso(busServiceDateIso(now));
+    next=busesForDate(tomorrowIsoDay)
+      .filter(bus=>serviceSupports(bus,state.busFrom,state.busTo))
+      .map(b=>({b,d:serviceDepartureAt(b,state.busFrom,now,tomorrowIsoDay)}))
+      .sort((a,b)=>a.d-b.d)[0];
+  }
+  if(!next){const lastEl=$("#busLastRun");if(lastEl)lastEl.hidden=true;return}
   const nextKey=`${next.b.time}|${next.b.from}|${next.b.to}`;
 
   /* Previous departure from the rider's actual boarding stop, any destination — not just
      buses matching the selected route. A stop like Phase V is never a literal origin in the
      timetable (we only know origin departure times), so for stops we have no real timing for,
      fall back to the same-origin-as-next-bus approximation used for the ORIGIN TIME tag. */
-  const literalOrigins=new Set(window.CAMPUS_DATA.bus.map(b=>b.from));
+  const literalOrigins=new Set(busesToday().map(b=>b.from));
   let previous=null;
   if(literalOrigins.has(state.busFrom)){
-    const fromHere=window.CAMPUS_DATA.bus.filter(b=>b.from===state.busFrom).map(b=>({b,d:busDate(b)})).sort((a,b)=>a.d-b.d);
+    const fromHere=busesToday().filter(b=>b.from===state.busFrom).map(b=>({b,d:serviceDepartureAt(b,state.busFrom)})).sort((a,b)=>a.d-b.d);
     const passed=fromHere.filter(item=>item.d<=now);
     previous=passed.length?passed[passed.length-1]:null;
   }else{
@@ -3027,12 +3100,15 @@ function renderBuses(){
    row says is which service runs it, which differs line to line. */
 /* A flat column of twenty times is a timetable, not a board. Splitting the day where a
    rider already splits it means you scan one block of four instead of the whole list. */
-const BUS_PERIODS=[{label:"Morning",to:12*60},{label:"Afternoon",to:17*60},{label:"Evening",to:21*60},{label:"Late night",to:24*60+1}];
+/* Bucketed by where the service sits in its bus day, not by its clock time: a 1:10am
+   run is the end of the night, and bucketing it by the clock opened a second "Morning"
+   section underneath "Late night" holding the two latest buses of the day. */
+const BUS_PERIODS=[{label:"Morning",to:12*60},{label:"Afternoon",to:17*60},{label:"Evening",to:21*60},{label:"Late night",to:27*60+1}];
 const busPeriod=mins=>BUS_PERIODS.find(p=>mins<p.to)||BUS_PERIODS[BUS_PERIODS.length-1];
 function busBoardHtml(items,nextKey,now,lastKey){
   let period=null;
   return items.map(({b})=>{
-    const p=busPeriod(minutes(b.time)),head=p.label!==period?`<p class="board-period">${esc(p.label)}</p>`:"";
+    const p=busPeriod(serviceMinutes(b)),head=p.label!==period?`<p class="board-period">${esc(p.label)}</p>`:"";
     period=p.label;
     return head+busRow(b,nextKey,now,lastKey);
   }).join("");
@@ -3683,7 +3759,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova203",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova204",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
