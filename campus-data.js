@@ -70,9 +70,9 @@ window.CAMPUS_DATA = {
      Landing. If it ever needs to appear, it wants adding to BUS_STOPS as its own
      stop, not folding into another. */
   busDays: {
-    "2026-11-13": {label:"Inter-IIM 2026", note:"Boys board at Main Gate; girls board at PGP Auditorium."},
-    "2026-11-14": {label:"Inter-IIM 2026", note:"Boys board at Main Gate; girls board at PGP Auditorium."},
-    "2026-11-15": {label:"Inter-IIM 2026", note:"Boys board at Main Gate; girls board at PGP Auditorium."}
+    "2026-11-13": {label:"Inter-IIM 2026"},
+    "2026-11-14": {label:"Inter-IIM 2026"},
+    "2026-11-15": {label:"Inter-IIM 2026"}
   },
   busByDate: Object.fromEntries(Object.entries({
     "2026-11-13": [
