@@ -2943,6 +2943,25 @@ function renderBusClassCatch(now){
    they have in their head - so the board says which day's schedule it is showing and
    who boards where, which is the part of the Inter-IIM sheet that is not obvious from
    the times. */
+/* Why a route can have nothing on it. On an ordinary day that is just a pair of stops
+   with no direct service between them. On an event day it is usually because the
+   special sheet serves fewer stops than the ordinary one - the Inter-IIM sheet does not
+   call at C&D Housing at all - and "try another origin" is no help unless it says which
+   ones there are to try. */
+function stopsServedToday(){
+  const names=new Set();
+  busesToday().forEach(b=>b.stops.forEach(s=>names.add(s.name)));
+  return [...names];
+}
+function noRouteReason(){
+  const info=busDayInfo(busServiceDateIso());
+  if(!info)return"Try another origin or destination.";
+  const served=stopsServedToday();
+  const missing=[state.busFrom,state.busTo].filter(s=>!served.includes(s));
+  const list=served.map(busStopLabel).join(", ");
+  if(missing.length)return`${missing.map(busStopLabel).join(" and ")} ${missing.length>1?"are":"is"} not served by today's ${info.label} timetable. Today's buses call at ${list}.`;
+  return`Today's ${info.label} timetable has no direct service between these two. It calls at ${list}.`;
+}
 function renderBusSpecialNotice(){
   const el=$("#busSpecialNotice");if(!el)return;
   const info=busDayInfo(busServiceDateIso());
@@ -2976,7 +2995,7 @@ function renderBuses(){
     const gateTags=$("#nextBusGateTags");if(gateTags)gateTags.innerHTML="";
     const ring=$("#countdownRing");if(ring){ring.style.setProperty("--pct",0);ring.classList.remove("urgent")}
     $(".next-bus-card")?.classList.remove("is-urgent");
-    const empty='<div class="empty-state"><span class="empty-state-icon">'+icon("bus")+'</span><p>No service on this route</p><small>Try another origin or destination.</small></div>';
+    const empty=`<div class="empty-state"><span class="empty-state-icon">${icon("bus")}</span><p>No service on this route</p><small>${esc(noRouteReason())}</small></div>`;
     upcomingList.innerHTML=empty;fullList.innerHTML=empty;
     const gapEl=$("#nextBusGap");if(gapEl)gapEl.hidden=true;
     const lastEl=$("#busLastRun");if(lastEl)lastEl.hidden=true;
@@ -3759,7 +3778,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova204",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova205",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
