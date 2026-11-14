@@ -1521,7 +1521,9 @@ function renderHeroInsight(iso,now){
   if(bus){
     const mins=Math.max(0,Math.round((bus.depart-now)/60000));
     el.hidden=false;
-    el.innerHTML=`${icon("bus")}Leave by <strong>${esc(fmtTime(bus.b.time))}</strong> for ${esc(canonical(next.code))}${mins<=90?` \u00b7 ${esc(tagCountdown(mins))}`:""}`;
+    /* "Leave by" is the time YOU leave, so it is the departure from your own stop -
+       the countdown after it was already measured from there. */
+    el.innerHTML=`${icon("bus")}Leave by <strong>${esc(fmtTime(hhmmOf(bus.depart)))}</strong> for ${esc(canonical(next.code))}${mins<=90?` \u00b7 ${esc(tagCountdown(mins))}`:""}`;
     return;
   }
   /* The one fact an evening-heavy term turns on: when you get your night back.
@@ -2748,16 +2750,38 @@ function routeStops(bus){
    boarding further down the route (e.g. Phase V on a Main Gate service) shouldn't see
    that bus as "gone" the moment its origin time passes; it hasn't reached them yet.
    Estimated minutes-per-hop, since the source data has no real intermediate timings. */
+/* How long each leg of the corridor takes, measured from the clock times the official
+   sheet prints against intermediate stops: Main Gate to C&D Housing 5 minutes, C&D
+   Housing to Phase V 5, Main Gate to Phase V 10 (which agrees with those two), PGP
+   Auditorium to Phase V 5. Every adjacent leg is five minutes, in either direction.
+
+   This used to be guessed from a stop's POSITION in the trip - the first hop of a
+   four-stop trip was assumed to be the long one, at 10 minutes. That is not a property
+   of position, and it was wrong: on a Main Gate service it put C&D Housing ten minutes
+   out instead of five. The ordinary sheet hid it, because the stops it prints a time
+   against are exactly the ones the estimate would have got wrong. The Inter-IIM sheet
+   prints no intermediate times at all, so nothing hid it there, and every four-stop
+   service on those days had its boarding time out by five to ten minutes. */
+const BUS_LEG_MINUTES={
+  "PGP Auditorium|Phase V Campus":5,
+  "Phase V Campus|C&D Housing":5,
+  "C&D Housing|Main Gate":5
+};
+function legMinutes(a,b){
+  const v=BUS_LEG_MINUTES[`${a}|${b}`]??BUS_LEG_MINUTES[`${b}|${a}`];
+  return v==null?5:v;
+}
+/* The clock time of an instant, in app time - for a departure that is computed rather
+   than read off the sheet. */
+function hhmmOf(date){const p=istParts(date);return`${p.hour}:${p.minute}`}
 function stopOffsetMinutes(bus,stop){
   const stops=routeStops(bus),idx=stops.indexOf(stop);
   if(idx<=0)return 0;
-  /* The official sheet prints a clock time against some intermediate stops. Where it
-     does, use it rather than an estimate — 12 of the 41 student trips are exact. */
+  /* A printed time beats any estimate — 12 of the 41 ordinary trips carry one. */
   const printed=bus.stops?.[idx]?.at;
   if(printed)return Math.max(0,minutes(printed)-minutes(bus.time));
-  const hopMinutes=stops.length===4?[10,5,5]:[5,5];
   let total=0;
-  for(let i=0;i<idx;i++)total+=hopMinutes[i]??5;
+  for(let i=1;i<=idx;i++)total+=legMinutes(stops[i-1],stops[i]);
   return total;
 }
 function busDateForStop(bus,stop,tomorrow=false){
@@ -2936,7 +2960,7 @@ function renderBusClassCatch(now){
   }
   el.hidden=false;el.classList.remove("is-missed");
   el.style.setProperty("--course",colorFor(next.code));
-  el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>Last bus for <span class="bcc-code">${esc(code)}</span> — ${esc(fmtTime(last.b.time))}</strong><small>Arrives ~${esc(fmtTime(minsToTimeStr(last.arrive.getHours()*60+last.arrive.getMinutes())))} · class at ${esc(classTime)}</small></span>`;
+  el.innerHTML=`<span class="bcc-icon">${icon("bus")}</span><span class="bcc-text"><strong>Last bus for <span class="bcc-code">${esc(code)}</span> — ${esc(fmtTime(hhmmOf(last.depart)))}</strong><small>Arrives ~${esc(fmtTime(minsToTimeStr(last.arrive.getHours()*60+last.arrive.getMinutes())))} · class at ${esc(classTime)}</small></span>`;
 }
 /* A replaced timetable has to announce itself. Someone reading the board on an event
    day has no way to tell that it is not the usual sheet, and the usual sheet is the one
@@ -3037,10 +3061,15 @@ function renderBuses(){
     previous=sameOriginPassed.length?sameOriginPassed[sameOriginPassed.length-1]:null;
   }
 
-  $("#nextBusTime").textContent=fmtTime(next.b.time);
+  /* The time it leaves YOUR stop, not the time it left its origin. The countdown
+     beside it has always been to your stop, so showing the origin time made the card
+     contradict itself: "10:30 am" over "leaves in 45 min" at ten o'clock. The origin
+     departure is still named, in the note underneath, where it is useful rather than
+     confusing. */
+  $("#nextBusTime").textContent=fmtTime(hhmmOf(next.d));
   $("#nextBusMeta").textContent=next.b.staff?"Staff shuttle":isMainGateService(next.b)?"Main Gate service":"Campus shuttle";
   const gateTags=$("#nextBusGateTags");
-  if(gateTags)gateTags.innerHTML=`${next.b.staff?'<span class="tag tag-staff">STAFF</span>':""}${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(next.b.from))}">ORIGIN TIME</span>`:""}`;
+  if(gateTags)gateTags.innerHTML=`${next.b.staff?'<span class="tag tag-staff">STAFF</span>':""}${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="Leaves ${esc(busStopLabel(next.b.from))} at ${esc(fmtTime(next.b.time))} and reaches ${esc(busStopLabel(state.busFrom))} at ${esc(fmtTime(hhmmOf(next.d)))}">FROM ${esc(busStopLabel(next.b.from).toUpperCase())}</span>`:""}`;
   const originNote=$("#nextBusOriginNote");
   if(originNote){
     if(previous){
@@ -3102,7 +3131,7 @@ function renderBuses(){
     if(finalRun){
       const gone=finalRun.d<=now,wait=Math.ceil((finalRun.d-now)/60000);
       lastEl.hidden=false;lastEl.classList.toggle("is-gone",gone);
-      lastEl.innerHTML=`<span class="blr-icon">${icon("moon")}</span><span class="blr-copy"><b>Last bus ${esc(fmtTime(finalRun.b.time))}</b><small>${gone?"Gone for today \u00b7 next one tomorrow morning":`${esc(busStopLabel(finalRun.b.from))} \u2192 ${esc(busStopLabel(finalRun.b.to))} \u00b7 ${esc(compactDuration(wait))} from now`}</small></span>`;
+      lastEl.innerHTML=`<span class="blr-icon">${icon("moon")}</span><span class="blr-copy"><b>Last bus ${esc(fmtTime(hhmmOf(finalRun.d)))}</b><small>${gone?"Gone for today \u00b7 next one tomorrow morning":`${esc(busStopLabel(finalRun.b.from))} \u2192 ${esc(busStopLabel(finalRun.b.to))} \u00b7 ${esc(compactDuration(wait))} from now`}</small></span>`;
     }else lastEl.hidden=true;
   }
   const toggle=$("#toggleFullBus");
@@ -3145,17 +3174,30 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
   const badges=[
     isNext?'<span class="tag tag-next">NEXT</span>':"",
     bus.staff?'<span class="tag tag-staff">STAFF</span>':"",
-    mainGate?'<span class="tag tag-gate">MAIN GATE</span>':"",
-    last?'<span class="tag tag-last">LAST BUS</span>':"",
-    bus.from!==state.busFrom?`<span class="tag tag-origin" title="Time shown is departure from ${esc(busStopLabel(bus.from))}">ORIGIN TIME</span>`:""
+    last?'<span class="tag tag-last">LAST BUS</span>':""
   ].filter(Boolean).join("");
+  /* The MAIN GATE tag is gone from the rows. On a board filtered to one route it was on
+     almost every row, saying the same thing each time while crowding out the subline,
+     and the row's amber pin already distinguishes a Main Gate service from a campus
+     shuttle. The hero still names it in words. */
+  /* The time a departure board shows is the time the bus leaves the stop you are
+     standing at. It used to show the time the service left its own origin, with an
+     ORIGIN TIME badge to excuse the difference, while the "in 35m" beside it counted
+     down to your stop - so the two halves of the same row disagreed, on every row.
+     Where the service starts somewhere else, that is worth knowing, so it is said
+     plainly underneath rather than flagged as a caveat. */
+  const boardTime=fmtTime(hhmmOf(stopDate));
+  /* The destination is in the panel heading above and is the same on every row of a
+     filtered board, so naming it per row only crowded out the part that does vary. */
+  const sub=bus.from!==state.busFrom
+    ?`Leaves ${busStopLabel(bus.from)} ${fmtTime(bus.time)}`
+    :`Starts here`;
   return`<article class="board-row ${mainGate?"is-maingate":"is-shuttle"} ${isNext?"next":""} ${elapsed?"elapsed":""}">
     <span class="board-row-avatar">${icon(mainGate?"pin":"bus")}</span>
     <div class="r">
-      <strong>${esc(busStopLabel(bus.from))} → ${esc(busStopLabel(bus.to))}</strong>
-      ${badges?`<div class="board-row-badges">${badges}</div>`:""}
+      <strong class="board-row-time"><b>${esc(boardTime)}</b>${soon}${badges?`<span class="board-row-badges">${badges}</span>`:""}</strong>
+      <span class="board-row-sub">${esc(sub)}</span>
     </div>
-    <span class="t">${esc(fmtTime(bus.time))}${soon}</span>
   </article>`;
 }
 
@@ -3778,7 +3820,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova207",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova208",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
