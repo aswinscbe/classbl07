@@ -2774,14 +2774,29 @@ function legMinutes(a,b){
 /* The clock time of an instant, in app time - for a departure that is computed rather
    than read off the sheet. */
 function hhmmOf(date){const p=istParts(date);return`${p.hour}:${p.minute}`}
+/* What the board shows is what the timetable says: the service's own printed time,
+   and nothing added to it. Estimating a boarding time by adding five minutes a leg
+   produced a time that appears on no official sheet, which is worse than being a few
+   minutes early - a rider cross-checking the app against the notice board would find
+   them disagreeing, and the notice board is the authority.
+
+   The one exception is not an estimate at all: where the sheet itself prints a clock
+   time against an intermediate stop, that IS the published time for that stop, and 12
+   of the 41 ordinary trips carry one. */
 function stopOffsetMinutes(bus,stop){
   const stops=routeStops(bus),idx=stops.indexOf(stop);
   if(idx<=0)return 0;
-  /* A printed time beats any estimate — 12 of the 41 ordinary trips carry one. */
   const printed=bus.stops?.[idx]?.at;
-  if(printed)return Math.max(0,minutes(printed)-minutes(bus.time));
+  return printed?Math.max(0,minutes(printed)-minutes(bus.time)):0;
+}
+/* How long the ride itself takes, which is a different question from when to be at the
+   stop. Used to work out whether a bus still gets you to a class in time, where
+   assuming you arrive the moment you board would promise a class you would miss. */
+function travelMinutes(bus,from,to){
+  const stops=routeStops(bus),i=stops.indexOf(from),j=stops.indexOf(to);
+  if(i<0||j<=i)return 0;
   let total=0;
-  for(let i=1;i<=idx;i++)total+=legMinutes(stops[i-1],stops[i]);
+  for(let k=i+1;k<=j;k++)total+=legMinutes(stops[k-1],stops[k]);
   return total;
 }
 function busDateForStop(bus,stop,tomorrow=false){
@@ -2933,7 +2948,10 @@ function lastBusForClass(cls,now){
   const startsAt=dateTime(cls,"startTime");
   const options=busesForDate(cls.dateIso)
     .filter(bus=>serviceSupports(bus,state.busFrom,state.busTo))
-    .map(b=>({b,depart:busDateForStop(b,state.busFrom),arrive:busDateForStop(b,state.busTo)}))
+    .map(b=>{
+      const depart=busDateForStop(b,state.busFrom);
+      return{b,depart,arrive:new Date(depart.getTime()+travelMinutes(b,state.busFrom,state.busTo)*60000)};
+    })
     .filter(o=>o.depart>now&&o.arrive<=startsAt)
     .sort((a,b)=>a.depart-b.depart);
   return options.length?options[options.length-1]:null;
@@ -3045,21 +3063,17 @@ function renderBuses(){
   if(!next){const lastEl=$("#busLastRun");if(lastEl)lastEl.hidden=true;return}
   const nextKey=`${next.b.time}|${next.b.from}|${next.b.to}`;
 
-  /* Previous departure from the rider's actual boarding stop, any destination — not just
-     buses matching the selected route. A stop like Phase V is never a literal origin in the
-     timetable (we only know origin departure times), so for stops we have no real timing for,
-     fall back to the same-origin-as-next-bus approximation used for the ORIGIN TIME tag. */
-  const literalOrigins=new Set(busesToday().map(b=>b.from));
-  let previous=null;
-  if(literalOrigins.has(state.busFrom)){
-    const fromHere=busesToday().filter(b=>b.from===state.busFrom).map(b=>({b,d:serviceDepartureAt(b,state.busFrom)})).sort((a,b)=>a.d-b.d);
-    const passed=fromHere.filter(item=>item.d<=now);
-    previous=passed.length?passed[passed.length-1]:null;
-  }else{
-    const sameOrigin=withTimes.filter(item=>item.b.from===next.b.from);
-    const sameOriginPassed=sameOrigin.filter(item=>item.d<=now);
-    previous=sameOriginPassed.length?sameOriginPassed[sameOriginPassed.length-1]:null;
-  }
+  /* The previous departure is the last bus ON THIS ROUTE that has already gone. That is
+     the whole rule, and withTimes already is this route in order, so it is the last
+     entry before now.
+
+     It used to be two rules and neither was this one. If your stop was some service's
+     literal origin it took every bus leaving your stop REGARDLESS OF DESTINATION, so a
+     Main Gate to Auditorium board would report a bus that went to the Arjuna Statue.
+     Otherwise it kept only buses sharing an origin with the next one, so a perfectly
+     good previous departure that happened to start somewhere else was skipped. */
+  const passed=withTimes.filter(item=>item.d<=now);
+  const previous=passed.length?passed[passed.length-1]:null;
 
   /* The time it leaves YOUR stop, not the time it left its origin. The countdown
      beside it has always been to your stop, so showing the origin time made the card
@@ -3069,15 +3083,15 @@ function renderBuses(){
   $("#nextBusTime").textContent=fmtTime(hhmmOf(next.d));
   $("#nextBusMeta").textContent=next.b.staff?"Staff shuttle":isMainGateService(next.b)?"Main Gate service":"Campus shuttle";
   const gateTags=$("#nextBusGateTags");
-  if(gateTags)gateTags.innerHTML=`${next.b.staff?'<span class="tag tag-staff">STAFF</span>':""}${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="Leaves ${esc(busStopLabel(next.b.from))} at ${esc(fmtTime(next.b.time))} and reaches ${esc(busStopLabel(state.busFrom))} at ${esc(fmtTime(hhmmOf(next.d)))}">FROM ${esc(busStopLabel(next.b.from).toUpperCase())}</span>`:""}`;
+  if(gateTags)gateTags.innerHTML=`${next.b.staff?'<span class="tag tag-staff">STAFF</span>':""}${isLastBus(next.b)?'<span class="tag tag-last">LAST BUS</span>':""}${next.b.from!==state.busFrom?`<span class="tag tag-origin" title="This service starts at ${esc(busStopLabel(next.b.from))}. The time shown is its departure from there, as printed on the timetable; it reaches ${esc(busStopLabel(state.busFrom))} a few minutes later.">FROM ${esc(busStopLabel(next.b.from).toUpperCase())}</span>`:""}`;
   const originNote=$("#nextBusOriginNote");
   if(originNote){
     if(previous){
       originNote.hidden=false;
-      const sameRoute=previous.b.to===next.b.to;
-      originNote.innerHTML=sameRoute
-        ?`<b>${esc(busStopLabel(previous.b.from))}</b> departures — <span class="passed">${esc(fmtTime(previous.b.time))} passed</span> · <span class="upcoming">${esc(fmtTime(next.b.time))} next</span>`
-        :`<span class="passed">Previous ${esc(busStopLabel(previous.b.from))} → ${esc(busStopLabel(previous.b.to))} · ${esc(fmtTime(previous.b.time))}</span>`;
+      const ago=Math.max(0,Math.round((now-previous.d)/60000));
+      /* The route is named in full directly above, so the note gives only the two
+         times: the one that has gone and the one coming. */
+      originNote.innerHTML=`<span class="passed">${esc(fmtTime(hhmmOf(previous.d)))} went${ago?` ${esc(compactDuration(ago))} ago`:""}</span> \u00b7 <span class="upcoming">${esc(fmtTime(hhmmOf(next.d)))} next</span>`;
     }else if(next.b.from!==state.busFrom){
       originNote.hidden=false;
       originNote.innerHTML=`First <b>${esc(busStopLabel(next.b.from))}</b> departure today: <span class="upcoming">${esc(fmtTime(next.b.time))}</span>`;
@@ -3189,9 +3203,10 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
   const boardTime=fmtTime(hhmmOf(stopDate));
   /* The destination is in the panel heading above and is the same on every row of a
      filtered board, so naming it per row only crowded out the part that does vary. */
-  const sub=bus.from!==state.busFrom
-    ?`Leaves ${busStopLabel(bus.from)} ${fmtTime(bus.time)}`
-    :`Starts here`;
+  /* The time above IS this service's printed departure, so repeating it here would say
+     the same thing twice. What is worth knowing is where the bus is coming from, since
+     one that started at the far end of the corridor may already be running late. */
+  const sub=bus.from!==state.busFrom?`From ${busStopLabel(bus.from)}`:"Starts here";
   return`<article class="board-row ${mainGate?"is-maingate":"is-shuttle"} ${isNext?"next":""} ${elapsed?"elapsed":""}">
     <span class="board-row-avatar">${icon(mainGate?"pin":"bus")}</span>
     <div class="r">
@@ -3820,7 +3835,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova208",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova209",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
