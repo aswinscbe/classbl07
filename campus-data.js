@@ -54,180 +54,30 @@ window.CAMPUS_DATA = {
       returnsToPgp:!!returnsToPgp};
   }),
   /* ===== Special bus schedules, by date =====
-     The institute replaces the whole campus timetable for an event rather than adding
-     to it, so these are complete replacements for the day named, not additions: on
-     13-15 November the ordinary sheet above does not run at all.
+     Empty: the ordinary sheet above is the timetable, on every day.
 
-     Transcribed from the Inter-IIM 2026 sheet (43, 53 and 37 services).
+     The mechanism stays, because the institute does this for every big event and the
+     next one is only a data drop away. Add a date to both maps and that date's board
+     switches over completely, with a banner saying the usual schedule is not running:
 
-     The campus corridor is a line:
+         busDays:   "2026-11-13": {label:"Inter-IIM 2026"}          // and optional note
+         busByDate: "2026-11-13": [ ["07:30",[["PGP Auditorium"],["Phase V Campus"],
+                                              ["C&D Housing"],["Main Gate"]]], ... ]
+
+     Two things to know when filling it, both learned the hard way on the Inter-IIM
+     sheet. A sheet's "via" column is shorthand and leaves stops out, so derive each
+     sequence from the corridor instead of copying it:
 
          PGP Auditorium - D Landing - Phase V - C&D Housing - Main Gate
 
-     so a service calls at every stop between its two endpoints, and these sequences
-     are derived from the endpoints rather than copied from the sheet's "via" column.
-     That column is shorthand and leaves stops out: it never once names C&D Housing,
-     although every Phase V <-> Main Gate run passes through it. Copying it verbatim
-     would have dropped C&D Housing from all three days and told anyone living there
-     that no bus was running. Every stop the sheet does name was checked to lie on the
-     derived span, across all 133 services.
+     a service calls at every stop between its two endpoints. And D Landing is NOT C&D
+     Housing; it is a stop the app does not model, so leave it out of the sequence
+     rather than folding it into another stop.
 
-     D Landing is dropped. It is a real stop on the corridor but not one the rest of
-     the app knows, and it is not wanted on ordinary days. Leaving it out only removes
-     a stop from a sequence - it never changes which other stops a service calls at.
-     To show it, add it to BUS_STOPS as a stop of its own; never fold it into C&D
-     Housing, which is a different place. */
-  busDays: {
-    "2026-11-13": {label:"Inter-IIM 2026"},
-    "2026-11-14": {label:"Inter-IIM 2026"},
-    "2026-11-15": {label:"Inter-IIM 2026"}
-  },
-  busByDate: Object.fromEntries(Object.entries({
-    "2026-11-13": [
-      ["07:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["07:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["08:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["08:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["09:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["09:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["10:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["10:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["11:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["11:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["12:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["12:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["13:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["13:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["14:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["14:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["14:40",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["15:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["15:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["15:40",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["16:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["16:10",[["Phase V Campus"],["PGP Auditorium"]]],
-      ["16:40",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["17:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["17:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["17:40",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["18:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["18:25",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["18:40",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["18:40",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["19:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["19:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["19:40",[["Phase V Campus"],["PGP Auditorium"]]],
-      ["20:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["20:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["21:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["21:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["22:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["22:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["23:10",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["23:10",[["Phase V Campus"],["PGP Auditorium"]]],
-      ["00:10",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["00:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]]
-    ],
-    "2026-11-14": [
-      ["05:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["06:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["06:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["07:30",[["PGP Auditorium"],["Phase V Campus"]]],
-      ["07:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["08:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["08:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["08:40",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["08:40",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["09:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["09:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["10:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["10:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["11:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["11:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["11:40",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["11:40",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["12:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["12:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["12:40",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["13:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["13:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["14:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["14:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["14:40",[["Phase V Campus"],["PGP Auditorium"]]],
-      ["15:00",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["15:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["16:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["16:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["17:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["17:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["17:40",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["18:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["18:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["18:40",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["18:40",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["19:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["19:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["20:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["20:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["20:40",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["20:40",[["Phase V Campus"],["PGP Auditorium"]]],
-      ["21:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["21:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["22:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["22:30",[["PGP Auditorium"],["Phase V Campus"]]],
-      ["22:40",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["22:40",[["Phase V Campus"],["PGP Auditorium"]]],
-      ["23:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["23:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["00:10",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["00:10",[["Phase V Campus"],["PGP Auditorium"]]],
-      ["01:10",[["Phase V Campus"],["PGP Auditorium"]]]
-    ],
-    "2026-11-15": [
-      ["05:30",[["PGP Auditorium"],["Phase V Campus"]]],
-      ["06:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["06:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["07:30",[["PGP Auditorium"],["Phase V Campus"]]],
-      ["07:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["08:10",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["08:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["09:00",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["09:00",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["10:00",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["10:00",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["11:00",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["11:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["11:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["11:40",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["12:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["12:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["13:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["13:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["14:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["14:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["14:40",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["15:10",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["15:30",[["Main Gate"],["C&D Housing"],["Phase V Campus"]]],
-      ["15:40",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["16:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["16:30",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["17:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["17:25",[["PGP Auditorium"],["Phase V Campus"]]],
-      ["17:40",[["PGP Auditorium"],["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["17:40",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["18:10",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["18:40",[["Main Gate"],["C&D Housing"],["Phase V Campus"],["PGP Auditorium"]]],
-      ["19:40",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["19:40",[["Phase V Campus"],["PGP Auditorium"]]],
-      ["20:10",[["Phase V Campus"],["C&D Housing"],["Main Gate"]]],
-      ["20:10",[["Phase V Campus"],["PGP Auditorium"]]]
-    ]
-  }).map(([iso,trips])=>[iso,trips.map(([time,stops])=>{
-    const seq=stops.map(([name,at])=>({name,at:at||null}));
-    return{time,stops:seq,from:seq[0].name,via:seq[1]?seq[1].name:null,
-      to:seq[seq.length-1].name,mainGate:seq.some(s=>s.name==="Main Gate"),
-      returnsToPgp:false,special:true};
-  })])),
+     The Inter-IIM 2026 tables for 13-15 November were removed when the event ended;
+     they are in the history at commit 7279a2c if they are ever wanted again. */
+  busDays: {},
+  busByDate: {},
   /* Which sheet this menu came from, carried as data so the app can say so rather
      than leaving people to guess whether they are reading a stale menu. Update these
      two lines whenever the menu below is replaced. */
