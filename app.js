@@ -3137,8 +3137,8 @@ function renderBuses(){
     const after=upcoming.find(item=>item.d>next.d),gapMins=after?Math.round((after.d-next.d)/60000):0;
     if(nextDay)gapEl.hidden=true;
     else if(!after){gapEl.hidden=false;gapEl.className="next-bus-gap is-final";gapEl.innerHTML=`<b>Last one today</b> on this route`}
-    else if(gapMins>=90){gapEl.hidden=false;gapEl.className="next-bus-gap is-wide";gapEl.innerHTML=`Miss it and the next is <b>${esc(fmtTime(after.b.time))}</b> \u2014 a ${esc(compactDuration(gapMins))} wait`}
-    else{gapEl.hidden=false;gapEl.className="next-bus-gap";gapEl.innerHTML=`Then <b>${esc(fmtTime(after.b.time))}</b>, ${esc(compactDuration(gapMins))} later`}
+    else if(gapMins>=90){gapEl.hidden=false;gapEl.className="next-bus-gap is-wide";gapEl.innerHTML=`Miss it and the next is <b>${esc(fmtTime(hhmmOf(after.d)))}</b> \u2014 a ${esc(compactDuration(gapMins))} wait`}
+    else{gapEl.hidden=false;gapEl.className="next-bus-gap";gapEl.innerHTML=`Then <b>${esc(fmtTime(hhmmOf(after.d)))}</b>, ${esc(compactDuration(gapMins))} later`}
   }
   const lastEl=$("#busLastRun");
   if(lastEl){
@@ -3835,7 +3835,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova210",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova211",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
