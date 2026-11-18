@@ -1383,6 +1383,9 @@ input[type="radio"]:checked::after{content:"";width:8px;height:8px;border-radius
 /* Badges ride on the time's line and push right, so the subline underneath always
    has the full width of the row and never truncates. */
 .board-row-badges{flex:none;display:flex;gap:5px}
+/* A countdown pill and a badge together leave no room for the origin label, at any
+   width. The origin is the least urgent of the three, so it is the one that goes. */
+.board-row:has(.board-row-in):has(.board-row-badges) .brm{display:none}
 .board-row:not(:has(.brm)) .board-row-badges{margin-left:auto}
 /* The one row you are actually looking for, lifted out of the list. */
 .board-row.next{
@@ -3372,7 +3375,13 @@ html{scroll-behavior:smooth}
   .board-row{gap:8px;padding:9px 8px 9px 13px}
   .brt{font-size:var(--text-md);min-width:72px}
   .brm{font-size:10px}
-  /* A LAST BUS or NEXT badge and the origin label cannot both have the right-hand end
-     of a 320px row. The badge wins: it is the rarer fact and the more urgent one. */
   .board-row:has(.board-row-badges) .brm{display:none}
 }
+
+/* A service that has left its origin but has not reached you yet. Green, because it is
+   good news - the bus you thought you had missed is still coming - and distinct from
+   both the faded rows that have genuinely gone and the accent of the next departure. */
+.board-row.on-way .brt{color:var(--live)}
+.board-row.on-way::before{background:var(--live);opacity:1}
+.board-row.on-way .brm{color:var(--live);opacity:.9}
+#nextBusOriginNote .on-way{color:var(--live);font-weight:700}

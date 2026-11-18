@@ -2799,6 +2799,24 @@ function stopOffsetMinutes(){return 0}
 /* How long the ride itself takes, which is a different question from when to be at the
    stop. Used to work out whether a bus still gets you to a class in time, where
    assuming you arrive the moment you board would promise a class you would miss. */
+/* Between leaving its origin and reaching the stop you are standing at, a service has
+   gone from the timetable's point of view but not from yours. Showing it as departed
+   for those few minutes is how you talk yourself into walking, five minutes before the
+   bus arrives.
+
+   No arbitrary window is needed to bound it: the window IS the ride from its origin to
+   you, five to fifteen minutes on this corridor, and it closes by itself the moment the
+   bus reaches the stop. Returns how many minutes ago it left, or 0 when it is not in
+   that state - including for a service that starts where you are, which can never be
+   on its way to you. */
+function enRouteMinutes(bus,stop,now=new Date(),dayIso=null){
+  if(!bus||bus.from===stop)return 0;
+  const left=serviceDepartureAt(bus,stop,now,dayIso);
+  const ride=travelMinutes(bus,bus.from,stop);
+  if(!ride)return 0;
+  const ago=(now-left)/60000;
+  return ago>=0&&ago<ride?Math.max(1,Math.round(ago)):0;
+}
 function travelMinutes(bus,from,to){
   const stops=routeStops(bus),i=stops.indexOf(from),j=stops.indexOf(to);
   if(i<0||j<=i)return 0;
@@ -3096,9 +3114,13 @@ function renderBuses(){
     if(previous){
       originNote.hidden=false;
       const ago=Math.max(0,Math.round((now-previous.d)/60000));
+      const onWay=enRouteMinutes(previous.b,state.busFrom,now);
       /* The route is named in full directly above, so the note gives only the two
-         times: the one that has gone and the one coming. */
-      originNote.innerHTML=`<span class="passed">${esc(fmtTime(hhmmOf(previous.d)))} went${ago?` ${esc(compactDuration(ago))} ago`:""}</span> \u00b7 <span class="upcoming">${esc(fmtTime(hhmmOf(next.d)))} next</span>`;
+         times: the one that has gone and the one coming - unless the one that "has
+         gone" is in fact still on its way here, which is worth saying plainly. */
+      originNote.innerHTML=onWay
+        ?`<span class="on-way">${esc(fmtTime(hhmmOf(previous.d)))} left ${esc(busStopLabel(previous.b.from))} ${esc(compactDuration(onWay))} ago \u2014 still coming</span> \u00b7 <span class="upcoming">${esc(fmtTime(hhmmOf(next.d)))} next</span>`
+        :`<span class="passed">${esc(fmtTime(hhmmOf(previous.d)))} went${ago?` ${esc(compactDuration(ago))} ago`:""}</span> \u00b7 <span class="upcoming">${esc(fmtTime(hhmmOf(next.d)))} next</span>`;
     }else if(next.b.from!==state.busFrom){
       originNote.hidden=false;
       originNote.innerHTML=`First <b>${esc(busStopLabel(next.b.from))}</b> departure today: <span class="upcoming">${esc(fmtTime(next.b.time))}</span>`;
@@ -3128,8 +3150,13 @@ function renderBuses(){
   /* "Upcoming" and "Full day" were two lists of the same buses, the second starting at
      midnight with everything already gone. One board now: what is left today, with the
      earlier departures available on request. */
-  const upcoming=withTimes.filter(item=>item.d>now);
-  const earlier=withTimes.filter(item=>item.d<=now);
+  /* A bus still on its way here belongs with the ones you can still catch, not filed
+     under "earlier" behind a collapse - it is the most catchable departure on the
+     board. It leaves the upcoming list by itself once it has actually reached the
+     stop. */
+  const stillComing=item=>!!enRouteMinutes(item.b,state.busFrom,now);
+  const upcoming=withTimes.filter(item=>item.d>now||stillComing(item));
+  const earlier=withTimes.filter(item=>item.d<=now&&!stillComing(item));
   const finalRun=withTimes[withTimes.length-1];
   const lastKey=finalRun?`${finalRun.b.time}|${finalRun.b.from}|${finalRun.b.to}`:null;
   upcomingList.innerHTML=busBoardHtml(upcoming.length?upcoming:[next],nextKey,now,lastKey);
@@ -3187,7 +3214,11 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
   const isNext=nextKey===key;
   /* On a board already filtered to one route, "last" means the last departure the rider
      can catch — not the last of each separate origin, which showed several LAST badges. */
-  const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),stopDate=busDateForStop(bus,state.busFrom),elapsed=!isNext&&stopDate<now;
+  const last=lastKey?key===lastKey:isLastBus(bus),mainGate=isMainGateService(bus),stopDate=busDateForStop(bus,state.busFrom);
+  /* Still on its way here, so not faded out with the ones that have genuinely been and
+     gone - it is the bus you are most likely to actually catch. */
+  const enRoute=enRouteMinutes(bus,state.busFrom,now);
+  const elapsed=!isNext&&!enRoute&&stopDate<now;
   /* Clock time answers "which bus"; minutes-from-now answers "can I still make it". Only
      worth printing inside the hour and a half you would actually wait. */
   const waitMins=Math.ceil((stopDate-now)/60000);
@@ -3219,8 +3250,12 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
      starting where you are standing is the ordinary case. Only the exception is
      printed, because a bus that began at the far end of the corridor is the one that
      may already be running late. */
-  const sub=bus.from!==state.busFrom?`from ${busStopLabel(bus.from)}`:"";
-  return`<article class="board-row ${mainGate?"is-maingate":"is-shuttle"} ${isNext?"next":""} ${elapsed?"elapsed":""}">
+  /* No badge on an on-its-way row: the green time and this line already say it, and a
+     tag beside them only squeezed the sentence into "left Main G...". */
+  const sub=bus.from===state.busFrom?""
+    :enRoute?`left ${busStopLabel(bus.from)} ${compactDuration(enRoute)} ago`
+    :`from ${busStopLabel(bus.from)}`;
+  return`<article class="board-row ${mainGate?"is-maingate":"is-shuttle"} ${isNext?"next":""} ${elapsed?"elapsed":""} ${enRoute?"on-way":""}">
     <b class="brt">${esc(boardTime)}</b>
     ${soon}
     ${sub?`<span class="brm">${esc(sub)}</span>`:""}
@@ -3847,7 +3882,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova213",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova214",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
