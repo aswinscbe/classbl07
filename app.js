@@ -2782,21 +2782,20 @@ function legMinutes(a,b){
 /* The clock time of an instant, in app time - for a departure that is computed rather
    than read off the sheet. */
 function hhmmOf(date){const p=istParts(date);return`${p.hour}:${p.minute}`}
-/* What the board shows is what the timetable says: the service's own printed time,
-   and nothing added to it. Estimating a boarding time by adding five minutes a leg
-   produced a time that appears on no official sheet, which is worse than being a few
-   minutes early - a rider cross-checking the app against the notice board would find
-   them disagreeing, and the notice board is the authority.
+/* A service is shown at its own departure time, wherever you board it. The 3:30 from
+   Main Gate is "the 3:30" to someone getting on at Phase V too - that is how the
+   timetable is published and how people say it - so nothing is ever added to a
+   service's printed time.
 
-   The one exception is not an estimate at all: where the sheet itself prints a clock
-   time against an intermediate stop, that IS the published time for that stop, and 12
-   of the 41 ordinary trips carry one. */
-function stopOffsetMinutes(bus,stop){
-  const stops=routeStops(bus),idx=stops.indexOf(stop);
-  if(idx<=0)return 0;
-  const printed=bus.stops?.[idx]?.at;
-  return printed?Math.max(0,minutes(printed)-minutes(bus.time)):0;
-}
+   This includes the twelve trips where the sheet prints a second clock time against an
+   intermediate stop. Those are real published times, and an earlier version used them,
+   but it meant the same bus was called 3:30 or 3:40 depending on which stop you had
+   selected, which is worse than being a few minutes early. One service, one time.
+
+   This is the single seam where that decision lives: everything that positions, orders
+   or counts down to a departure goes through here. The printed intermediate times are
+   still in campus-data.js if the rule is ever reversed. */
+function stopOffsetMinutes(){return 0}
 /* How long the ride itself takes, which is a different question from when to be at the
    stop. Used to work out whether a bus still gets you to a class in time, where
    assuming you arrive the moment you board would promise a class you would miss. */
@@ -3848,7 +3847,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova212",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova213",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
