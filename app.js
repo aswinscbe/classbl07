@@ -2670,6 +2670,14 @@ function busStopLabel(stop){
   if(stop==="PGP Auditorium")return"Auditorium";
   return stop;
 }
+/* A native select cannot ellipsise, it just cuts: at phone width the From box read
+   "C&D Housir". Prose keeps the full name; the two pickers and the tightest chips use
+   this shorter one, which is what people say out loud anyway. */
+function busStopShort(stop){
+  if(stop==="C&D Housing")return"C&D";
+  if(stop==="Arjuna Statue")return"Arjuna";
+  return busStopLabel(stop);
+}
 
 /* Timeline swipe — offset is days from today, clamped to a week ahead. Defaults to
    tomorrow (1) since today's schedule already lives in the hero card. */
@@ -2898,7 +2906,7 @@ function saveBusRoute(){save(KEYS.busRoute,{from:state.busFrom,to:state.busTo})}
 
 function renderBusControls(){
   const options=BUS_STOPS.map(stop=>
-    `<option value="${esc(stop)}">${esc(busStopLabel(stop))}</option>`
+    `<option value="${esc(stop)}">${esc(busStopShort(stop))}</option>`
   ).join("");
   $("#busFrom").innerHTML=options;$("#busTo").innerHTML=options;
   $("#busFrom").value=state.busFrom;$("#busTo").value=state.busTo;
@@ -3184,7 +3192,7 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
   /* Clock time answers "which bus"; minutes-from-now answers "can I still make it". Only
      worth printing inside the hour and a half you would actually wait. */
   const waitMins=Math.ceil((stopDate-now)/60000);
-  const soon=!elapsed&&waitMins>0&&waitMins<=90?`<small class="board-row-in">in ${esc(compactDuration(waitMins))}</small>`:"";
+  const soon=!elapsed&&waitMins>0&&waitMins<=90?`<span class="board-row-in">in ${esc(compactDuration(waitMins))}</span>`:"";
   const badges=[
     isNext?'<span class="tag tag-next">NEXT</span>':"",
     bus.staff?'<span class="tag tag-staff">STAFF</span>':"",
@@ -3203,16 +3211,21 @@ function busRow(bus,nextKey,now=new Date(),lastKey=null){
   const boardTime=fmtTime(hhmmOf(stopDate));
   /* The destination is in the panel heading above and is the same on every row of a
      filtered board, so naming it per row only crowded out the part that does vary. */
-  /* The time above IS this service's printed departure, so repeating it here would say
-     the same thing twice. What is worth knowing is where the bus is coming from, since
-     one that started at the far end of the corridor may already be running late. */
-  const sub=bus.from!==state.busFrom?`From ${busStopLabel(bus.from)}`:"Starts here";
+  /* A timetable is a column of times, so it is laid out as one: the time in a fixed
+     left column in tabular figures, everything else ranged after it. It used to be
+     twenty bordered cards each holding one time adrift in a field of padding, which is
+     a lot of furniture for a list you scan rather than read.
+
+     "Starts here" is gone. It was on half the rows and said nothing - a service
+     starting where you are standing is the ordinary case. Only the exception is
+     printed, because a bus that began at the far end of the corridor is the one that
+     may already be running late. */
+  const sub=bus.from!==state.busFrom?`from ${busStopLabel(bus.from)}`:"";
   return`<article class="board-row ${mainGate?"is-maingate":"is-shuttle"} ${isNext?"next":""} ${elapsed?"elapsed":""}">
-    <span class="board-row-avatar">${icon(mainGate?"pin":"bus")}</span>
-    <div class="r">
-      <strong class="board-row-time"><b>${esc(boardTime)}</b>${soon}${badges?`<span class="board-row-badges">${badges}</span>`:""}</strong>
-      <span class="board-row-sub">${esc(sub)}</span>
-    </div>
+    <b class="brt">${esc(boardTime)}</b>
+    ${soon}
+    ${sub?`<span class="brm">${esc(sub)}</span>`:""}
+    ${badges?`<span class="board-row-badges">${badges}</span>`:""}
   </article>`;
 }
 
@@ -3835,7 +3848,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova211",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova212",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
