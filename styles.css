@@ -3378,10 +3378,10 @@ html{scroll-behavior:smooth}
   .board-row:has(.board-row-badges) .brm{display:none}
 }
 
-/* A service that has left its origin but has not reached you yet. Green, because it is
-   good news - the bus you thought you had missed is still coming - and distinct from
-   both the faded rows that have genuinely gone and the accent of the next departure. */
-.board-row.on-way .brt{color:var(--live)}
-.board-row.on-way::before{background:var(--live);opacity:1}
-.board-row.on-way .brm{color:var(--live);opacity:.9}
-#nextBusOriginNote .on-way{color:var(--live);font-weight:700}
+/* A service that left its origin in the last few minutes. Amber rather than green: it
+   is worth a second look, not a promise that the bus is still coming - the app does not
+   know that. It is simply not faded like the ones that have genuinely been and gone. */
+.board-row.on-way .brt{color:var(--ink)}
+.board-row.on-way::before{background:var(--amber);opacity:1}
+.board-row.on-way .brm{color:var(--amber);font-weight:700}
+#nextBusOriginNote .on-way{color:var(--amber);font-weight:700}

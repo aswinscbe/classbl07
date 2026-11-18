@@ -2799,23 +2799,31 @@ function stopOffsetMinutes(){return 0}
 /* How long the ride itself takes, which is a different question from when to be at the
    stop. Used to work out whether a bus still gets you to a class in time, where
    assuming you arrive the moment you board would promise a class you would miss. */
-/* Between leaving its origin and reaching the stop you are standing at, a service has
-   gone from the timetable's point of view but not from yours. Showing it as departed
-   for those few minutes is how you talk yourself into walking, five minutes before the
-   bus arrives.
+/* A service that has just left its origin may not have reached the stop you are
+   standing at yet, so the board reports when it left rather than calling it gone.
 
-   No arbitrary window is needed to bound it: the window IS the ride from its origin to
-   you, five to fifteen minutes on this corridor, and it closes by itself the moment the
-   bus reaches the stop. Returns how many minutes ago it left, or 0 when it is not in
-   that state - including for a service that starts where you are, which can never be
-   on its way to you. */
+   What this deliberately does NOT do is claim the bus is still coming. The only thing
+   known here is the printed departure from its origin; where the bus is now is a guess
+   built on five minutes a leg, and a guess that runs slow tells you to wait for a bus
+   that has already passed. Standing at a stop for nothing is a worse outcome than
+   setting off walking, so the line states the fact and leaves the judgement to the
+   rider, who can see the road.
+
+   The window is short and fixed for the same reason - ten minutes at the outside,
+   and never longer than the ride itself, so a one-stop hop does not advertise for ten
+   minutes. Past that the service reads as gone, because by then it almost certainly
+   is. Returns how many minutes ago it left, or 0 when the line does not apply -
+   including for a service that starts where you are, which cannot be on its way to
+   you. */
+const ON_WAY_MAX_MINS=10;
 function enRouteMinutes(bus,stop,now=new Date(),dayIso=null){
   if(!bus||bus.from===stop)return 0;
   const left=serviceDepartureAt(bus,stop,now,dayIso);
   const ride=travelMinutes(bus,bus.from,stop);
   if(!ride)return 0;
+  const window=Math.min(ride,ON_WAY_MAX_MINS);
   const ago=(now-left)/60000;
-  return ago>=0&&ago<ride?Math.max(1,Math.round(ago)):0;
+  return ago>=0&&ago<window?Math.max(1,Math.round(ago)):0;
 }
 function travelMinutes(bus,from,to){
   const stops=routeStops(bus),i=stops.indexOf(from),j=stops.indexOf(to);
@@ -3119,7 +3127,7 @@ function renderBuses(){
          times: the one that has gone and the one coming - unless the one that "has
          gone" is in fact still on its way here, which is worth saying plainly. */
       originNote.innerHTML=onWay
-        ?`<span class="on-way">${esc(fmtTime(hhmmOf(previous.d)))} left ${esc(busStopLabel(previous.b.from))} ${esc(compactDuration(onWay))} ago \u2014 still coming</span> \u00b7 <span class="upcoming">${esc(fmtTime(hhmmOf(next.d)))} next</span>`
+        ?`<span class="on-way">${esc(fmtTime(hhmmOf(previous.d)))} left ${esc(busStopLabel(previous.b.from))} ${esc(compactDuration(onWay))} ago</span> \u00b7 <span class="upcoming">${esc(fmtTime(hhmmOf(next.d)))} next</span>`
         :`<span class="passed">${esc(fmtTime(hhmmOf(previous.d)))} went${ago?` ${esc(compactDuration(ago))} ago`:""}</span> \u00b7 <span class="upcoming">${esc(fmtTime(hhmmOf(next.d)))} next</span>`;
     }else if(next.b.from!==state.busFrom){
       originNote.hidden=false;
@@ -3882,7 +3890,7 @@ async function init(){
   setInterval(updateTopbarClock,15000);
   setInterval(()=>{renderHome();renderBuses()},30000);
   requestAnimationFrame(playCardEntrance);
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova214",{updateViaCache:"none"}).catch(console.error)
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js?v=20260928-nova215",{updateViaCache:"none"}).catch(console.error)
 }
 document.addEventListener("DOMContentLoaded",init);
 })();
